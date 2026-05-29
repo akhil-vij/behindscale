@@ -1,0 +1,165 @@
+# Progress Tracker
+
+Update this file after every meaningful implementation change.
+
+## Current Phase
+
+- Not started (scaffolding context files complete; implementation pending).
+
+## Current Goal
+
+- Stand up the repository skeleton and the shared content-contract types,
+  then a minimal website shell that renders sample content.
+
+## Completed
+
+- Context files authored: project-overview, architecture (Content Contract
+  enumerates Source, Article, and Patterns shapes in full), ui-context,
+  code-standards, ai-workflow-rules, CLAUDE.md.
+- Key design decisions locked (see Architecture Decisions below): static
+  site, two decoupled sub-systems, sandboxed-iframe artifacts, light shell
+  + dark artifacts, allowlisted official engineering blogs, dual-axis
+  navigation, authored pattern definitions, SQLite-for-pipeline-only,
+  prompts-as-code, hash-based routing (`HashRouter`), esbuild for artifact
+  bundles, and the artifact-pointer-as-discriminated-null Article shape.
+
+## In Progress
+
+- None yet.
+
+## Next Up
+
+1. Initialize Vite + React + TypeScript project and Tailwind with the
+   ui-context.md tokens wired into the theme.
+2. Define shared schema types in `src/types/` covering the full content
+   contract: article summary (with `source` block and `patterns[]`
+   references), pattern definition, and aggregated pattern library shapes.
+3. Place hand-written sample content in `content/articles/` and
+   `content/patterns/` (one article + the patterns it references) so the
+   site has something to render end-to-end.
+4. Build the website shell covering both navigation axes:
+   - Home / article index with article cards (source eyebrow + pattern chips).
+   - Article page (`/articles/:slug`) with source attribution, pattern chips,
+     and a "Patterns in this article" section.
+   - Pattern library index (`/patterns`) — grid of pattern cards.
+   - Pattern detail page (`/patterns/:slug`) — definition, when-it-applies,
+     tradeoffs, and "Seen in" back-link cards with source attribution.
+5. Add the build-time validation step that fails the build on orphan pattern
+   slugs (article references a pattern with no definition). This enforces
+   invariant 8 concretely.
+6. Implement the sandboxed-iframe artifact embed; include one deliberately
+   broken sample artifact to verify fault isolation (invariant 2).
+7. Add filter affordances: source filter on the article index
+   (driven by `pipeline/feeds.json`) and optional category filter on the
+   pattern library index.
+8. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
+   reading sources from the allowlist.
+
+## Open Questions
+
+- Should existing artifacts already produced in Claude chat (Skipper, Stripe
+  idempotency, Airbnb monitoring, Uber load management, this architecture
+  doc) be backfilled as the first library entries? (Recommended: yes — they
+  seed the pattern library immediately and give the dual-axis navigation
+  real content from day one.)
+- Initial pattern seed list: which canonical patterns to author definitions
+  for before launch. Candidates from work to date: durable workflow / replay,
+  atomic phases & recovery points, fault isolation, dead man's switch,
+  priority-aware load shedding, dynamic-vs-static thresholds, bidirectional
+  idempotency. Decide before building the pattern detail page so there's
+  authored content to render.
+- Pattern categories: whether to use a flat set of category tags
+  (e.g. resilience, consistency, throughput, observability) and what the
+  initial category list is. Optional but useful for the pattern library
+  index filter. Keep flat — no deep taxonomy.
+- Pipeline scheduling: the orchestrator (`npm run study`) is the daily
+  command and is built regardless. Only the *scheduler* that auto-invokes it
+  is open — GitHub Actions cron (runs in the cloud, commits results) vs local
+  launchd/cron (runs on the laptop). Decide when reaching the CI stage; the
+  orchestrator is designed so this choice is just "what calls the command."
+
+## Architecture Decisions
+
+- **Static site, no DB/auth on the website.** The site renders only
+  pre-generated files; all dynamic work is in the build-time pipeline.
+  Rationale: a personal/public learning library has no per-user state needs;
+  static is cheaper, simpler, and faster, and deploys free.
+- **Two decoupled sub-systems: pipeline and website**, communicating only
+  through generated files (the content contract). Rationale: clean separation
+  of build-time vs render-time concerns; mirrors the "colocate logic with
+  state / clear boundaries" lessons from the studied blogs.
+- **Artifacts rendered in sandboxed iframes**, one self-contained bundle
+  each. Rationale: auto-generated artifacts will occasionally be malformed;
+  iframes isolate failures so one bad artifact can't break the build or other
+  artifacts. This is the fault-isolation pattern from the Airbnb monitoring
+  study, applied to our own system.
+- **Light editorial reading shell + dark technical artifacts.** Rationale:
+  long-form reading is most comfortable on a light, high-whitespace surface
+  (Stripe docs / Linear style); the dark interactive artifacts gain hierarchy
+  and a "lab" feel by contrast.
+- **Official engineering blogs only (allowlist-enforced).** Rationale:
+  signal quality is the whole point of the library. First-party engineering
+  writeups from the team that actually built the system are dense, accurate,
+  and full of real tradeoffs. Personal blogs, third-party summaries, and
+  aggregators dilute that signal — they often paraphrase official posts with
+  less depth, vary wildly in quality, and create dedup noise. The allowlist
+  in `pipeline/feeds.json` is the single source of truth for what counts.
+- **Dual-axis navigation: articles and patterns are equally first-class.**
+  The home page is the article feed (the daily reading surface), and the
+  pattern library at `/patterns` is the durable-knowledge surface, with a
+  prominent pattern detail page per pattern. Articles reference patterns by
+  canonical slug; patterns list their articles. Bidirectional integrity is
+  enforced at build time (invariant 8). Rationale: the stated mission is to
+  build durable, transferable system design intuition — patterns are the
+  takeaway, articles are the evidence. But the daily-reading ritual is real,
+  so the article feed remains the primary entry point. Pure pattern-first
+  navigation would bury fresh articles; pure article-first would relegate
+  the pattern library to a footnote. Both axes get their own surface.
+- **Pattern definitions are authored, not auto-generated.** The pipeline
+  may *propose* new pattern slugs when it sees something recurring, but
+  pattern definition files in `content/patterns/{slug}.json` are hand-written
+  or hand-reviewed. Rationale: the synthesis across articles is where the
+  learning compounds; auto-derived definitions from a single article tend
+  to be too narrow and miss the cross-article generality that makes a
+  pattern useful.
+- **Pipeline metadata in SQLite; published content as committed JSON/JSX.**
+  Rationale: control-flow/dedup state belongs in a queryable store; durable
+  published content belongs in version control for auditability.
+- **Prompts treated as versioned code** under `pipeline/prompts/`. Rationale:
+  artifact/summary quality depends on prompt quality; it must be reviewable
+  and improvable over time.
+- **Hash-based routing** (`react-router-dom` with `HashRouter`). Rationale:
+  GitHub Pages does not natively serve SPA routes under browser history —
+  visiting `/articles/foo` directly returns 404 unless we add a `404.html`
+  redirect shim, which is fragile. Hash routes (`#/articles/foo`) are served
+  identically on local dev and Pages with zero config. The aesthetic cost
+  (visible `#`) is minor and acceptable for a learning site. Locks in
+  consistent behavior across environments.
+- **esbuild for compiling artifact bundles.** Each `.jsx` artifact is
+  compiled to a self-contained ESM bundle and wrapped in a minimal HTML
+  shell, one bundle per article under `public/artifacts/{slug}/`. Rationale:
+  esbuild is fast, handles JSX/TSX out of the box, has near-zero config, and
+  produces standalone bundles suitable for iframe embedding. Alternatives
+  (Vite library mode, Rollup) are heavier without providing additional value
+  for this use case. The bundler is invoked from the pipeline's `generate`
+  stage; the website does not import esbuild.
+- **Article `artifact` pointer as discriminated null** (`{ path: string } | null`
+  rather than `{ path, hasArtifact: boolean }`). Rationale: missing-artifact
+  is a data state, not a filesystem inference — encoding it as `null`
+  rather than a 404 keeps the iframe loader's "skip + flag on bad entry"
+  path deterministic (invariant 6) and leaves room for summary-only
+  articles without a special case. The discriminated form makes the
+  invalid state `{ path: "/x", hasArtifact: false }` unrepresentable,
+  which the boolean-plus-path shape cannot prevent.
+
+## Session Notes
+
+- Domain `behindscale.com` has been acquired by the owner; target deploy is
+  GitHub Pages with a CNAME to the custom domain.
+- The owner is studying system design by dissecting engineering blogs; this
+  project automates and publishes that workflow. The studied patterns so far
+  (workflow durability, idempotency/atomic phases, fault isolation /
+  dead-man's-switch, priority-aware load shedding / PID control) are good
+  candidates to seed the initial pattern library.
+- Owner uses Claude Code locally; this repo is intended to be built with it
+  following the spec-driven workflow in ai-workflow-rules.md.
