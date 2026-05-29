@@ -1,22 +1,128 @@
-import { useParams } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { articleBySlug, patternBySlug } from '../content'
+import PatternChip from '../components/PatternChip'
+import SourceAttribution from '../components/SourceAttribution'
 
 export default function ArticleDetail() {
   const { slug } = useParams<{ slug: string }>()
+  const article = slug ? articleBySlug.get(slug) : undefined
+
+  // Skip + flag on missing entry per invariant 6 — never crash.
+  if (!article) {
+    return (
+      <main className="max-w-[720px] mx-auto px-6 py-12">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
+          Article not found
+        </h1>
+        <p className="mt-4 text-text-secondary">
+          No article with slug{' '}
+          <code className="font-mono text-text-primary">
+            {slug ?? '(missing)'}
+          </code>{' '}
+          exists in the library.
+        </p>
+        <p className="mt-6">
+          <Link
+            to="/"
+            className="text-accent-primary hover:text-accent-hover transition-colors"
+          >
+            ← Back to articles
+          </Link>
+        </p>
+      </main>
+    )
+  }
+
   return (
-    <main className="max-w-[720px] mx-auto px-6 py-12">
-      <p className="font-mono text-text-muted text-sm uppercase tracking-wide">
-        Route: /articles/:slug
-      </p>
-      <h1 className="text-3xl font-semibold text-text-primary tracking-tight mt-2">
-        Article Detail
+    <article className="max-w-[720px] mx-auto px-6 py-12">
+      <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
+        {article.title}
       </h1>
-      <p className="text-text-secondary mt-4">
-        slug ={' '}
-        <code className="font-mono text-text-primary">{slug}</code>
+      <div className="mt-3">
+        <SourceAttribution
+          source={article.source}
+          publishedAt={article.publishedAt}
+          variant="header"
+          articleUrl={article.url}
+        />
+      </div>
+      <p className="mt-6 text-lg leading-relaxed text-text-secondary">
+        {article.summary}
       </p>
-      <p className="text-text-secondary mt-4">
-        Stub — real reading view lands in Unit 3c.
-      </p>
-    </main>
+
+      <Section title="Problem">
+        <Prose>{article.problem}</Prose>
+      </Section>
+
+      <Section title="Solution">
+        <Prose>{article.solution}</Prose>
+      </Section>
+
+      {article.tradeoffs.length > 0 && (
+        <Section title="Tradeoffs">
+          <ul className="mt-4 flex list-none flex-col gap-3">
+            {article.tradeoffs.map((tradeoff, i) => (
+              <li
+                key={i}
+                className="leading-relaxed text-text-secondary"
+              >
+                {tradeoff}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {article.patterns.length > 0 && (
+        <Section title="Patterns in this article">
+          <ul className="mt-4 flex list-none flex-col gap-5">
+            {article.patterns.map((ref) => {
+              const def = patternBySlug.get(ref.slug)
+              return (
+                <li key={ref.slug} className="flex flex-col items-start gap-2">
+                  <PatternChip
+                    slug={ref.slug}
+                    name={def?.name ?? ref.slug}
+                    category={def?.category}
+                  />
+                  <p className="leading-relaxed text-text-secondary">
+                    {ref.note}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+        </Section>
+      )}
+    </article>
+  )
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mt-10">
+      <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+// Splits a markdown-ish multi-paragraph string on blank lines and renders
+// each chunk as a paragraph. Real markdown (lists, bold, code, links) is
+// deferred to a markdown renderer when Claude-generated content needs it;
+// the sample content for 3c uses plain paragraphs only.
+function Prose({ children }: { children: string }) {
+  const paragraphs = children.split(/\n{2,}/).filter((p) => p.trim().length > 0)
+  return (
+    <div className="mt-4 flex flex-col gap-4">
+      {paragraphs.map((p, i) => (
+        <p key={i} className="leading-relaxed text-text-secondary">
+          {p}
+        </p>
+      ))}
+    </div>
   )
 }

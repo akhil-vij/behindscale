@@ -5,10 +5,9 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase 3: building the website shell (Unit 3, decomposed into 3a-3e).
-  3a and 3b complete (routing skeleton + content indexer + article index
-  page with reusable components). 3c (article detail page) is next; no
-  design-intent paragraph required (the reusable components landed in
-  3b, so 3c is composition + layout).
+  3a, 3b, and 3c complete (routing + indexer + reusable components +
+  article index + article detail). 3d (pattern library index + Playwright
+  smoke test) is next.
 
 ## Current Goal
 
@@ -61,6 +60,36 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 3c — Article detail page (`/articles/:slug`).** Reading-column
+  layout (max-width 720px) per ui-context.md. Composition only — reuses
+  `SourceAttribution variant="header"` (with external links to the source
+  blog and to the original article, both `target="_blank"`) and
+  `PatternChip` from 3b. Section ordering chosen for narrative flow:
+  title → source header → summary paragraph → Problem → Solution →
+  Tradeoffs → "Patterns in this article". Patterns surface at the bottom
+  as takeaway anchors (the reader already saw chips on the index card;
+  re-surfacing them at the top would be redundant). Tradeoffs render as
+  an unstyled `<ul list-none>` so each item reads as a clean paragraph
+  while staying semantically a list. Each pattern in the bottom section
+  shows its chip plus the per-article `note` so the reader sees how
+  *this* article applies the pattern.
+  - Local helpers `Section` (h2 wrapper) and `Prose` (splits a
+    markdown-ish string on blank lines and renders each chunk as a `<p>`)
+    keep the page composable. Real markdown rendering is deferred to a
+    future unit when Claude-generated content needs it; sample content is
+    plain paragraphs.
+  - Missing-slug case: when `articleBySlug.get(slug)` is undefined, the
+    page renders a clear "Article not found" state with a link back to
+    `/`. Invariant 6 (skip + flag on bad entry, never crash).
+  - Indexer tightening landed in this commit: pattern glob now uses an
+    array form with explicit negation
+    `['/content/patterns/*.json', '!/content/patterns/index.json']` so
+    Vite skips loading the future derived aggregated library at the glob
+    level rather than filtering after load. Runtime filter helper
+    removed. Forward-protects the indexer from the moment Unit 4+ starts
+    writing `index.json`.
+  - Build passes (CSS 41.92 kB / JS 176.12 kB; +1.5 kB JS over 3b);
+    `npm test` still 34 passing.
 - **Unit 3b — Content indexer + ArticleCard + PatternChip +
   SourceAttribution.** Foundational addition before component work:
   `src/content/index.ts` is the build-time content indexer using
@@ -120,8 +149,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 3b complete. Unit 3c (article detail page at
-  `/articles/:slug`) is next, reusing the components that landed in 3b.
+- None — Unit 3c complete. Unit 3d (pattern library index at `/patterns`
+  with `PatternCard` + frequency count + teaser, plus the Playwright
+  smoke test that loads `/`, navigates to one article, navigates to one
+  pattern, asserts no crash) is next.
 
 ## Next Up
 
