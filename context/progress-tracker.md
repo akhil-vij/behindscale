@@ -4,7 +4,8 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Not started (scaffolding context files complete; implementation pending).
+- Phase 1: website scaffolding complete. Moving toward the content
+  contract (shared schema types) next.
 
 ## Current Goal
 
@@ -16,43 +17,48 @@ Update this file after every meaningful implementation change.
 - Context files authored: project-overview, architecture (Content Contract
   enumerates Source, Article, and Patterns shapes in full), ui-context,
   code-standards, ai-workflow-rules, CLAUDE.md.
-- Key design decisions locked (see Architecture Decisions below): static
-  site, two decoupled sub-systems, sandboxed-iframe artifacts, light shell
-  + dark artifacts, allowlisted official engineering blogs, dual-axis
-  navigation, authored pattern definitions, SQLite-for-pipeline-only,
-  prompts-as-code, hash-based routing (`HashRouter`), esbuild for artifact
-  bundles, and the artifact-pointer-as-discriminated-null Article shape.
+- Key design decisions locked (see Architecture Decisions below).
+- **Unit 1 — Project scaffolding.** Vite + React 18 + TypeScript (strict)
+  initialized. Tailwind v3 configured with the full ui-context.md token set
+  exposed as CSS custom properties in `src/index.css` and surfaced through
+  `tailwind.config.js` `theme.extend` (colors, fontFamily, borderRadius).
+  No hardcoded hex outside `src/index.css` (the token source).
+  `npm run dev` boots cleanly on `http://localhost:5173/`; `npm run build`
+  passes (`tsc -b && vite build`). Minimal `App.tsx` renders the
+  "behindscale" wordmark using `bg-bg-base`, `text-text-primary`, and
+  `font-sans` — token wiring verified end-to-end. Webfonts (Inter /
+  JetBrains Mono) deferred to Unit 3 (will use `@fontsource` for
+  self-hosting per invariant 1); current `--font-sans` / `--font-mono`
+  are system fallback stacks. Tailwind v3 locked in for the project.
 
 ## In Progress
 
-- None yet.
+- None — Unit 1 complete; Unit 2 (shared schema types) up next.
 
 ## Next Up
 
-1. Initialize Vite + React + TypeScript project and Tailwind with the
-   ui-context.md tokens wired into the theme.
-2. Define shared schema types in `src/types/` covering the full content
+1. Define shared schema types in `src/types/` covering the full content
    contract: article summary (with `source` block and `patterns[]`
    references), pattern definition, and aggregated pattern library shapes.
-3. Place hand-written sample content in `content/articles/` and
+2. Place hand-written sample content in `content/articles/` and
    `content/patterns/` (one article + the patterns it references) so the
    site has something to render end-to-end.
-4. Build the website shell covering both navigation axes:
+3. Build the website shell covering both navigation axes:
    - Home / article index with article cards (source eyebrow + pattern chips).
    - Article page (`/articles/:slug`) with source attribution, pattern chips,
      and a "Patterns in this article" section.
    - Pattern library index (`/patterns`) — grid of pattern cards.
    - Pattern detail page (`/patterns/:slug`) — definition, when-it-applies,
      tradeoffs, and "Seen in" back-link cards with source attribution.
-5. Add the build-time validation step that fails the build on orphan pattern
+4. Add the build-time validation step that fails the build on orphan pattern
    slugs (article references a pattern with no definition). This enforces
    invariant 8 concretely.
-6. Implement the sandboxed-iframe artifact embed; include one deliberately
+5. Implement the sandboxed-iframe artifact embed; include one deliberately
    broken sample artifact to verify fault isolation (invariant 2).
-7. Add filter affordances: source filter on the article index
+6. Add filter affordances: source filter on the article index
    (driven by `pipeline/feeds.json`) and optional category filter on the
    pattern library index.
-8. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
+7. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
    reading sources from the allowlist.
 
 ## Open Questions

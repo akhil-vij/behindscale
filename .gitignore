@@ -1,0 +1,30 @@
+node_modules
+dist
+dist-ssr
+.DS_Store
+*.local
+.env
+.env.*
+!.env.example
+
+# Claude Code per-user local settings (project-shared settings.json would be tracked)
+.claude/settings.local.json
+
+# build/cache directories
+.vite
+.vitest-cache
+.cache
+coverage
+*.tsbuildinfo
+
+# pipeline operational state (SQLite, including WAL files)
+processed.db
+processed.db-shm
+processed.db-wal
+pipeline/processed.db
+pipeline/processed.db-shm
+pipeline/processed.db-wal
+
+# generated artifact bundles — produced by the pipeline's generate stage
+public/artifacts/*
+!public/artifacts/.gitkeep
