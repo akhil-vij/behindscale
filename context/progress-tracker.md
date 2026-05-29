@@ -4,9 +4,10 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase 3: building the website shell (Unit 3, decomposed into 3a-3e).
-  3a-3d complete. 3e (pattern detail page at `/patterns/:slug`) is next
-  and closes out Unit 3.
+- **Phase 3 complete.** Unit 3 (3a-3e) fully landed; the website shell
+  renders sample content across all four routes with the smoke test
+  green. Moving to Unit 4 (build-time orphan-pattern-slug validator)
+  next — design-intent paragraph required first.
 
 ## Current Goal
 
@@ -59,6 +60,35 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 3e — Pattern detail page (`/patterns/:slug`).** Closes out
+  Unit 3. Reading-column layout (max-width 720px), section ordering per
+  ui-context.md: pattern name (h1) → category eyebrow (if set) →
+  Definition → When it applies → Tradeoffs → "Seen in". The
+  `Prose` helper that lived inline in ArticleDetail was lifted to
+  `src/components/Prose.tsx` and is now imported by both pages; it
+  encodes the paragraph-separated-plain-text rendering contract from
+  architecture.md (markdown rendering deferred to Unit 7+ as a
+  one-component swap). "Seen in" reads `patternStats.articleSlugs`,
+  resolves each via `articleBySlug`, and renders a back-link card per
+  article reusing `SourceAttribution variant="card"` plus the article
+  title (Link to `/articles/:slug`) and the per-article `note` —
+  exactly the surface 3b's role-based variant naming was set up for.
+  Empty `seenIn` shows a "No articles embody this pattern yet" message
+  (patterns may exist before their first article per architecture.md
+  invariant 8).
+  - SourceAttribution card-variant Link target updated to
+    `/?source=<slug>` per the locked Unit-6 URL shape — the query string
+    is currently inert (no filter reads it yet) and becomes effective
+    in Unit 6 with zero changes to this component. The component's
+    comment now references the locked shape directly.
+  - Missing-slug case: "Pattern not found" with a back link to
+    `/patterns`. Invariant 6 (skip + flag, never crash).
+  - Smoke test updated to assert the real PatternDetail h1
+    (`Atomic Phases`) plus h2s `Definition`, `When it applies`,
+    `Seen in`. Still 1/1 passing in 2.5 s (31.3 s total with build +
+    preview boot).
+  - Build passes (CSS 42.28 kB / JS 179.46 kB; +2.0 kB JS over 3d for
+    PatternDetail + Prose extraction). `npm test` still 34 passing.
 - **Unit 3d — Pattern library index + first Playwright smoke test.**
   Per the "build platforms, not point solutions" guidance, the
   aggregation lives behind a stable interface so Unit 4 can swap the
@@ -184,10 +214,9 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 3d complete. Unit 3e (pattern detail page at
-  `/patterns/:slug` — definition + when-it-applies + tradeoffs + "Seen
-  in" back-link cards reusing `SourceAttribution variant="card"`) is next
-  and closes Unit 3.
+- None — Unit 3 fully complete. Awaiting design-intent paragraph for
+  Unit 4 (orphan-pattern-slug validator: where it runs in the build,
+  what failure looks like) before code.
 
 ## Developer Setup
 
@@ -197,54 +226,35 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-Unit 3 (website shell with sample content embedded) is decomposed into
-five sub-units. Each ends in a buildable, verifiable state and lands as
-its own commit. The shell is the deliverable; the JSON is the means to
-render it.
-
-1. **Unit 3a — Routing skeleton + navbar + webfonts + sample content.**
-   `HashRouter` from `react-router-dom`. `Navbar` component (wordmark left,
-   Articles + Patterns links). `@fontsource/inter` and
-   `@fontsource/jetbrains-mono` self-hosted (invariant 1). Sample content:
-   one `Article` in `content/articles/`, one `PatternDefinition` in
-   `content/patterns/`, one `feeds.json` entry. Page components are
-   placeholder stubs that just render their route name; the content files
-   aren't consumed yet. Mechanical — no design-intent paragraph needed.
-2. **Unit 3b — Article index page (`/`).** `ArticleCard`, `PatternChip`,
-   and `SourceAttribution` components land here and become reusable across
-   the next three sub-units. **Design-intent paragraph required before
-   code** (per ai-workflow-rules.md): cover ArticleCard anatomy,
-   PatternChip visual + the `+N more` affordance, and how the index-card
-   source eyebrow differs from the article-page source row.
-3. **Unit 3c — Article detail page (`/articles/:slug`).** Reading column
-   layout per ui-context.md (max-width ~720px). `SourceAttribution` row
-   reused. Pattern chips in the article header and again in a
-   "Patterns in this article" section near the bottom.
-4. **Unit 3d — Pattern library index (`/patterns`).** `PatternCard`
-   component with frequency count and teaser. Reads from the sample
-   `PatternDefinition` (frequency = 1 since the library has one article).
-   The Playwright smoke test lands here or as its own commit (whichever
-   reads cleanest): loads `/`, navigates to one article, navigates to one
-   pattern, asserts no crash. First test of the testing strategy from
-   code-standards.md.
-5. **Unit 3e — Pattern detail page (`/patterns/:slug`).** Definition,
-   when-it-applies, tradeoffs. "Seen in" back-link cards reuse the article
-   card pattern with source attribution.
-
-Then:
-
-6. **Unit 4 — Build-time orphan-pattern-slug validator** (invariant 8).
+1. **Unit 4 — Build-time orphan-pattern-slug validator** (invariant 8).
    Design-intent paragraph requested before code.
-7. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately broken
-   sample artifact (invariant 2). Design-intent paragraph requested
-   before code.
-8. **Unit 6 — Filter affordances.** Source filter on the article index
-   (driven by `pipeline/feeds.json`) and optional category filter on the
+2. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately
+   broken sample artifact (invariant 2). Design-intent paragraph
+   requested before code.
+3. **Unit 6 — Filter affordances.** Source filter on the article index
+   (driven by the allowlist, location resolved per the feeds.json open
+   question), reading the `?source=<slug>` URL shape that
+   `SourceAttribution` already emits. Optional category filter on the
    pattern library index.
-9. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
+4. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist.
-10. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
-    Design-intent paragraph requested before code.
+5. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
+   Design-intent paragraph requested before code.
+
+## Deferred Work
+
+- **Post-Unit 3e — Edge-case fixtures for the pattern detail page.**
+  Hand-author small fixture pattern definitions covering: uncategorized
+  (no `category`), empty `whenItApplies`, very long `definition`. Each
+  exercises a code path the current single sample (`atomic-phases`)
+  doesn't reach. Deliberate fixture construction, not ambient variety.
+- **Post-Unit 5 — Backfill 4–5 existing Claude-chat artifacts** as the
+  first real library entries: Skipper, Stripe idempotency, Airbnb
+  monitoring, Uber load management (and the architecture writeup if it
+  has artifact assets). Each needs a hand-authored `Article` JSON
+  summary plus the existing `.jsx` artifact wired through the iframe
+  infrastructure that Unit 5 establishes. Pre-Unit-5 backfill would
+  ship placeholders, not real artifacts — that's why it waits.
 
 ## Open Questions
 
@@ -269,44 +279,6 @@ Then:
   allowlist, it can't appear on an article. Will be enforced by the
   analyze stage (Unit 7+) and ideally verified by the same build-time
   validator that catches orphan pattern slugs (Unit 4).
-- Should existing artifacts already produced in Claude chat (Skipper, Stripe
-  idempotency, Airbnb monitoring, Uber load management, this architecture
-  doc) be backfilled as the first library entries? (Recommended: yes — they
-  seed the pattern library immediately and give the dual-axis navigation
-  real content from day one.)
-- Initial pattern seed list: which canonical patterns to author definitions
-  for before launch. Candidates from work to date: durable workflow / replay,
-  atomic phases & recovery points, fault isolation, dead man's switch,
-  priority-aware load shedding, dynamic-vs-static thresholds, bidirectional
-  idempotency. **Timing pressure:** Unit 3e (next) renders the pattern
-  detail page; it works with the single `atomic-phases` definition we
-  already have, but additional definitions would let 3e be tested against
-  the variety the page is meant to handle. Not a blocker; mention if you
-  want to seed 1–2 more before 3e.
-- Pattern categories: a flat set is the agreed shape (no deep taxonomy).
-  **De facto starting set** (already wired into `CATEGORY_CLASSES` in
-  `src/components/PatternChip.tsx`, each with a `--cat-*` color):
-  `resilience` (blue), `consistency` (purple), `throughput` (green),
-  `observability` (cyan). The remaining `--cat-*` tokens (`orange`,
-  `red`, `amber`) are unassigned and available. Confirm the four
-  starting categories and the unassigned color budget when convenient;
-  otherwise this stays the working assumption.
-- **Markdown rendering for prose fields** (`Article.problem`,
-  `Article.solution`, `PatternDefinition.definition`). Architecture.md
-  types these as markdown strings, but 3c/3d render them as plain
-  paragraphs (blank-line split → `<p>`). Sample content is paragraph-only
-  so the gap is invisible today; real Claude-generated content will
-  likely include lists, code, and links. **Decide before the first real
-  Claude output lands** — likely Unit 7 (analyze stage) or earlier if
-  we hand-author richer sample content. Candidates: `react-markdown`
-  (simple, well-trodden), `marked` + sanitizer (lighter), `micromark`
-  (smallest, no React glue).
-- **Source filter URL shape** (Unit 6). The `SourceAttribution`
-  card-variant currently links to `/` — that becomes the source-filtered
-  index in Unit 6. Choose a URL form before then: `/?source=<slug>`
-  (query string, keeps the route, easy to share) vs `/sources/<slug>`
-  (dedicated route, more URL-as-noun). Query-string is the lower-overhead
-  pick; flagging so the choice is conscious, not accidental.
 - Pipeline scheduling: the orchestrator (`npm run study`) is the daily
   command and is built regardless. Only the *scheduler* that auto-invokes it
   is open — GitHub Actions cron (runs in the cloud, commits results) vs local
@@ -386,6 +358,35 @@ Then:
   articles without a special case. The discriminated form makes the
   invalid state `{ path: "/x", hasArtifact: false }` unrepresentable,
   which the boolean-plus-path shape cannot prevent.
+- **Canonical pattern categories — four locked in, additive via
+  two-step docs-then-code change.** `resilience` (blue), `consistency`
+  (purple), `throughput` (green), `observability` (cyan). The remaining
+  `--cat-*` ramp tokens (`orange`, `red`, `amber`) are reserved
+  headroom; assigning one to a new category is a `docs:` commit
+  updating architecture.md's Canonical pattern categories table first,
+  then a `feat:` commit wiring the slug into `PatternChip.CATEGORY_CLASSES`.
+  Rationale: prevents pattern definitions from being authored against a
+  category slug the website doesn't know how to color, and keeps the
+  ramp from sprawling into a deep taxonomy. Uncategorized patterns (no
+  `category` field) stay valid via the neutral-chip path.
+- **Prose-field rendering contract — paragraph-separated plain text,
+  markdown deferred to Unit 7+.** `Article.problem`, `Article.solution`,
+  and `PatternDefinition.definition` are typed as plain strings split
+  on blank lines into `<p>` chunks (the `Prose` component). When the
+  first real Claude output lands (Unit 7+, analyze stage), `Prose`
+  swaps for a real markdown renderer (likely `react-markdown`) with no
+  consumer changes — Article/Pattern detail pages keep importing
+  `Prose` and the URL shape, prop surface, and rendering contract stay
+  identical. Rationale: ship a working contract today rather than
+  picking a renderer speculatively; the renderer swap is a one-component
+  change.
+- **Source filter URL shape — query string, `/?source=<slug>`.**
+  `SourceAttribution variant="card"` already emits this URL; the query
+  string is currently inert and becomes effective when Unit 6 wires the
+  filter on the article index. Rationale: keeps `/` as the canonical
+  route, composes naturally with future category/tag filters via
+  additional query params, easy to share, no UX cost over a dedicated
+  `/sources/<slug>` route.
 - **Hand-written type-guard predicates over Zod (for now).** Schema
   validation tests use lightweight inline predicates in
   `src/types/__tests__/validators.ts` rather than a runtime validation

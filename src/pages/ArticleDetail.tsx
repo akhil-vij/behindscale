@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { articleBySlug, patternBySlug } from '../content'
 import PatternChip from '../components/PatternChip'
+import Prose from '../components/Prose'
 import SourceAttribution from '../components/SourceAttribution'
 
 export default function ArticleDetail() {
@@ -107,22 +108,5 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       </h2>
       {children}
     </section>
-  )
-}
-
-// Splits a markdown-ish multi-paragraph string on blank lines and renders
-// each chunk as a paragraph. Real markdown (lists, bold, code, links) is
-// deferred to a markdown renderer when Claude-generated content needs it;
-// the sample content for 3c uses plain paragraphs only.
-function Prose({ children }: { children: string }) {
-  const paragraphs = children.split(/\n{2,}/).filter((p) => p.trim().length > 0)
-  return (
-    <div className="mt-4 flex flex-col gap-4">
-      {paragraphs.map((p, i) => (
-        <p key={i} className="leading-relaxed text-text-secondary">
-          {p}
-        </p>
-      ))}
-    </div>
   )
 }

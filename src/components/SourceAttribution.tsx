@@ -28,12 +28,17 @@ export default function SourceAttribution({
 }: SourceAttributionProps) {
   if (variant === 'card') {
     // Compact eyebrow used on article cards (index) and pattern-detail
-    // back-link cards (Unit 3e). The source-name link currently routes
-    // to / -- it will become a "filter by this blog" affordance in
-    // Unit 6 without changing this component's surface.
+    // back-link cards. The source-name link uses the
+    // /?source=<slug> URL shape locked in for Unit 6's source filter;
+    // the query string is currently inert (no filter logic reads it
+    // yet) and becomes effective when Unit 6 wires the filter on the
+    // article index. No further changes to this component for Unit 6.
     return (
       <div className="font-mono text-xs uppercase tracking-wide text-text-muted">
-        <Link to="/" className="hover:text-text-primary transition-colors">
+        <Link
+          to={`/?source=${source.slug}`}
+          className="hover:text-text-primary transition-colors"
+        >
           {source.name}
         </Link>
         <span className="mx-2" aria-hidden="true">

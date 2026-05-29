@@ -36,10 +36,17 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   // 3. Click the Atomic Phases pattern chip -> /patterns/:slug.
   await page.getByRole('link', { name: 'Atomic Phases' }).first().click()
   await expect(page).toHaveURL(/#\/patterns\/atomic-phases$/)
-  // PatternDetail is still a stub in 3d; the 3a placeholder renders this
-  // heading + slug.
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Pattern Detail' }),
+    page.getByRole('heading', { level: 1, name: 'Atomic Phases' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Definition' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'When it applies' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Seen in' }),
   ).toBeVisible()
 
   // 4. Click "Patterns" in the navbar -> /patterns.
