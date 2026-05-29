@@ -41,3 +41,44 @@ export const patterns: PatternDefinition[] = Object.values(patternModules).sort(
 export const patternBySlug: ReadonlyMap<string, PatternDefinition> = new Map(
   patterns.map((p) => [p.slug, p]),
 )
+
+// patternStats is the aggregated counts surface that the pattern library
+// renders (frequency, articles, companies). Consumers (PatternCard,
+// PatternIndex, PatternDetail) read by slug and never know how the stats
+// were computed.
+//
+// 3d implementation (here): walk the in-memory `articles` array at module
+// load and aggregate. Cheap, fine while the library has few articles.
+//
+// Unit 4+ swap point: this implementation will be replaced by a read from
+// `content/patterns/index.json` (the pipeline-generated aggregated pattern
+// library) -- shape stays identical, the swap is the body of
+// buildPatternStats() and the const that follows it. No consumer changes.
+export interface PatternStatsEntry {
+  frequency: number
+  articleSlugs: string[]
+  sourceSlugs: string[]
+}
+
+function buildPatternStats(): Map<string, PatternStatsEntry> {
+  const stats = new Map<string, PatternStatsEntry>()
+  for (const article of articles) {
+    const sourceSlug = article.source.slug
+    for (const ref of article.patterns) {
+      let entry = stats.get(ref.slug)
+      if (!entry) {
+        entry = { frequency: 0, articleSlugs: [], sourceSlugs: [] }
+        stats.set(ref.slug, entry)
+      }
+      entry.frequency += 1
+      entry.articleSlugs.push(article.slug)
+      if (!entry.sourceSlugs.includes(sourceSlug)) {
+        entry.sourceSlugs.push(sourceSlug)
+      }
+    }
+  }
+  return stats
+}
+
+export const patternStats: ReadonlyMap<string, PatternStatsEntry> =
+  buildPatternStats()

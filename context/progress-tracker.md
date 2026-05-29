@@ -5,9 +5,8 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase 3: building the website shell (Unit 3, decomposed into 3a-3e).
-  3a, 3b, and 3c complete (routing + indexer + reusable components +
-  article index + article detail). 3d (pattern library index + Playwright
-  smoke test) is next.
+  3a-3d complete. 3e (pattern detail page at `/patterns/:slug`) is next
+  and closes out Unit 3.
 
 ## Current Goal
 
@@ -60,6 +59,42 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 3d — Pattern library index + first Playwright smoke test.**
+  Per the "build platforms, not point solutions" guidance, the
+  aggregation lives behind a stable interface so Unit 4 can swap the
+  implementation without touching consumers. `src/content/index.ts` now
+  exports `patternStats: ReadonlyMap<string, PatternStatsEntry>` where
+  `PatternStatsEntry = { frequency, articleSlugs, sourceSlugs }`. 3d's
+  implementation walks the in-memory `articles` array at module load and
+  aggregates; the function has an explicit comment marking the
+  Unit 4+ swap point (replace with a read of
+  `content/patterns/index.json`, the pipeline-generated aggregated
+  library; the exported shape stays identical). PatternCard +
+  PatternIndex never know the difference.
+  - `src/components/PatternCard.tsx` — whole-card-as-`Link` (no nested
+    anchors; single click target unlike ArticleCard). Renders pattern
+    name, optional category eyebrow, frequency line
+    (`Seen in N articles across M companies` — pluralized, handles
+    zero/one), and a 2-line teaser from the first paragraph of
+    `definition`.
+  - `src/pages/PatternIndex.tsx` — `Patterns` h1, then a `grid-cols-1
+    md:grid-cols-3` grid of PatternCards per ui-context.md. Sample data
+    renders one card.
+  - **Playwright smoke test** lands in this commit. `@playwright/test`
+    on devDependencies; `npx playwright install chromium` is the
+    one-time browser install (documented in Developer Setup above and
+    will be wired into CI). `playwright.config.ts` runs the build +
+    `vite preview --port 4173` and tests against the production bundle
+    (not the dev server — the bundle is what users actually load).
+    `tests/e2e/smoke.spec.ts` is a single test that walks all four
+    routes per the testing strategy: load `/` → click article title →
+    click pattern chip → click "Patterns" in the navbar. After each
+    navigation, asserts both the URL is correct AND that a page-specific
+    element rendered (so a silent crash to a blank page fails the test,
+    not just routing). New `npm run test:e2e` script. Test passes in
+    3.2 s (37 s including build + preview boot).
+  - Bundle: CSS 42.28 kB / JS 177.46 kB (+1.3 kB JS over 3c — patternStats
+    + PatternCard). `npm test` still 34 passing.
 - **Unit 3c — Article detail page (`/articles/:slug`).** Reading-column
   layout (max-width 720px) per ui-context.md. Composition only — reuses
   `SourceAttribution variant="header"` (with external links to the source
@@ -149,10 +184,16 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 3c complete. Unit 3d (pattern library index at `/patterns`
-  with `PatternCard` + frequency count + teaser, plus the Playwright
-  smoke test that loads `/`, navigates to one article, navigates to one
-  pattern, asserts no crash) is next.
+- None — Unit 3d complete. Unit 3e (pattern detail page at
+  `/patterns/:slug` — definition + when-it-applies + tradeoffs + "Seen
+  in" back-link cards reusing `SourceAttribution variant="card"`) is next
+  and closes Unit 3.
+
+## Developer Setup
+
+- One-time before running `npm run test:e2e`: `npx playwright install
+  chromium` to download the browser binary. CI uses
+  `npx playwright install --with-deps`.
 
 ## Next Up
 

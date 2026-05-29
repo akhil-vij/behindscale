@@ -17,6 +17,12 @@ dist-ssr
 coverage
 *.tsbuildinfo
 
+# Playwright artifacts
+test-results
+playwright-report
+blob-report
+.playwright
+
 # pipeline operational state (SQLite, including WAL files)
 processed.db
 processed.db-shm
