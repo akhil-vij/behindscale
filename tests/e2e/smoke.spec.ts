@@ -34,6 +34,13 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   await expect(page.getByRole('heading', { level: 2, name: 'Solution' })).toBeVisible()
 
   // 3. Click the Atomic Phases pattern chip -> /patterns/:slug.
+  // The chip is in the "Patterns in this article" section near the
+  // bottom; Playwright auto-scrolls it into view before clicking, so
+  // we record window.scrollY as a sanity check that we navigate from a
+  // scrolled position (and not from the top).
+  await page.getByRole('link', { name: 'Atomic Phases' }).first().scrollIntoViewIfNeeded()
+  const yBeforeNav = await page.evaluate(() => window.scrollY)
+  expect(yBeforeNav).toBeGreaterThan(0)
   await page.getByRole('link', { name: 'Atomic Phases' }).first().click()
   await expect(page).toHaveURL(/#\/patterns\/atomic-phases$/)
   await expect(
@@ -48,6 +55,10 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   await expect(
     page.getByRole('heading', { level: 2, name: 'Seen in' }),
   ).toBeVisible()
+  // Scroll resets to top on route change so cross-route navigation
+  // doesn't land mid-page (the ScrollToTop component in App.tsx). Without
+  // this assertion, the bug that prompted it could regress silently.
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
 
   // 4. Click "Patterns" in the navbar -> /patterns.
   await page.getByRole('navigation').getByRole('link', { name: 'Patterns' }).click()
