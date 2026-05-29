@@ -68,32 +68,54 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. Place hand-written sample content in `content/articles/` and
-   `content/patterns/` (one article + the patterns it references) so the
-   site has something to render end-to-end. Also: add `@fontsource/inter`
-   and `@fontsource/jetbrains-mono` (self-hosted webfonts per invariant 1).
-2. Build the website shell covering both navigation axes:
-   - Home / article index with article cards (source eyebrow + pattern chips).
-   - Article page (`/articles/:slug`) with source attribution, pattern chips,
-     and a "Patterns in this article" section.
-   - Pattern library index (`/patterns`) — grid of pattern cards.
-   - Pattern detail page (`/patterns/:slug`) — definition, when-it-applies,
-     tradeoffs, and "Seen in" back-link cards with source attribution.
-   Includes the Playwright smoke test that loads home -> article -> pattern
-   and asserts no crash.
-3. Add the build-time validation step that fails the build on orphan pattern
-   slugs (article references a pattern with no definition). This enforces
-   invariant 8 concretely. Design-intent paragraph requested before code.
-4. Implement the sandboxed-iframe artifact embed; include one deliberately
-   broken sample artifact to verify fault isolation (invariant 2).
+Unit 3 (website shell with sample content embedded) is decomposed into
+five sub-units. Each ends in a buildable, verifiable state and lands as
+its own commit. The shell is the deliverable; the JSON is the means to
+render it.
+
+1. **Unit 3a — Routing skeleton + navbar + webfonts + sample content.**
+   `HashRouter` from `react-router-dom`. `Navbar` component (wordmark left,
+   Articles + Patterns links). `@fontsource/inter` and
+   `@fontsource/jetbrains-mono` self-hosted (invariant 1). Sample content:
+   one `Article` in `content/articles/`, one `PatternDefinition` in
+   `content/patterns/`, one `feeds.json` entry. Page components are
+   placeholder stubs that just render their route name; the content files
+   aren't consumed yet. Mechanical — no design-intent paragraph needed.
+2. **Unit 3b — Article index page (`/`).** `ArticleCard`, `PatternChip`,
+   and `SourceAttribution` components land here and become reusable across
+   the next three sub-units. **Design-intent paragraph required before
+   code** (per ai-workflow-rules.md): cover ArticleCard anatomy,
+   PatternChip visual + the `+N more` affordance, and how the index-card
+   source eyebrow differs from the article-page source row.
+3. **Unit 3c — Article detail page (`/articles/:slug`).** Reading column
+   layout per ui-context.md (max-width ~720px). `SourceAttribution` row
+   reused. Pattern chips in the article header and again in a
+   "Patterns in this article" section near the bottom.
+4. **Unit 3d — Pattern library index (`/patterns`).** `PatternCard`
+   component with frequency count and teaser. Reads from the sample
+   `PatternDefinition` (frequency = 1 since the library has one article).
+   The Playwright smoke test lands here or as its own commit (whichever
+   reads cleanest): loads `/`, navigates to one article, navigates to one
+   pattern, asserts no crash. First test of the testing strategy from
+   code-standards.md.
+5. **Unit 3e — Pattern detail page (`/patterns/:slug`).** Definition,
+   when-it-applies, tradeoffs. "Seen in" back-link cards reuse the article
+   card pattern with source attribution.
+
+Then:
+
+6. **Unit 4 — Build-time orphan-pattern-slug validator** (invariant 8).
    Design-intent paragraph requested before code.
-5. Add filter affordances: source filter on the article index
+7. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately broken
+   sample artifact (invariant 2). Design-intent paragraph requested
+   before code.
+8. **Unit 6 — Filter affordances.** Source filter on the article index
    (driven by `pipeline/feeds.json`) and optional category filter on the
    pattern library index.
-6. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
-   reading sources from the allowlist.
-7. Pipeline orchestrator (`pipeline/run.ts`, `npm run study`).
-   Design-intent paragraph requested before code.
+9. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
+   SQLite), reading sources from the allowlist.
+10. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
+    Design-intent paragraph requested before code.
 
 ## Open Questions
 

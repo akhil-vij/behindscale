@@ -80,6 +80,30 @@
 - The aggregated pattern library is derived data: it is regenerated from the
   per-article summaries, never hand-edited.
 
+## Testing Strategy
+
+- **Schema validation tests with vitest.** One test file per content type,
+  colocated with the types under `src/types/__tests__/`. Each test asserts
+  that a positive sample conforms and that several deliberately malformed
+  samples are rejected. Lightweight hand-written type-guard predicates
+  (in `validators.ts`, test-only) handle the runtime shape check. Zod or a
+  similar runtime validator is deferred until the pipeline needs to
+  validate Claude's JSON output before writing to `content/`.
+- **Build-time integrity checks** run as part of `npm run build`, not as a
+  separate test suite. The orphan-pattern-slug validator (invariant 8) is
+  the canonical example: a failure fails the build with a clear error
+  identifying the offending article and slug.
+- **One Playwright smoke test** covers the golden path: load `/`, navigate
+  to one article, navigate to one pattern, assert no crash. Lands once
+  those three pages render real content (Unit 3c onward). Catches
+  routing/rendering regressions cheaply; not a substitute for component
+  tests where they're warranted.
+- **No preemptive unit tests for pipeline glue code.** The orchestrator's
+  per-article success/failure reporting is the real safety net. Add
+  targeted tests only for non-trivial pure functions (e.g. slug
+  normalization, dedup logic) where the function's behavior is hard to
+  verify by running the orchestrator end to end.
+
 ## File Organization
 
 - `pipeline/` — pipeline stages, prompts, SQLite access, Claude client.

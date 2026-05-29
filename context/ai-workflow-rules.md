@@ -58,6 +58,48 @@ the current unit, this list is the strategic framing.
   In particular, never mix pipeline work and website work in the same step —
   they are different boundaries (architecture.md).
 
+## Sub-Unit Decomposition
+
+Some units are too large to land in a single commit while still ending in a
+buildable, verifiable state. When that's the case, split the unit into
+lettered sub-units (e.g. 3a, 3b, 3c, …). Each sub-unit:
+
+- Ends in a state where `npm run build` and (when applicable) `npm run dev`
+  pass and the increment is visibly working — no half-rendered routes, no
+  imports of files that don't exist yet.
+- Lands as its own commit using the project's Conventional Commits format
+  (`feat: unit 3a — …`).
+- Is reviewed by the owner against its own diff, not against the parent
+  unit's summary.
+
+The decomposition itself is recorded in `progress-tracker.md` under
+"Next Up" before the first sub-unit's code lands.
+
+## Design-Intent Before Code
+
+Some units involve design decisions that propagate widely — visible
+component anatomy, error-surface behavior, orchestration models — and are
+not pure mechanical execution. Before writing code for these, send the
+owner a brief design-intent paragraph (one to two paragraphs, not a spec)
+covering the visible choices and why. The owner reviews and confirms
+before implementation starts.
+
+Units currently requiring a design-intent paragraph:
+
+- **3b** — article shell components (ArticleCard, PatternChip,
+  SourceAttribution). These components are reused across four pages, so
+  their anatomy is a load-bearing decision.
+- **4** — orphan-pattern-slug validator: where it runs in the build,
+  what a failure looks like (which file, which slug, exit code).
+- **5** — sandboxed-iframe artifact embed: how missing artifacts
+  (`artifact: null`) and broken artifacts surface to the reader without
+  breaking the page (invariant 2 + invariant 6).
+- **7** — pipeline orchestrator: per-article success/failure reporting
+  model and idempotency semantics.
+
+Pure-scaffolding sub-units (e.g. 3a — routing skeleton + placeholders) do
+not require a design-intent paragraph; they are mechanical.
+
 ## When to Split Work
 
 Split an implementation step if it combines:
