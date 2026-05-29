@@ -278,12 +278,35 @@ Then:
   for before launch. Candidates from work to date: durable workflow / replay,
   atomic phases & recovery points, fault isolation, dead man's switch,
   priority-aware load shedding, dynamic-vs-static thresholds, bidirectional
-  idempotency. Decide before building the pattern detail page so there's
-  authored content to render.
-- Pattern categories: whether to use a flat set of category tags
-  (e.g. resilience, consistency, throughput, observability) and what the
-  initial category list is. Optional but useful for the pattern library
-  index filter. Keep flat — no deep taxonomy.
+  idempotency. **Timing pressure:** Unit 3e (next) renders the pattern
+  detail page; it works with the single `atomic-phases` definition we
+  already have, but additional definitions would let 3e be tested against
+  the variety the page is meant to handle. Not a blocker; mention if you
+  want to seed 1–2 more before 3e.
+- Pattern categories: a flat set is the agreed shape (no deep taxonomy).
+  **De facto starting set** (already wired into `CATEGORY_CLASSES` in
+  `src/components/PatternChip.tsx`, each with a `--cat-*` color):
+  `resilience` (blue), `consistency` (purple), `throughput` (green),
+  `observability` (cyan). The remaining `--cat-*` tokens (`orange`,
+  `red`, `amber`) are unassigned and available. Confirm the four
+  starting categories and the unassigned color budget when convenient;
+  otherwise this stays the working assumption.
+- **Markdown rendering for prose fields** (`Article.problem`,
+  `Article.solution`, `PatternDefinition.definition`). Architecture.md
+  types these as markdown strings, but 3c/3d render them as plain
+  paragraphs (blank-line split → `<p>`). Sample content is paragraph-only
+  so the gap is invisible today; real Claude-generated content will
+  likely include lists, code, and links. **Decide before the first real
+  Claude output lands** — likely Unit 7 (analyze stage) or earlier if
+  we hand-author richer sample content. Candidates: `react-markdown`
+  (simple, well-trodden), `marked` + sanitizer (lighter), `micromark`
+  (smallest, no React glue).
+- **Source filter URL shape** (Unit 6). The `SourceAttribution`
+  card-variant currently links to `/` — that becomes the source-filtered
+  index in Unit 6. Choose a URL form before then: `/?source=<slug>`
+  (query string, keeps the route, easy to share) vs `/sources/<slug>`
+  (dedicated route, more URL-as-noun). Query-string is the lower-overhead
+  pick; flagging so the choice is conscious, not accidental.
 - Pipeline scheduling: the orchestrator (`npm run study`) is the daily
   command and is built regardless. Only the *scheduler* that auto-invokes it
   is open — GitHub Actions cron (runs in the cloud, commits results) vs local
