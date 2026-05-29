@@ -4,10 +4,10 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase 2: content contract (shared schema types) complete. Article shape
-  enumerated in architecture.md Content Contract and codified in
-  `src/types/article.ts`. Moving toward hand-placed sample content and the
-  website shell next.
+- Phase 3: building the website shell (Unit 3, decomposed into 3a-3e).
+  3a (routing skeleton + sample content) complete; 3b (article index with
+  reusable ArticleCard / PatternChip / SourceAttribution) up next, gated
+  on a design-intent paragraph per ai-workflow-rules.md.
 
 ## Current Goal
 
@@ -60,11 +60,31 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 3a — Routing skeleton + navbar + webfonts + sample content.**
+  `react-router-dom@6` wired up via `HashRouter` (zero-config GitHub Pages
+  hosting). Four routes registered: `/`, `/articles/:slug`, `/patterns`,
+  `/patterns/:slug`. `Navbar` component (wordmark left, Articles +
+  Patterns links right) lives in `src/components/Navbar.tsx`; active-link
+  state is path-based so `Articles` highlights on `/` and `/articles/*`,
+  `Patterns` highlights on `/patterns*`. Page components are placeholder
+  stubs under `src/pages/` that render their route name and (for dynamic
+  routes) the parsed slug — no content consumption yet. Inter and
+  JetBrains Mono are self-hosted via `@fontsource/inter` (weights 400,
+  500, 600, 700) and `@fontsource/jetbrains-mono` (weights 400, 500),
+  imported in `src/main.tsx`. Sample content lands as data on disk: one
+  Article (`content/articles/stripe-idempotency.json`), one
+  PatternDefinition (`content/patterns/atomic-phases.json`, the single
+  pattern the article references — bidirectional integrity intact even
+  before the Unit 4 validator), and one feed entry
+  (`pipeline/feeds.json`, Stripe Engineering). Build passes; bundle is
+  ~167 KB JS (gzip 54 KB) + 38 KB CSS (gzip 17 KB) + lazy webfont chunks.
+  `npm test` still 34 passing — types are untouched.
 
 ## In Progress
 
-- None — Unit 2 complete; awaiting owner sign-off before starting Unit 3
-  (sample content + the first article/pattern files).
+- None — Unit 3a complete; awaiting design-intent paragraph review before
+  starting Unit 3b (article index + ArticleCard / PatternChip /
+  SourceAttribution components).
 
 ## Next Up
 

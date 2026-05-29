@@ -1,0 +1,18 @@
+{
+  "slug": "atomic-phases",
+  "name": "Atomic Phases",
+  "definition": "Break a long workflow into discrete, individually committable phases so that any interruption resumes from the last committed boundary without redoing or skipping work.\n\nEach phase has a clear input, a single side effect (or a tightly bounded group of related side effects), and a durable commit point that captures what was done. A subsequent retry reads the workflow's stored state, sees which phase completed last, and continues from the next one. The pattern turns a long, network-spanning operation into a sequence of small, locally-reasoned operations — each of which can succeed, fail, or replay on its own without breaking the whole.\n\nThe key invariant is that each phase is atomic with respect to the workflow's externally observable state: either the phase committed and its effects are visible to the next phase, or it didn't and the next retry sees the world as it was before the phase started. No partial commits, no observable in-between states.",
+  "whenItApplies": [
+    "Long-running workflows that must survive partial failure (process crash, network drop, host loss).",
+    "Operations that must be safe to retry from any midpoint without double-execution.",
+    "Workflows that span multiple external systems where any single call could fail independently.",
+    "Pipelines where re-executing earlier work is expensive or destructive, so resumption needs a precise restart point."
+  ],
+  "tradeoffs": [
+    "Requires durable storage at each phase boundary, with the latency cost that implies.",
+    "Phase boundaries must be designed carefully — too coarse and a failure replays expensive work; too fine and the bookkeeping dominates the actual work.",
+    "Adds complexity to the data model; every workflow carries its phase state alongside its business state.",
+    "Designing each phase as atomic with respect to externally observable state is hard for operations that touch multiple systems simultaneously."
+  ],
+  "category": "resilience"
+}

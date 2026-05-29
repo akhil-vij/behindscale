@@ -1,0 +1,30 @@
+{
+  "slug": "stripe-idempotency",
+  "title": "Designing robust and predictable APIs with idempotency",
+  "url": "https://stripe.com/blog/idempotency",
+  "publishedAt": "2017-08-29",
+  "source": {
+    "name": "Stripe Engineering",
+    "slug": "stripe-engineering",
+    "company": "Stripe",
+    "url": "https://stripe.com/blog/engineering",
+    "feed": "https://stripe.com/blog/feed.rss"
+  },
+  "summary": "How Stripe makes payment APIs safe to retry by combining idempotency keys with atomic phase boundaries — turning network uncertainty into a non-event for the caller.",
+  "problem": "A network failure during a payment request leaves the caller uncertain whether the charge succeeded. Naive retries risk double-charging the customer; abandoning the request risks dropping a real payment. Without a coordinated scheme, every transient network hiccup forces a hard choice between two bad outcomes.",
+  "solution": "Persist an idempotency key with each request and structure the work as a sequence of atomic phases, each with its own commit point. On retry, the system reads the key's stored progress, sees which phase completed last, and resumes from the next one. The same key produces the same outcome whether the original request succeeded, failed mid-flight, or never reached the server. The caller can retry safely and indefinitely, and the server's behavior is deterministic given the key.",
+  "tradeoffs": [
+    "Requires a durable key store with TTLs long enough to outlive all expected retry windows.",
+    "Adds per-request bookkeeping cost — every request reads and writes the key's progress record.",
+    "Phase boundaries are load-bearing design decisions; getting one wrong (too coarse, too fine, or non-atomic) reintroduces the original retry hazard the pattern was meant to eliminate."
+  ],
+  "tags": ["payments", "retries", "idempotency"],
+  "patterns": [
+    {
+      "slug": "atomic-phases",
+      "note": "Each network/database step is its own commit point, so a retry resumes from the last completed phase rather than redoing or skipping work."
+    }
+  ],
+  "generatedAt": "2026-05-29T13:00:00.000Z",
+  "artifact": null
+}

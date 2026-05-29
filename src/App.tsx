@@ -1,11 +1,22 @@
-function App() {
+import { HashRouter, Route, Routes } from 'react-router-dom'
+import Navbar from './components/Navbar'
+import ArticleIndex from './pages/ArticleIndex'
+import ArticleDetail from './pages/ArticleDetail'
+import PatternIndex from './pages/PatternIndex'
+import PatternDetail from './pages/PatternDetail'
+
+export default function App() {
   return (
-    <main className="min-h-full bg-bg-base text-text-primary font-sans flex items-center justify-center px-6">
-      <h1 className="font-sans text-text-primary tracking-tight text-4xl font-semibold">
-        behindscale
-      </h1>
-    </main>
+    <HashRouter>
+      <div className="min-h-full">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<ArticleIndex />} />
+          <Route path="/articles/:slug" element={<ArticleDetail />} />
+          <Route path="/patterns" element={<PatternIndex />} />
+          <Route path="/patterns/:slug" element={<PatternDetail />} />
+        </Routes>
+      </div>
+    </HashRouter>
   )
 }
-
-export default App
