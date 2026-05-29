@@ -123,10 +123,16 @@ Every per-article summary JSON in `content/articles/` conforms to the
 - `source` — required `Source` block, as documented above.
 - `summary` — required string. Short summary surfaced on article cards
   and used as the page lead on the article page.
-- `problem` — required string (markdown). What the team was solving — the
-  motivating problem the original post describes.
-- `solution` — required string (markdown). How they solved it — the
-  architectural approach the post takes.
+- `problem` — required string. What the team was solving — the
+  motivating problem the original post describes. Plain
+  paragraph-separated text (paragraphs split on blank lines); markdown
+  rendering is deferred until the first real Claude output lands
+  (Unit 7+), at which point we adopt a renderer (likely `react-markdown`)
+  and these fields gain lists/code/links. Until then, treat as plain
+  prose.
+- `solution` — required string. How they solved it — the architectural
+  approach the post takes. Same paragraph-separated-plain-text contract
+  as `problem`.
 - `tradeoffs` — required string array. The costs, constraints, and
   limitations the solution introduces.
 - `tags` — required string array. Free-form topical labels (e.g.
@@ -181,13 +187,48 @@ pattern's detail page.
 - `slug` — canonical identifier.
 - `name` — human-readable pattern name (e.g. "Atomic Phases").
 - `definition` — a hand-authored or hand-reviewed multi-paragraph
-  description: what the pattern is, how it works, when to use it.
+  description: what the pattern is, how it works, when to use it. Plain
+  paragraph-separated text (same rendering contract as `Article.problem`
+  / `Article.solution`); markdown rendering deferred to Unit 7+.
 - `whenItApplies` — short bullet list of situations where this pattern is
   the right tool.
 - `tradeoffs` — short bullet list of the costs and constraints the pattern
   introduces (e.g. "requires an ACID-compliant store").
-- `category` — optional flat grouping tag (e.g. "resilience", "consistency",
-  "throughput"). Flat only; no deep taxonomy.
+- `category` — optional flat grouping tag drawn from the **canonical
+  category set** documented below. Flat only; no deep taxonomy.
+
+#### Canonical pattern categories
+
+The set is intentionally small and additive. Each category gets a
+dedicated color from the `--cat-*` ramp in `src/index.css`, wired into
+`CATEGORY_CLASSES` in `src/components/PatternChip.tsx`. A pattern may
+omit `category` entirely — that's the uncategorized neutral chip
+variant.
+
+| Slug            | Color                |
+| --------------- | -------------------- |
+| `resilience`    | `--cat-blue`         |
+| `consistency`   | `--cat-purple`       |
+| `throughput`    | `--cat-green`        |
+| `observability` | `--cat-cyan`         |
+
+The remaining ramp tokens (`--cat-orange`, `--cat-red`, `--cat-amber`)
+are reserved headroom — unassigned until a future pattern needs one.
+
+**Adding a new category is a deliberate, two-step change:**
+
+1. Update this table (and the rationale paragraph, if the new category
+   needs one) in a `docs:` commit. New category gets a color from the
+   reserved ramp.
+2. Then a `feat:` commit wires the slug into `CATEGORY_CLASSES` in
+   `PatternChip.tsx` and (when pattern-library category filtering
+   exists) wherever the filter lists categories.
+
+The docs-first ordering prevents pattern definitions from being
+authored with a category slug the website doesn't know how to color.
+Patterns whose definitions don't fit any current category should
+either be authored without a category (uncategorized chip) or trigger
+the two-step addition above — never silently use a new slug.
 
 **3. Aggregated pattern library** (in `content/patterns/index.json`).
 This is *derived data*, regenerated from scratch every pipeline run by
