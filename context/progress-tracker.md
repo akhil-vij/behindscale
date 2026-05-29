@@ -4,8 +4,10 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Phase 1: website scaffolding complete. Moving toward the content
-  contract (shared schema types) next.
+- Phase 2: content contract (shared schema types) complete. Article shape
+  enumerated in architecture.md Content Contract and codified in
+  `src/types/article.ts`. Moving toward hand-placed sample content and the
+  website shell next.
 
 ## Current Goal
 
@@ -30,36 +32,68 @@ Update this file after every meaningful implementation change.
   JetBrains Mono) deferred to Unit 3 (will use `@fontsource` for
   self-hosting per invariant 1); current `--font-sans` / `--font-mono`
   are system fallback stacks. Tailwind v3 locked in for the project.
+- **Unit 2 — Shared schema types.** The content contract is now typed in
+  `src/types/`:
+  - `source.ts` — `Source` (name, slug, company, url, feed), matching the
+    Content Contract in architecture.md.
+  - `pattern.ts` — `PatternReference` (on-article: slug, note) and
+    `PatternDefinition` (slug, name, definition, whenItApplies, tradeoffs,
+    optional category).
+  - `article.ts` — `Article` (slug, title, url, publishedAt, source,
+    summary, problem, solution, tradeoffs, tags, patterns, optional
+    relatedArticles, optional generatedAt, required artifact as
+    `{ path: string } | null`). Source and PatternReference imported as
+    type-only.
+  - `pattern-library.ts` — `PatternLibraryArticleRef`,
+    `PatternLibraryEntry` (definition, frequency, articles, companies),
+    and `PatternLibrary` ({ generatedAt, entries }).
+  - `index.ts` — type-only barrel export.
+
+  All files are type-only: zero runtime logic. Tests under
+  `src/types/__tests__/` use hand-written type-guard predicates in
+  `validators.ts` (test-only; never exported from the barrel, never
+  imported outside tests) — no Zod. Each shape has a positive sample +
+  multiple malformed samples that the predicate rejects, including the
+  `artifact: null` summary-only case and rejection of missing-artifact
+  entirely. **34 tests, 4 files, all passing**; `npm run build` still
+  passes (5.99 kB CSS, 142.70 kB JS — types add zero runtime weight).
+  Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
+  live colocated under `src/types/__tests__/` — pattern to repeat for
+  future types.
 
 ## In Progress
 
-- None — Unit 1 complete; Unit 2 (shared schema types) up next.
+- None — Unit 2 complete; awaiting owner sign-off before starting Unit 3
+  (sample content + the first article/pattern files).
 
 ## Next Up
 
-1. Define shared schema types in `src/types/` covering the full content
-   contract: article summary (with `source` block and `patterns[]`
-   references), pattern definition, and aggregated pattern library shapes.
-2. Place hand-written sample content in `content/articles/` and
+1. Place hand-written sample content in `content/articles/` and
    `content/patterns/` (one article + the patterns it references) so the
-   site has something to render end-to-end.
-3. Build the website shell covering both navigation axes:
+   site has something to render end-to-end. Also: add `@fontsource/inter`
+   and `@fontsource/jetbrains-mono` (self-hosted webfonts per invariant 1).
+2. Build the website shell covering both navigation axes:
    - Home / article index with article cards (source eyebrow + pattern chips).
    - Article page (`/articles/:slug`) with source attribution, pattern chips,
      and a "Patterns in this article" section.
    - Pattern library index (`/patterns`) — grid of pattern cards.
    - Pattern detail page (`/patterns/:slug`) — definition, when-it-applies,
      tradeoffs, and "Seen in" back-link cards with source attribution.
-4. Add the build-time validation step that fails the build on orphan pattern
+   Includes the Playwright smoke test that loads home -> article -> pattern
+   and asserts no crash.
+3. Add the build-time validation step that fails the build on orphan pattern
    slugs (article references a pattern with no definition). This enforces
-   invariant 8 concretely.
-5. Implement the sandboxed-iframe artifact embed; include one deliberately
+   invariant 8 concretely. Design-intent paragraph requested before code.
+4. Implement the sandboxed-iframe artifact embed; include one deliberately
    broken sample artifact to verify fault isolation (invariant 2).
-6. Add filter affordances: source filter on the article index
+   Design-intent paragraph requested before code.
+5. Add filter affordances: source filter on the article index
    (driven by `pipeline/feeds.json`) and optional category filter on the
    pattern library index.
-7. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
+6. Begin the pipeline: `discover` stage (RSS fetch + filter + score + SQLite),
    reading sources from the allowlist.
+7. Pipeline orchestrator (`pipeline/run.ts`, `npm run study`).
+   Design-intent paragraph requested before code.
 
 ## Open Questions
 
@@ -157,6 +191,14 @@ Update this file after every meaningful implementation change.
   articles without a special case. The discriminated form makes the
   invalid state `{ path: "/x", hasArtifact: false }` unrepresentable,
   which the boolean-plus-path shape cannot prevent.
+- **Hand-written type-guard predicates over Zod (for now).** Schema
+  validation tests use lightweight inline predicates in
+  `src/types/__tests__/validators.ts` rather than a runtime validation
+  library. Rationale: at this stage the only consumer of validation is the
+  test suite (verifying sample JSON conforms); shipping a runtime validator
+  would be premature. Zod (or similar) will be introduced when the pipeline
+  needs to validate Claude's JSON output before writing to `content/` per
+  code-standards.md.
 
 ## Session Notes
 
