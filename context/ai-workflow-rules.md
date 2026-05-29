@@ -47,7 +47,8 @@ the current unit, this list is the strategic framing.
    report per-article success/failure. This is the deliverable that makes the
    whole system usable day to day — treat it as a first-class unit, not an
    afterthought.
-8. CI/CD: build + deploy to GitHub Pages; then the optional scheduler, whose
+8. CI/CD: build + deploy to Vercel (auto on push to `main`); then the
+   optional pipeline scheduler, whose
    only job is to invoke `npm run study` on a timer.
 
 ## Scoping Rules

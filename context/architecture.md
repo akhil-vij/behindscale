@@ -13,14 +13,14 @@ committed to the repo (the "content contract").
 | ---------------- | ----------------------------------- | ----------------------------------------------------------- |
 | Website build    | Vite + React + TypeScript           | Static site that renders generated summaries and artifacts  |
 | Styling          | Tailwind CSS + CSS custom properties| Editorial reading shell; tokens defined in ui-context.md    |
-| Routing          | React Router (`HashRouter`)         | Hash-based client-side routing; zero-config on GitHub Pages |
+| Routing          | React Router (`HashRouter`)         | Hash-based client-side routing; zero-config across static hosts |
 | Artifact bundler | esbuild                             | Compiles each artifact `.jsx` to a standalone ESM bundle    |
 | Artifact runtime | Sandboxed iframes                   | Each artifact rendered in isolation as a self-contained bundle |
 | Pipeline         | Node.js + TypeScript                | RSS discovery, fetch/extract, Claude analysis & generation  |
 | AI               | Anthropic SDK (Claude Sonnet)       | Article analysis + artifact generation                      |
 | Pipeline storage | SQLite (better-sqlite3)             | Tracks processed articles, status, dedup                    |
 | Content store    | Flat files (JSON + JSX/HTML) in repo| Source of truth for what the site renders                   |
-| Hosting / CI     | GitHub Pages + GitHub Actions       | Build and deploy on push; optional scheduled pipeline run   |
+| Hosting / CI     | Vercel                              | Auto-deploy on push to `main`; preview deploys per PR       |
 
 ## System Boundaries
 

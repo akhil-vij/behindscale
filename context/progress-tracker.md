@@ -193,7 +193,7 @@ Update this file after every meaningful implementation change.
   delta covers indexer + components + JSON content; webfonts still
   lazy-chunked). `npm test` still 34 passing.
 - **Unit 3a — Routing skeleton + navbar + webfonts + sample content.**
-  `react-router-dom@6` wired up via `HashRouter` (zero-config GitHub Pages
+  `react-router-dom@6` wired up via `HashRouter` (zero-config across static
   hosting). Four routes registered: `/`, `/articles/:slug`, `/patterns`,
   `/patterns/:slug`. `Navbar` component (wordmark left, Articles +
   Patterns links right) lives in `src/components/Navbar.tsx`; active-link
@@ -399,7 +399,8 @@ Update this file after every meaningful implementation change.
 ## Session Notes
 
 - Domain `behindscale.com` has been acquired by the owner; target deploy is
-  GitHub Pages with a CNAME to the custom domain.
+  Vercel with the domain configured as a custom alias (DNS managed at the
+  registrar). Production URL recorded once the deploy is live (Unit 3f).
 - The owner is studying system design by dissecting engineering blogs; this
   project automates and publishes that workflow. The studied patterns so far
   (workflow durability, idempotency/atomic phases, fault isolation /
