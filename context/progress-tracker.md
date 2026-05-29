@@ -398,9 +398,13 @@ Update this file after every meaningful implementation change.
 
 ## Session Notes
 
-- Domain `behindscale.com` has been acquired by the owner; target deploy is
+- Domain `behindscale.com` has been acquired by the owner; deployed to
   Vercel with the domain configured as a custom alias (DNS managed at the
-  registrar). Production URL recorded once the deploy is live (Unit 3f).
+  registrar). **Production URL: https://www.behindscale.com** (apex
+  `behindscale.com` 301-redirects to www). Deploy went live 2026-05-29
+  (Unit 3f). Production smoke (`npm run test:e2e:prod`) green at the
+  time of recording: 1/1 in 6.6 s end-to-end (full four-route walk
+  against the live URL, no local build).
 - The owner is studying system design by dissecting engineering blogs; this
   project automates and publishes that workflow. The studied patterns so far
   (workflow durability, idempotency/atomic phases, fault isolation /
