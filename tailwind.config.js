@@ -25,14 +25,16 @@ export default {
         'art-border': 'var(--art-border)',
         'art-text': 'var(--art-text)',
         'art-text-muted': 'var(--art-text-muted)',
-        // Pattern / tag accent ramp
-        'cat-blue': 'var(--cat-blue)',
-        'cat-green': 'var(--cat-green)',
-        'cat-orange': 'var(--cat-orange)',
-        'cat-purple': 'var(--cat-purple)',
-        'cat-cyan': 'var(--cat-cyan)',
-        'cat-red': 'var(--cat-red)',
-        'cat-amber': 'var(--cat-amber)',
+        // Pattern / tag accent ramp. Routed through the -rgb triplet
+        // variants so Tailwind's <alpha-value> syntax composes opacity
+        // modifiers (e.g. bg-cat-blue/10, border-cat-blue/30).
+        'cat-blue': 'rgb(var(--cat-blue-rgb) / <alpha-value>)',
+        'cat-green': 'rgb(var(--cat-green-rgb) / <alpha-value>)',
+        'cat-orange': 'rgb(var(--cat-orange-rgb) / <alpha-value>)',
+        'cat-purple': 'rgb(var(--cat-purple-rgb) / <alpha-value>)',
+        'cat-cyan': 'rgb(var(--cat-cyan-rgb) / <alpha-value>)',
+        'cat-red': 'rgb(var(--cat-red-rgb) / <alpha-value>)',
+        'cat-amber': 'rgb(var(--cat-amber-rgb) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-sans)'],

@@ -5,9 +5,10 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - Phase 3: building the website shell (Unit 3, decomposed into 3a-3e).
-  3a (routing skeleton + sample content) complete; 3b (article index with
-  reusable ArticleCard / PatternChip / SourceAttribution) up next, gated
-  on a design-intent paragraph per ai-workflow-rules.md.
+  3a and 3b complete (routing skeleton + content indexer + article index
+  page with reusable components). 3c (article detail page) is next; no
+  design-intent paragraph required (the reusable components landed in
+  3b, so 3c is composition + layout).
 
 ## Current Goal
 
@@ -60,6 +61,43 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 3b — Content indexer + ArticleCard + PatternChip +
+  SourceAttribution.** Foundational addition before component work:
+  `src/content/index.ts` is the build-time content indexer using
+  `import.meta.glob('/content/articles/*.json', { eager: true,
+  import: 'default' })` (and same for patterns). Exports `articles`
+  (sorted by `publishedAt` desc), `articleBySlug`, `patterns` (sorted by
+  `name`), and `patternBySlug`. Type-only schema imports from
+  `src/types/`. Eager glob — all content bundled at build time, invariant
+  1 intact. `content/patterns/index.json` is excluded (reserved for the
+  Unit 4+ derived aggregated library). The `feeds` export is deferred to
+  Unit 6 (see Open Questions). Tailwind's category color tokens (`--cat-*`)
+  now have parallel `-rgb` triplet variants in `index.css` so opacity
+  modifiers (`bg-cat-blue/10`, `border-cat-blue/30`) compose via
+  Tailwind's `<alpha-value>` syntax; canonical hex names and ui-context.md
+  values are unchanged. Three reusable components:
+  - **PatternChip** — `rounded-md`, `font-mono`, `text-xs`. Category lookup
+    via `CATEGORY_CLASSES` literal map so Tailwind's content scanner picks
+    every variant up. Uncategorized chips fall back to a neutral
+    border + secondary text. Hover: `bg-bg-subtle` for all variants
+    (no hue shift). Always a `Link` to `/patterns/:slug`.
+  - **SourceAttribution** — `variant="card" | "header"` (role-named, not
+    layout-named, so 3e back-link cards reuse `variant="card"` cleanly).
+    Card variant: compact uppercase eyebrow, `font-mono`, `text-muted`,
+    source-name internal Link (currently routes to `/`; becomes
+    "filter by this blog" in Unit 6 without changing the surface). Header
+    variant: larger mixed-case row with external links (source homepage +
+    optional "Read original") opening in a new tab.
+  - **ArticleCard** — non-anchor card pattern per pushback. Only the
+    title is a `Link` to `/articles/:slug`; source name and chips are
+    independent Links inside the card; no nested anchors anywhere. Chip
+    overflow: first 3 chips visible, `+N` Link to the article page with
+    `aria-label="N more pattern(s)"`.
+
+  ArticleIndex (`/`) now reads from the indexer and renders one
+  ArticleCard. Build passes (CSS 41.52 kB / JS 174.56 kB; the +7 kB JS
+  delta covers indexer + components + JSON content; webfonts still
+  lazy-chunked). `npm test` still 34 passing.
 - **Unit 3a — Routing skeleton + navbar + webfonts + sample content.**
   `react-router-dom@6` wired up via `HashRouter` (zero-config GitHub Pages
   hosting). Four routes registered: `/`, `/articles/:slug`, `/patterns`,
@@ -82,9 +120,8 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 3a complete; awaiting design-intent paragraph review before
-  starting Unit 3b (article index + ArticleCard / PatternChip /
-  SourceAttribution components).
+- None — Unit 3b complete. Unit 3c (article detail page at
+  `/articles/:slug`) is next, reusing the components that landed in 3b.
 
 ## Next Up
 
@@ -139,6 +176,27 @@ Then:
 
 ## Open Questions
 
+- **`pipeline/feeds.json` location vs. invariant 3** (forces a decision in
+  Unit 6 — source filter affordance on the article index). The website
+  needs to read the allowlist for the filter, but importing
+  `pipeline/feeds.json` from `src/` is a website-to-pipeline data import
+  not currently covered by the type-only exception. **Expected resolution
+  (Option A): move `pipeline/feeds.json` → `content/feeds.json`** so the
+  website reads from one place (`content/`), full stop. The pipeline reads
+  the same file from `content/feeds.json`; nothing else changes. If Unit 6
+  surfaces a reason to choose otherwise (allowlist needs to evolve
+  asymmetrically from website-visible source metadata), revisit then.
+  Documenting the expected direction now prevents re-opening the
+  architecture question fresh in six units.
+- **Source-equality constraint with `feeds.json`** (for Unit 6 / pipeline
+  analyze stage). The `source` block embedded in each
+  `content/articles/{slug}.json` must equal the `source` block in the
+  corresponding `feeds.json` entry exactly — the pipeline copies it
+  verbatim, never re-derives. This is how invariant 7 (official engineering
+  blogs only) holds at the data level: if the source isn't in the
+  allowlist, it can't appear on an article. Will be enforced by the
+  analyze stage (Unit 7+) and ideally verified by the same build-time
+  validator that catches orphan pattern slugs (Unit 4).
 - Should existing artifacts already produced in Claude chat (Skipper, Stripe
   idempotency, Airbnb monitoring, Uber load management, this architecture
   doc) be backfilled as the first library entries? (Recommended: yes — they
