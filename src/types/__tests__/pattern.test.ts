@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isPatternReference, isPatternDefinition } from './validators'
+import { isPatternReference, isPatternDefinition } from '../predicates'
 
 const validReference = {
   slug: 'atomic-phases',

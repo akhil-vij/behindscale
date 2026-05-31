@@ -4,10 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 3 complete.** Unit 3 (3a-3e) fully landed; the website shell
-  renders sample content across all four routes with the smoke test
-  green. Moving to Unit 4 (build-time orphan-pattern-slug validator)
-  next — design-intent paragraph required first.
+- **Phase 4: build-time content validator landed.** Unit 4 ships the
+  multi-check validator framework plus the first two checks (orphan
+  pattern slugs + minimum pattern coverage). Moving to Unit 5
+  (sandboxed-iframe artifact embed) next — design-intent paragraph
+  required first.
 
 ## Current Goal
 
@@ -60,6 +61,62 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 4 — Content validator framework + orphan-pattern-slugs +
+  minimum-pattern-coverage.** Multi-check framework that runs at build
+  time, lives in `scripts/`, and reports all failures in one pass.
+  - `scripts/validate-content.ts` — the runner. Explicit imports +
+    registration array (`CHECKS`); no auto-discovery. Adding a check
+    is "write a file under `scripts/checks/`, append one line to
+    `CHECKS`". Exit 0 on pass, 1 on any failure.
+  - `scripts/load-content.ts` — schema-validating loader. Walks
+    `content/articles/` and `content/patterns/`, parses JSON, validates
+    against the predicates from `src/types/predicates.ts`. Files that
+    fail schema get skipped from the ContentSet and reported under the
+    `[schema]` section (loader's section label, owned by
+    `SCHEMA_SECTION_NAME` for grep-ability). Includes
+    `isPatternDefinitionFile(name)` — explicit `index.json` exclusion
+    mirroring `src/content/index.ts`'s glob negation; both must stay
+    in sync.
+  - `scripts/render-output.ts` — pure formatter. Format: `[section]`
+    headers + section error counts, file path indented 2 sp, message
+    4 sp, fix alternatives as `→`-prefixed lines (Rust/Elm compiler
+    style; Unicode arrow renders fine on Vercel + modern terminals).
+    Footer is `ok` or `failed (N files skipped)`.
+  - `scripts/checks/orphan-pattern-slugs.ts` — every `patterns[].slug`
+    on an article must have a matching definition. Reports articleSlug
+    + the offending pattern slug + two-fix-alternatives output.
+  - `scripts/checks/minimum-pattern-coverage.ts` — every article must
+    reference ≥ 2 patterns (invariant 8). `MIN_PATTERN_COUNT = 2`
+    constant with comment pointing at architecture.md.
+  - `scripts/types.ts` — shared `Check`, `ContentSet`, `CheckError`.
+    Checks deal in slugs (`articleSlug`/`patternSlug`); the runner
+    resolves slug → path when rendering. `file?` field is the
+    escape hatch for cross-cutting checks.
+  - Tests at `scripts/checks/__tests__/` — 10 new vitest cases (5 per
+    check) using an in-memory fixture builder (`fixtures.ts`); no
+    filesystem state. Total: 44 passing (34 schema + 10 check).
+  - Predicates relocated from `src/types/__tests__/validators.ts` to
+    `src/types/predicates.ts` (non-barrel-exported sibling of the type
+    files). Now used by both vitest schema tests and the validator
+    loader. New `Result = { ok: true } | { ok: false; reason }` shape
+    carries field-level reasons for the loader's `[schema]` section.
+    Boolean `isXxx` wrappers kept so existing tests continue to read
+    naturally.
+  - Build chain updated: `"build": "npm run validate && tsc -b && vite
+    build"`. Vercel inherits this — a failed validator fails the
+    deploy. `tsx` (v4) added as a devDep to run the validator's
+    TypeScript directly.
+  - Content updated to pass on first run: authored
+    `content/patterns/idempotency-keys.json` (category: `consistency`
+    — same input → same outcome across retries) and added it as the
+    second pattern reference on `content/articles/stripe-idempotency.json`.
+    Side effect: `/` now exercises the two-chip code path on
+    ArticleCard, `/patterns` shows two cards, `/articles/stripe-idempotency`
+    shows two chips and two entries in "Patterns in this article".
+  - Verification: `npm run validate` clean (`2 checks, 0 errors. ok.`);
+    `npm test` 44/44; `npm run build` end-to-end clean
+    (CSS 42.28 kB / JS 181.53 kB — +2 kB JS for the bundled second
+    pattern JSON); `npm run test:e2e` 1/1 green locally.
 - **Unit 3e — Pattern detail page (`/patterns/:slug`).** Closes out
   Unit 3. Reading-column layout (max-width 720px), section ordering per
   ui-context.md: pattern name (h1) → category eyebrow (if set) →
@@ -214,9 +271,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 3 fully complete. Awaiting design-intent paragraph for
-  Unit 4 (orphan-pattern-slug validator: where it runs in the build,
-  what failure looks like) before code.
+- None — Unit 4 complete. Awaiting design-intent paragraph for Unit 5
+  (sandboxed-iframe artifact embed: how missing artifacts (`artifact:
+  null`) and broken artifacts surface to the reader without breaking
+  the page) before code.
 
 ## Developer Setup
 
@@ -226,19 +284,19 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 4 — Build-time orphan-pattern-slug validator** (invariant 8).
-   Design-intent paragraph requested before code.
-2. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately
+1. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately
    broken sample artifact (invariant 2). Design-intent paragraph
    requested before code.
-3. **Unit 6 — Filter affordances.** Source filter on the article index
+2. **Unit 6 — Filter affordances.** Source filter on the article index
    (driven by the allowlist, location resolved per the feeds.json open
    question), reading the `?source=<slug>` URL shape that
    `SourceAttribution` already emits. Optional category filter on the
    pattern library index.
-4. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
-   SQLite), reading sources from the allowlist.
-5. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
+3. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
+   SQLite), reading sources from the allowlist. Also: implement the
+   Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
+   proposed-but-undefined pattern slugs, three publish states.
+4. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
    Design-intent paragraph requested before code.
 
 ## Deferred Work
@@ -388,13 +446,17 @@ Update this file after every meaningful implementation change.
   additional query params, easy to share, no UX cost over a dedicated
   `/sources/<slug>` route.
 - **Hand-written type-guard predicates over Zod (for now).** Schema
-  validation tests use lightweight inline predicates in
-  `src/types/__tests__/validators.ts` rather than a runtime validation
-  library. Rationale: at this stage the only consumer of validation is the
-  test suite (verifying sample JSON conforms); shipping a runtime validator
-  would be premature. Zod (or similar) will be introduced when the pipeline
-  needs to validate Claude's JSON output before writing to `content/` per
-  code-standards.md.
+  validation predicates live in `src/types/predicates.ts` — a
+  non-barrel-exported sibling of the type files. They're consumed by
+  both vitest schema tests (via the boolean `isXxx` wrappers) and the
+  build-time content validator (via the field-level `checkXxx`
+  functions that return `Result` objects). The barrel
+  (`src/types/index.ts`) stays type-only, so the website's main bundle
+  is unaffected. Rationale for hand-written: at this stage the
+  validation surface is small (one consumer per side); shipping a
+  runtime validation library would be premature. Zod (or similar) will
+  be introduced when the pipeline's analyze stage needs to validate
+  Claude's JSON output before writing to `content/`.
 - **Invariant 8 expansion — minimum-2-pattern coverage** (architecture.md).
   Every article must reference at least 2 patterns; below-threshold
   articles fail the build. Rationale: behindscale's mission is

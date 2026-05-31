@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isArticle } from './validators'
+import { isArticle } from '../predicates'
 
 const validSource = {
   name: 'Stripe Engineering',

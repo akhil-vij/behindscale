@@ -21,6 +21,10 @@
   "tags": ["payments", "retries", "idempotency"],
   "patterns": [
     {
+      "slug": "idempotency-keys",
+      "note": "The article centers on the client-supplied idempotency key as the durable identifier of a payment attempt — same key in, same outcome out, whether the original request succeeded, failed mid-flight, or never reached the server."
+    },
+    {
       "slug": "atomic-phases",
       "note": "Each network/database step is its own commit point, so a retry resumes from the last completed phase rather than redoing or skipping work."
     }

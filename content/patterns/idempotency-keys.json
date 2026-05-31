@@ -1,0 +1,16 @@
+{
+  "slug": "idempotency-keys",
+  "name": "Idempotency Keys",
+  "definition": "A client-supplied stable identifier that the server uses to deduplicate retries of the same logical operation. The first request creates a record of the outcome under the key; subsequent requests with the same key return that recorded outcome rather than re-executing the work. Same key in, same outcome out, regardless of how many times the request is sent.\n\nIdempotency keys are the user-facing contract that makes safe retry possible. They sit above the wire protocol -- the network can drop, the server can crash, the client can time out and retry, and as long as both sides agree on the key, the outcome is deterministic. The implementation underneath (atomic phase commits, dedup storage, etc.) is a separate concern; the pattern is the agreement on the identifier.",
+  "whenItApplies": [
+    "Any non-idempotent operation that may be retried -- payment charges, resource creation, irreversible state changes.",
+    "APIs where the caller is responsible for retry policy and the server cannot trust the network.",
+    "Workflows that span multiple systems where partial completion on retry would diverge state."
+  ],
+  "tradeoffs": [
+    "Requires durable storage of (key -> outcome) records with TTLs that outlive realistic retry windows.",
+    "Adds per-request bookkeeping cost: every request reads and (on first execution) writes a key record.",
+    "Key reuse is a real hazard -- a client that reuses an old key for a new logical operation gets the old outcome, silently. Key generation discipline (UUIDs, monotonic IDs, scope-prefixed) becomes part of the contract."
+  ],
+  "category": "consistency"
+}
