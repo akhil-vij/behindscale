@@ -256,6 +256,63 @@ slugs when it sees something recurring across articles, but those proposals
 land in `progress-tracker.md` as open items, not as auto-merged
 definitions.
 
+## Proposed Pattern Queue
+
+The pipeline's analyze stage (Unit 7+) may identify candidate patterns
+in an article that aren't yet defined in `content/patterns/`. Pattern
+definitions are authored, not auto-generated (see Architecture
+Decisions in `progress-tracker.md`), but the analyze stage shouldn't
+silently drop emerging patterns either — the synthesis across articles
+is where the library's value compounds. The Proposed Pattern Queue is
+the mechanism that surfaces candidates for human curation without
+compromising the authored-definitions rule.
+
+**Mechanism.** When the analyze stage emits an article's candidate
+`patterns[]` list, it splits each reference by whether the slug has a
+matching definition in `content/patterns/`:
+
+- *Grounded references* (slug has a definition) stay on the article
+  and are written into the article's published JSON.
+- *Proposed references* (slug has no definition) are stripped from the
+  article's published JSON and appended to
+  `pipeline/proposed-patterns.json` — a human-review queue listing the
+  candidate slug, the source article, and the analyze stage's
+  rationale.
+
+The validator (Unit 4) only ever sees articles with fully grounded
+references; this preserves invariant 8 at the data level without
+requiring the analyze stage to be perfect.
+
+**Three publish states.** Stripping proposed references can drop an
+article below invariant 8's minimum-2 rule. The analyze stage routes
+each article into one of three states:
+
+- *Published* — ≥2 grounded references after stripping. The article's
+  JSON is written to `content/articles/` and the validator passes.
+  Proposed slugs (if any) still log to the queue for later authoring.
+- *Blocked* — fewer than 2 grounded references after stripping. The
+  article's JSON is **not** written to `content/articles/` (which
+  would fail the validator). Instead, the full analyzed article and
+  its proposed slugs land in `pipeline/blocked-articles.json`,
+  awaiting human action: author the missing definitions to unblock,
+  or reject.
+- *Rejected* — manually removed from `blocked-articles.json` when the
+  owner decides the article isn't worth pursuing. No persistent state
+  required — the absence from both queues is the rejection.
+
+The principle: **the validator enforces shape integrity; the analyze
+stage makes authoring decisions.** Splitting the concerns this way
+lets the validator stay simple and content-focused, and lets the
+analyze stage stay editorial without poisoning the content contract.
+
+**Storage.** Both `pipeline/proposed-patterns.json` and
+`pipeline/blocked-articles.json` are pipeline operational state, not
+website-readable content. They live under `pipeline/` and never enter
+`content/`. (Compare with `pipeline/feeds.json`, which both pipeline
+and website read — that file is on track to move to
+`content/feeds.json` in Unit 6 to resolve its boundary cleanly. The
+queue files have no such tension: only the pipeline reads them.)
+
 ## Auth and Access Model
 
 - No authentication. The site is fully public and read-only.
@@ -295,10 +352,28 @@ definitions.
    discovery, regardless of how it was discovered (RSS, manual URL, etc.).
    Personal blogs, Substacks, third-party summaries, conference recaps, and
    aggregators are never published, even when they cover the same material.
-8. **Bidirectional pattern integrity.** Articles and patterns are joined by
-   canonical pattern slugs. Every `patterns[].slug` referenced by an article
-   must have a matching pattern definition file in `content/patterns/`;
-   orphan references fail the build. Pattern slugs are unique and normalized
-   (lowercase, kebab-case). Patterns with zero matching articles are
-   permitted (a pattern can be seeded before its first article) and
-   surfaced as such in the pattern library, but never silently dropped.
+8. **Bidirectional pattern integrity + minimum coverage.** Articles and
+   patterns are joined by canonical pattern slugs. Two rules govern the
+   relationship; both fail the build when violated:
+   - **Orphan references.** Every `patterns[].slug` referenced by an
+     article must have a matching pattern definition file in
+     `content/patterns/`.
+   - **Minimum coverage.** Every article must reference **at least 2
+     patterns**. Articles below the threshold do not belong in the
+     library.
+
+   Pattern slugs are unique and normalized (lowercase, kebab-case).
+   Patterns with zero matching articles are permitted (a pattern can be
+   seeded before its first article) and surfaced as such in the pattern
+   library, but never silently dropped.
+
+   *Rationale for the minimum-2 rule:* behindscale's mission is to
+   surface transferable patterns across companies. An article that
+   embodies only one pattern is a single-pattern case study — fine
+   reading on its own, but it doesn't compound, and the library's value
+   is the cross-article synthesis. The minimum forces either deeper
+   analysis (most engineering articles really do embody multiple
+   patterns once you look) or honest exclusion (the article doesn't fit
+   the library's purpose). Enforced by the build-time validator
+   (Unit 4); produced by the analyze stage's Proposed Pattern Queue
+   mechanism (see section above).

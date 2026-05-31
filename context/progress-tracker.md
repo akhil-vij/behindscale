@@ -395,6 +395,30 @@ Update this file after every meaningful implementation change.
   would be premature. Zod (or similar) will be introduced when the pipeline
   needs to validate Claude's JSON output before writing to `content/` per
   code-standards.md.
+- **Invariant 8 expansion — minimum-2-pattern coverage** (architecture.md).
+  Every article must reference at least 2 patterns; below-threshold
+  articles fail the build. Rationale: behindscale's mission is
+  transferable-patterns synthesis across companies, and the library's
+  value compounds through cross-article overlap. Single-pattern articles
+  are case studies, not library entries. The validator (Unit 4) is the
+  enforcement layer; the analyze stage's Proposed Pattern Queue
+  (Unit 7+) is the upstream mechanism that produces well-grounded
+  articles.
+- **Proposed Pattern Queue — analyze stage's strip-and-log mechanism**
+  (architecture.md, new section). The analyze stage splits each
+  candidate `patterns[]` entry into grounded references (slug has a
+  definition → stays on the article) and proposed references (slug has
+  no definition → stripped + logged to
+  `pipeline/proposed-patterns.json`). Three publish states — Published,
+  Blocked, Rejected — cover the case where stripping drops an article
+  below the invariant-8 minimum. Blocked articles land in
+  `pipeline/blocked-articles.json` and don't enter `content/`. The
+  validator (Unit 4) only ever sees articles with fully grounded
+  references; new pattern definitions enter the library through a
+  deliberate authoring gate. **Deliverable in Unit 7+** (analyze
+  stage); the architecture lands now so Unit 7 doesn't redebate.
+  Principle: validator enforces shape integrity; analyze stage makes
+  authoring decisions.
 
 ## Session Notes
 
