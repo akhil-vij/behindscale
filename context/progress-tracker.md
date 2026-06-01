@@ -4,11 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 4: build-time content validator landed.** Unit 4 ships the
-  multi-check validator framework plus the first two checks (orphan
-  pattern slugs + minimum pattern coverage). Moving to Unit 5
-  (sandboxed-iframe artifact embed) next — design-intent paragraph
-  required first.
+- **Phase 5: artifact embed infrastructure landed.** Unit 5 ships the
+  compile-artifacts pipeline (esbuild → self-contained ESM bundles +
+  HTML shell per artifact), the `ArtifactEmbed` React component
+  (sandboxed iframe, two-failure-modes-one-surface error handling),
+  and a documented sandbox-and-postMessage principle (architecture.md
+  invariant 2). Moving to Unit 5b — backfill the Stripe idempotency
+  artifact from chat, which exercises the happy path on prod.
 
 ## Current Goal
 
@@ -61,6 +63,50 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 5 — Sandboxed-iframe artifact embed (infrastructure).**
+  Build-time + render-time fault-isolated artifact pipeline per
+  architecture.md invariant 2.
+  - `scripts/compile-artifacts.ts` — walks `content/artifacts/*.jsx`,
+    wraps each in a per-artifact entry that mounts the default export
+    inside a top-level React error boundary, runs esbuild (`format:
+    esm`, `jsx: automatic`, minified), writes
+    `public/artifacts/{slug}/index.js` plus an inlined HTML shell at
+    `index.html`. Per-artifact compile failures stderr-log + skip +
+    clean up partial output + continue (the build never fails on an
+    artifact). Wipes the output dir on each run for local-dev hygiene.
+    Each bundle ships its own React copy — the architecture decision
+    on self-containment, not optimization.
+  - `src/components/ArtifactEmbed.tsx` — renders the artifact in a
+    sandboxed iframe (`sandbox="allow-scripts"`, no other flags). Two
+    failure modes converge to one visible surface (a muted single-line
+    error frame): a HEAD probe on the bundle URL catches load failures
+    (some browsers fire `iframe.onload` even on 404); the iframe's
+    own ErrorBoundary catches render exceptions inside. Includes the
+    "Open in full ↗" affordance per ui-context.md.
+  - Article page layout updated: reading column stays at 720 px; the
+    artifact slot is a 960 px breakout *below* "Patterns in this
+    article," not embedded mid-narrative. The artifact is the
+    exploration destination after the read, not a textbook insertion.
+    Renders only when `article.artifact !== null` — summary-only
+    articles read top-to-bottom with no embed and no placeholder.
+  - Build chain: `"build": "npm run validate && npm run
+    compile-artifacts && tsc -b && vite build"`. esbuild added as a
+    direct devDep.
+  - Failure-mode probe (Mode A: compile failure): wrote a syntactically
+    broken `content/artifacts/broken-probe.jsx`, ran
+    `npm run compile-artifacts`, observed `skip broken-probe: Build
+    failed with 1 error:` + `1 artifact skipped; build proceeds
+    (invariant 2)` + exit 0 + empty `public/artifacts/` (cleanup-
+    on-failure verified). Probe restored before commit. Mode B
+    (runtime exception inside a compiled artifact) deferred to natural
+    exercise during 5b authoring — the in-iframe ErrorBoundary catches
+    any render throw and surfaces the same muted error frame.
+  - Verification: `npm run build` clean end-to-end
+    (CSS 43.00 kB / JS 183.02 kB — +0.7 / +1.5 kB over Unit 4 for
+    ArtifactEmbed styles and component code); `npm test` 44/44;
+    `npm run test:e2e` 1/1; on this commit the stripe article still
+    has `artifact: null` so the embed itself renders nothing on prod —
+    happy-path verification lands with Unit 5b.
 - **Unit 4 — Content validator framework + orphan-pattern-slugs +
   minimum-pattern-coverage.** Multi-check framework that runs at build
   time, lives in `scripts/`, and reports all failures in one pass.
@@ -271,10 +317,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 4 complete. Awaiting design-intent paragraph for Unit 5
-  (sandboxed-iframe artifact embed: how missing artifacts (`artifact:
-  null`) and broken artifacts surface to the reader without breaking
-  the page) before code.
+- None — Unit 5 (infrastructure) complete. Unit 5b (Stripe idempotency
+  artifact backfill) is next; no design-intent needed (composition over
+  Unit-5 primitives). Awaiting the artifact `.jsx` from chat to author
+  `content/artifacts/stripe-idempotency.jsx`.
 
 ## Developer Setup
 
@@ -284,41 +330,30 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5 — Sandboxed-iframe artifact embed** (infrastructure +
-   failure-mode probe). `scripts/compile-artifacts.ts` (esbuild per
-   `.jsx` source under `content/artifacts/`, output to
-   `public/artifacts/{slug}/index.html`), `ArtifactEmbed` component
-   on the article page rendered at the bottom of the reading column
-   (after "Patterns in this article", below the narrative — the
-   artifact is the exploration *destination*, not an interruption),
-   load-failure + render-exception handling both converging to a
-   muted single-line error frame. Verification: deliberate
-   broken-artifact probe, restored before commit (same discipline as
-   Unit 4's orphan-injection).
-2. **Unit 5b — Backfill Stripe idempotency artifact** (verifies the
+1. **Unit 5b — Backfill Stripe idempotency artifact** (verifies the
    happy path on prod). Authors a real `.jsx` from the existing
-   chat-conversation artifact, wires it into `content/artifacts/`,
-   updates `content/articles/stripe-idempotency.json`'s
-   `artifact` field. After this lands, prod has at least one
-   exercised happy-path embed.
-3. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
-4. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
+   chat-conversation artifact at `content/artifacts/stripe-idempotency.jsx`,
+   updates `content/articles/stripe-idempotency.json`'s `artifact`
+   field to `{ path: "/artifacts/stripe-idempotency/index.html" }`.
+   After this lands, prod has at least one exercised happy-path embed.
+2. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
+3. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
    from chat.
-5. **Unit 5e — Backfill Uber load management artifact.** Real
+4. **Unit 5e — Backfill Uber load management artifact.** Real
    artifact from chat. After 5e the library is four articles with
    four real artifacts — the first version of the project that's
    meaningfully *content-rich*, not just infrastructure with one
    reference article.
-6. **Unit 6 — Filter affordances.** Source filter on the article index
+5. **Unit 6 — Filter affordances.** Source filter on the article index
    (driven by the allowlist, location resolved per the feeds.json open
    question), reading the `?source=<slug>` URL shape that
    `SourceAttribution` already emits. Optional category filter on the
    pattern library index.
-7. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
+6. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist. Also: implement the
    Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
    proposed-but-undefined pattern slugs, three publish states.
-8. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
+7. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
    Design-intent paragraph requested before code.
 
 ## Deferred Work
