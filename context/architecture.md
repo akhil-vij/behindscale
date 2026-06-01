@@ -325,9 +325,29 @@ queue files have no such tension: only the pipeline reads them.)
 1. The website performs no network calls or dynamic data fetching at request
    time. It renders only pre-generated files from `content/` and
    `public/artifacts/`. (Static-by-construction.)
-2. Each interactive artifact renders in its own sandboxed iframe. A single
-   malformed or failing artifact must never break the site build or affect
-   any other artifact. (Fault isolation.)
+2. **Artifact fault isolation and containment.** Each interactive
+   artifact renders in its own sandboxed iframe. A single malformed or
+   failing artifact must never break the site build or affect any
+   other artifact (fault isolation). This holds at **compile time**
+   (per-artifact esbuild failures log to stderr and skip; the missing
+   bundle does not fail the build) and at **runtime** (iframe load
+   errors and inside-iframe render exceptions both surface as a single
+   muted error state in the artifact's slot — the rest of the page
+   reads normally; the home and pattern routes are unaffected).
+
+   The iframe `sandbox` attribute is exactly `allow-scripts` — JS
+   execution and nothing else. Same-origin, form submission, top-level
+   navigation, popups, pointer lock, storage access (cookies,
+   localStorage, sessionStorage), plugin embeds, and downloads are all
+   denied by the absence of the corresponding `allow-*` flags.
+   Artifacts cannot read parent state, navigate the parent, or persist
+   data.
+
+   **Principle: never loosen sandbox, widen postMessage instead.**
+   Future "this artifact wants to do X" needs are granted through a
+   `postMessage` protocol between artifact and parent (artifact emits
+   a request, parent decides whether to honor it) — never by adding
+   sandbox flags. The sandbox is the floor; postMessage is the door.
 3. The pipeline and the website never import each other's **runtime code**.
    They communicate only through the generated files in `content/` and
    `public/artifacts/` (the content contract). Exception: shared schema

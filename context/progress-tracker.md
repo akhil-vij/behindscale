@@ -284,19 +284,41 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5 — Sandboxed-iframe artifact embed** with a deliberately
-   broken sample artifact (invariant 2). Design-intent paragraph
-   requested before code.
-2. **Unit 6 — Filter affordances.** Source filter on the article index
+1. **Unit 5 — Sandboxed-iframe artifact embed** (infrastructure +
+   failure-mode probe). `scripts/compile-artifacts.ts` (esbuild per
+   `.jsx` source under `content/artifacts/`, output to
+   `public/artifacts/{slug}/index.html`), `ArtifactEmbed` component
+   on the article page rendered at the bottom of the reading column
+   (after "Patterns in this article", below the narrative — the
+   artifact is the exploration *destination*, not an interruption),
+   load-failure + render-exception handling both converging to a
+   muted single-line error frame. Verification: deliberate
+   broken-artifact probe, restored before commit (same discipline as
+   Unit 4's orphan-injection).
+2. **Unit 5b — Backfill Stripe idempotency artifact** (verifies the
+   happy path on prod). Authors a real `.jsx` from the existing
+   chat-conversation artifact, wires it into `content/artifacts/`,
+   updates `content/articles/stripe-idempotency.json`'s
+   `artifact` field. After this lands, prod has at least one
+   exercised happy-path embed.
+3. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
+4. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
+   from chat.
+5. **Unit 5e — Backfill Uber load management artifact.** Real
+   artifact from chat. After 5e the library is four articles with
+   four real artifacts — the first version of the project that's
+   meaningfully *content-rich*, not just infrastructure with one
+   reference article.
+6. **Unit 6 — Filter affordances.** Source filter on the article index
    (driven by the allowlist, location resolved per the feeds.json open
    question), reading the `?source=<slug>` URL shape that
    `SourceAttribution` already emits. Optional category filter on the
    pattern library index.
-3. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
+7. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist. Also: implement the
    Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
    proposed-but-undefined pattern slugs, three publish states.
-4. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
+8. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
    Design-intent paragraph requested before code.
 
 ## Deferred Work
@@ -306,13 +328,16 @@ Update this file after every meaningful implementation change.
   (no `category`), empty `whenItApplies`, very long `definition`. Each
   exercises a code path the current single sample (`atomic-phases`)
   doesn't reach. Deliberate fixture construction, not ambient variety.
-- **Post-Unit 5 — Backfill 4–5 existing Claude-chat artifacts** as the
-  first real library entries: Skipper, Stripe idempotency, Airbnb
-  monitoring, Uber load management (and the architecture writeup if it
-  has artifact assets). Each needs a hand-authored `Article` JSON
-  summary plus the existing `.jsx` artifact wired through the iframe
-  infrastructure that Unit 5 establishes. Pre-Unit-5 backfill would
-  ship placeholders, not real artifacts — that's why it waits.
+- **Unit 5+ — Validator check for artifact path matching article slug.**
+  Today the contract is convention: if `article.artifact !== null`,
+  then `artifact.path === /artifacts/${article.slug}/index.html`.
+  Convention is fine until someone breaks it silently. A new file
+  under `scripts/checks/` enforces it as a build-time check; the
+  framework added in Unit 4 makes this one file. Closes the
+  convention-vs-enforcement gap with no further infrastructure cost.
+  (The four chat-artifact backfills happen inline as Units 5b–5e in
+  Next Up, not as deferred work — they ARE the happy-path verification
+  on prod, not someday-work.)
 
 ## Open Questions
 
