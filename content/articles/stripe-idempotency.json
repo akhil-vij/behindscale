@@ -30,5 +30,5 @@
     }
   ],
   "generatedAt": "2026-05-29T13:00:00.000Z",
-  "artifact": null
+  "artifact": { "path": "/artifacts/stripe-idempotency/index.html" }
 }

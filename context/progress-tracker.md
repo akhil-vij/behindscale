@@ -4,13 +4,12 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5: artifact embed infrastructure landed.** Unit 5 ships the
-  compile-artifacts pipeline (esbuild → self-contained ESM bundles +
-  HTML shell per artifact), the `ArtifactEmbed` React component
-  (sandboxed iframe, two-failure-modes-one-surface error handling),
-  and a documented sandbox-and-postMessage principle (architecture.md
-  invariant 2). Moving to Unit 5b — backfill the Stripe idempotency
-  artifact from chat, which exercises the happy path on prod.
+- **Phase 5: artifact embed infrastructure + first real artifact
+  landed.** Unit 5 shipped the compile-artifacts pipeline and the
+  `ArtifactEmbed` component; Unit 5b backfilled the Stripe idempotency
+  artifact from chat — the first article in the library with a working
+  interactive visualization on prod. Moving to Unit 5c next (Skipper
+  backfill).
 
 ## Current Goal
 
@@ -63,6 +62,36 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 5b — Stripe idempotency artifact (first real backfill).**
+  Authored `content/artifacts/stripe-idempotency.jsx` from the existing
+  chat-conversation artifact: an interactive walkthrough of Stripe's
+  atomic-phases + recovery-points retry model, with a "Simulate
+  Crashes" mode that walks through three crash scenarios and how the
+  retry algorithm recovers from each. Updated
+  `content/articles/stripe-idempotency.json`'s `artifact` field from
+  `null` to `{ "path": "/artifacts/stripe-idempotency/index.html" }`.
+  The compile-artifacts script produces a 155 kB bundle (React +
+  ReactDOM + artifact code, minified) at `public/artifacts/
+  stripe-idempotency/index.html` + `index.js`.
+  - Smoke test extended with iframe-presence + attribute assertions on
+    the article page: locator finds an `iframe[title*="Interactive
+    visualization"]`, `src` equals the locked bundle path, `sandbox`
+    equals `allow-scripts`. **Deliberately does not assert
+    iframe-internal DOM.** The sandbox makes the iframe a unique
+    opaque origin, and Playwright's cross-origin frameLocator
+    traversal is unreliable through that boundary. Tightening the
+    sandbox attribute is the more load-bearing property; iframe
+    content correctness is verified by (a) bundle existence on disk
+    (compile-artifacts succeeded), (b) the parent-side HEAD probe
+    staying satisfied (otherwise the ErrorFrame would replace the
+    iframe and the attribute assertions would fail), and (c) manual
+    visual confirmation on prod.
+  - Side effect: Mode B fault isolation (in-iframe render exception)
+    gets natural exercise on every subsequent artifact landing — any
+    bug in a real artifact surfaces as the muted error frame instead
+    of breaking the page.
+  - Build passes; `npm test` 44/44 (unit tests untouched); local
+    smoke `npm run test:e2e` 1/1.
 - **Unit 5 — Sandboxed-iframe artifact embed (infrastructure).**
   Build-time + render-time fault-isolated artifact pipeline per
   architecture.md invariant 2.
@@ -317,10 +346,8 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 5 (infrastructure) complete. Unit 5b (Stripe idempotency
-  artifact backfill) is next; no design-intent needed (composition over
-  Unit-5 primitives). Awaiting the artifact `.jsx` from chat to author
-  `content/artifacts/stripe-idempotency.jsx`.
+- None — Unit 5b complete. Unit 5c (Skipper artifact backfill) is next.
+  Awaiting the Skipper `.jsx` from chat.
 
 ## Developer Setup
 
@@ -330,21 +357,17 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5b — Backfill Stripe idempotency artifact** (verifies the
-   happy path on prod). Authors a real `.jsx` from the existing
-   chat-conversation artifact at `content/artifacts/stripe-idempotency.jsx`,
-   updates `content/articles/stripe-idempotency.json`'s `artifact`
-   field to `{ path: "/artifacts/stripe-idempotency/index.html" }`.
-   After this lands, prod has at least one exercised happy-path embed.
-2. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
-3. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
-   from chat.
-4. **Unit 5e — Backfill Uber load management artifact.** Real
-   artifact from chat. After 5e the library is four articles with
-   four real artifacts — the first version of the project that's
-   meaningfully *content-rich*, not just infrastructure with one
-   reference article.
-5. **Unit 6 — Filter affordances.** Source filter on the article index
+1. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
+   Needs a hand-authored `Article` JSON summary + `.jsx` at
+   `content/artifacts/skipper.jsx`.
+2. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
+   from chat; needs Article JSON + `.jsx`.
+3. **Unit 5e — Backfill Uber load management artifact.** Real
+   artifact from chat; needs Article JSON + `.jsx`. After 5e the
+   library is four articles with four real artifacts — the first
+   version of the project that's meaningfully *content-rich*, not
+   just infrastructure with one reference article.
+4. **Unit 6 — Filter affordances.** Source filter on the article index
    (driven by the allowlist, location resolved per the feeds.json open
    question), reading the `?source=<slug>` URL shape that
    `SourceAttribution` already emits. Optional category filter on the

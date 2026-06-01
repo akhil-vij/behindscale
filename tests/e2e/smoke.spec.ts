@@ -33,6 +33,34 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   await expect(page.getByRole('heading', { level: 2, name: 'Problem' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Solution' })).toBeVisible()
 
+  // Artifact iframe is present with the locked sandbox flag and points
+  // at the compiled bundle. This asserts the Unit 5 infrastructure
+  // end-to-end at the parent boundary: ArtifactEmbed rendered the
+  // iframe (didn't fall back to ErrorFrame), the iframe has the
+  // locked-in sandbox attribute, and src points at the bundle the
+  // compile-artifacts script produced.
+  //
+  // We deliberately do NOT assert iframe-internal DOM here. The iframe
+  // runs with `sandbox="allow-scripts"` (no allow-same-origin), giving
+  // it a unique opaque origin. Playwright's frameLocator traversal
+  // is unreliable across that boundary, and tightening the sandbox is
+  // the more important property to preserve than the test's reach.
+  // Iframe-content correctness is verified by (a) bundle existence on
+  // disk (compile-artifacts must have succeeded for `npm run build`
+  // to have completed), (b) the parent-side HEAD probe staying
+  // satisfied (otherwise the ErrorFrame would have replaced the
+  // iframe and these attribute assertions would fail), and (c) manual
+  // visual verification during 5b's prod check.
+  const iframeSelector = 'iframe[title*="Interactive visualization"]'
+  const artifactIframe = page.locator(iframeSelector)
+  await artifactIframe.scrollIntoViewIfNeeded()
+  await expect(artifactIframe).toBeVisible()
+  await expect(artifactIframe).toHaveAttribute(
+    'src',
+    '/artifacts/stripe-idempotency/index.html',
+  )
+  await expect(artifactIframe).toHaveAttribute('sandbox', 'allow-scripts')
+
   // 3. Click the Atomic Phases pattern chip -> /patterns/:slug.
   // The chip is in the "Patterns in this article" section near the
   // bottom; Playwright auto-scrolls it into view before clicking, so
