@@ -8,7 +8,7 @@
 // JSON files is enforced by the build-time validator in Unit 4; this
 // module trusts the schema.
 
-import type { Article, PatternDefinition } from '../types'
+import type { Article, PatternDefinition, Source } from '../types'
 
 const articleModules = import.meta.glob<Article>(
   '/content/articles/*.json',
@@ -41,6 +41,26 @@ export const patterns: PatternDefinition[] = Object.values(patternModules).sort(
 export const patternBySlug: ReadonlyMap<string, PatternDefinition> = new Map(
   patterns.map((p) => [p.slug, p]),
 )
+
+// The source allowlist (invariant 7). Moved from pipeline/feeds.json to
+// content/feeds.json in Unit 6 -- the website reads it to support a
+// future "Sources we track" page, and the pipeline reads it to gate
+// discovery. The article-index filter chips do NOT derive from this
+// list; they derive from articles[*].source so empty sources don't
+// surface as broken chips (Unit 6 architecture decision: navigation
+// surfaces filter by realized content; informational surfaces describe
+// intended scope).
+//
+// Read via import.meta.glob so the loading mechanism matches articles
+// and patterns -- no separate `resolveJsonModule` configuration, no
+// cross-include path concerns from `import` of a file outside src/.
+// The glob targets a single literal path; the resulting record has
+// exactly one entry.
+const feedsModules = import.meta.glob<Source[]>('/content/feeds.json', {
+  eager: true,
+  import: 'default',
+})
+export const feeds: readonly Source[] = Object.values(feedsModules)[0] ?? []
 
 // patternStats is the aggregated counts surface that the pattern library
 // renders (frequency, articles, companies). Consumers (PatternCard,

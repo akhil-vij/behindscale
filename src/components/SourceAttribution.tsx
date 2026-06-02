@@ -28,11 +28,8 @@ export default function SourceAttribution({
 }: SourceAttributionProps) {
   if (variant === 'card') {
     // Compact eyebrow used on article cards (index) and pattern-detail
-    // back-link cards. The source-name link uses the
-    // /?source=<slug> URL shape locked in for Unit 6's source filter;
-    // the query string is currently inert (no filter logic reads it
-    // yet) and becomes effective when Unit 6 wires the filter on the
-    // article index. No further changes to this component for Unit 6.
+    // back-link cards. The source-name link emits the /?source=<slug>
+    // URL that ArticleIndex reads (Unit 6) to apply the source filter.
     return (
       <div className="font-mono text-xs uppercase tracking-wide text-text-muted">
         <Link

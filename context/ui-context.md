@@ -173,8 +173,16 @@ back-links — shows where it came from, prominently and consistently.
   `source.name` alongside the article title so the breadth of a pattern
   across companies is visible at a glance ("seen in Uber, Stripe, Airbnb").
 - **Filter affordance:** the article index supports a source filter
-  (chips/dropdown) sourced from `pipeline/feeds.json`. Selecting one
-  narrows the index to articles from that source.
+  (inline chips above the card grid). Chips are derived from
+  `articles[*].source` — only sources with at least one published
+  article appear, plus an explicit "All" chip as the cleared state.
+  The full `content/feeds.json` allowlist is the upstream truth and
+  the surface for any future "Sources we track" page, but the filter
+  itself filters by realized content (Unit 6 architecture decision:
+  navigation surfaces filter by realized content; informational
+  surfaces describe intended scope). Chips ordered alphabetically by
+  display name. Active chip filled; inactive chips border-only. URL
+  shape: `?source=<slug>`.
 
 Attribution must never be styled in a way that visually competes with the
 article title — it is a credibility signal and a wayfinding cue, not the

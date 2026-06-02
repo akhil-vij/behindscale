@@ -97,9 +97,9 @@ renders as visible attribution and what enforces invariant #7
   article URL — that's `article.url`). Used for "View all from this blog"
   links and as a credibility cue.
 - `source.feed` — the RSS feed the article was discovered through. Useful
-  for debugging and as a back-reference into `pipeline/feeds.json`.
+  for debugging and as a back-reference into `content/feeds.json`.
 
-Every entry in `pipeline/feeds.json` (the allowlist from invariant #7)
+Every entry in `content/feeds.json` (the allowlist from invariant #7)
 defines these fields once. The pipeline copies them onto each article it
 publishes — articles do not invent or override source data, they inherit it
 from the allowlist. This guarantees: if it isn't in the allowlist, it can't
@@ -308,10 +308,10 @@ analyze stage stay editorial without poisoning the content contract.
 **Storage.** Both `pipeline/proposed-patterns.json` and
 `pipeline/blocked-articles.json` are pipeline operational state, not
 website-readable content. They live under `pipeline/` and never enter
-`content/`. (Compare with `pipeline/feeds.json`, which both pipeline
-and website read — that file is on track to move to
-`content/feeds.json` in Unit 6 to resolve its boundary cleanly. The
-queue files have no such tension: only the pipeline reads them.)
+`content/`. (Compare with `content/feeds.json`, which both pipeline
+and website read — moved from `pipeline/feeds.json` in Unit 6 to
+resolve its boundary cleanly. The queue files have no such tension:
+only the pipeline reads them.)
 
 ## Auth and Access Model
 
@@ -367,7 +367,7 @@ queue files have no such tension: only the pipeline reads them.)
 7. **Official engineering blogs only.** Every article in the library must
    originate from the official engineering blog of the company that built
    the system being described. The pipeline maintains an explicit source
-   allowlist (`pipeline/feeds.json`) of approved official feeds; any article
+   allowlist (`content/feeds.json`) of approved official feeds; any article
    whose canonical URL does not match an allowlisted source is rejected at
    discovery, regardless of how it was discovered (RSS, manual URL, etc.).
    Personal blogs, Substacks, third-party summaries, conference recaps, and

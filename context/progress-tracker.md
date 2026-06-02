@@ -390,7 +390,8 @@ Update this file after every meaningful implementation change.
   PatternDefinition (`content/patterns/atomic-phases.json`, the single
   pattern the article references — bidirectional integrity intact even
   before the Unit 4 validator), and one feed entry
-  (`pipeline/feeds.json`, Stripe Engineering). Build passes; bundle is
+  (`content/feeds.json`, Stripe Engineering — moved from
+  `pipeline/feeds.json` in Unit 6). Build passes; bundle is
   ~167 KB JS (gzip 54 KB) + 38 KB CSS (gzip 17 KB) + lazy webfont chunks.
   `npm test` still 34 passing — types are untouched.
 
@@ -512,7 +513,7 @@ Update this file after every meaningful implementation change.
   and full of real tradeoffs. Personal blogs, third-party summaries, and
   aggregators dilute that signal — they often paraphrase official posts with
   less depth, vary wildly in quality, and create dedup noise. The allowlist
-  in `pipeline/feeds.json` is the single source of truth for what counts.
+  in `content/feeds.json` is the single source of truth for what counts.
 - **Dual-axis navigation: articles and patterns are equally first-class.**
   The home page is the article feed (the daily reading surface), and the
   pattern library at `/patterns` is the durable-knowledge surface, with a

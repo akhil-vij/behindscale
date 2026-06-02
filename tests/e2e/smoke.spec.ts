@@ -17,6 +17,38 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
     }),
   ).toBeVisible()
 
+  // 1a. Source filter -- click the Stripe Engineering chip, verify
+  // only Stripe-source articles render. The toHaveCount(0) absent-
+  // assertion on the Skipper title is the load-bearing one here: if
+  // the filter chips render but the filter logic doesn't apply,
+  // not.toBeVisible() passes silently while the bug ships. Count
+  // assertions break loudly. Same discipline as Unit 4's orphan
+  // probe and Unit 5's broken-artifact verification.
+  const stripeArticleLink = page.getByRole('link', {
+    name: /designing robust and predictable apis with idempotency/i,
+  })
+  const skipperArticleLink = page.getByRole('link', {
+    name: /skipper: building airbnb's embedded workflow engine/i,
+  })
+
+  // Baseline: both article cards visible with no filter set.
+  await expect(stripeArticleLink).toBeVisible()
+  await expect(skipperArticleLink).toBeVisible()
+
+  await page
+    .getByRole('link', { name: 'Stripe Engineering', exact: true })
+    .first()
+    .click()
+  await expect(page).toHaveURL(/[?&]source=stripe-engineering/)
+  await expect(stripeArticleLink).toBeVisible()
+  await expect(skipperArticleLink).toHaveCount(0)
+
+  // 1b. Click "All" to clear the filter and verify both cards return.
+  await page.getByRole('link', { name: 'All', exact: true }).click()
+  await expect(page).not.toHaveURL(/[?&]source=/)
+  await expect(stripeArticleLink).toBeVisible()
+  await expect(skipperArticleLink).toBeVisible()
+
   // 2. Click the article title -> /articles/:slug.
   await page
     .getByRole('link', {
