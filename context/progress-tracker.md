@@ -4,12 +4,14 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5: backfilling the chat-conversation artifacts into the
-  library.** Unit 5 shipped the compile-artifacts pipeline and the
-  `ArtifactEmbed` component; Units 5b–5e backfill the four real
-  artifacts from chat. 5b (Stripe) and 5c (Skipper) landed and
-  verified on prod; library now has 2 articles, 5 patterns, 2
-  artifacts. Moving to 5d (Airbnb monitoring) next.
+- **Phase 5/6 interleave: artifact backfills paused for one
+  navigation unit.** Phase 5 (artifact backfills 5b/5c done, 5d/5e
+  queued) is interrupted by Unit 6 — the source filter on the
+  article index — because it resolves the longest-standing open
+  question on the books (the `feeds.json` location, deferred since
+  Unit 3b) and adds the first real navigation surface beyond
+  chip/article cross-linking. 5d and 5e resume after Unit 6 lands
+  and prod-verifies.
 
 ## Current Goal
 
@@ -394,10 +396,44 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 5c complete and verified on prod (1/1 smoke against
-  https://www.behindscale.com, 2026-06-02). Unit 5d (Airbnb monitoring
-  artifact backfill) is next. Awaiting the Airbnb monitoring `.jsx`
-  + article context from chat.
+- **Unit 6 — Source filter on the article index + `feeds.json`
+  migration + artifact-path validator check.** Resolves the
+  longstanding `pipeline/feeds.json` vs. `content/feeds.json`
+  open question (Option A: file moves to `content/`). Adds the
+  source filter to `/`, reading `?source=<slug>` from the URL
+  (the locked URL shape `SourceAttribution variant="card"` has
+  emitted since Unit 3b but has been inert until now). Adds the
+  third validator check (`artifact-path-matches-slug`) that
+  promotes the slug-equals-path convention from Units 5/5b/5c
+  into enforcement.
+  - Filter UI: inline chips above the article grid, not a sidebar.
+    One chip per source that has at least one article (derived
+    from `articles[*].source`, not from the full feeds allowlist —
+    chips for empty sources read as broken at small library
+    sizes), plus an explicit "All" chip as the cleared state.
+    Chips alphabetical by source name (deterministic; prevents
+    visual jitter when a new article reorders count-based
+    rankings). Active chip is filled; inactive chips are
+    border-only. "All" is filled when no filter is set.
+  - Empty state when `?source=<slug>` matches nothing: active
+    source chip stays visible (filled, clickable to clear) *and*
+    "All" chip visible (border-only). One line:
+    "No articles from <Source Name> yet." plus an inline
+    "Show all articles" Link that clears the filter. Mirrors the
+    pattern-detail "No articles embody this pattern yet" wording
+    — same vocabulary, same restraint. Out-of-allowlist filter
+    (e.g. `?source=garbage`): same line with the raw slug, no
+    chip to click (no source object to render). Invariant 6
+    (skip + flag, never crash).
+  - Smoke test extension: at `/`, click the Stripe Engineering
+    filter chip, assert URL contains `?source=stripe-engineering`,
+    assert Stripe card visible *and* Skipper card
+    `toHaveCount(0)` (the absent-assertion is the load-bearing
+    one — `not.toBeVisible()` passes silently if the chip
+    renders but doesn't filter). Click "All", assert URL back to
+    `/`, assert both cards visible. Then continue the existing
+    walk.
+  - Two-commit shape (docs then feat), same rhythm as 5b/5c.
 
 ## Developer Setup
 
@@ -408,17 +444,13 @@ Update this file after every meaningful implementation change.
 ## Next Up
 
 1. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
-   from chat; needs Article JSON + `.jsx`.
+   from chat; needs Article JSON + `.jsx`. Resumes after Unit 6
+   ships.
 2. **Unit 5e — Backfill Uber load management artifact.** Real
    artifact from chat; needs Article JSON + `.jsx`. After 5e the
    library is four articles with four real artifacts — the first
    version of the project that's meaningfully *content-rich*, not
    just infrastructure with one reference article.
-4. **Unit 6 — Filter affordances.** Source filter on the article index
-   (driven by the allowlist, location resolved per the feeds.json open
-   question), reading the `?source=<slug>` URL shape that
-   `SourceAttribution` already emits. Optional category filter on the
-   pattern library index.
 6. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist. Also: implement the
    Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
@@ -433,31 +465,13 @@ Update this file after every meaningful implementation change.
   (no `category`), empty `whenItApplies`, very long `definition`. Each
   exercises a code path the current single sample (`atomic-phases`)
   doesn't reach. Deliberate fixture construction, not ambient variety.
-- **Unit 5+ — Validator check for artifact path matching article slug.**
-  Today the contract is convention: if `article.artifact !== null`,
-  then `artifact.path === /artifacts/${article.slug}/index.html`.
-  Convention is fine until someone breaks it silently. A new file
-  under `scripts/checks/` enforces it as a build-time check; the
-  framework added in Unit 4 makes this one file. Closes the
-  convention-vs-enforcement gap with no further infrastructure cost.
-  (The four chat-artifact backfills happen inline as Units 5b–5e in
-  Next Up, not as deferred work — they ARE the happy-path verification
-  on prod, not someday-work.)
+- **Optional category filter on the pattern library index.** Out of
+  scope for Unit 6 (single-source filter is the focused deliverable).
+  Same shape would apply at `/patterns?category=resilience` if it
+  proves useful at higher pattern counts.
 
 ## Open Questions
 
-- **`pipeline/feeds.json` location vs. invariant 3** (forces a decision in
-  Unit 6 — source filter affordance on the article index). The website
-  needs to read the allowlist for the filter, but importing
-  `pipeline/feeds.json` from `src/` is a website-to-pipeline data import
-  not currently covered by the type-only exception. **Expected resolution
-  (Option A): move `pipeline/feeds.json` → `content/feeds.json`** so the
-  website reads from one place (`content/`), full stop. The pipeline reads
-  the same file from `content/feeds.json`; nothing else changes. If Unit 6
-  surfaces a reason to choose otherwise (allowlist needs to evolve
-  asymmetrically from website-visible source metadata), revisit then.
-  Documenting the expected direction now prevents re-opening the
-  architecture question fresh in six units.
 - **Source-equality constraint with `feeds.json`** (for Unit 6 / pipeline
   analyze stage). The `source` block embedded in each
   `content/articles/{slug}.json` must equal the `source` block in the
@@ -584,6 +598,42 @@ Update this file after every meaningful implementation change.
   semantics that don't cleanly apply to the artifact-as-a-visualization.
   Prevents future artifacts from re-litigating this — accent choice is
   artifact-local and free.
+- **`feeds.json` lives at `content/feeds.json`** (Unit 6, Option A).
+  The website needs to read the allowlist for the source filter, and
+  importing from `pipeline/` would breach invariant 3 (the only
+  permitted cross-boundary surface is type-only imports from
+  `src/types/`). Moving the file to `content/` resolves the boundary
+  cleanly: the website reads from one place (`content/`), the
+  pipeline reads the same file from `content/feeds.json`, nothing
+  else changes. Forecasted in the open questions block since Unit 3b
+  and locked here. Pipeline references in architecture.md update
+  in the same Unit 6 feat commit.
+- **Filter UI chip derivation principle — navigation surfaces filter
+  by realized content; informational surfaces describe intended
+  scope.** Source filter chips on the article index derive from
+  `articles[*].source` (only sources with at least one article),
+  *not* from the full `content/feeds.json` allowlist. A chip for a
+  source the library doesn't yet cover reads as broken at small
+  library sizes. When the gap matters — likely with a future
+  "Sources we track" page — that page reads `content/feeds.json` as
+  its truth. Same principle applies to any future filter
+  (categories, tags, companies): the navigation chip shows what's
+  reachable; the informational page describes what's tracked.
+- **Filter chip ordering — alphabetical by display name,
+  deterministic.** Don't order by article count or iteration order.
+  Count-based ordering creates visual jitter when a new article
+  from a less-represented source reorders chips; iteration order
+  isn't deterministic across reloads. Alphabetical is the safer
+  default. Change deliberately later if a different order emerges
+  as obviously better at higher article counts.
+- **Validator check parity: artifact-path-matches-slug as
+  enforcement (Unit 6).** Every article with `artifact !== null`
+  must have `artifact.path === '/artifacts/' + slug + '/index.html'`.
+  Convention since Units 5/5b/5c; enforced from Unit 6 onward as a
+  build-time check in `scripts/checks/`. The Unit 4 framework
+  makes this one file + one entry in `CHECKS`. Closes the
+  convention-vs-enforcement gap before the fourth artifact backfill
+  can silently break it.
 - **Source filter URL shape — query string, `/?source=<slug>`.**
   `SourceAttribution variant="card"` already emits this URL; the query
   string is currently inert and becomes effective when Unit 6 wires the
