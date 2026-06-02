@@ -4,13 +4,12 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5/6 interleave: Unit 6 landed; resuming artifact
-  backfills.** Phase 5 (artifact backfills 5b/5c done) was
-  interrupted by Unit 6 — the source filter on the article index,
-  feeds.json migration, and the artifact-path validator check.
-  Unit 6 is now live on prod (1/1 smoke, 2026-06-02). Library
-  state: 2 articles, 5 patterns, 2 artifacts. 5d (Airbnb
-  monitoring) is next, then 5e (Uber load management).
+- **Phase 5 artifact backfills resumed: 5d landed.** Unit 5d (Airbnb
+  Monitoring Reliably at Scale) is live on prod. Library state:
+  3 articles, 8 patterns, 3 artifacts. One backfill left (5e — Uber
+  load management). After 5e, the four chat-conversation artifacts
+  on the deferred-work list are complete and the library moves to
+  Unit 7 (pipeline).
 
 ## Current Goal
 
@@ -63,6 +62,45 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 5d — Airbnb Monitoring Reliably at Scale artifact (second
+  Airbnb article).** Added `content/articles/airbnb-monitoring-
+  reliably-at-scale.json` plus three new pattern definitions:
+  `fault-isolation` (resilience), `dead-mans-switch` (observability),
+  and `circular-dependency-avoidance` (resilience). Article
+  references all three with per-article notes; coverage 3 >= 2.
+  `content/artifacts/airbnb-monitoring-reliably-at-scale.jsx` is a
+  four-tab walkthrough (Problem -> Compute -> Network -> Dead Man's
+  Switch) with a cyan accent against the dark token palette,
+  self-contained (only `useState`). Each tab walks an options-then-
+  decision shape (shared / own / dedicated-managed; Istio /
+  separate Envoy / DIY; binary signal vs absence detection).
+  - Library state after 5d: 3 articles, 8 pattern definitions, 3
+    working artifacts. The Airbnb Engineering source now has 2
+    articles (Skipper + this one), so the source filter on `/` has
+    its first multi-result case beyond the single-Stripe-article
+    check.
+  - Bundle: CSS 43.55 kB / JS 217.37 kB (+17 kB JS over Unit 6 for
+    the bundled new content JSONs).
+  - The smoke test still pins to Stripe + Skipper visibility; the
+    Stripe-source filter check holds with the Airbnb article in the
+    list because the Airbnb article is also filtered out under
+    `?source=stripe-engineering`. Expanding the smoke to assert
+    Airbnb-source filter behavior belongs with a future
+    "smoke-as-fixture-grid" change, not 5d.
+  - Side note: fault-isolation is likely a high-frequency pattern
+    across future articles (the underlying principle recurs at
+    every layer: process, tenant, failure-domain, traffic,
+    capability). The patternStats aggregator already handles
+    arbitrary frequency -- no code change. Worth noticing as the
+    first pattern the library expects to see broadly.
+  - Verification: `npm run validate` clean (3 checks, 0 errors);
+    `npm run compile-artifacts` ok for all 3 artifacts; `npm run
+    build` end-to-end clean; `npm test` 49/49; local `npm run
+    test:e2e` 1/1 in 4.5 s; **production smoke `npm run
+    test:e2e:prod` against https://www.behindscale.com green after
+    the Vercel auto-deploy of `c4b6530` landed** -- 1/1, 4.0 s
+    test, 9.4 s end-to-end. The Unit 6 UA override carried 5d
+    through without re-triggering Vercel's bot detection.
 - **Unit 6 — Source filter on the article index + feeds.json
   migration + artifact-path validator check.** Three loosely
   related deliverables in one unit: resolves the longstanding
@@ -462,10 +500,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 6 complete and verified on prod (1/1 smoke against
-  https://www.behindscale.com, 2026-06-02). Unit 5d (Airbnb
-  monitoring artifact backfill) is next. Awaiting the Airbnb
-  monitoring `.jsx` + article context from chat.
+- None — Unit 5d complete and verified on prod (1/1 smoke against
+  https://www.behindscale.com, 2026-06-02). Unit 5e (Uber load
+  management artifact backfill) is next and last of the chat
+  backfills. Awaiting the Uber `.jsx` + article context from chat.
 
 ## Developer Setup
 
@@ -475,14 +513,12 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
-   from chat; needs Article JSON + `.jsx`. Resumes after Unit 6
-   ships.
-2. **Unit 5e — Backfill Uber load management artifact.** Real
-   artifact from chat; needs Article JSON + `.jsx`. After 5e the
-   library is four articles with four real artifacts — the first
-   version of the project that's meaningfully *content-rich*, not
-   just infrastructure with one reference article.
+1. **Unit 5e — Backfill Uber load management artifact.** Real
+   artifact from chat; needs Article JSON + `.jsx`. Last of the
+   chat backfills. After 5e the library is four articles with four
+   real artifacts — the first version of the project that's
+   meaningfully *content-rich*, not just infrastructure with one
+   reference article.
 6. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist. Also: implement the
    Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
