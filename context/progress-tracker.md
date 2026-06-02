@@ -91,7 +91,14 @@ Update this file after every meaningful implementation change.
     bug in a real artifact surfaces as the muted error frame instead
     of breaking the page.
   - Build passes; `npm test` 44/44 (unit tests untouched); local
-    smoke `npm run test:e2e` 1/1.
+    smoke `npm run test:e2e` 1/1; **production smoke
+    `npm run test:e2e:prod` against https://www.behindscale.com green
+    after the Vercel auto-deploy of `2e633e3` landed** — 1/1, 11.2 s
+    test, 21.9 s end-to-end. The Stripe atomic-phases artifact is
+    live and the iframe-presence + sandbox-attribute assertions hold
+    on prod. Manual visual confirmation of iframe-internal rendering
+    by the owner pending separately (the test deliberately can't
+    reach cross-origin iframe content).
 - **Unit 5 — Sandboxed-iframe artifact embed (infrastructure).**
   Build-time + render-time fault-isolated artifact pipeline per
   architecture.md invariant 2.
@@ -346,8 +353,9 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 5b complete. Unit 5c (Skipper artifact backfill) is next.
-  Awaiting the Skipper `.jsx` from chat.
+- None — Unit 5b complete and verified on prod (1/1 smoke against
+  https://www.behindscale.com, 2026-06-02). Unit 5c (Skipper artifact
+  backfill) is next. Awaiting the Skipper `.jsx` from chat.
 
 ## Developer Setup
 
