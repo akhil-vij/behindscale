@@ -4,12 +4,11 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5: artifact embed infrastructure + first real artifact
-  landed.** Unit 5 shipped the compile-artifacts pipeline and the
-  `ArtifactEmbed` component; Unit 5b backfilled the Stripe idempotency
-  artifact from chat — the first article in the library with a working
-  interactive visualization on prod. Moving to Unit 5c next (Skipper
-  backfill).
+- **Phase 5: backfilling the chat-conversation artifacts into the
+  library.** Unit 5 shipped the compile-artifacts pipeline and the
+  `ArtifactEmbed` component; Units 5b–5e backfill the four real
+  artifacts from chat. 5b (Stripe) landed and verified on prod; 5c
+  (Skipper) is in progress.
 
 ## Current Goal
 
@@ -353,9 +352,19 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 5b complete and verified on prod (1/1 smoke against
-  https://www.behindscale.com, 2026-06-02). Unit 5c (Skipper artifact
-  backfill) is next. Awaiting the Skipper `.jsx` from chat.
+- **Unit 5c — Skipper workflow engine artifact backfill.** First new
+  article since the seed: adds an `Article` JSON for the Airbnb
+  Engineering "Skipper: Building Airbnb's Embedded Workflow Engine"
+  post (2024-08-15), three new pattern definitions (`durable-workflows`,
+  `embedded-vs-centralized-orchestration`, `hibernation-vs-polling`),
+  and the interactive `.jsx` artifact (four-tab walkthrough: Problem →
+  Embedded vs Central → Replay & Checkpoints → Hibernation, dark
+  palette with a green accent). Categories are `resilience`,
+  `resilience`, `throughput` respectively. Article references all
+  three patterns with notes; pattern coverage well above the
+  minimum-2 floor. Files added; verification chain (validate →
+  compile-artifacts → build → vitest → playwright local) runs in this
+  commit; production smoke runs after Vercel auto-deploys the push.
 
 ## Developer Setup
 
@@ -365,12 +374,9 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5c — Backfill Skipper artifact.** Real artifact from chat.
-   Needs a hand-authored `Article` JSON summary + `.jsx` at
-   `content/artifacts/skipper.jsx`.
-2. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
+1. **Unit 5d — Backfill Airbnb monitoring artifact.** Real artifact
    from chat; needs Article JSON + `.jsx`.
-3. **Unit 5e — Backfill Uber load management artifact.** Real
+2. **Unit 5e — Backfill Uber load management artifact.** Real
    artifact from chat; needs Article JSON + `.jsx`. After 5e the
    library is four articles with four real artifacts — the first
    version of the project that's meaningfully *content-rich*, not
@@ -529,6 +535,22 @@ Update this file after every meaningful implementation change.
   identical. Rationale: ship a working contract today rather than
   picking a renderer speculatively; the renderer swap is a one-component
   change.
+- **Artifact accent colors are not bound to the category color ramp.**
+  `PatternChip` strictly follows the category ramp from architecture.md
+  — wayfinding benefits from consistency, so the same category always
+  reads the same color across every chip on every page. Artifacts pick
+  whatever accent best suits their specific visualization: 5b's Stripe
+  artifact uses indigo (not a category color); 5c's Skipper artifact
+  uses green (which *is* the throughput category color, but Skipper is
+  mostly resilience/throughput, not throughput's pure case). Rationale:
+  chips are navigation surfaces where consistency aids recognition;
+  artifacts are destinations where variety aids differentiation between
+  the small number of artifacts a reader sees in one session. The
+  decoupling lets artifact authors pick colors that read well against
+  the dark token palette without being constrained by category
+  semantics that don't cleanly apply to the artifact-as-a-visualization.
+  Prevents future artifacts from re-litigating this — accent choice is
+  artifact-local and free.
 - **Source filter URL shape — query string, `/?source=<slug>`.**
   `SourceAttribution variant="card"` already emits this URL; the query
   string is currently inert and becomes effective when Unit 6 wires the
