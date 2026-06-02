@@ -23,6 +23,16 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // Override Playwright's default user-agent (which includes
+    // "HeadlessChrome") with a normal Desktop Chrome UA. Vercel's
+    // bot-detection serves a JS security checkpoint to anything that
+    // looks scripted, and the checkpoint page doesn't include the
+    // navbar/articles the smoke asserts on -- so the test fails
+    // before the real app ever loads. The override only affects
+    // prod-target runs; the local config (vite preview at :4173) has
+    // no such gate.
+    userAgent:
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
   },
   projects: [
     {

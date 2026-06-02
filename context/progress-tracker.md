@@ -4,14 +4,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5/6 interleave: artifact backfills paused for one
-  navigation unit.** Phase 5 (artifact backfills 5b/5c done, 5d/5e
-  queued) is interrupted by Unit 6 — the source filter on the
-  article index — because it resolves the longest-standing open
-  question on the books (the `feeds.json` location, deferred since
-  Unit 3b) and adds the first real navigation surface beyond
-  chip/article cross-linking. 5d and 5e resume after Unit 6 lands
-  and prod-verifies.
+- **Phase 5/6 interleave: Unit 6 landed; resuming artifact
+  backfills.** Phase 5 (artifact backfills 5b/5c done) was
+  interrupted by Unit 6 — the source filter on the article index,
+  feeds.json migration, and the artifact-path validator check.
+  Unit 6 is now live on prod (1/1 smoke, 2026-06-02). Library
+  state: 2 articles, 5 patterns, 2 artifacts. 5d (Airbnb
+  monitoring) is next, then 5e (Uber load management).
 
 ## Current Goal
 
@@ -64,6 +63,72 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 6 — Source filter on the article index + feeds.json
+  migration + artifact-path validator check.** Three loosely
+  related deliverables in one unit: resolves the longstanding
+  `pipeline/feeds.json` location open question (now
+  `content/feeds.json`), adds the first navigation surface beyond
+  chip/article cross-linking (a single-source filter on `/`), and
+  promotes the slug-equals-path artifact convention into
+  enforcement.
+  - `content/feeds.json` (renamed from `pipeline/feeds.json`) is
+    now the single source of truth for the source allowlist.
+    Architecture / ui-context / progress-tracker path references
+    updated to match. The new `feeds` export from
+    `src/content/index.ts` loads it via `import.meta.glob` of a
+    single literal path — same loading mechanism as articles and
+    patterns, no separate `resolveJsonModule` configuration, no
+    cross-include path concerns from `import` of a file outside
+    `src/`.
+  - Source filter UI: inline chips above the article grid (not a
+    sidebar — the index is the only filterable surface on the
+    site; a layout split would break the single-column reading
+    rhythm everywhere else). Chips derive from
+    `articles[*].source` (realized-content principle: navigation
+    surfaces filter by realized content, informational surfaces
+    describe intended scope — Architecture Decisions), sorted
+    alphabetically by display name (deterministic; prevents
+    visual jitter from count-based ordering). Explicit "All" chip
+    first, then one chip per realized source. Active chip filled
+    (accent-primary background, white text); inactive chips
+    border-only. `SourceFilterChip` is a distinct component from
+    `PatternChip`: same shape vocabulary, but switched on
+    intensity rather than hue — pattern chips tag, filter chips
+    toggle.
+  - Empty state: "No articles from <Source Name> yet." plus an
+    inline "Show all articles" Link. Mirrors pattern-detail "No
+    articles embody this pattern yet" wording. Out-of-allowlist
+    filter (e.g. `?source=garbage`): same line with the raw slug,
+    no broken-chip rendering for the unknown source — invariant 6
+    (skip + flag, never crash).
+  - New `scripts/checks/artifact-path-matches-slug.ts`. For every
+    article with `artifact !== null`, asserts
+    `artifact.path === '/artifacts/' + slug + '/index.html'`.
+    Validator footer now reads "3 checks". Five vitest cases under
+    `__tests__/` cover happy path, drift, null-artifact silent
+    pass, multi-drift in one pass, and right-folder-wrong-filename.
+  - Smoke test extension: click "Stripe Engineering" chip, assert
+    URL contains `?source=stripe-engineering`, assert Stripe card
+    visible AND Skipper card `toHaveCount(0)` (the load-bearing
+    absent-assertion — `not.toBeVisible()` passes silently if the
+    chip renders but filter logic doesn't apply). Click "All",
+    assert URL back to `/`, assert both cards visible. Then
+    continue the original walk.
+  - Prod-smoke fix: Playwright's default user-agent
+    (`HeadlessChrome`) re-triggers Vercel's bot-detection security
+    checkpoint, which serves a JS challenge page that doesn't
+    contain the navbar/articles the smoke asserts on. Added a
+    `userAgent` override in `playwright.prod.config.ts` (normal
+    Desktop Chrome UA) so prod runs see the real app. Local config
+    is untouched.
+  - Bundle: CSS 43.55 kB / JS 200.28 kB (+2 kB JS over 5c for
+    `SourceFilterChip` + feeds export + filter logic). `npm test`
+    49/49 (44 prior + 5 new artifact-path cases). Local
+    `npm run test:e2e` 1/1; **production smoke
+    `npm run test:e2e:prod` against https://www.behindscale.com
+    green after the Vercel auto-deploy of `268ecac` landed** —
+    1/1, 6.5 s test, 15.7 s end-to-end. The smoke now exercises
+    the filter end-to-end on the live site.
 - **Unit 5c — Skipper workflow engine artifact (first new article).**
   Added Airbnb Engineering's "Skipper: Building Airbnb's Embedded
   Workflow Engine" (2024-08-15) at
@@ -397,44 +462,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- **Unit 6 — Source filter on the article index + `feeds.json`
-  migration + artifact-path validator check.** Resolves the
-  longstanding `pipeline/feeds.json` vs. `content/feeds.json`
-  open question (Option A: file moves to `content/`). Adds the
-  source filter to `/`, reading `?source=<slug>` from the URL
-  (the locked URL shape `SourceAttribution variant="card"` has
-  emitted since Unit 3b but has been inert until now). Adds the
-  third validator check (`artifact-path-matches-slug`) that
-  promotes the slug-equals-path convention from Units 5/5b/5c
-  into enforcement.
-  - Filter UI: inline chips above the article grid, not a sidebar.
-    One chip per source that has at least one article (derived
-    from `articles[*].source`, not from the full feeds allowlist —
-    chips for empty sources read as broken at small library
-    sizes), plus an explicit "All" chip as the cleared state.
-    Chips alphabetical by source name (deterministic; prevents
-    visual jitter when a new article reorders count-based
-    rankings). Active chip is filled; inactive chips are
-    border-only. "All" is filled when no filter is set.
-  - Empty state when `?source=<slug>` matches nothing: active
-    source chip stays visible (filled, clickable to clear) *and*
-    "All" chip visible (border-only). One line:
-    "No articles from <Source Name> yet." plus an inline
-    "Show all articles" Link that clears the filter. Mirrors the
-    pattern-detail "No articles embody this pattern yet" wording
-    — same vocabulary, same restraint. Out-of-allowlist filter
-    (e.g. `?source=garbage`): same line with the raw slug, no
-    chip to click (no source object to render). Invariant 6
-    (skip + flag, never crash).
-  - Smoke test extension: at `/`, click the Stripe Engineering
-    filter chip, assert URL contains `?source=stripe-engineering`,
-    assert Stripe card visible *and* Skipper card
-    `toHaveCount(0)` (the absent-assertion is the load-bearing
-    one — `not.toBeVisible()` passes silently if the chip
-    renders but doesn't filter). Click "All", assert URL back to
-    `/`, assert both cards visible. Then continue the existing
-    walk.
-  - Two-commit shape (docs then feat), same rhythm as 5b/5c.
+- None — Unit 6 complete and verified on prod (1/1 smoke against
+  https://www.behindscale.com, 2026-06-02). Unit 5d (Airbnb
+  monitoring artifact backfill) is next. Awaiting the Airbnb
+  monitoring `.jsx` + article context from chat.
 
 ## Developer Setup
 
