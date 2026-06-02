@@ -4,12 +4,16 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5 artifact backfills resumed: 5d landed.** Unit 5d (Airbnb
-  Monitoring Reliably at Scale) is live on prod. Library state:
-  3 articles, 8 patterns, 3 artifacts. One backfill left (5e — Uber
-  load management). After 5e, the four chat-conversation artifacts
-  on the deferred-work list are complete and the library moves to
-  Unit 7 (pipeline).
+- **Phase 5 closed.** All four chat-conversation artifact backfills
+  shipped and verified on prod. Library state: 4 articles
+  (Stripe / Skipper / Airbnb monitoring / Uber Cinnamon), 11
+  patterns spanning all four canonical categories (resilience,
+  consistency, throughput, observability), 4 working artifacts.
+  The library is now meaningfully content-rich, not infrastructure
+  with one reference article. Next phase: Unit 7 — pipeline. Owner
+  has requested an upfront architecture review covering the four
+  stages (discover, fetch, analyze, generate), the orchestrator,
+  and the SQLite metadata schema before any code is written.
 
 ## Current Goal
 
@@ -62,6 +66,51 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 5e — Uber Intelligent Load Management artifact (closes
+  Phase 5).** Last of the four chat-conversation artifact backfills.
+  Added `content/articles/uber-intelligent-load-management.json`
+  plus three new pattern definitions:
+  `priority-aware-load-shedding` (resilience),
+  `pid-controlled-adaptive-thresholds` (throughput), and
+  `byos-platform-design` (throughput). Article references all
+  three; coverage 3 >= 2.
+  - `content/artifacts/uber-intelligent-load-management.jsx` is the
+    largest artifact yet — 640 lines source, 168 kB compiled.
+    Four tabs (Evolution -> CoDel -> Priority Tiers -> BYOS/PID)
+    with an orange accent against the dark token palette. The PID
+    tab runs a real control loop in `useEffect` with `useRef`-
+    tracked state, plotting the PID-adjusted concurrency limit
+    against a static-threshold comparison line so the qualitative
+    difference (smooth convergence vs binary oscillation) is
+    visible in motion. Self-contained: only useState / useEffect /
+    useRef from react.
+  - Library state after 5e: **4 articles, 11 pattern definitions
+    (atomic-phases, idempotency-keys, durable-workflows,
+    embedded-vs-centralized-orchestration, hibernation-vs-polling,
+    fault-isolation, dead-mans-switch, circular-dependency-
+    avoidance, priority-aware-load-shedding,
+    pid-controlled-adaptive-thresholds, byos-platform-design),
+    4 working artifacts.** All four canonical pattern categories
+    have realized examples. Uber Engineering joins the realized
+    sources, so the filter chip row on `/` is now All + Airbnb +
+    Stripe + Uber.
+  - Bundle: CSS 43.55 kB / JS 237.08 kB (+20 kB JS over 5d for the
+    bundled new content JSONs).
+  - The smoke test still pins to Stripe + Skipper visibility; the
+    Stripe-source filter check holds because Skipper, Airbnb, and
+    Uber articles all get filtered out under
+    `?source=stripe-engineering`. Smoke does not exercise the PID
+    simulator's internal animation — the iframe sandbox prevents
+    cross-origin DOM traversal, so the simulator's correctness is
+    confirmed by manual visual check on prod, not by the smoke.
+  - Verification: `npm run validate` clean (3 checks, 0 errors);
+    `npm run compile-artifacts` ok for all 4 artifacts; `npm run
+    build` end-to-end clean; `npm test` 49/49; local
+    `npm run test:e2e` 1/1 in 3.6 s; **production smoke
+    `npm run test:e2e:prod` against https://www.behindscale.com
+    green after the Vercel auto-deploy of `b090672` landed** —
+    1/1, 3.7 s test, 7.3 s end-to-end. The Unit 6 UA override
+    continues to carry prod smoke through clean.
 - **Unit 5d — Airbnb Monitoring Reliably at Scale artifact (second
   Airbnb article).** Added `content/articles/airbnb-monitoring-
   reliably-at-scale.json` plus three new pattern definitions:
@@ -500,10 +549,14 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- None — Unit 5d complete and verified on prod (1/1 smoke against
-  https://www.behindscale.com, 2026-06-02). Unit 5e (Uber load
-  management artifact backfill) is next and last of the chat
-  backfills. Awaiting the Uber `.jsx` + article context from chat.
+- None — Phase 5 closed. Unit 5e verified on prod (1/1 smoke
+  against https://www.behindscale.com, 2026-06-02). **Next: Unit 7
+  — pipeline.** Owner has asked for an upfront architecture review
+  covering the four stages (discover, fetch, analyze, generate),
+  the orchestrator, and the SQLite metadata schema before any code
+  is written. Sub-units will then be implemented without
+  per-sub-unit design intent review — architecture decisions live
+  in the upfront review, not in each stage.
 
 ## Developer Setup
 
@@ -513,12 +566,14 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 5e — Backfill Uber load management artifact.** Real
-   artifact from chat; needs Article JSON + `.jsx`. Last of the
-   chat backfills. After 5e the library is four articles with four
-   real artifacts — the first version of the project that's
-   meaningfully *content-rich*, not just infrastructure with one
-   reference article.
+1. **Unit 7 — Pipeline architecture review + four stages.**
+   Upfront architecture review covering the four stages (discover,
+   fetch, analyze, generate), the orchestrator (`pipeline/run.ts`,
+   `npm run study`), and the SQLite metadata schema. Owner reviews
+   the architecture before code lands; sub-units (one per stage,
+   one for the orchestrator) ship without per-sub-unit design
+   intent. The Proposed Pattern Queue mechanism
+   (architecture.md) is part of the analyze stage.
 6. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
    SQLite), reading sources from the allowlist. Also: implement the
    Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
