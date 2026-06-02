@@ -1,0 +1,18 @@
+{
+  "slug": "embedded-vs-centralized-orchestration",
+  "name": "Embedded vs Centralized Orchestration",
+  "definition": "When a system needs cross-step coordination — workflows, sagas, retries, scheduling — there are two architectural shapes. The orchestration logic can live inside each participating service as a library (embedded), or in a dedicated cluster that every service talks to (centralized). The two shapes have inverse tradeoffs: embedding gives you isolation and operational simplicity at the cost of cross-service coordination; centralizing gives you cross-service coordination and uniform tooling at the cost of a shared dependency that becomes a single point of failure.\n\nEmbedded orchestrators (like Airbnb's Skipper) ship as a library. Each service runs its own orchestration in-process, using its own existing database for state. A failure in one service's orchestration doesn't touch any other service. There is no new infrastructure to operate. The cost: cross-service workflows are awkward — you either build saga-style choreography by hand, or your orchestration is fundamentally service-scoped.\n\nCentralized orchestrators (like Temporal or Cadence) ship as a cluster. Every service talks to the orchestrator over the network; the orchestrator owns workflow state and coordinates activities across services. You get a uniform workflow UI, polyglot SDKs, and natural cross-service coordination. The cost: every service depends on the cluster's availability, and the cluster itself becomes a critical operational concern that must be tuned, scaled, and protected.\n\nThe choice usually comes down to whether your most critical workflows are service-scoped (embedded wins) or cross-service (centralized wins), and whether your team can absorb the operational burden of running a workflow cluster.",
+  "whenItApplies": [
+    "Choosing between adding workflow infrastructure (embedded library) and adopting workflow infrastructure (centralized cluster) — this pattern names the underlying tradeoff so the decision becomes about local constraints rather than abstract preference",
+    "Tier-0 services where adding a shared dependency is unacceptable — embedded orchestration is structurally safer because the failure domain stays local",
+    "Engineering organizations with multiple polyglot services where workflows often span services — centralized orchestration becomes increasingly attractive as cross-service coordination dominates the work",
+    "Reviewing existing orchestration architectures where the team has accumulated friction (e.g., a central cluster has become a recurring incident driver, or embedded workflows are increasingly papering over cross-service needs)"
+  ],
+  "tradeoffs": [
+    "Embedded: cross-service coordination is awkward and often degenerates into saga choreography by hand. Centralized: every service depends on the orchestrator cluster's availability.",
+    "Embedded: each service must own its own workflow observability — there is no unified UI across services. Centralized: workflow visibility is built in but applies uniformly, which may not match per-service needs.",
+    "Embedded: tied to the host service's language and runtime. Centralized: polyglot SDKs are common, enabling workflows that span services in different languages.",
+    "Embedded: no new infrastructure to operate, but every service team is implicitly responsible for their own orchestration concerns. Centralized: a dedicated team typically owns the orchestrator, which concentrates expertise but also concentrates risk."
+  ],
+  "category": "resilience"
+}

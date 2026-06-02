@@ -1,0 +1,18 @@
+{
+  "slug": "durable-workflows",
+  "name": "Durable Workflows",
+  "definition": "A durable workflow is a multi-step business process whose execution state survives crashes, restarts, and arbitrary waits — without the business logic needing to know about persistence, retries, or recovery. The workflow author writes linear code; the runtime guarantees that if execution is interrupted at any point, it resumes from the last known good state when restarted.\n\nThe defining mechanism is the separation of orchestration logic from side effects. Orchestration logic (conditionals, loops, waits, the overall flow) must be deterministic so it can be replayed identically. Side effects (API calls, database writes, anything observable externally) are wrapped in an explicit primitive (often called an Action, Activity, or Step) whose result is checkpointed to durable storage after each successful execution.\n\nOn crash and resume, the workflow re-executes from the beginning. Where it encounters an already-completed side effect, it short-circuits to the checkpointed result instead of re-running. The workflow author sees linear, top-to-bottom code; the runtime handles the heavy lifting of durability.",
+  "whenItApplies": [
+    "Multi-step processes spanning minutes to days where intermediate state matters (payments, claims, onboarding, multi-stage approvals)",
+    "Workflows with external waits — waiting for human approval, third-party callbacks, scheduled times — where blocking a thread or polling would be wasteful",
+    "Business logic that must survive arbitrary infrastructure failures without leaving partial state, duplicate side effects, or orphaned operations",
+    "Domains where reconciliation scripts and ad-hoc cleanup jobs have proliferated; durable workflows replace that scattered logic with a single coherent execution model"
+  ],
+  "tradeoffs": [
+    "Workflow code must be deterministic. Random numbers, clock reads, and non-deterministic branches must be wrapped in side-effect primitives so their results checkpoint.",
+    "Side effects are at-least-once. If execution succeeds but the checkpoint write fails, the next replay re-runs the side effect. Idempotency at the side-effect boundary is required.",
+    "Workflow evolution is hard. Changing a workflow's logic while instances are in flight requires versioning — replaying old instances against new code will diverge if the action sequence changes.",
+    "Debugging requires understanding replay. Observed behavior may not match what the code appears to do on a single execution — the durable runtime is shaping outcomes in ways that need their own mental model."
+  ],
+  "category": "resilience"
+}

@@ -1,0 +1,18 @@
+{
+  "slug": "hibernation-vs-polling",
+  "name": "Hibernation vs Polling",
+  "definition": "When a process needs to wait for an external signal — a callback, an approval, a scheduled time, a state change in another system — there are two ways to handle the wait. The naive approach is polling: a loop, a queue consumer, or a scheduled job that periodically wakes up and asks \"is it ready yet?\" The durable approach is hibernation: the process serializes its state, releases its compute resources, and exists only as data until an external signal explicitly wakes it.\n\nHibernation requires a coordination point — typically a database row or a workflow runtime — that holds the waiting process's state and accepts signals. When a signal arrives (via an API call, a queue message, or a scheduled timer), the runtime reloads the state and resumes execution. Between submission and signal, the process consumes zero CPU and effectively no memory. The wait can last seconds or weeks; the cost is the same.\n\nPolling consumes resources proportional to wait duration. Hibernation consumes resources proportional only to the number of waiting processes (typically one row each). For workflows with long waits, the difference is many orders of magnitude.\n\nThe trade is in complexity: polling is shallow but operationally simple (every component is straightforward). Hibernation requires a durable state store and a signal-routing mechanism, but eliminates the queue-consumer + callback-endpoint + scheduled-job + state-table sprawl that polling-based business logic typically grows into.",
+  "whenItApplies": [
+    "Workflows with long external waits (human approval, third-party callbacks, scheduled times) where polling-based logic has fragmented into multiple components per business process",
+    "Systems handling many concurrent waits where the per-process cost of polling threads, queue consumers, or scheduled-job scans is non-trivial",
+    "Business processes where the wait duration is variable or open-ended — polling intervals are always wrong (too tight wastes resources, too loose adds latency)",
+    "Architectures where reconciliation scripts have proliferated to clean up after partial state from polling-based waits; hibernation eliminates the conditions that produce partial state"
+  ],
+  "tradeoffs": [
+    "Hibernation requires a durable runtime with a state store and a signal-routing mechanism. Polling can be built with primitives you already have (queues, cron, a state table).",
+    "Hibernation creates an opaque \"the workflow is sleeping somewhere\" state that requires runtime-aware tooling to inspect. Polling state is in obvious places (queues, scheduler logs).",
+    "Hibernation depends on signals being delivered exactly once or being idempotent at the wake point — duplicate signals can re-wake the same waiting process or create races. Polling sidesteps signal delivery by asking proactively.",
+    "Hibernation typically requires the entire business process to be expressed in a workflow runtime. Polling can be added incrementally to systems that aren't structured around durable workflows."
+  ],
+  "category": "throughput"
+}

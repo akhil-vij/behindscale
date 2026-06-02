@@ -1,0 +1,41 @@
+{
+  "slug": "skipper-workflow-engine",
+  "title": "Skipper: Building Airbnb's Embedded Workflow Engine",
+  "url": "https://medium.com/airbnb-engineering/skipper-building-airbnbs-embedded-workflow-engine-f6c34552146f",
+  "publishedAt": "2024-08-15",
+  "source": {
+    "name": "Airbnb Engineering",
+    "slug": "airbnb-engineering",
+    "company": "Airbnb",
+    "url": "https://medium.com/airbnb-engineering",
+    "feed": "https://medium.com/feed/airbnb-engineering"
+  },
+  "summary": "Airbnb built Skipper as a workflow engine that ships as a library embedded inside each service, not as a central cluster. It uses replay-based durability with checkpointed actions, hibernates during long waits without consuming compute, and reuses the service's existing database for state. The result: durable multi-step workflows without the operational burden — or single point of failure — of a dedicated orchestration system.",
+  "problem": "Airbnb runs many multi-step business processes — insurance claims, payments, media processing — that span minutes to days. When a server crashes mid-workflow, traditional approaches leave partial state, duplicate side effects, or orphaned operations. Teams across the company kept building bespoke solutions: queue consumers, scheduled jobs, reconciliation scripts. Each team rediscovered the same edge cases around idempotency, retries, and crash recovery.\n\nExternal orchestration engines like Temporal or Cadence solve this elegantly, but they require running a dedicated cluster that becomes a critical shared dependency. Airbnb's most critical (Tier-0) services couldn't afford a new single point of failure — a central orchestration cluster going down would cascade into every dependent service. The team needed durable workflows without the shared-cluster risk.",
+  "solution": "Skipper is a workflow engine that ships as a library embedded directly inside each service. There is no central cluster — workflow state lives in whatever database the service already uses (MySQL or DynamoDB), and the engine runs in-process.\n\nThe engine exposes two core abstractions: Workflows define orchestration logic (deterministic control flow with conditionals, loops, and waits) and Actions wrap side effects (API calls, database writes) that get automatically checkpointed to the database after execution.\n\nDurability comes from replay: when a workflow resumes after a crash, the workflow method re-executes from the top, but previously completed actions return their saved checkpoint instantly instead of re-running. Long waits use hibernation — when a workflow hits waitUntil, its state serializes to the database, the thread returns to the pool, and the workflow exists only as a row until a signal arrives or the timeout fires. No thread consumed, no compute used, no polling.\n\nOn the happy path, Skipper runs entirely in-process with no network round-trips. It only \"activates\" the persistence layer on crashes, waits, or errors. This is the inverse of central orchestrators that need a round-trip per step.",
+  "tradeoffs": [
+    "Workflow methods must be deterministic — no random numbers, no clock reads inside workflow code, no non-deterministic branches. Skipper guarantees replay only produces the same action sequence if the workflow is deterministic. Any non-determinism must be wrapped in an Action so the result gets checkpointed.",
+    "Actions are at-least-once. If an action executes successfully but the process crashes before the checkpoint is written, the replay will execute it again. Action implementations must be idempotent — typically via an idempotency key derived from the workflow instance ID and action sequence number.",
+    "Cross-service workflows are awkward. Skipper lives inside one service; coordinating actions across services means API calls and saga-like patterns. Teams needing true cross-service orchestration find a dedicated orchestrator more appropriate.",
+    "Workflow evolution is hard. Changing a workflow's logic while instances are in flight is the most-cited friction. Replay-based systems are sensitive to action-sequence drift; versioning workflows is required and non-trivial.",
+    "Observability is DIY. Centralized orchestrators come with workflow dashboards, replay UIs, and manual intervention tools. Skipper's workflow state is just rows in MySQL/DynamoDB — visibility means building it yourself."
+  ],
+  "tags": ["workflow-orchestration", "durable-execution", "distributed-systems", "fault-tolerance"],
+  "patterns": [
+    {
+      "slug": "durable-workflows",
+      "note": "Skipper's Workflow + Action abstractions are the canonical implementation: orchestration logic stays deterministic, side effects are checkpointed, and crash recovery is replay from the last good state. The library form (vs. central cluster) doesn't change the durability pattern itself — just where it executes."
+    },
+    {
+      "slug": "embedded-vs-centralized-orchestration",
+      "note": "Airbnb explicitly evaluated and rejected centralized orchestrators (Temporal/Cadence) because the shared-cluster failure domain was unacceptable for Tier-0 services. The embedded-library form trades cross-service coordination capability for failure isolation. Skipper is the worked example of the embedded side of this tradeoff."
+    },
+    {
+      "slug": "hibernation-vs-polling",
+      "note": "Skipper's waitUntil serializes workflow state to the database and releases the executing thread. The workflow exists as a database row until signaled, consuming zero compute. This is the inverse of the queue-consumer + scheduled-job + state-table pattern that would otherwise be required for the same business logic."
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/skipper-workflow-engine/index.html"
+  }
+}
