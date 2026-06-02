@@ -1,0 +1,19 @@
+{
+  "slug": "circular-dependency-avoidance",
+  "name": "Circular Dependency Avoidance",
+  "definition": "A circular dependency in infrastructure exists when system A monitors or controls system B, but A itself depends on B to function. The dependency is invisible during normal operation — everything works — and only becomes visible when B fails: A loses its ability to detect or respond to B's failure at exactly the moment that ability matters most.\n\nThe canonical example is a monitoring stack that runs on the infrastructure it monitors. When the underlying platform degrades, the monitoring degrades with it, and alerts that should fire don't. The same shape appears in many other places: deploy systems that depend on the services they deploy, secrets management systems whose own secrets are stored in themselves, DNS systems that depend on DNS to resolve their upstream, authentication systems whose dependencies require authentication, certificate authorities whose renewals depend on services protected by the certificates they issue.\n\nThe pattern is not the avoidance technique itself but the discipline of mapping every dependency of a system that has a safety or control role, and then verifying that none of those dependencies are the system being protected or controlled. The mapping is usually surprising — modern infrastructure is so heavily shared (control planes, identity, DNS, metric pipelines, secret stores) that hidden circular dependencies are nearly always present somewhere. Finding and severing them is ongoing work, not a one-time architectural decision.\n\nSevering a circular dependency typically means moving the dependent system into a different failure domain: separate infrastructure, separate cloud region, separate provider, or simple enough that it can be hosted on infrastructure with no shared substrate. The cost is duplication and operational overhead; the benefit is that the system can continue to function when its dependency fails.",
+  "whenItApplies": [
+    "Designing or auditing monitoring, alerting, deploy, or incident-response infrastructure that needs to function specifically when other systems are failing",
+    "Identifying root causes after outages where 'the alerts didn't fire' or 'we couldn't deploy a fix' was part of the incident — these almost always have a circular dependency as the underlying cause",
+    "Building secrets management, certificate authorities, or identity systems where the system protecting credentials must not itself depend on those credentials",
+    "Auditing infrastructure for hidden shared substrate (control planes, DNS, metric collection) that could turn an apparent isolation into a discovered shared failure domain",
+    "Adding any new dependency to a Tier-0 or safety-critical system — explicitly mapping whether the new dependency could itself depend, transitively, on the system being protected"
+  ],
+  "tradeoffs": [
+    "Mapping every dependency is laborious. Modern infrastructure has deep dependency chains, and verifying that no chain loops back to the system being protected requires either tooling or deliberate manual audit.",
+    "Severing dependencies usually means duplication: separate infrastructure for the protective system, with its own operational concerns, its own cost, and its own debugging surface.",
+    "Some dependencies are unavoidable. Even a fully-isolated monitoring system probably depends on DNS, internet routing, cloud provider control planes, or other widely-shared substrate. The goal is severing the dependencies that matter, not pretending zero shared substrate is possible.",
+    "Over-paranoia about circular dependencies can produce architectures with so much duplication that they become harder to maintain than the failures they prevent. The right amount of severance depends on the failure modes that actually occur and the stakes of the system being protected."
+  ],
+  "category": "resilience"
+}

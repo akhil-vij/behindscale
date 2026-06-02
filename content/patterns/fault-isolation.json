@@ -1,0 +1,19 @@
+{
+  "slug": "fault-isolation",
+  "name": "Fault Isolation",
+  "definition": "Fault isolation is the architectural practice of containing failures so that one component's degradation doesn't cascade into others. The defining mechanism is making explicit the boundaries between components and ensuring those boundaries hold under failure — through dedicated resources, separate data paths, independent failure domains, or sandbox-style containment.\n\nThe core insight is that systems naturally develop shared dependencies as they grow, and those shared dependencies become the conduits through which localized failures become systemic outages. Fault isolation reverses the default: instead of sharing infrastructure for efficiency and discovering shared failure modes during incidents, you deliberately accept resource duplication or operational overhead in exchange for guaranteed containment.\n\nFault isolation can be applied at many layers: process isolation (each service in its own container), tenant isolation (each customer's data and resources separated), failure-domain isolation (across availability zones, regions, or providers), traffic isolation (separate network paths for different traffic classes), or capability isolation (sandboxed code with limited permissions). The same principle scales across these layers because the underlying logic — failure should not propagate beyond the boundary that contains it — is universal.",
+  "whenItApplies": [
+    "Designing infrastructure where a failure in one component could cascade through shared dependencies into a broader outage",
+    "Multi-tenant systems where one tenant's behavior must not degrade service quality for others (noisy-neighbor protection)",
+    "Building safety or observability systems that must continue to function when the systems they oversee are failing",
+    "Running untrusted or auto-generated code where the host system must survive arbitrary behavior in the guest",
+    "Operating at scale where shared-resource utilization optimization has crossed into shared-failure-mode territory"
+  ],
+  "tradeoffs": [
+    "Resource duplication is the cost: isolated systems use more compute, more network, more storage than a shared equivalent. The economics only work above a certain scale or stakes threshold.",
+    "Operational complexity increases: separate systems mean separate deployment, separate monitoring, separate runbooks. Each isolated boundary is also a coordination boundary that human teams must manage.",
+    "Boundaries can be subtle. A system can appear isolated while sharing hidden dependencies (DNS, control plane, identity, secrets infrastructure). Fault isolation requires actively mapping and severing every shared dependency that matters, not just the obvious ones.",
+    "Over-isolation creates its own problems: too many independent failure domains can fragment debugging, slow down legitimate cross-cutting changes, and concentrate complexity at the boundaries. The right granularity depends on what failure modes you're actually trying to contain."
+  ],
+  "category": "resilience"
+}
