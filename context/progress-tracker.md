@@ -7,8 +7,9 @@ Update this file after every meaningful implementation change.
 - **Phase 5: backfilling the chat-conversation artifacts into the
   library.** Unit 5 shipped the compile-artifacts pipeline and the
   `ArtifactEmbed` component; Units 5b–5e backfill the four real
-  artifacts from chat. 5b (Stripe) landed and verified on prod; 5c
-  (Skipper) is in progress.
+  artifacts from chat. 5b (Stripe) and 5c (Skipper) landed and
+  verified on prod; library now has 2 articles, 5 patterns, 2
+  artifacts. Moving to 5d (Airbnb monitoring) next.
 
 ## Current Goal
 
@@ -61,6 +62,47 @@ Update this file after every meaningful implementation change.
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 5c — Skipper workflow engine artifact (first new article).**
+  Added Airbnb Engineering's "Skipper: Building Airbnb's Embedded
+  Workflow Engine" (2024-08-15) at
+  `content/articles/skipper-workflow-engine.json` plus three new
+  pattern definitions: `durable-workflows` (resilience),
+  `embedded-vs-centralized-orchestration` (resilience), and
+  `hibernation-vs-polling` (throughput). Article references all
+  three with per-article notes; pattern coverage 3 ≥ 2.
+  `content/artifacts/skipper-workflow-engine.jsx` is a four-tab
+  walkthrough (Problem → Embedded vs Central → Replay & Checkpoints
+  → Hibernation) with a green accent against the dark token palette,
+  self-contained (only `useState`), inline styles in token-compatible
+  hex. Compile output: 152 kB bundle at
+  `public/artifacts/skipper-workflow-engine/{index.html, index.js}`.
+  - Library state after 5c: 2 articles, 5 pattern definitions
+    (atomic-phases, idempotency-keys, durable-workflows,
+    embedded-vs-centralized-orchestration, hibernation-vs-polling),
+    2 working artifacts.
+  - Bundle: CSS 43.00 kB / JS 198.15 kB (+15 kB JS over 5b for the
+    bundled new content JSONs).
+  - The smoke test still pins to the Stripe article path; expanding
+    it to walk Skipper belongs with a future "second-article-as-
+    fixture" change, not in 5c.
+  - First architecture decision recorded ahead of this commit:
+    artifact accent colors are not bound to the category color ramp.
+    Chips strictly follow the ramp (wayfinding); artifacts pick what
+    suits the visualization (Skipper's green ≠ throughput category
+    semantics). Prevents future artifacts from re-litigating this.
+  - Verification: `npm run validate` clean (2 checks, 0 errors); `npm
+    run compile-artifacts` ok for both artifacts; `npm run build`
+    end-to-end clean; `npm test` 44/44; local `npm run test:e2e` 1/1
+    in 3.7 s; **production smoke `npm run test:e2e:prod` against
+    https://www.behindscale.com green after the Vercel auto-deploy
+    of `8f0cead` landed** — 1/1, 4.8 s test, 9.0 s end-to-end.
+    Skipper artifact bundle confirmed live via HEAD probe
+    (`/artifacts/skipper-workflow-engine/index.html` returns 200).
+    Manual visual confirmation by the owner pending separately:
+    `/articles/skipper-workflow-engine` reading column + bottom
+    artifact, `/patterns` showing 5 cards (was 2), and
+    `/patterns/durable-workflows` showing the new article as a
+    "Seen in" back-link.
 - **Unit 5b — Stripe idempotency artifact (first real backfill).**
   Authored `content/artifacts/stripe-idempotency.jsx` from the existing
   chat-conversation artifact: an interactive walkthrough of Stripe's
@@ -352,19 +394,10 @@ Update this file after every meaningful implementation change.
 
 ## In Progress
 
-- **Unit 5c — Skipper workflow engine artifact backfill.** First new
-  article since the seed: adds an `Article` JSON for the Airbnb
-  Engineering "Skipper: Building Airbnb's Embedded Workflow Engine"
-  post (2024-08-15), three new pattern definitions (`durable-workflows`,
-  `embedded-vs-centralized-orchestration`, `hibernation-vs-polling`),
-  and the interactive `.jsx` artifact (four-tab walkthrough: Problem →
-  Embedded vs Central → Replay & Checkpoints → Hibernation, dark
-  palette with a green accent). Categories are `resilience`,
-  `resilience`, `throughput` respectively. Article references all
-  three patterns with notes; pattern coverage well above the
-  minimum-2 floor. Files added; verification chain (validate →
-  compile-artifacts → build → vitest → playwright local) runs in this
-  commit; production smoke runs after Vercel auto-deploys the push.
+- None — Unit 5c complete and verified on prod (1/1 smoke against
+  https://www.behindscale.com, 2026-06-02). Unit 5d (Airbnb monitoring
+  artifact backfill) is next. Awaiting the Airbnb monitoring `.jsx`
+  + article context from chat.
 
 ## Developer Setup
 
