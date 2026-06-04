@@ -24,6 +24,18 @@ committed to the repo (the "content contract").
 
 ## System Boundaries
 
+> **Pipeline status: deferred from active implementation as of
+> 2026-06-04.** behindscale is currently in manual editorial
+> authoring mode (see `progress-tracker.md` → Current Operating
+> Mode). The conceptual shape of the pipeline — its boundaries,
+> stages, idempotency contract, and relationship to the content
+> contract — is retained below as the architectural shape the
+> website is designed against. The full design-as-built (four
+> stages, SQLite schema, Claude integration, draft handoff,
+> twelve open questions) is preserved at
+> `context/pipeline-architecture-deferred.md`. Revisit when manual
+> cadence shows scaling friction or at the week-8 reassessment.
+
 - `pipeline/` — Owns article discovery, fetching, Claude API calls, and
   artifact generation. Produces content into `content/` and compiled
   artifact bundles into `public/artifacts/`. May do long-running work and

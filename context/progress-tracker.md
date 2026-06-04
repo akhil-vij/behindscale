@@ -4,16 +4,27 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5 closed.** All four chat-conversation artifact backfills
-  shipped and verified on prod. Library state: 4 articles
-  (Stripe / Skipper / Airbnb monitoring / Uber Cinnamon), 11
-  patterns spanning all four canonical categories (resilience,
-  consistency, throughput, observability), 4 working artifacts.
-  The library is now meaningfully content-rich, not infrastructure
-  with one reference article. Next phase: Unit 7 — pipeline. Owner
-  has requested an upfront architecture review covering the four
-  stages (discover, fetch, analyze, generate), the orchestrator,
-  and the SQLite metadata schema before any code is written.
+- **Phase 5 closed; Phase 6 = manual editorial publication
+  cadence.** All four chat-conversation artifact backfills shipped
+  and verified on prod. Library state: 4 articles (Stripe /
+  Skipper / Airbnb monitoring / Uber Cinnamon), 11 patterns
+  spanning all four canonical categories (resilience, consistency,
+  throughput, observability), 4 working artifacts. Unit 7
+  (pipeline) was scoped end-to-end during the architecture review
+  on 2026-06-04 and then deferred indefinitely; the project enters
+  manual editorial authoring at a sustained 3-articles-per-week
+  floor. The unit-numbered, architecturally-shaped engineering
+  rhythm of Phases 1–5 gives way in Phase 6 to descriptively-named
+  per-article publication commits.
+
+## Current Operating Mode
+
+Manual editorial authoring. Akhil reads engineering blogs, drafts
+dissections in conversation with Claude (chat partner), and hands
+files to the Claude Code agent for commit and prod verification.
+Sustained cadence target: 3 articles per week (treated as a floor,
+exceed when bandwidth allows). Reassess at week 8 (counting from
+2026-06-04) with data on actual cadence and quality consistency.
 
 ## Current Goal
 
@@ -566,23 +577,38 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-1. **Unit 7 — Pipeline architecture review + four stages.**
-   Upfront architecture review covering the four stages (discover,
-   fetch, analyze, generate), the orchestrator (`pipeline/run.ts`,
-   `npm run study`), and the SQLite metadata schema. Owner reviews
-   the architecture before code lands; sub-units (one per stage,
-   one for the orchestrator) ship without per-sub-unit design
-   intent. The Proposed Pattern Queue mechanism
-   (architecture.md) is part of the analyze stage.
-6. **Unit 7 — Pipeline `discover` stage** (RSS fetch + filter + score +
-   SQLite), reading sources from the allowlist. Also: implement the
-   Proposed Pattern Queue mechanism (architecture.md) — strip-and-log
-   proposed-but-undefined pattern slugs, three publish states.
-7. **Unit 8 — Pipeline orchestrator** (`pipeline/run.ts`, `npm run study`).
-   Design-intent paragraph requested before code.
+1. **5f — first new article from candidate list.** First manual-mode
+   publication. Article selection is the owner's call; current
+   candidates under consideration include Slack shared channels,
+   Discord trillion messages, Netflix active-active, Cloudflare
+   Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
+   LinkedIn Brooklin. Commit shape becomes descriptive rather than
+   unit-numbered (`feat: publish <article-slug>` with the
+   accompanying patterns + artifact bundle in one commit). Awaiting
+   the owner's URL + dissection-in-conversation from chat.
 
 ## Deferred Work
 
+- **Unit 7 (pipeline) and Unit 8 (orchestrator) — deferred
+  indefinitely as of 2026-06-04.** The full architecture was
+  scoped end-to-end (four stages, SQLite schema, Claude
+  integration, draft-artifact handoff, twelve open questions) and
+  preserved at `context/pipeline-architecture-deferred.md`. The
+  decision rests on three reasons: (1) behindscale's quality bar
+  is the editorial taste developed across the four hand-authored
+  chat artifacts, and manual authoring keeps that taste applied
+  consistently while pipeline-assisted authoring would risk drift
+  toward generic structural extraction — at 4 articles the
+  problem is habit formation, not scaling; (2) the pipeline is a
+  3-4 week engineering investment whose payoff is back-loaded,
+  and building it now would force a publication pause during the
+  period when audience-building and cadence rhythm most need
+  momentum; (3) the owner is committing to a sustained 3-article-
+  per-week manual cadence (floor, not ceiling) and we reassess at
+  the 8-week mark (counting from 2026-06-04) with real cadence
+  and quality-consistency data. Revisit triggers: scaling
+  friction shows up in the manual rhythm, or the 8-week
+  reassessment surfaces a decision to scale through automation.
 - **Post-Unit 3e — Edge-case fixtures for the pattern detail page.**
   Hand-author small fixture pattern definitions covering: uncategorized
   (no `category`), empty `whenItApplies`, very long `definition`. Each
