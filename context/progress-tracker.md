@@ -4,18 +4,16 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 5 closed; Phase 6 = manual editorial publication
-  cadence.** All four chat-conversation artifact backfills shipped
-  and verified on prod. Library state: 4 articles (Stripe /
-  Skipper / Airbnb monitoring / Uber Cinnamon), 11 patterns
-  spanning all four canonical categories (resilience, consistency,
-  throughput, observability), 4 working artifacts. Unit 7
-  (pipeline) was scoped end-to-end during the architecture review
-  on 2026-06-04 and then deferred indefinitely; the project enters
-  manual editorial authoring at a sustained 3-articles-per-week
-  floor. The unit-numbered, architecturally-shaped engineering
-  rhythm of Phases 1–5 gives way in Phase 6 to descriptively-named
-  per-article publication commits.
+- **Phase 6 underway: manual editorial publication cadence.**
+  Phase 5 closed with all four chat-conversation backfills; Unit 7
+  (pipeline) is deferred indefinitely per the 2026-06-04 decision.
+  First manual-mode publication (5f, Discord trillions of messages)
+  shipped 2026-06-09. Library state: **5 articles, 15 patterns, 5
+  working artifacts.** All four canonical pattern categories
+  realized with strong examples across resilience, consistency,
+  throughput, observability. Source filter shows 4 chips. Cadence
+  target: 3 articles/week floor; reassess at week 8 (counting from
+  2026-06-04) with real cadence + quality-consistency data.
 
 ## Current Operating Mode
 
@@ -77,6 +75,58 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **5f — Discord: How Discord Indexes Trillions of Messages (first
+  Phase 6 publication).** Discord Engineering's 2025 retrospective
+  on the 2017→2025 message-search architecture evolution. The 2017
+  application-layer-sharding decision survives; every other
+  component is replaced (Redis-as-buffer → PubSub with guaranteed
+  delivery; two big clusters → ~40 small ones grouped into cells;
+  cross-destination bulk indexing → destination-batched routing;
+  outlier guilds approaching Lucene's 2B MAX_DOC → multi-shard BFG
+  cell with dual-index-then-cutover migration). Added 4 new
+  patterns + a cross-reference to the existing `fault-isolation`
+  pattern:
+  - `application-layer-sharding` (throughput) — moving the
+    where-data-lives decision into application code rather than
+    the storage system's internal sharding. Likely to recur
+    broadly.
+  - `cell-architecture` (resilience) — independent self-contained
+    units as the architectural primitive; each cell is the unit of
+    capacity, isolation, and operational reasoning.
+  - `queue-with-guaranteed-delivery` (resilience) — persistent
+    queues vs. buffers-pretending-to-be-queues; the principle:
+    if your queue's failure mode under pressure is data loss, you
+    don't have a queue.
+  - `batched-routing-by-destination` (throughput) — group items by
+    downstream destination before issuing each bulk operation;
+    keeps each bulk operation's fault domain narrow.
+  Artifact at `content/artifacts/discord-trillions-message-search.jsx`
+  is a four-tab walkthrough (2017 → The Four Cracks → 2025 Cells →
+  BFG) with Discord-brand indigo (#5865F2) accent; 160 kB compiled
+  bundle; self-contained on `useState`.
+  - **content/feeds.json backfill** to invariant-7 parity. Adds
+    Airbnb Engineering, Discord Engineering, and Uber Engineering
+    alongside the existing Stripe Engineering entry. Source blocks
+    copied verbatim from the corresponding articles. The
+    pipeline-side `source-matches-allowlist` validator check
+    (deferred Unit 7 deliverable) would have caught the gap;
+    backfilling here avoids carrying the inconsistency forward.
+  - Library state after 5f: **5 articles, 15 pattern definitions,
+    5 working artifacts.** The `fault-isolation` pattern gains its
+    first two-article cross-reference (Airbnb monitoring +
+    Discord), exercising the multi-article "Seen in" path on the
+    pattern detail page in production for the first time. The
+    Discord Engineering source chip is the fourth source filter on
+    `/`.
+  - Bundle: CSS 43.55 kB / JS 271.52 kB (+34 kB JS over 5e for the
+    bundled new content + feeds.json).
+  - Verification: `npm run validate` clean (3 checks, 0 errors);
+    `npm run compile-artifacts` ok for all 5 artifacts; `npm run
+    build` end-to-end clean; `npm test` 49/49; local
+    `npm run test:e2e` 1/1 in 2.2 s; **production smoke
+    `npm run test:e2e:prod` against https://www.behindscale.com
+    green after the Vercel auto-deploy of `fd99a80` landed** —
+    1/1, 2.2 s test, 4.0 s end-to-end.
 - **Unit 5e — Uber Intelligent Load Management artifact (closes
   Phase 5).** Last of the four chat-conversation artifact backfills.
   Added `content/articles/uber-intelligent-load-management.json`
@@ -560,14 +610,13 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Phase 5 closed. Unit 5e verified on prod (1/1 smoke
-  against https://www.behindscale.com, 2026-06-02). **Next: Unit 7
-  — pipeline.** Owner has asked for an upfront architecture review
-  covering the four stages (discover, fetch, analyze, generate),
-  the orchestrator, and the SQLite metadata schema before any code
-  is written. Sub-units will then be implemented without
-  per-sub-unit design intent review — architecture decisions live
-  in the upfront review, not in each stage.
+- None — 5f (Discord) shipped and verified on prod
+  (1/1 smoke against https://www.behindscale.com, 2026-06-09).
+  Next manual-mode publication awaiting the owner's article choice
+  from the remaining candidate list (Slack shared channels, Discord
+  trillion messages [done as 5f], Netflix active-active, Cloudflare
+  Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
+  LinkedIn Brooklin).
 
 ## Developer Setup
 
@@ -577,15 +626,13 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Next Up
 
-1. **5f — first new article from candidate list.** First manual-mode
-   publication. Article selection is the owner's call; current
-   candidates under consideration include Slack shared channels,
-   Discord trillion messages, Netflix active-active, Cloudflare
-   Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
-   LinkedIn Brooklin. Commit shape becomes descriptive rather than
-   unit-numbered (`feat: publish <article-slug>` with the
-   accompanying patterns + artifact bundle in one commit). Awaiting
-   the owner's URL + dissection-in-conversation from chat.
+1. **Next Phase 6 publication.** Owner's article choice from the
+   remaining candidate list (Slack shared channels, Netflix
+   active-active, Cloudflare Prometheus, Meta FOQS, GitHub
+   sharding, DoorDash internal tools, LinkedIn Brooklin), or any
+   newly-surfaced piece. Same shape as 5f:
+   `feat: publish <article-slug>` bundling article + patterns +
+   artifact in one commit.
 
 ## Deferred Work
 
