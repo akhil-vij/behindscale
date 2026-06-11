@@ -22,6 +22,134 @@ committed to the repo (the "content contract").
 | Content store    | Flat files (JSON + JSX/HTML) in repo| Source of truth for what the site renders                   |
 | Hosting / CI     | Vercel                              | Auto-deploy on push to `main`; preview deploys per PR       |
 
+## Rendering
+
+> Locked in Unit 9 (2026-06-11), superseding the HashRouter +
+> client-only SPA model from Unit 3a. See `progress-tracker.md`
+> Architecture Decisions for the rationale and the rejected
+> alternative (`vite-react-ssg`).
+
+behindscale renders to **per-route static HTML at build time**. The
+build emits one HTML file per known route — every article, every
+pattern, the article index, the patterns index, the 404 — with
+content, head tags, meta tags, OpenGraph + Twitter card tags,
+canonical tags, and (for article pages) JSON-LD `Article` structured
+data baked into the served HTML. Crawlers, link-preview unfurlers,
+screen readers, and any other non-JavaScript reader receive the full
+page on first byte.
+
+**Mechanism.** A custom prerender script (`scripts/prerender.ts`)
+runs after `vite build` produces the client bundle and
+`vite build --ssr src/ssr-entry.tsx --outDir dist-ssr` produces the
+SSR bundle. The script reads `dist/index.html` as a template (Vite
+has already injected the hashed `<script>` and
+`<link rel="stylesheet">` tags into that file), uses
+`react-dom/server`'s `renderToString` with `react-router-dom`'s
+`StaticRouter` to render each route's React component tree to HTML,
+splices the per-route head tags and rendered body into the template,
+and writes one file per route to `dist/`. Head tags and JSON-LD
+inject as string interpolation from the article and pattern JSON the
+script already has in hand — no head-context library, no
+react-helmet-async dependency.
+
+Routes are enumerable at build time from `articleBySlug.keys()`,
+`patternBySlug.keys()`, and the static route table (`/`,
+`/patterns`, `/404`). The same React components run twice: once at
+build time (Node, `renderToString` + `StaticRouter`) to produce
+HTML, once at runtime (browser, `hydrateRoot` + `BrowserRouter`) to
+take over interactivity for navigation, the source filter, and the
+artifact iframe HEAD probe.
+
+**Defensive properties of the prerender script (locked):**
+
+1. Every string replacement in the template asserts the needle
+   exists before replacing and that the output differs from the
+   input after. A drifted template — someone edits `<title>` in
+   `index.html`, Vite changes how it emits the root div, whitespace
+   shifts — makes the replacement no-op silently and ship empty
+   pages, precisely the regression this unit exists to prevent. The
+   script throws on either failure; the build refuses to emit a
+   page it couldn't fully populate.
+2. JSON-LD inline injection escapes `<` to `\u003c` after
+   `JSON.stringify` to prevent script-tag breakout when an article
+   summary or title legitimately contains `</script>` (a dissection
+   about HTML sanitization is plausible for this site). The escape
+   is valid JSON, parses identically, cannot close the tag.
+3. Attribute-context escape helper covers `&`, `<`, `>`, `"`, `'` —
+   not just the three HTML-content characters.
+
+**Hydration model.** SSG renders the unfiltered article index on
+first paint. Filtered arrivals at `/?source=<slug>` apply the
+filter from state set in a `useEffect` immediately after mount, so
+the hydrated DOM matches the server-rendered DOM on first paint and
+the filter resolves on next tick. There is one `dist/index.html` for
+all source-filter arrivals — no per-query-string HTML files. The SEO
+benefit of source-filter URLs being indexable is small (they're
+navigation surfaces, not content surfaces); the hydration-mismatch
+cost of doing it the other way is real.
+
+**JSON-LD field map** (per article page, locked verbatim):
+
+```jsonc
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline":         "<article.title>",
+  "description":      "<article.summary>",
+  "datePublished":    "<article.addedAt>",
+  "dateModified":     "<article.addedAt>",
+  "author":           { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
+  "publisher":        { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
+  "mainEntityOfPage": "https://www.behindscale.com/articles/<slug>",
+  "image":            "https://www.behindscale.com/og-default.png",
+  "isBasedOn": {
+    "@type": "Article",
+    "url":   "<article.url>",
+    "datePublished": "<article.publishedAt>",
+    "publisher": { "@type": "Organization", "name": "<article.source.name>", "url": "<article.source.url>" }
+  },
+  "citation": "<article.url>"
+}
+```
+
+The map describes the page as behindscale's dissection of the source
+post — not the source post itself. `isBasedOn` and `citation`
+attribute the original to its publisher; `author` / `publisher` /
+`mainEntityOfPage` attribute the dissection to behindscale.
+**`isBasedOn` deliberately omits `name`**: behindscale's title is
+editorial and may diverge from the source post's title; asserting
+the source published under our title would be misattribution. URL +
+publisher is sufficient identification; if a future `originalTitle`
+field is added to the content contract, `name` can return inside
+`isBasedOn`. `dateModified` equals `datePublished` until a future
+`updatedAt` field exists; that field then sources `dateModified`
+without redefinition.
+
+**Deploy.** Vercel serves the per-route HTML files directly.
+`vercel.json` pins `cleanUrls: true` and `trailingSlash: false`:
+`/articles/foo` maps to `dist/articles/foo.html` with no extension
+and no trailing slash; `/articles/foo/` 308-redirects to
+`/articles/foo`. Unknown paths get `dist/404.html` with a 404 status
+code — the 404 is itself prerendered as a React `NotFound`
+component routed through `/404` like every other static route, so
+it inherits the navbar and styling; Vercel automatically serves
+`dist/404.html` for unknown paths.
+
+**Sitemap + robots.** `scripts/generate-sitemap.ts` emits
+`dist/sitemap.xml` listing every prerendered route except `/404`
+(404 pages don't belong in sitemaps), plus `dist/robots.txt`
+pointing at the sitemap. Article `lastmod` is the article's
+`addedAt`. Pattern `lastmod` is derived as `max(addedAt)` over
+articles referencing that pattern (truthful: the page's content
+last changed when its newest referencing article landed).
+
+**Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
+placed before the main.tsx script tag in `index.html` so it runs on
+first paint before React mounts. On detecting a `#/` prefix in
+`location.hash`, the script `location.replace`s to the canonical
+path. Catches every URL shared before Unit 9 in one move, no
+flash, no race.
+
 ## System Boundaries
 
 > **Pipeline status: deferred from active implementation as of
@@ -343,9 +471,16 @@ only the pipeline reads them.)
 
 ## Invariants
 
-1. The website performs no network calls or dynamic data fetching at request
-   time. It renders only pre-generated files from `content/` and
-   `public/artifacts/`. (Static-by-construction.)
+1. **Static-by-construction.** Per-route content is present in the
+   served HTML at build time via SSG (see Rendering section). The
+   only runtime network activity is artifact iframe loads and their
+   HEAD availability probe — progressive enhancements, not content
+   dependencies. The original wording (Unit 1) read "the website
+   performs no network calls or dynamic data fetching at request
+   time," which captured the no-fetch property but missed the
+   no-runtime-computation property — exactly the gap that made the
+   SEO miss possible in Unit 9. The current phrasing makes both
+   explicit: content first, network only for enhancements.
 2. **Artifact fault isolation and containment.** Each interactive
    artifact renders in its own sandboxed iframe. A single malformed or
    failing artifact must never break the site build or affect any

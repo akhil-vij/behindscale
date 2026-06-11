@@ -4,16 +4,18 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 underway: manual editorial publication cadence.**
-  Phase 5 closed with all four chat-conversation backfills; Unit 7
-  (pipeline) is deferred indefinitely per the 2026-06-04 decision.
-  First manual-mode publication (5f, Discord trillions of messages)
-  shipped 2026-06-09. Library state: **5 articles, 15 patterns, 5
-  working artifacts.** All four canonical pattern categories
-  realized with strong examples across resilience, consistency,
-  throughput, observability. Source filter shows 4 chips. Cadence
-  target: 3 articles/week floor; reassess at week 8 (counting from
-  2026-06-04) with real cadence + quality-consistency data.
+- **Phase 6: cadence paused for one architecturally-shaped
+  engineering unit.** Unit 9 (SSG + SEO foundation, locked
+  2026-06-11) is the first such unit since Phase 6 began.
+  Triggered by an SEO diagnosis on 2026-06-11: a Googlebot fetch
+  of `/#/patterns` returned the empty SPA shell, exposing that
+  the HashRouter decision (Unit 3a) and the SPA rendering model
+  together made every URL on the site identical to crawlers,
+  link-preview unfurlers, and screen readers. Article publication
+  cadence resumes after Unit 9 lands and prod-verifies. Library
+  state at pause: 5 articles, 15 patterns, 5 artifacts; the
+  reassessment window from 2026-06-04 still applies and is
+  paused for the duration of the unit.
 
 ## Current Operating Mode
 
@@ -610,13 +612,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — 5f (Discord) shipped and verified on prod
-  (1/1 smoke against https://www.behindscale.com, 2026-06-09).
-  Next manual-mode publication awaiting the owner's article choice
-  from the remaining candidate list (Slack shared channels, Discord
-  trillion messages [done as 5f], Netflix active-active, Cloudflare
-  Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
-  LinkedIn Brooklin).
+- **Unit 9 — SSG + SEO foundation, supersedes HashRouter (Unit
+  3a).** Per-route static HTML at build time via a custom prerender
+  script over first-party primitives (`react-dom/server`'s
+  `renderToString` + `react-router-dom`'s `StaticRouter` + Node
+  `fs`); per-route title/description/canonical/OG/twitter:card and
+  JSON-LD `Article` structured data; sitemap.xml + robots.txt;
+  prerendered `dist/404.html`; legacy `#/...` URL redirect shim;
+  `vercel.json` for `cleanUrls` + no-trailing-slash. Three commits,
+  in order: (1) `chore: add addedAt to Article schema + backfill`
+  (atomic content-contract change so the SEO unit consumes a field
+  that already exists); (2) this docs commit locking the
+  architecture decision; (3) `feat: unit 9 -- SSG + SEO foundation`
+  with the implementation in one shot. Defensive properties locked
+  in the `architecture.md` Rendering section (loud template
+  assertions, JSON-LD `\u003c` escaping, two-pass `?source=foo`
+  hydration). See Architecture Decisions below for the SSG lock +
+  the HashRouter supersede + the `vite-react-ssg` loser's
+  paragraph.
 
 ## Developer Setup
 
@@ -685,6 +698,45 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Rendering: per-route SSG at build time** (Unit 9, 2026-06-11).
+  The website renders to one HTML file per known route at build
+  time via `scripts/prerender.ts`, using `react-dom/server`'s
+  `renderToString` + `react-router-dom`'s `StaticRouter`,
+  templating off `dist/index.html` to inherit Vite's already-
+  injected asset paths and stylesheet links. The same components
+  run again at runtime via `hydrateRoot` + `BrowserRouter` for
+  interactivity. Implementation: ~200 lines of glue over
+  first-party primitives. Rationale: matches the content's actual
+  shape (fully known at build time) better than the SPA model did;
+  produces real HTML for crawlers, link-preview unfurlers, screen
+  readers, and accessibility tools; aligns with invariant 1's
+  spirit (content available without runtime computation, not just
+  without runtime fetch). The `architecture.md` Rendering section
+  documents the full contract including defensive properties,
+  JSON-LD field map, sitemap derivation, and deploy semantics.
+- **vite-react-ssg evaluated, rejected** (Unit 9, 2026-06-11).
+  A community-maintained Vite SSG library for React
+  (`Daydreamer-riri/vite-react-ssg`, v0.9.0, single maintainer,
+  pre-1.0). Technically viable for our exact stack — Vite 5 +
+  React 18 + react-router-dom v6 — with a clean `<Head>`
+  primitive (react-helmet-async wrapper), configurable emit
+  shape (`dirStyle: 'flat'` matches our trailing-slash policy),
+  and `includedRoutes` enumeration matching `articleBySlug` /
+  `patternBySlug`. Rejected on two grounds: (1) single-maintainer
+  pre-1.0 beta on a load-bearing path concentrates upgrade-cycle
+  risk on a third party we don't control; (2) the custom-prerender
+  alternative, once simplified by templating off `dist/index.html`
+  and skipping the head-context library, lands at ~200 lines of
+  glue over first-party primitives (`react-dom/server`,
+  `react-router-dom`'s StaticRouter, Node `fs`) — a stronger
+  dependency position than the library trade-off implied at first
+  read. Revisit if the custom script's upgrade cost exceeds
+  expectations at the next React or Vite major (failure case:
+  hydration semantics or SSR globs break in a way our script
+  can't paper over with a small patch). The library remains a
+  contained fallback — same emit shape, same `vercel.json`, same
+  hash shim, same JSON-LD — so the migration cost in that
+  scenario is bounded.
 - **Static site, no DB/auth on the website.** The site renders only
   pre-generated files; all dynamic work is in the build-time pipeline.
   Rationale: a personal/public learning library has no per-user state needs;
@@ -733,7 +785,18 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 - **Prompts treated as versioned code** under `pipeline/prompts/`. Rationale:
   artifact/summary quality depends on prompt quality; it must be reviewable
   and improvable over time.
-- **Hash-based routing** (`react-router-dom` with `HashRouter`). Rationale:
+- **Hash-based routing** (`react-router-dom` with `HashRouter`).
+  **SUPERSEDED by Unit 9 (2026-06-11; see "Rendering: per-route SSG"
+  above). The premise of this decision — GitHub Pages SPA-routing
+  compatibility — expired when hosting moved to Vercel in Unit 3f.
+  SEO surfaced the cost of not revisiting on 2026-06-11: crawlers
+  and link-preview unfurlers saw the empty SPA shell for every URL,
+  making the whole library invisible to organic discovery and
+  shareability. The evolution-not-revision framing applies: the
+  original choice was right for its stated premise, the premise
+  changed, and the cost compounded silently until an external signal
+  made it visible. Original rationale preserved below for the
+  record.** Rationale:
   GitHub Pages does not natively serve SPA routes under browser history —
   visiting `/articles/foo` directly returns 404 unless we add a `404.html`
   redirect shim, which is fragile. Hash routes (`#/articles/foo`) are served
