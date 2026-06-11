@@ -4,16 +4,19 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 resumed: Unit 9 (SSG + SEO foundation) landed and
-  prod-verified on 2026-06-11.** Per-route static HTML at build
-  time now ships for all 23 routes (1 home + 1 patterns index +
-  5 articles + 15 patterns + 1 404); JSON-LD `Article`
-  structured data is baked into each article page; sitemap.xml
-  + robots.txt + a real `dist/404.html` serve from production.
-  Article publication cadence resumes from Phase 6's manual
-  editorial mode. Library state: 5 articles, 15 patterns, 5
-  artifacts. The reassessment window from 2026-06-04 still
-  applies, paused during Unit 9.
+- **Phase 6: cadence paused for one more architecturally-shaped
+  unit before article #6.** Unit 9 (SSG + SEO foundation) landed
+  and prod-verified on 2026-06-11; one iframe regression from
+  Unit 9's `cleanUrls` was caught and fixed within the hour
+  (`fix:` commit `a6a31af`). Editorial review (Fable + Akhil)
+  the same day surfaced Unit 10 — article reading arc +
+  instrumentation — gating article #6 on a measurement
+  foundation so the funnel pageview → artifact_viewed →
+  artifact_interacted exists before new content lands. Article
+  publication cadence resumes after Unit 10's feat commit lands
+  and prod-verifies. Library state at pause: 5 articles, 15
+  patterns, 5 artifacts. The reassessment window from
+  2026-06-04 still applies, paused during Units 9 + 10.
 
 ## Current Operating Mode
 
@@ -699,20 +702,50 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Unit 9 shipped and prod-verified on 2026-06-11 (prod
-  smoke 2/2 against https://www.behindscale.com, including the
-  new hash-redirect journey test); one Unit-9-introduced
-  regression on artifact iframes was caught + fixed within the
-  hour as a follow-up `fix:` commit (see Completed). Next
-  manual-mode publication awaiting the owner's article choice
-  from the candidate list (Slack shared channels, Netflix
-  active-active, Cloudflare Prometheus, Meta FOQS, GitHub
-  sharding, DoorDash internal tools, LinkedIn Brooklin). One
-  known follow-up open: a `public/og-default.png` (1200x630,
-  dark token palette + wordmark) to replace the 404 that
-  unfurlers currently get on the `og:image` URL; not a blocker
-  (unfurlers degrade gracefully and still render title +
-  description), can land as a small chore commit anytime.
+- **Unit 10 — Article reading arc + instrumentation (gates
+  article #6).** Five deliverables: (1) artifact placement
+  moves from page-end to between Solution and Tradeoffs, with
+  `id="artifact"` anchor; (2) `ArtifactTeaser` card after
+  summary, sourced from new optional `artifact.teaser` field
+  (specificity principle: no generic fallback); (3) `StatCallout`
+  components rendered between prose sections, sourced from new
+  optional `stats[]` with placement enum
+  `"problem" | "solution" | "tradeoffs"` and editorially
+  enforced by the `stats-value-in-prose` validator check (max
+  3, every value must appear in the article's own prose); (4)
+  pattern chips under the article header (wayfinding-vs-substance
+  split with the full bottom Patterns section); (5)
+  instrumentation via `@vercel/analytics` (free tier, client-only,
+  same invariant-1 class as the artifact HEAD probe) firing
+  `artifact_viewed` on IntersectionObserver and
+  `artifact_interacted` on first pointerdown delivered via
+  `postMessage` (cross-origin by design — the sandboxed iframe
+  has an opaque origin so `iframe.contentDocument` is
+  unreadable; this is the "never loosen sandbox, widen
+  postMessage" path from invariant 2 / Unit 5 instantiated).
+  - Three commits in order: (1) the preceding `chore: add
+    artifact.teaser + stats[] to Article schema` (`7f5958c`,
+    atomic content-contract change with a new fourth validator
+    check); (2) this docs commit locking the architecture
+    decision; (3) `feat: unit 10 -- article reading arc +
+    instrumentation` with the implementation in one shot. A
+    trailing `content:` commit lands once Fable's editorial
+    teaser strings + stats values are reviewed (does not block
+    the feat).
+  - Explicit deferrals recorded in Architecture Decisions
+    below: Tier 2 (`?view=` prose→artifact deep links via
+    parent→child postMessage), Tier 3 (scroll-synced sticky
+    artifact panel, desktop-only, prototype on one article
+    first — gated on Tier 1's measured funnel), per-article
+    OG card images. One explicit rejection recorded: any
+    side-by-side two-column layout (artifacts are designed for
+    ~960 px and break at half-column widths; reading and
+    simulating are competing cognitive modes; the rejection is
+    locked so it isn't re-litigated from scratch).
+  - Carry-over from Unit 9: `public/og-default.png` (1200×630,
+    dark token palette + wordmark) is still pending. Not a
+    blocker (unfurlers degrade gracefully); can ride along in
+    Unit 10's feat commit or land separately.
 
 ## Developer Setup
 
@@ -732,6 +765,37 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Deferred Work
 
+- **Tier 2: prose → artifact-state deep links** (`?view=` URL
+  param protocol; parent→child postMessage). Surfaced during
+  Unit 10's editorial review (2026-06-11). The article page
+  could deep-link from a specific prose paragraph into the
+  artifact's matching state ("click here to simulate this
+  failure mode"), wiring read-then-interact down to the
+  sentence level. Requires a new parent→child postMessage
+  protocol (today's Unit 10 protocol is child→parent only,
+  for telemetry). Gated on Tier 1 (Unit 10) shipping and
+  showing meaningful artifact engagement first; building the
+  deep-link infrastructure before the basic funnel is measured
+  inverts effort and risk.
+- **Tier 3: scroll-synced sticky artifact panel** (desktop-only,
+  prototype on one article first). Surfaced during Unit 10's
+  editorial review (2026-06-11). The artifact pins to the
+  viewport while the reader scrolls through prose; the
+  artifact's state updates to match the section the reader
+  is currently reading. Higher-ambition variant of Tier 2;
+  most engagement uplift potential and most implementation
+  complexity. Explicitly gated on Tier 1's measured funnel —
+  if `artifact_viewed` and `artifact_interacted` rates from
+  Unit 10 indicate readers are already reaching and engaging
+  with the bottom-of-page or mid-page artifact, Tier 3's
+  return shrinks. Prototype on one article (likely the
+  artifact-richest one, Uber Cinnamon) before generalizing.
+- **Per-article OpenGraph card images.** Generated at build
+  time from the article JSON (title + source + accent color).
+  Replaces the single `public/og-default.png` fallback with
+  per-article unfurls. Out of scope for Unit 10 (which is
+  focused on the on-page reading arc + instrumentation);
+  carries over from Unit 9's same-named follow-up.
 - **Unit 7 (pipeline) and Unit 8 (orchestrator) — deferred
   indefinitely as of 2026-06-04.** The full architecture was
   scoped end-to-end (four stages, SQLite schema, Claude
@@ -781,6 +845,77 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Article reading arc: artifact between Solution and Tradeoffs**
+  (Unit 10, 2026-06-11). Section order on every article page is
+  `header → top pattern chips (wayfinding) → summary → artifact
+  teaser → Problem → Solution → [ARTIFACT EMBED] → Tradeoffs →
+  Patterns (full)`. Rationale: the learning arc is
+  understand-problem → understand-solution → interact → read
+  tradeoffs with hands-on intuition. Tradeoffs land harder after
+  the reader has toggled a failure mode themselves; the full
+  patterns section stays last as the zoom-out beat. The width
+  discontinuity (720 px prose → 960 px artifact breakout →
+  720 px prose) is by design, matching the Stripe Docs / Notion
+  precedent; recorded here so the visual judgment isn't
+  re-debated when someone proposes containing the artifact at
+  720 px later. Locked in `architecture.md` Article Reading Arc
+  section.
+- **Editorial discipline: stats are a lift, not a source**
+  (Unit 10, 2026-06-11). Article.stats[] is a strict editorial
+  surface: at most 3 per article, every value must appear in
+  the article's own prose (problem/solution/tradeoffs/summary).
+  Zero is fine — an article without strong figures ships
+  without callouts rather than with weak ones. The
+  `stats-value-in-prose` validator check (the fourth, joining
+  orphan-pattern-slugs / minimum-pattern-coverage /
+  artifact-path-matches-slug) enforces both constraints with
+  best-effort normalization (strip `+`, `%`, `,`, whitespace;
+  lowercase) so `+80%` matches "80 percent" and `3.1 s`
+  matches `3.1s`. Flag, don't block, on fuzzy misses. Locks
+  the same pattern as the previous editorial-rigor checks:
+  the validator is the enforcement layer; the prose is the
+  source of truth. The teaser card follows the same shape:
+  no generic fallback, specificity over presence.
+- **Artifact interaction telemetry uses postMessage**
+  (Unit 10, 2026-06-11; instantiates the Unit 5 "never loosen
+  sandbox, widen postMessage" decision). The
+  `artifact_interacted` analytics event fires on first
+  pointerdown inside the artifact iframe and is delivered via
+  `window.parent.postMessage({ type: 'artifact:interacted',
+  slug })` with target origin `'*'`. The cross-origin design
+  is mandatory, not preferential: the iframe sandbox is
+  `allow-scripts` *without* `allow-same-origin` (architecture
+  invariant 2 — locked in Unit 5b), which gives the iframe an
+  opaque origin (`event.origin === "null"` on the parent
+  side). Parent gating uses **source comparison**
+  (`event.source === iframeRef.current?.contentWindow`), not
+  origin comparison — an origin allowlist would be meaningless
+  when every sandboxed message arrives with origin `"null"`.
+  The brief's original proposal (read `iframe.contentDocument`
+  for a pointerdown listener) is structurally impossible
+  under this sandbox; surfaced during scope review and folded
+  in before the feat commit, with a smoke test step that
+  would have caught it shipping silently.
+- **Two-column article layout — rejected** (Unit 10,
+  2026-06-11). Evaluated during the editorial review that
+  produced Unit 10. Rejected: artifacts are designed for
+  ~960 px and break at half-column widths; reading and
+  simulating are competing cognitive modes; mobile is
+  unaffected either way (single-column at both widths).
+  Recorded here so the rejection isn't re-litigated from
+  scratch the next time a "reading + interactive side by
+  side" proposal surfaces.
+- **Analytics is a progressive enhancement, not content**
+  (Unit 10, 2026-06-11; Vercel Analytics free tier). Mounted
+  client-only, never invoked during SSR or referenced in
+  render paths. The framing is the same class as the
+  artifact iframe HEAD probe — runtime network activity for
+  *enhancements*, not for content delivery. Invariant 1's
+  Unit 9 wording ("content available without runtime
+  computation") is untouched: analytics events are not
+  content, so the no-runtime-computation property still
+  holds for everything Google or any other crawler indexes.
+  Pre-defends the next invariant-1 revisit.
 - **Rendering: per-route SSG at build time** (Unit 9, 2026-06-11).
   The website renders to one HTML file per known route at build
   time via `scripts/prerender.ts`, using `react-dom/server`'s

@@ -150,6 +150,94 @@ first paint before React mounts. On detecting a `#/` prefix in
 path. Catches every URL shared before Unit 9 in one move, no
 flash, no race.
 
+## Article Reading Arc
+
+> Locked in Unit 10 (2026-06-11). The article page's section order,
+> the artifact's pedagogical placement, the editorial-discipline
+> hooks (`artifact.teaser`, `stats[]`), and the cross-origin
+> instrumentation protocol. See `progress-tracker.md` Architecture
+> Decisions for the rationale and the explicit deferrals (Tier 2
+> deep links, Tier 3 sticky panel, per-article OG cards,
+> two-column rejection).
+
+**Section order on every article page** (the reading arc):
+
+```
+header → pattern chips (wayfinding) → summary → artifact teaser
+→ Problem → Solution → [ARTIFACT EMBED] → Tradeoffs → Patterns (full)
+```
+
+The arc is **understand-problem → understand-solution → interact →
+read tradeoffs with hands-on intuition**. Tradeoffs land harder
+after the reader has toggled a failure mode themselves; the full
+patterns section stays last as the zoom-out beat. Pattern chips at
+the top are wayfinding for the is-this-worth-my-time scan; the
+bottom section is the substance with per-article notes.
+
+**Width discontinuity is by design.** Prose renders at 720 px; the
+artifact breakout renders at 960 px. The reader's eye crosses two
+width boundaries per article (in and out of the breakout). Stripe
+Docs and Notion both adopt this shape; recorded here so the visual
+judgment isn't re-debated when someone proposes containing the
+artifact at 720 px later. Mobile is unaffected (single-column at
+both widths).
+
+**Artifact teaser card** (rendered between summary and Problem,
+only when `article.artifact.teaser` is present). Dark surface in
+the artifact's visual language (`#08090D` background, JetBrains
+Mono, the artifact's accent color as a left border or label tint).
+One small `INTERACTIVE` label + the editorial teaser line + an
+anchor link to `#artifact` (the embed wrapper). **Specificity
+principle**: no generic fallback copy — a vague teaser is worse
+than none. The card activates per-article as teaser strings land in
+content, not at deploy time of the feat commit. On Unit 10's
+initial deploy, zero articles render the card; the field activates
+incrementally as Fable's editorial backfill commits land.
+
+**Stat callouts** (rendered between prose sections per
+`stat.placement`, only when `article.stats` is present). Large
+mono value + small label, accent-tinted. Editorial constraints
+enforced by the `stats-value-in-prose` validator check (Content
+Contract): at most 3 per article, every value must appear in the
+article's own prose. The field is a lift, not a source of new
+claims.
+
+**Instrumentation protocol**: per-article analytics events flow via
+`@vercel/analytics` (client-only, never mounted during SSR; a
+progressive enhancement of the same class as the artifact iframe
+HEAD probe — see invariant 1 wording).
+
+- `artifact_viewed` — fires once when the embed enters the
+  viewport. Implemented in `ArtifactEmbed` via
+  `IntersectionObserver` inside `useEffect`. Payload: `{ slug }`.
+- `artifact_interacted` — fires once on first pointerdown inside
+  the iframe, delivered via `postMessage`. **Cross-origin by
+  design**: the iframe runs with `sandbox="allow-scripts"` (no
+  `allow-same-origin`), giving it an opaque origin, so
+  `iframe.contentDocument` is unreadable from the parent. This is
+  the instantiation of invariant 2's "never loosen sandbox, widen
+  postMessage instead" decision (Unit 5).
+  - `scripts/compile-artifacts.ts` entryStub installs a one-time
+    `pointerdown` listener and posts
+    `{ type: 'artifact:interacted', slug }` to `window.parent`
+    with target origin `'*'`. The sandboxed frame's own origin is
+    opaque (`event.origin === "null"` on the parent side) and the
+    parent origin differs between local dev and production, so the
+    target-origin string can't be pinned at compile time. Origin
+    pinning happens on the receiving side instead.
+  - `ArtifactEmbed` listens for `message` events and accepts only
+    those where `event.source === iframeRef.current?.contentWindow`
+    and `event.data?.type === 'artifact:interacted'`. **Source
+    comparison, not origin comparison** — a sandboxed frame's
+    `event.origin` is literally the string `"null"`, which makes
+    origin-allowlist checks meaningless here. Source comparison is
+    the correct gating mechanism for the sandboxed-iframe → parent
+    direction.
+
+The funnel: pageview → `artifact_viewed` → `artifact_interacted`.
+This is the metric Tier 1 (Unit 10) measures and any future Tier 3
+prototype (deferred) must beat.
+
 ## System Boundaries
 
 > **Pipeline status: deferred from active implementation as of
