@@ -3,6 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Legacy hash redirect (Unit 9). Catches any visitor arriving at
+      // a #/...-shaped URL shared before Unit 9 and rewrites to the
+      // canonical path before React mounts. Inline, first script in
+      // <head>, runs on first paint.
+      (function () {
+        var h = location.hash
+        if (h && h.charAt(0) === '#' && h.charAt(1) === '/') {
+          // h.slice(1) already starts with '/', so replace it
+          // directly -- concatenating with location.pathname would
+          // produce a protocol-relative '//...' URL when on '/'.
+          location.replace(h.slice(1) + location.search)
+        }
+      })()
+    </script>
     <title>behindscale</title>
   </head>
   <body>

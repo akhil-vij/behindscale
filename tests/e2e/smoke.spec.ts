@@ -55,7 +55,7 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
       name: /designing robust and predictable apis with idempotency/i,
     })
     .click()
-  await expect(page).toHaveURL(/#\/articles\/stripe-idempotency$/)
+  await expect(page).toHaveURL(/\/articles\/stripe-idempotency$/)
   await expect(
     page.getByRole('heading', {
       level: 1,
@@ -102,7 +102,7 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   const yBeforeNav = await page.evaluate(() => window.scrollY)
   expect(yBeforeNav).toBeGreaterThan(0)
   await page.getByRole('link', { name: 'Atomic Phases' }).first().click()
-  await expect(page).toHaveURL(/#\/patterns\/atomic-phases$/)
+  await expect(page).toHaveURL(/\/patterns\/atomic-phases$/)
   await expect(
     page.getByRole('heading', { level: 1, name: 'Atomic Phases' }),
   ).toBeVisible()
@@ -116,18 +116,39 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
     page.getByRole('heading', { level: 2, name: 'Seen in' }),
   ).toBeVisible()
   // Scroll resets to top on route change so cross-route navigation
-  // doesn't land mid-page (the ScrollToTop component in App.tsx). Without
-  // this assertion, the bug that prompted it could regress silently.
+  // doesn't land mid-page (the ScrollToTop component in AppRoutes.tsx).
+  // Without this assertion, the bug that prompted it could regress silently.
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
 
   // 4. Click "Patterns" in the navbar -> /patterns.
   await page.getByRole('navigation').getByRole('link', { name: 'Patterns' }).click()
-  await expect(page).toHaveURL(/#\/patterns$/)
+  await expect(page).toHaveURL(/\/patterns$/)
   await expect(
     page.getByRole('heading', { level: 1, name: 'Patterns' }),
   ).toBeVisible()
   // The single sample PatternCard renders.
   await expect(
     page.getByRole('heading', { level: 3, name: 'Atomic Phases' }),
+  ).toBeVisible()
+})
+
+// Unit 9: legacy #/...-shaped URLs (shared before the SSG migration)
+// must redirect to the canonical path before React mounts. The hash
+// redirect shim in index.html is a five-line inline <script> in
+// <head>, placed before main.tsx. This test asserts the full journey:
+// navigate to a hash URL, land at the canonical path, the article h1
+// renders (so we know the redirect didn't drop us at the empty shell).
+test('legacy #/... URL redirects to canonical path and renders', async ({
+  page,
+}) => {
+  await page.goto('/#/articles/stripe-idempotency')
+  // The redirect is location.replace, so the final URL has no hash
+  // segment. Allow Playwright a beat to follow the navigation.
+  await expect(page).toHaveURL(/\/articles\/stripe-idempotency$/)
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: /designing robust and predictable apis with idempotency/i,
+    }),
   ).toBeVisible()
 })

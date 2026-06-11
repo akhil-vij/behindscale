@@ -7,7 +7,7 @@
     "dev": "vite",
     "validate": "tsx scripts/validate-content.ts",
     "compile-artifacts": "tsx scripts/compile-artifacts.ts",
-    "build": "npm run validate && npm run compile-artifacts && tsc -b && vite build",
+    "build": "npm run validate && npm run compile-artifacts && tsc -b && vite build && vite build --ssr src/ssr-entry.tsx --outDir dist-ssr && tsx scripts/prerender.ts && tsx scripts/generate-sitemap.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "test:e2e": "playwright test",

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { Source } from '../types'
 import { articles } from '../content'
@@ -31,7 +31,19 @@ function uniqueSourcesByName(): Source[] {
 
 export default function ArticleIndex() {
   const [searchParams] = useSearchParams()
-  const sourceFilter = searchParams.get('source')
+
+  // Two-pass hydration (Unit 9, architecture.md Rendering section).
+  // There is one dist/index.html for all source-filter arrivals;
+  // SSG emits the unfiltered article list. To match that on first
+  // paint -- and avoid React 18 hydration mismatches when a visitor
+  // lands directly at /?source=foo via a shared link -- we read the
+  // URL param in a useEffect rather than during render. First paint
+  // matches the server-rendered unfiltered list; the filter resolves
+  // immediately after mount.
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null)
+  useEffect(() => {
+    setSourceFilter(searchParams.get('source'))
+  }, [searchParams])
 
   const availableSources = useMemo(uniqueSourcesByName, [])
 
