@@ -27,5 +27,25 @@ export interface Article {
   patterns: PatternReference[]
   relatedArticles?: string[]
   generatedAt?: string
-  artifact: { path: string } | null
+  // Artifact pointer. `path` resolves to the compiled bundle at
+  // /artifacts/<slug>/index.html. Optional `teaser` is an editorial
+  // one-line description of what the reader can DO inside the
+  // artifact, surfaced by `ArtifactTeaser` between summary and Problem.
+  // Specificity principle (Unit 10): no generic fallback copy -- the
+  // teaser card renders only when `teaser` is present; a vague hook is
+  // worse than none.
+  artifact: { path: string; teaser?: string } | null
+  // Pull-stat callouts (Unit 10). Max 3 per article, editorially
+  // enforced by the stats-value-in-prose validator check. Each value
+  // must appear in this article's own prose (problem/solution/
+  // tradeoffs) -- the field is a lift, not a source of new claims.
+  // `placement` controls which prose section the callout renders
+  // after.
+  stats?: ArticleStat[]
+}
+
+export interface ArticleStat {
+  value: string
+  label: string
+  placement: 'problem' | 'solution' | 'tradeoffs'
 }

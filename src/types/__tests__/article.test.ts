@@ -117,4 +117,68 @@ describe('Article', () => {
   it('rejects when artifact is a plain string instead of an object or null', () => {
     expect(isArticle({ ...validArticle, artifact: '/artifacts/foo' })).toBe(false)
   })
+
+  it('accepts an artifact with the optional teaser field (Unit 10)', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        artifact: {
+          path: '/artifacts/foo/index.html',
+          teaser: 'Break each layer and watch what fails.',
+        },
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects when artifact.teaser is present but not a string', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        artifact: { path: '/artifacts/foo/index.html', teaser: 42 },
+      }),
+    ).toBe(false)
+  })
+
+  it('accepts an article with the optional stats array (Unit 10)', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        stats: [
+          { value: '+80%', label: 'throughput under overload', placement: 'solution' },
+          { value: '93%', label: 'fewer goroutines', placement: 'solution' },
+        ],
+      }),
+    ).toBe(true)
+  })
+
+  it('accepts stats with placement = "tradeoffs"', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        stats: [{ value: '3x', label: 'tuning effort', placement: 'tradeoffs' }],
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects stats when placement is not in the enum', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        stats: [{ value: '10x', label: 'speedup', placement: 'patterns' }],
+      }),
+    ).toBe(false)
+  })
+
+  it('rejects stats when an entry is missing label', () => {
+    expect(
+      isArticle({
+        ...validArticle,
+        stats: [{ value: '10x', placement: 'solution' }],
+      }),
+    ).toBe(false)
+  })
+
+  it('rejects when stats is present but not an array', () => {
+    expect(isArticle({ ...validArticle, stats: 'two of them' })).toBe(false)
+  })
 })

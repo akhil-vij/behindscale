@@ -300,16 +300,41 @@ Every per-article summary JSON in `content/articles/` conforms to the
   this article (distinct from `publishedAt`, which is the original post's
   date). Useful for "studied on X" UI affordances and for debugging
   re-runs.
-- `artifact` — required. Either `{ path: string }` — the relative path the
-  website loads into the iframe, e.g. `/artifacts/{slug}/index.html` — or
-  `null` when this article has no interactive artifact (summary-only
-  articles). **Missing artifacts are encoded as data (`null`), never
-  inferred from a filesystem 404.** This makes the iframe loader's
-  "skip + flag on bad entry" path (invariant 6) deterministic, and it
-  leaves room for summary-only articles without a special case.
-  Discriminated union shape (`{ path } | null`) is used in preference to
+- `artifact` — required. Either `{ path: string; teaser?: string }` —
+  the relative path the website loads into the iframe (e.g.
+  `/artifacts/{slug}/index.html`) plus an optional editorial teaser
+  line (Unit 10) — or `null` when this article has no interactive
+  artifact (summary-only articles). **Missing artifacts are encoded
+  as data (`null`), never inferred from a filesystem 404.** This
+  makes the iframe loader's "skip + flag on bad entry" path
+  (invariant 6) deterministic, and it leaves room for summary-only
+  articles without a special case. Discriminated union shape
+  (`{ path; teaser? } | null`) is used in preference to
   `{ path, hasArtifact }` so the impossible state
   `{ path: "/x", hasArtifact: false }` is unrepresentable.
+  - `artifact.teaser` (optional, Unit 10) — one-line editorial
+    description of what the reader can *do* inside the artifact,
+    surfaced by the `ArtifactTeaser` card between summary and
+    Problem. Specificity principle: no generic fallback copy. The
+    teaser card renders only when this field is present; a vague
+    hook is worse than none.
+- `stats` (optional, Unit 10) — an array of up to three pull-stat
+  callouts displayed inline between prose sections. Each entry:
+  - `value` — string, the figure to display (e.g. `"+80%"`,
+    `"3.1 s"`, `"93%"`).
+  - `label` — string, the short caption beneath the value.
+  - `placement` — one of `"problem" | "solution" | "tradeoffs"`,
+    controlling which prose section the callout renders after.
+  Editorial constraints, enforced by the `stats-value-in-prose`
+  validator check: **at most 3 entries per article** (zero is fine
+  — an article without strong figures ships without callouts
+  rather than with weak ones), and **every `value` must already
+  appear in the article's own prose** (problem/solution/tradeoffs/
+  summary). The field is a lift, not a source of new claims;
+  normalization is intentionally best-effort (strip `+`, `%`,
+  `,`, whitespace; lowercase) so `"+80%"` matches `"80 percent"`
+  and `"3.1 s"` matches `"3.1s"`. Flag, don't block, on fuzzy
+  misses.
 
 ### Patterns
 

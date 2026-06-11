@@ -14,6 +14,7 @@ import { render, type CheckResult } from './render-output'
 import { orphanPatternSlugs } from './checks/orphan-pattern-slugs'
 import { minimumPatternCoverage } from './checks/minimum-pattern-coverage'
 import { artifactPathMatchesSlug } from './checks/artifact-path-matches-slug'
+import { statsValueInProse } from './checks/stats-value-in-prose'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -23,6 +24,7 @@ const CHECKS: readonly Check[] = [
   orphanPatternSlugs,
   minimumPatternCoverage,
   artifactPathMatchesSlug,
+  statsValueInProse,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

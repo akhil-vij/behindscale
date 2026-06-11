@@ -101,6 +101,36 @@ export function checkArticle(value: unknown): Result {
   if (value.artifact !== null) {
     if (!isObject(value.artifact)) return fail('`artifact` expected object or null')
     if (typeof value.artifact.path !== 'string') return fail('`artifact.path` expected string')
+    if (
+      value.artifact.teaser !== undefined &&
+      typeof value.artifact.teaser !== 'string'
+    ) {
+      return fail('`artifact.teaser` expected string when present')
+    }
+  }
+  if (value.stats !== undefined) {
+    if (!Array.isArray(value.stats)) return fail('`stats` expected array when present')
+    for (let i = 0; i < value.stats.length; i++) {
+      const statResult = checkArticleStat(value.stats[i])
+      if (!statResult.ok) return fail(`\`stats[${i}]\`: ` + statResult.reason)
+    }
+  }
+  return ok
+}
+
+const STAT_PLACEMENTS = new Set(['problem', 'solution', 'tradeoffs'])
+
+export function checkArticleStat(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (typeof value.value !== 'string') return fail('`value` expected string')
+  if (typeof value.label !== 'string') return fail('`label` expected string')
+  if (typeof value.placement !== 'string') {
+    return fail('`placement` expected string')
+  }
+  if (!STAT_PLACEMENTS.has(value.placement)) {
+    return fail(
+      `\`placement\` must be "problem", "solution", or "tradeoffs" (got "${value.placement}")`,
+    )
   }
   return ok
 }
@@ -148,6 +178,7 @@ export const isPatternReference = (v: unknown): v is PatternReference =>
 export const isPatternDefinition = (v: unknown): v is PatternDefinition =>
   checkPatternDefinition(v).ok
 export const isArticle = (v: unknown): v is Article => checkArticle(v).ok
+export const isArticleStat = (v: unknown) => checkArticleStat(v).ok
 export const isPatternLibraryArticleRef = (v: unknown): v is PatternLibraryArticleRef =>
   checkPatternLibraryArticleRef(v).ok
 export const isPatternLibraryEntry = (v: unknown): v is PatternLibraryEntry =>
