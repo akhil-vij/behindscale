@@ -29,7 +29,16 @@ const ARTIFACTS_OUT_DIR = 'public/artifacts'
 // so the artifact paints something coherent even before its bundle
 // executes. Loads index.js as a module; the bundle does the React
 // mount inside its top-level error boundary (see entryStub below).
-const HTML_SHELL = `<!doctype html>
+//
+// The script src must be slug-absolute, NOT relative (./index.js).
+// Reason (Unit 9 regression caught 2026-06-11): Vercel's cleanUrls
+// 308-redirects /artifacts/<slug>/index.html -> /artifacts/<slug>
+// (no trailing slash). The browser then resolves a relative
+// `./index.js` against `/artifacts/`, asking for `/artifacts/index.js`
+// (404). A slug-absolute path always resolves correctly regardless
+// of how Vercel rewrites the iframe URL.
+function htmlShell(slug: string): string {
+  return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -42,10 +51,11 @@ const HTML_SHELL = `<!doctype html>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="/artifacts/${slug}/index.js"></script>
   </body>
 </html>
 `
+}
 
 // The per-artifact entry that esbuild bundles. Imports the artifact's
 // default export, wraps it in a top-level error boundary that converts
@@ -124,7 +134,7 @@ async function compileArtifact(
       loader: { '.jsx': 'jsx' },
       logLevel: 'silent',
     })
-    writeFileSync(join(outDir, 'index.html'), HTML_SHELL)
+    writeFileSync(join(outDir, 'index.html'), htmlShell(slug))
     return { slug, ok: true }
   } catch (err) {
     // Clean up partial output so a failed compile leaves no trace.

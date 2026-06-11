@@ -4,18 +4,16 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6: cadence paused for one architecturally-shaped
-  engineering unit.** Unit 9 (SSG + SEO foundation, locked
-  2026-06-11) is the first such unit since Phase 6 began.
-  Triggered by an SEO diagnosis on 2026-06-11: a Googlebot fetch
-  of `/#/patterns` returned the empty SPA shell, exposing that
-  the HashRouter decision (Unit 3a) and the SPA rendering model
-  together made every URL on the site identical to crawlers,
-  link-preview unfurlers, and screen readers. Article publication
-  cadence resumes after Unit 9 lands and prod-verifies. Library
-  state at pause: 5 articles, 15 patterns, 5 artifacts; the
-  reassessment window from 2026-06-04 still applies and is
-  paused for the duration of the unit.
+- **Phase 6 resumed: Unit 9 (SSG + SEO foundation) landed and
+  prod-verified on 2026-06-11.** Per-route static HTML at build
+  time now ships for all 23 routes (1 home + 1 patterns index +
+  5 articles + 15 patterns + 1 404); JSON-LD `Article`
+  structured data is baked into each article page; sitemap.xml
+  + robots.txt + a real `dist/404.html` serve from production.
+  Article publication cadence resumes from Phase 6's manual
+  editorial mode. Library state: 5 articles, 15 patterns, 5
+  artifacts. The reassessment window from 2026-06-04 still
+  applies, paused during Unit 9.
 
 ## Current Operating Mode
 
@@ -77,6 +75,95 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 9 — SSG + SEO foundation (supersedes HashRouter,
+  2026-06-11).** Per-route static HTML at build time via a custom
+  prerender script over first-party primitives
+  (`react-dom/server`'s `renderToString` + `react-router-dom`'s
+  `StaticRouter` + Node `fs`). 23 routes prerendered (home,
+  patterns index, 5 articles, 15 patterns, 404), each ships with
+  real content + `<title>` + `<meta name="description">` +
+  canonical link + OpenGraph (type, site_name, title, description,
+  url, image) + twitter:card + (for articles) full `Article`
+  JSON-LD structured data baked into the served HTML.
+  - Three commits in order: `chore: add addedAt to Article schema
+    + backfill five articles` (atomic content-contract change so
+    the SEO unit consumed a field that already existed); `docs:
+    Unit 9 architecture lock` (locked the SSG decision, the
+    HashRouter supersede, and the vite-react-ssg loser's paragraph
+    in Architecture Decisions); `feat: unit 9 -- SSG + SEO
+    foundation` (the implementation in one shot).
+  - Implementation: 11 files changed, +507/-19. `scripts/
+    prerender.ts` (~250 lines, the meat) reads `dist/index.html`
+    as the template, loads the SSR bundle's `render` function,
+    walks the route table, renders each route via `renderToString`
+    + `StaticRouter`, splices per-route head tags + JSON-LD,
+    writes one HTML file per route. `scripts/generate-sitemap.ts`
+    emits `dist/sitemap.xml` (22 URLs, /404 excluded) and
+    `dist/robots.txt`. `src/AppRoutes.tsx` is the router-agnostic
+    route tree; `src/main.tsx` switches to `hydrateRoot` +
+    `BrowserRouter`; `src/ssr-entry.tsx` wraps in `StaticRouter`
+    and re-exports content arrays for the prerender script (Vite
+    resolves `import.meta.glob` at SSR build time; the SSR bundle
+    is the single source of truth for routing). `src/components/
+    NotFound.tsx` renders both `/404` (prerendered) and the
+    runtime `*` catchall. `index.html` gains a 5-line inline
+    hash-redirect shim before `main.tsx` so any visitor arriving
+    at `#/...` gets `location.replace`d to the canonical path
+    before React mounts. `vercel.json` pins `cleanUrls: true` and
+    `trailingSlash: false`.
+  - Three defensive properties locked in
+    `architecture.md` Rendering section: (1) every prerender
+    string replacement asserts the needle exists AND output
+    differs from input after, throws loudly on either failure;
+    (2) JSON-LD inline injection escapes `<` to `<` to
+    prevent `</script>` breakout; (3) attribute escapes cover
+    `&`, `<`, `>`, `"`, `'`. Hydration model: `ArticleIndex`
+    reads `useSearchParams` from a `useEffect` so first paint
+    matches the server-rendered unfiltered list; the filter
+    resolves immediately after mount, dodging mismatch on
+    `?source=foo` arrivals.
+  - JSON-LD field map deliberately omits `name` inside
+    `isBasedOn` — behindscale's title is editorial and may
+    diverge from the source post's title, and asserting the
+    source published under our title would be misattribution.
+    URL + publisher is sufficient identification.
+  - Invariant 1 reworded in `architecture.md` to make the
+    no-runtime-computation property explicit (the original
+    wording met the letter and missed the spirit, which is what
+    made the SEO miss possible). The artifact iframe HEAD probe
+    is named as the one runtime network activity — a
+    progressive enhancement, not a content dependency, so the
+    new wording doesn't overclaim.
+  - `vite-react-ssg` evaluated and rejected during the
+    investigation phase (single-maintainer pre-1.0 beta on a
+    load-bearing path; the custom-prerender alternative is a
+    stronger dependency position). Full loser's paragraph
+    preserved in Architecture Decisions for revisit triggers.
+  - Bug caught in local smoke: hash-redirect shim originally
+    concatenated `location.pathname + h.slice(1)`, which on `/`
+    produced a protocol-relative `//articles/...` URL. Fixed to
+    `h.slice(1) + location.search` (slice already starts with
+    `/`, plus preserve existing query string).
+  - Verification: `npm run validate` 3 checks, 0 errors;
+    `npm run compile-artifacts` ok for all 5 artifacts; `npm
+    run build` end-to-end clean — 23 routes prerendered, 22 URLs
+    in sitemap.xml, robots.txt emitted, all defensive assertions
+    passed; `npm test` 51/51; local `npm run test:e2e` 2/2 (the
+    existing four-route walk + the new hash-redirect journey);
+    **production smoke `npm run test:e2e:prod` against
+    https://www.behindscale.com green after the Vercel
+    auto-deploy of `5a08db9` landed** — 2/2, 3.8 s + 2.2 s
+    tests, 10.8 s end-to-end. Curl-verified at the byte level:
+    `/articles/stripe-idempotency` returns real `<title>`, real
+    `og:title` / `og:description`, full Article JSON-LD with
+    corrected `isBasedOn`; `/sitemap.xml` and `/robots.txt`
+    serve 200; unknown paths return HTTP 404 (not soft-200).
+  - Known follow-up (out of scope for this commit): a
+    `public/og-default.png` (1200×630, dark token palette +
+    wordmark). The `og:image` meta tag currently points at
+    `https://www.behindscale.com/og-default.png`; until the
+    file lands, unfurlers will 404 on fetch and gracefully
+    omit the image while still rendering title + description.
 - **5f — Discord: How Discord Indexes Trillions of Messages (first
   Phase 6 publication).** Discord Engineering's 2025 retrospective
   on the 2017→2025 message-search architecture evolution. The 2017
@@ -612,24 +699,20 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- **Unit 9 — SSG + SEO foundation, supersedes HashRouter (Unit
-  3a).** Per-route static HTML at build time via a custom prerender
-  script over first-party primitives (`react-dom/server`'s
-  `renderToString` + `react-router-dom`'s `StaticRouter` + Node
-  `fs`); per-route title/description/canonical/OG/twitter:card and
-  JSON-LD `Article` structured data; sitemap.xml + robots.txt;
-  prerendered `dist/404.html`; legacy `#/...` URL redirect shim;
-  `vercel.json` for `cleanUrls` + no-trailing-slash. Three commits,
-  in order: (1) `chore: add addedAt to Article schema + backfill`
-  (atomic content-contract change so the SEO unit consumes a field
-  that already exists); (2) this docs commit locking the
-  architecture decision; (3) `feat: unit 9 -- SSG + SEO foundation`
-  with the implementation in one shot. Defensive properties locked
-  in the `architecture.md` Rendering section (loud template
-  assertions, JSON-LD `\u003c` escaping, two-pass `?source=foo`
-  hydration). See Architecture Decisions below for the SSG lock +
-  the HashRouter supersede + the `vite-react-ssg` loser's
-  paragraph.
+- None — Unit 9 shipped and prod-verified on 2026-06-11 (prod
+  smoke 2/2 against https://www.behindscale.com, including the
+  new hash-redirect journey test); one Unit-9-introduced
+  regression on artifact iframes was caught + fixed within the
+  hour as a follow-up `fix:` commit (see Completed). Next
+  manual-mode publication awaiting the owner's article choice
+  from the candidate list (Slack shared channels, Netflix
+  active-active, Cloudflare Prometheus, Meta FOQS, GitHub
+  sharding, DoorDash internal tools, LinkedIn Brooklin). One
+  known follow-up open: a `public/og-default.png` (1200x630,
+  dark token palette + wordmark) to replace the 404 that
+  unfurlers currently get on the `og:image` URL; not a blocker
+  (unfurlers degrade gracefully and still render title +
+  description), can land as a small chore commit anytime.
 
 ## Developer Setup
 
