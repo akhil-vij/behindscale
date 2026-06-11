@@ -3,6 +3,7 @@
   "title": "Designing robust and predictable APIs with idempotency",
   "url": "https://stripe.com/blog/idempotency",
   "publishedAt": "2017-08-29",
+  "addedAt": "2026-05-29",
   "source": {
     "name": "Stripe Engineering",
     "slug": "stripe-engineering",

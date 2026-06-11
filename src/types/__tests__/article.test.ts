@@ -14,6 +14,7 @@ const validArticle = {
   title: 'Designing robust and predictable APIs with idempotency',
   url: 'https://stripe.com/blog/idempotency',
   publishedAt: '2017-08-29',
+  addedAt: '2026-05-29',
   source: validSource,
   summary: 'How Stripe makes payment APIs safe to retry by combining idempotency keys with atomic phase boundaries.',
   problem: 'Network failures during payment requests leave the client uncertain whether the charge succeeded.',
@@ -57,6 +58,16 @@ describe('Article', () => {
     const malformed: Record<string, unknown> = { ...validArticle }
     delete malformed.title
     expect(isArticle(malformed)).toBe(false)
+  })
+
+  it('rejects when addedAt is missing (required field after Unit 9)', () => {
+    const malformed: Record<string, unknown> = { ...validArticle }
+    delete malformed.addedAt
+    expect(isArticle(malformed)).toBe(false)
+  })
+
+  it('rejects when addedAt is present but not a string', () => {
+    expect(isArticle({ ...validArticle, addedAt: 1717000000000 })).toBe(false)
   })
 
   it('rejects when source is malformed (missing feed)', () => {

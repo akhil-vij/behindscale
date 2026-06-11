@@ -132,6 +132,15 @@ Every per-article summary JSON in `content/articles/` conforms to the
   homepage.
 - `publishedAt` — required ISO 8601 date string. When the original post
   was published on the source blog.
+- `addedAt` — required ISO 8601 date string. When this article first
+  appeared on behindscale's production deploy (distinct from
+  `publishedAt`, which is the source post's date). Used for sitemap
+  `lastmod`, JSON-LD `datePublished` and `dateModified`, and any future
+  recently-added surface. Leave room for an `updatedAt` field on the day
+  an article is materially revised post-publish; until then, JSON-LD
+  `dateModified` mirrors `addedAt`. Added as a schema chore ahead of
+  Unit 9 (the SSG / SEO foundation); backfilled on the five Phase-5
+  and 5f articles from their prod-verify dates.
 - `source` — required `Source` block, as documented above.
 - `summary` — required string. Short summary surfaced on article cards
   and used as the page lead on the article page.

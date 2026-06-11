@@ -11,6 +11,7 @@ export function article(slug: string, patternSlugs: readonly string[]): Article 
     title: `Article ${slug}`,
     url: 'https://example.com/article',
     publishedAt: '2026-01-01',
+    addedAt: '2026-01-02',
     source: {
       name: 'Example Engineering',
       slug: 'example-engineering',

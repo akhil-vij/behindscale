@@ -76,6 +76,7 @@ export function checkArticle(value: unknown): Result {
   if (typeof value.title !== 'string') return fail('`title` expected string')
   if (typeof value.url !== 'string') return fail('`url` expected string')
   if (typeof value.publishedAt !== 'string') return fail('`publishedAt` expected string')
+  if (typeof value.addedAt !== 'string') return fail('`addedAt` expected string (ISO YYYY-MM-DD; the date this article first appeared on behindscale production)')
   const sourceResult = checkSource(value.source)
   if (!sourceResult.ok) return fail('`source`: ' + sourceResult.reason)
   if (typeof value.summary !== 'string') return fail('`summary` expected string')
