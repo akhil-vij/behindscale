@@ -4,19 +4,20 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6: cadence paused for one more architecturally-shaped
-  unit before article #6.** Unit 9 (SSG + SEO foundation) landed
-  and prod-verified on 2026-06-11; one iframe regression from
-  Unit 9's `cleanUrls` was caught and fixed within the hour
-  (`fix:` commit `a6a31af`). Editorial review (Fable + Akhil)
-  the same day surfaced Unit 10 — article reading arc +
-  instrumentation — gating article #6 on a measurement
-  foundation so the funnel pageview → artifact_viewed →
-  artifact_interacted exists before new content lands. Article
-  publication cadence resumes after Unit 10's feat commit lands
-  and prod-verifies. Library state at pause: 5 articles, 15
-  patterns, 5 artifacts. The reassessment window from
-  2026-06-04 still applies, paused during Units 9 + 10.
+- **Phase 6 resumed: Units 9 + 10 closed; article cadence
+  unblocked.** Unit 9 (SSG + SEO foundation) landed and
+  prod-verified 2026-06-11; one iframe regression from
+  `cleanUrls` was caught + fixed within the hour (`fix:` commit
+  `a6a31af`). Unit 10 (article reading arc + instrumentation)
+  landed in three commits over 2026-06-11/12 and was manually
+  prod-verified by the owner: section order is live, analytics
+  pipe is firing into the Vercel dashboard. Library state
+  unchanged at 5 articles, 15 patterns, 5 artifacts; the
+  measurement foundation (`artifact_viewed` +
+  `artifact_interacted` funnel) is now in place so the next
+  article publication generates real signal from minute one.
+  The reassessment window from 2026-06-04 still applies; both
+  units consumed three operating days inside it.
 
 ## Current Operating Mode
 
@@ -78,6 +79,100 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 10 — Article reading arc + instrumentation
+  (2026-06-11/12).** Three commits in order: `chore: add
+  artifact.teaser + stats[] to Article schema; new validator
+  check` (`7f5958c` — content-contract change adding two optional
+  fields and the project's fourth validator check,
+  `stats-value-in-prose`, enforcing the editorial constraint that
+  pull-stat values are a lift from the article's own prose, not a
+  source of new claims; normalization is best-effort substring
+  match with `+`/`%`/`,`/whitespace stripped and lowercased);
+  `docs: Unit 10 architecture lock` (`b22c9e5` — new top-level
+  Article Reading Arc section in `architecture.md`, five new
+  Architecture Decisions entries in `progress-tracker.md`
+  covering placement-rationale + width-discontinuity-by-design,
+  stats-as-lift editorial discipline, the postMessage telemetry
+  protocol with explicit cross-reference to invariant 2's "never
+  loosen sandbox, widen postMessage" decision and the
+  source-vs-origin subtlety, the two-column-layout rejection, and
+  the analytics-as-progressive-enhancement framing that
+  pre-defends invariant 1's Unit-9 wording); `feat: unit 10 --
+  article reading arc + instrumentation` (`d60f147` — five
+  deliverables in one shot).
+  - Implementation: 10 files changed, +433/-18. `src/pages/
+    ArticleDetail.tsx` reordered: header → top pattern chips
+    (wayfinding) → SourceAttribution → summary → ArtifactTeaser
+    (conditional) → Problem + stats[problem] → Solution +
+    stats[solution] → ARTIFACT EMBED with `id="artifact"` →
+    Tradeoffs + stats[tradeoffs] → Patterns (full, with notes).
+    New `ArtifactTeaser` + `StatsRow` components, both pure
+    functions of article JSON (no hydration surface). `ArtifactEmbed`
+    gains two `useEffect`-gated analytics hooks: IntersectionObserver
+    fires `artifact_viewed` once at threshold=0.5; a `message`
+    listener fires `artifact_interacted` filtered by
+    `event.source === iframeRef.current?.contentWindow` (source
+    comparison, not origin — sandboxed frames have
+    `event.origin === "null"`). `scripts/compile-artifacts.ts`
+    gains a capture-phase window-level pointerdown listener in
+    the entryStub that posts `{ type: 'artifact:interacted', slug
+    }` to `window.parent` with target origin `'*'`; the
+    closure-flag "once" semantic survives a race condition where
+    stray browser-internal pointer events could consume a
+    `{once:true}` listener before any real interaction.
+    `src/main.tsx` mounts `<Analytics />` at the client entry
+    only — never inside `AppRoutes` — so SSR never invokes the
+    tracker; invariant 1's Unit-9 wording is untouched (analytics
+    is a progressive enhancement, not content).
+    `scripts/prerender.ts` gains a `truncateForMeta()` helper that
+    cuts meta descriptions at the last word boundary ≤160 chars
+    with ellipsis (the meta nit from Unit 9's verification ride-
+    along); applied to both `articleMeta` (full summaries
+    previously shipped >300 chars) and `patternMeta` (previously
+    hard-cut at 220 chars mid-word). `@vercel/analytics` ^2.0.1
+    added as a runtime dependency.
+  - Smoke test: 5/5 tests (was 2/2). Existing four-route walk
+    fixed to target the bottom-section "Atomic Phases" chip via
+    `.last()` after Unit 10 added the wayfinding chip at the top.
+    New `Unit 10: article section order` test reads h2 + iframe
+    bounding-box Y positions and asserts Solution.y < iframe.y <
+    Tradeoffs.y — a future refactor that re-buries the artifact
+    breaks loudly. New paired Unit-10 tests for the analytics
+    protocol: a pipe test that invokes the cross-origin
+    `window.parent.postMessage` from inside the sandboxed iframe
+    via `frame.evaluate` and asserts the parent listener captures
+    the canonical payload, and a build-time check that walks
+    `public/artifacts/` and asserts every compiled bundle
+    contains the `'artifact:interacted'` literal, the slug
+    literal, and `window.parent.postMessage`. The pair covers
+    what the brief's original click-iframe-assert-message test
+    was meant to catch (Playwright cannot deliver synthetic
+    pointer events into opaque-origin sandboxed iframes —
+    multiple synthesis strategies were attempted during
+    implementation and all failed at the cross-realm boundary
+    the sandbox enforces; the limitation is documented inline in
+    the test file).
+  - Verification: validator 4 checks 0 errors; vitest 65/65;
+    Playwright local 5/5 in ~2.3 min; build clean (23 routes
+    prerendered with the new section order baked in on every
+    article page); owner manually confirmed Unit 10 on prod
+    (section order live, analytics pipe firing into the Vercel
+    dashboard, `artifact_interacted` events recorded).
+  - Known follow-ups (intended, not bugs): a `content:` commit
+    with Fable's editorial backfill of `artifact.teaser` strings
+    and `stats[]` values for the five existing articles
+    (specificity principle — until that lands, the teaser card
+    renders on zero articles, which is the documented intended
+    initial state); the `public/og-default.png` carry-over from
+    Unit 9.
+  - Architectural side benefit: the `artifact_interacted` event
+    is the first instantiation of the Unit 5b "never loosen
+    sandbox, widen postMessage instead" decision in production.
+    The brief's original `iframe.contentDocument` plan would have
+    silently failed (contentDocument is unreadable under
+    `sandbox="allow-scripts"` without `allow-same-origin`); the
+    scope review surfaced this BEFORE the feat commit and the
+    paired tests would have caught it after.
 - **Unit 9 — SSG + SEO foundation (supersedes HashRouter,
   2026-06-11).** Per-route static HTML at build time via a custom
   prerender script over first-party primitives
@@ -702,50 +797,20 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- **Unit 10 — Article reading arc + instrumentation (gates
-  article #6).** Five deliverables: (1) artifact placement
-  moves from page-end to between Solution and Tradeoffs, with
-  `id="artifact"` anchor; (2) `ArtifactTeaser` card after
-  summary, sourced from new optional `artifact.teaser` field
-  (specificity principle: no generic fallback); (3) `StatCallout`
-  components rendered between prose sections, sourced from new
-  optional `stats[]` with placement enum
-  `"problem" | "solution" | "tradeoffs"` and editorially
-  enforced by the `stats-value-in-prose` validator check (max
-  3, every value must appear in the article's own prose); (4)
-  pattern chips under the article header (wayfinding-vs-substance
-  split with the full bottom Patterns section); (5)
-  instrumentation via `@vercel/analytics` (free tier, client-only,
-  same invariant-1 class as the artifact HEAD probe) firing
-  `artifact_viewed` on IntersectionObserver and
-  `artifact_interacted` on first pointerdown delivered via
-  `postMessage` (cross-origin by design — the sandboxed iframe
-  has an opaque origin so `iframe.contentDocument` is
-  unreadable; this is the "never loosen sandbox, widen
-  postMessage" path from invariant 2 / Unit 5 instantiated).
-  - Three commits in order: (1) the preceding `chore: add
-    artifact.teaser + stats[] to Article schema` (`7f5958c`,
-    atomic content-contract change with a new fourth validator
-    check); (2) this docs commit locking the architecture
-    decision; (3) `feat: unit 10 -- article reading arc +
-    instrumentation` with the implementation in one shot. A
-    trailing `content:` commit lands once Fable's editorial
-    teaser strings + stats values are reviewed (does not block
-    the feat).
-  - Explicit deferrals recorded in Architecture Decisions
-    below: Tier 2 (`?view=` prose→artifact deep links via
-    parent→child postMessage), Tier 3 (scroll-synced sticky
-    artifact panel, desktop-only, prototype on one article
-    first — gated on Tier 1's measured funnel), per-article
-    OG card images. One explicit rejection recorded: any
-    side-by-side two-column layout (artifacts are designed for
-    ~960 px and break at half-column widths; reading and
-    simulating are competing cognitive modes; the rejection is
-    locked so it isn't re-litigated from scratch).
-  - Carry-over from Unit 9: `public/og-default.png` (1200×630,
-    dark token palette + wordmark) is still pending. Not a
-    blocker (unfurlers degrade gracefully); can ride along in
-    Unit 10's feat commit or land separately.
+- None — Units 9 + 10 closed and prod-verified. Owner manually
+  confirmed Unit 10 on prod (section order live, analytics pipe
+  firing into the Vercel dashboard). Next manual-mode publication
+  awaiting article choice from the candidate list (Slack shared
+  channels, Netflix active-active, Cloudflare Prometheus, Meta
+  FOQS, GitHub sharding, DoorDash internal tools, LinkedIn
+  Brooklin). Two known follow-ups, both small + non-blocking:
+  - `public/og-default.png` (1200×630, dark token palette +
+    wordmark) — carries over from Unit 9. Unfurlers degrade
+    gracefully without it; lands as a chore commit anytime.
+  - Editorial backfill of `artifact.teaser` strings and `stats[]`
+    values for the five existing articles (Fable supplies). Lands
+    as a `content:` commit once values are reviewed; not
+    architecturally blocking.
 
 ## Developer Setup
 
