@@ -4,20 +4,30 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 resumed: Units 9 + 10 closed; article cadence
-  unblocked.** Unit 9 (SSG + SEO foundation) landed and
-  prod-verified 2026-06-11; one iframe regression from
-  `cleanUrls` was caught + fixed within the hour (`fix:` commit
-  `a6a31af`). Unit 10 (article reading arc + instrumentation)
-  landed in three commits over 2026-06-11/12 and was manually
-  prod-verified by the owner: section order is live, analytics
-  pipe is firing into the Vercel dashboard. Library state
-  unchanged at 5 articles, 15 patterns, 5 artifacts; the
-  measurement foundation (`artifact_viewed` +
-  `artifact_interacted` funnel) is now in place so the next
-  article publication generates real signal from minute one.
-  The reassessment window from 2026-06-04 still applies; both
-  units consumed three operating days inside it.
+- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pt 1
+  (stripe rework) landed; article cadence unblocked.** Unit 9
+  (SSG + SEO foundation) landed and prod-verified 2026-06-11;
+  one iframe regression from `cleanUrls` was caught + fixed
+  within the hour (`fix:` commit `a6a31af`). Unit 10 (article
+  reading arc + instrumentation) landed in three commits over
+  2026-06-11/12 and was manually prod-verified by the owner:
+  section order is live, analytics pipe is firing into the
+  Vercel dashboard. **Unit 11 / quality sprint pt 1 (stripe
+  rework) landed 2026-06-12** in three commits: an audit found
+  the seed article (Unit 3f) dissected material from a personal
+  blog rather than the attributed official post, violating
+  invariant 7; rewritten exclusively from the source post,
+  pattern references corrected (atomic-phases removed, rehomed
+  to skipper-workflow-engine; new
+  retry-with-backoff-and-jitter pattern added), artifact
+  rebuilt. `updatedAt` schema field added in the same sprint
+  for the first material post-publish revision. Library state:
+  **5 articles, 16 pattern definitions (new
+  retry-with-backoff-and-jitter), 5 artifacts.** The
+  measurement foundation from Unit 10 is intact through the
+  rebuild — the new stripe bundle ships the same
+  `artifact_interacted` emitter wiring. The reassessment
+  window from 2026-06-04 still applies.
 
 ## Current Operating Mode
 
@@ -79,6 +89,98 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 11 / quality sprint pt 1 — Stripe rework
+  (2026-06-12).** Three commits in order: `chore: add optional
+  updatedAt to Article schema` (the schema field; JSON-LD
+  `dateModified` and sitemap `lastmod` both source
+  `updatedAt ?? addedAt`; predicate + 2 tests; architecture.md
+  Content Contract and Rendering sections updated);
+  `content: stripe rework -- rewrite to source, new pattern,
+  rebuilt artifact` (full article rewrite sourced exclusively
+  from stripe.com/blog/idempotency; new
+  `retry-with-backoff-and-jitter` pattern definition;
+  full-replacement artifact rebuilt around the source post's
+  failure taxonomy + idempotency-key resolution; atomic-phases
+  rehomed onto skipper-workflow-engine where checkpointed
+  Actions are a true embodiment); this docs commit (decision
+  log + tracker update).
+  - The audit motivation: the original stripe-idempotency
+    dissection (Unit 3f, the project's seed article) was
+    written before the fidelity discipline locked in; the
+    post-Unit-9 quality audit found that the article's
+    atomic-phases framing, recovery-point state machine, and
+    Rocket Rides walkthrough all came from Brandur Leach's
+    *personal blog* series on the same subject, not from the
+    cited official post — invariant 7 (official engineering
+    blogs only) exclusion. The seed article predated the
+    fidelity discipline. Rewritten exclusively from the
+    post's actual material: HTTP idempotent-verb semantics
+    (PUT/DELETE, RFC 7231), idempotency keys and how they
+    resolve each of three network-failure modes,
+    exponential backoff with jitter. Two metadata bugs
+    surfaced in the same pass and fixed inline: `publishedAt`
+    was 2017-08-29, the post says February 22, 2017
+    (corrected to `2017-02-22`); and this is the first
+    material post-publish revision, which triggers the
+    `updatedAt` field added in the same sprint.
+  - The new `retry-with-backoff-and-jitter` pattern
+    definition synthesizes across multiple embodiments
+    (Ethernet CSMA/CD, TCP retransmission, AWS SDK retry
+    policies, gRPC + Envoy) with Stripe's official client
+    library called out as one instance among many. Category
+    `resilience`. Pairs with `idempotency-keys` (now the
+    stripe article's other pattern reference) — together
+    they cover both sides of safe retry: what makes the
+    retry safe (keys) and what makes the retry polite
+    (backoff + jitter).
+  - The artifact (`content/artifacts/stripe-idempotency.jsx`)
+    is a full replacement: three failure scenarios
+    (connection fails, mid-operation crash, response lost)
+    crossed with a no-key / `Idempotency-Key` toggle.
+    Step through any scenario with either mode and watch the
+    server's key table, the event log, and the resulting
+    verdict update together. The mid-operation case surfaces
+    on screen the post's "behavior here is heavily
+    implementation-dependent" caveat — the artifact shows
+    the ACID-rollback path because that's the path the
+    source post describes; the deeper recovery-point work
+    has no qualifying first-party source and was removed
+    with it. esbuild-verified, 21.8 kB source / 154 kB
+    bundled. The Unit 10 `artifact_interacted` emitter is
+    intact in the new bundle (smoke-checked: bundle contains
+    `artifact:interacted`, slug literal, and
+    `window.parent.postMessage`).
+  - Atomic-phases rehomed to
+    `skipper-workflow-engine.json`: Skipper's checkpointed
+    Actions are an embedded-library instance of the
+    pattern (each action's result is durably committed after
+    execution; on replay, completed actions return their
+    checkpoints instantly). Skipper now references 4
+    patterns (was 3), well above the minimum-2 rule and
+    more truthful to the post's content.
+  - `relatedArticles: ["uber-intelligent-load-management"]`
+    is the field's first real use. The pairing is on the
+    overload-protection-as-shared-concern axis: Stripe is
+    the client-side politeness half (backoff + jitter);
+    Uber's load shedder is the server-side complement.
+    The website has no `relatedArticles` UI surface yet —
+    the field validates and ships, the missing "see also"
+    section moves to In Progress as a small standalone
+    follow-up.
+  - Verification: validator 4 checks 0 errors; vitest 67/67
+    (was 65; +2 for `updatedAt` accept/reject);
+    `npm run compile-artifacts` 5/5 ok; `npm run build`
+    end-to-end clean — 24 routes prerendered (was 23; +1
+    for the new pattern page). Spot-checked
+    `dist/articles/stripe-idempotency.html`: new title,
+    `datePublished = 2026-05-29` (addedAt unchanged),
+    `dateModified = 2026-06-12` (updatedAt first use),
+    `isBasedOn.datePublished = 2017-02-22` (corrected).
+    Sitemap `lastmod` for the article is the updatedAt
+    date; the atomic-phases pattern page's `lastmod`
+    cleanly migrated from stripe's old addedAt to
+    skipper's. Production smoke pending the Vercel deploy
+    after push.
 - **Unit 10 — Article reading arc + instrumentation
   (2026-06-11/12).** Three commits in order: `chore: add
   artifact.teaser + stats[] to Article schema; new validator
@@ -797,20 +899,30 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Units 9 + 10 closed and prod-verified. Owner manually
-  confirmed Unit 10 on prod (section order live, analytics pipe
-  firing into the Vercel dashboard). Next manual-mode publication
-  awaiting article choice from the candidate list (Slack shared
-  channels, Netflix active-active, Cloudflare Prometheus, Meta
-  FOQS, GitHub sharding, DoorDash internal tools, LinkedIn
-  Brooklin). Two known follow-ups, both small + non-blocking:
+- None — Units 9 + 10 closed and prod-verified; Unit 11 / quality
+  sprint pt 1 (stripe rework) landed 2026-06-12. Next manual-mode
+  publication awaiting article choice from the candidate list
+  (Slack shared channels, Netflix active-active, Cloudflare
+  Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
+  LinkedIn Brooklin). Three known follow-ups, all small +
+  non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
   - Editorial backfill of `artifact.teaser` strings and `stats[]`
-    values for the five existing articles (Fable supplies). Lands
-    as a `content:` commit once values are reviewed; not
-    architecturally blocking.
+    values for the remaining four published articles (stripe
+    now has its teaser + intentional zero stats from the
+    rework). The previous round flagged the Skipper teaser
+    against the actual artifact and three composite stat values
+    (`500ms → <100ms`, `3.1s → 1.0s`, `minutes → days`) that the
+    current value-in-prose validator can't substring-match;
+    awaiting editorial revision and (optionally) a small
+    validator extension for `→`-composites.
+  - `relatedArticles` UI surface. Stripe's rework was the
+    field's first populated use; the website doesn't yet
+    render a "see also" section. Lands as a small standalone
+    unit when the next authoring cadence touches the article
+    page.
 
 ## Developer Setup
 
@@ -910,6 +1022,28 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Stripe seed article reworked to source** (quality audit,
+  2026-06-12). The original stripe-idempotency dissection
+  (Unit 3f, the site's seed article) included mechanism detail
+  — atomic phases, recovery points, the Rocket Rides
+  walkthrough — imported from Brandur Leach's *personal blog*
+  series rather than the attributed official post, which
+  predated the project's fidelity discipline. Rewritten
+  sourced exclusively from `stripe.com/blog/idempotency`:
+  failure taxonomy, HTTP idempotent-verb semantics,
+  idempotency keys and their per-failure-case resolution, and
+  exponential backoff with jitter. Pattern references
+  corrected: `atomic-phases` removed (one supporting sentence
+  in the source is not an embodiment) and rehomed to
+  `skipper-workflow-engine`, where checkpointed Actions are a
+  true instance; `retry-with-backoff-and-jitter` added as a
+  new library pattern (synthesized across Ethernet CSMA/CD,
+  TCP, AWS SDK retry policies, gRPC + Envoy). Artifact rebuilt
+  from the actual source's material. `publishedAt` corrected
+  (2017-02-22). First use of `updatedAt`. The deeper
+  recovery-point material remains valuable but has no
+  qualifying first-party source; it returns if and when one
+  exists.
 - **Article reading arc: artifact between Solution and Tradeoffs**
   (Unit 10, 2026-06-11). Section order on every article page is
   `header → top pattern chips (wayfinding) → summary → artifact
