@@ -1,4 +1,16 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/patterns/pid-controlled-adaptive-thresholds",
+      "destination": "/patterns/feedback-controlled-load-management",
+      "permanent": true
+    },
+    {
+      "source": "/patterns/byos-platform-design",
+      "destination": "/patterns/feedback-controlled-load-management",
+      "permanent": true
+    }
+  ]
 }
