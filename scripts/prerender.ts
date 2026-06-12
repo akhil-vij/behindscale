@@ -59,6 +59,21 @@ const template = readFileSync(templatePath, 'utf8')
 
 // --- Helpers ---
 
+// Truncate a meta description at a word boundary, max 160 chars
+// (the safe sweet spot across Google snippets and OpenGraph
+// unfurlers). Adds an ellipsis when truncated. Returns the original
+// string untouched when already <= max. The word-boundary cut means
+// we don't ship descriptions ending mid-word.
+function truncateForMeta(s: string, max = 160): string {
+  if (s.length <= max) return s
+  const slice = s.slice(0, max)
+  const lastSpace = slice.lastIndexOf(' ')
+  // Prefer the last space if it's not too far back (>60% of max);
+  // otherwise hard-cut to avoid a tiny truncation.
+  const cutAt = lastSpace > max * 0.6 ? lastSpace : max
+  return slice.slice(0, cutAt).replace(/[.,;:—–-]+$/, '').trimEnd() + '…'
+}
+
 function escapeAttr(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -129,7 +144,7 @@ function patternsIndexMeta(): Meta {
 function articleMeta(article: Article): Meta {
   return {
     title: `${article.title} — ${SITE_NAME}`,
-    description: article.summary,
+    description: truncateForMeta(article.summary),
     canonical: `${SITE_URL}/articles/${article.slug}`,
     ogType: 'article',
     jsonLd: {
@@ -173,7 +188,7 @@ function patternMeta(pattern: PatternDefinition): Meta {
   const firstParagraph = pattern.definition.split(/\n\s*\n/)[0] ?? ''
   return {
     title: `${pattern.name} — patterns — ${SITE_NAME}`,
-    description: firstParagraph.slice(0, 220),
+    description: truncateForMeta(firstParagraph),
     canonical: `${SITE_URL}/patterns/${pattern.slug}`,
     ogType: 'article',
     jsonLd: null,

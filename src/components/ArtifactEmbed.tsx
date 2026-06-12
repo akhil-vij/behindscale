@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { track } from '@vercel/analytics'
 
 // Renders an artifact in a sandboxed iframe. Two failure modes converge
 // to one visible surface (the muted error frame):
@@ -17,9 +18,24 @@ import { useEffect, useRef, useState } from 'react'
 //
 // Sandbox attribute is exactly `allow-scripts`. Future capability
 // needs go through postMessage, never by widening sandbox flags.
+//
+// Unit 10 instrumentation:
+//
+//   - artifact_viewed: IntersectionObserver on the wrapper, fires
+//     once on first intersection at threshold=0.5.
+//   - artifact_interacted: postMessage from the iframe (the
+//     entryStub posts {type:'artifact:interacted', slug} on first
+//     pointerdown). Parent gates by event.source comparison (NOT
+//     origin -- the sandboxed frame has opaque origin so
+//     event.origin === "null"; an origin allowlist would be
+//     meaningless here). See architecture.md Article Reading Arc.
+//
+// Both are useEffect-gated; SSR never touches window or
+// IntersectionObserver.
 
 interface ArtifactEmbedProps {
   artifactPath: string
+  articleSlug: string
   articleTitle: string
 }
 
@@ -27,11 +43,14 @@ const IFRAME_HEIGHT_PX = 600
 
 export default function ArtifactEmbed({
   artifactPath,
+  articleSlug,
   articleTitle,
 }: ArtifactEmbedProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [loadFailed, setLoadFailed] = useState(false)
 
+  // HEAD probe -- catches load failures the iframe's onerror misses.
   useEffect(() => {
     let canceled = false
     fetch(artifactPath, { method: 'HEAD' })
@@ -56,12 +75,49 @@ export default function ArtifactEmbed({
     }
   }, [artifactPath])
 
+  // artifact_viewed via IntersectionObserver.
+  useEffect(() => {
+    const el = wrapperRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          track('artifact_viewed', { slug: articleSlug })
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.5 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [articleSlug])
+
+  // artifact_interacted via postMessage from the sandboxed iframe.
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Source comparison, not origin -- a sandboxed frame's origin
+      // is the string "null" so an origin allowlist would be
+      // meaningless. The source check pins the message to THIS
+      // iframe's contentWindow regardless of origin.
+      if (event.source !== iframeRef.current?.contentWindow) return
+      const data = event.data as { type?: string } | null
+      if (!data || data.type !== 'artifact:interacted') return
+      track('artifact_interacted', { slug: articleSlug })
+      window.removeEventListener('message', handleMessage)
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [articleSlug])
+
   if (loadFailed) {
     return <ErrorFrame />
   }
 
   return (
-    <div className="rounded-xl border border-art-border bg-art-bg overflow-hidden shadow-sm">
+    <div
+      ref={wrapperRef}
+      className="rounded-xl border border-art-border bg-art-bg overflow-hidden shadow-sm"
+    >
       <iframe
         ref={iframeRef}
         src={artifactPath}

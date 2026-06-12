@@ -62,7 +62,18 @@ function htmlShell(slug: string): string {
 // a render exception into the same muted error message the parent
 // renders for load failures (architecture.md invariant 2: two failure
 // modes -> one visible surface).
-function entryStub(sourcePath: string): string {
+//
+// Also installs the Unit 10 first-pointerdown emitter that posts
+// {type: 'artifact:interacted', slug} to window.parent. The iframe
+// runs with sandbox=allow-scripts (no allow-same-origin), so the
+// parent can't read contentDocument; postMessage is the only direction
+// the boundary allows -- this is the "never loosen sandbox, widen
+// postMessage instead" decision (invariant 2 / Unit 5b) instantiated.
+// Target origin is '*' because the sandbox makes the frame's own
+// origin opaque and the parent origin varies between local dev and
+// prod; the parent gates on event.source comparison, which is the
+// correct mechanism for sandboxed-iframe -> parent messages.
+function entryStub(sourcePath: string, slug: string): string {
   return `
 import { Component } from 'react'
 import { createRoot } from 'react-dom/client'
@@ -102,6 +113,32 @@ class ErrorBoundary extends Component {
 
 const root = createRoot(document.getElementById('root'))
 root.render(<ErrorBoundary><Artifact /></ErrorBoundary>)
+
+// Unit 10: fire artifact_interacted on first pointerdown, via
+// postMessage to the parent. Capture phase so React's event
+// delegation (which attaches at the root element during the bubble
+// phase) can't preempt or stopPropagation away from us. The "once"
+// semantic lives in a closure flag rather than {once:true}: it
+// turns out {once:true} can be consumed by stray browser-internal
+// pointer events during the bundle's initial render and the
+// listener disappears before any real user interaction; the closure
+// flag survives that race.
+;(function () {
+  var fired = false
+  window.addEventListener('pointerdown', function () {
+    if (fired) return
+    fired = true
+    try {
+      window.parent.postMessage(
+        { type: 'artifact:interacted', slug: ${JSON.stringify(slug)} },
+        '*'
+      )
+    } catch (err) {
+      // Parent unreachable, postMessage blocked, etc. Telemetry is
+      // best-effort -- never break the artifact itself.
+    }
+  }, { passive: true, capture: true })
+})()
 `
 }
 
@@ -120,7 +157,7 @@ async function compileArtifact(
     mkdirSync(outDir, { recursive: true })
     await build({
       stdin: {
-        contents: entryStub(sourcePath),
+        contents: entryStub(sourcePath, slug),
         resolveDir: process.cwd(),
         loader: 'jsx',
       },

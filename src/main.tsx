@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { hydrateRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import AppRoutes from './AppRoutes'
 import './index.css'
 
@@ -18,11 +19,18 @@ import '@fontsource/jetbrains-mono/500.css'
 // already-rendered DOM and wire up interactivity (navigation, source
 // filter, artifact iframe HEAD probe). See architecture.md Rendering
 // section for the build-time + runtime split.
+//
+// <Analytics /> mounts client-only at the client entry, never inside
+// AppRoutes. The SSR entry (ssr-entry.tsx) imports only AppRoutes, so
+// the analytics tracker is never invoked during prerender. Invariant
+// 1's spirit is preserved: analytics is a progressive enhancement,
+// not content (architecture.md Article Reading Arc / Unit 10).
 hydrateRoot(
   document.getElementById('root')!,
   <StrictMode>
     <BrowserRouter>
       <AppRoutes />
     </BrowserRouter>
+    <Analytics />
   </StrictMode>,
 )
