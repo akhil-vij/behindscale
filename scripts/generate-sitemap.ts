@@ -4,10 +4,13 @@
 // (404 pages don't belong in sitemaps), plus dist/robots.txt pointing
 // at the sitemap.
 //
-// Article lastmod = article.addedAt.
-// Pattern lastmod = max(article.addedAt) across articles referencing
-// the pattern (architecture.md Rendering section: truthful, the page's
-// content last changed when its newest referencing article landed).
+// Article lastmod = article.updatedAt ?? article.addedAt -- when an
+// article has been materially revised post-publish, the revision date
+// supersedes the original prod-add date.
+// Pattern lastmod = max(article.updatedAt ?? article.addedAt) across
+// articles referencing the pattern (architecture.md Rendering section:
+// truthful, the page's content last changed when its newest referencing
+// article landed or was revised).
 
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -32,10 +35,14 @@ const DIST = join(ROOT, 'dist')
 
 const SITE_URL = 'https://www.behindscale.com'
 
+function articleLastMod(a: Article): string {
+  return a.updatedAt ?? a.addedAt
+}
+
 function patternLastMod(patternSlug: string): string | undefined {
   const dates = articles
     .filter((a) => a.patterns.some((p) => p.slug === patternSlug))
-    .map((a) => a.addedAt)
+    .map(articleLastMod)
   if (dates.length === 0) return undefined
   return dates.reduce((latest, candidate) =>
     candidate > latest ? candidate : latest,
@@ -52,7 +59,7 @@ const entries: SitemapEntry[] = [
   { url: `${SITE_URL}/patterns` },
   ...articles.map((a) => ({
     url: `${SITE_URL}/articles/${a.slug}`,
-    lastMod: a.addedAt,
+    lastMod: articleLastMod(a),
   })),
   ...patterns.map((p) => ({
     url: `${SITE_URL}/patterns/${p.slug}`,

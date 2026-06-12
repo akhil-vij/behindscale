@@ -153,7 +153,10 @@ function articleMeta(article: Article): Meta {
       headline: article.title,
       description: article.summary,
       datePublished: article.addedAt,
-      dateModified: article.addedAt,
+      // `updatedAt` is the date of the last material post-publish
+      // revision. When absent, `dateModified` mirrors `addedAt`
+      // (architecture.md JSON-LD field map).
+      dateModified: article.updatedAt ?? article.addedAt,
       author: {
         '@type': 'Organization',
         name: SITE_NAME,

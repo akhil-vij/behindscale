@@ -12,12 +12,15 @@ export interface Article {
   // isBasedOn.datePublished.
   publishedAt: string
   // ISO YYYY-MM-DD. The date this article first appeared on
-  // behindscale's production deploy. Used for sitemap `lastmod`,
-  // JSON-LD `datePublished` and `dateModified`, and any future
-  // recently-added surface. Leave room for an `updatedAt` field on the
-  // day an article is materially revised post-publish; until then,
-  // JSON-LD `dateModified` mirrors `addedAt`.
+  // behindscale's production deploy. Used for sitemap `lastmod` (when
+  // `updatedAt` is absent), JSON-LD `datePublished`, and any future
+  // recently-added surface.
   addedAt: string
+  // ISO YYYY-MM-DD. The date of the last material post-publish revision
+  // to this article (rewrite to source, corrections, pattern reattribution).
+  // Sources JSON-LD `dateModified` and sitemap `lastmod` when present;
+  // when absent, both fall back to `addedAt`.
+  updatedAt?: string
   source: Source
   summary: string
   problem: string

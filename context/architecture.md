@@ -97,7 +97,7 @@ cost of doing it the other way is real.
   "headline":         "<article.title>",
   "description":      "<article.summary>",
   "datePublished":    "<article.addedAt>",
-  "dateModified":     "<article.addedAt>",
+  "dateModified":     "<article.updatedAt ?? article.addedAt>",
   "author":           { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
   "publisher":        { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
   "mainEntityOfPage": "https://www.behindscale.com/articles/<slug>",
@@ -121,9 +121,10 @@ editorial and may diverge from the source post's title; asserting
 the source published under our title would be misattribution. URL +
 publisher is sufficient identification; if a future `originalTitle`
 field is added to the content contract, `name` can return inside
-`isBasedOn`. `dateModified` equals `datePublished` until a future
-`updatedAt` field exists; that field then sources `dateModified`
-without redefinition.
+`isBasedOn`. `dateModified` sources from `article.updatedAt` when
+present (the date of the last material post-publish revision) and
+falls back to `article.addedAt` otherwise — the same fallback the
+sitemap's `lastmod` uses.
 
 **Deploy.** Vercel serves the per-route HTML files directly.
 `vercel.json` pins `cleanUrls: true` and `trailingSlash: false`:
@@ -138,10 +139,13 @@ it inherits the navbar and styling; Vercel automatically serves
 **Sitemap + robots.** `scripts/generate-sitemap.ts` emits
 `dist/sitemap.xml` listing every prerendered route except `/404`
 (404 pages don't belong in sitemaps), plus `dist/robots.txt`
-pointing at the sitemap. Article `lastmod` is the article's
-`addedAt`. Pattern `lastmod` is derived as `max(addedAt)` over
-articles referencing that pattern (truthful: the page's content
-last changed when its newest referencing article landed).
+pointing at the sitemap. Article `lastmod` is
+`article.updatedAt ?? article.addedAt` — when an article has been
+materially revised post-publish, the revision date supersedes the
+original prod-add date. Pattern `lastmod` is derived as
+`max(updatedAt ?? addedAt)` over articles referencing that pattern
+(truthful: the page's content last changed when its newest
+referencing article landed or was revised).
 
 **Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
 placed before the main.tsx script tag in `index.html` so it runs on
@@ -351,12 +355,17 @@ Every per-article summary JSON in `content/articles/` conforms to the
 - `addedAt` — required ISO 8601 date string. When this article first
   appeared on behindscale's production deploy (distinct from
   `publishedAt`, which is the source post's date). Used for sitemap
-  `lastmod`, JSON-LD `datePublished` and `dateModified`, and any future
-  recently-added surface. Leave room for an `updatedAt` field on the day
-  an article is materially revised post-publish; until then, JSON-LD
-  `dateModified` mirrors `addedAt`. Added as a schema chore ahead of
+  `lastmod` (when `updatedAt` is absent), JSON-LD `datePublished`, and
+  any future recently-added surface. Added as a schema chore ahead of
   Unit 9 (the SSG / SEO foundation); backfilled on the five Phase-5
   and 5f articles from their prod-verify dates.
+- `updatedAt` — optional ISO 8601 date string. The date of the last
+  material post-publish revision to this article: a rewrite to source,
+  a correction, a pattern reattribution. Sources JSON-LD `dateModified`
+  and sitemap `lastmod` when present; both fall back to `addedAt`
+  otherwise. Added in Unit 11's stripe-rework chore — the seed article's
+  audit-driven rewrite was the field's first use; later articles set it
+  only when they are materially revised post-publish.
 - `source` — required `Source` block, as documented above.
 - `summary` — required string. Short summary surfaced on article cards
   and used as the page lead on the article page.

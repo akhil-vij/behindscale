@@ -50,6 +50,14 @@ describe('Article', () => {
     expect(isArticle(withoutGenerated)).toBe(true)
   })
 
+  it('accepts an article with the optional updatedAt field', () => {
+    expect(isArticle({ ...validArticle, updatedAt: '2026-06-12' })).toBe(true)
+  })
+
+  it('rejects when updatedAt is present but not a string', () => {
+    expect(isArticle({ ...validArticle, updatedAt: 20260612 })).toBe(false)
+  })
+
   it('accepts a summary-only article (artifact = null)', () => {
     expect(isArticle({ ...validArticle, artifact: null })).toBe(true)
   })
