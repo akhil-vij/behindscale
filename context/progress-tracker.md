@@ -4,30 +4,39 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pt 1
-  (stripe rework) landed; article cadence unblocked.** Unit 9
-  (SSG + SEO foundation) landed and prod-verified 2026-06-11;
-  one iframe regression from `cleanUrls` was caught + fixed
-  within the hour (`fix:` commit `a6a31af`). Unit 10 (article
-  reading arc + instrumentation) landed in three commits over
-  2026-06-11/12 and was manually prod-verified by the owner:
-  section order is live, analytics pipe is firing into the
-  Vercel dashboard. **Unit 11 / quality sprint pt 1 (stripe
-  rework) landed 2026-06-12** in three commits: an audit found
-  the seed article (Unit 3f) dissected material from a personal
-  blog rather than the attributed official post, violating
-  invariant 7; rewritten exclusively from the source post,
-  pattern references corrected (atomic-phases removed, rehomed
-  to skipper-workflow-engine; new
-  retry-with-backoff-and-jitter pattern added), artifact
-  rebuilt. `updatedAt` schema field added in the same sprint
-  for the first material post-publish revision. Library state:
-  **5 articles, 16 pattern definitions (new
-  retry-with-backoff-and-jitter), 5 artifacts.** The
-  measurement foundation from Unit 10 is intact through the
-  rebuild — the new stripe bundle ships the same
-  `artifact_interacted` emitter wiring. The reassessment
-  window from 2026-06-04 still applies.
+- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pts 1
+  and 2 (stripe + uber reworks) landed; article cadence
+  unblocked.** Unit 9 (SSG + SEO foundation) landed and
+  prod-verified 2026-06-11; one iframe regression from
+  `cleanUrls` was caught + fixed within the hour (`fix:` commit
+  `a6a31af`). Unit 10 (article reading arc + instrumentation)
+  landed in three commits over 2026-06-11/12 and was manually
+  prod-verified by the owner: section order is live, analytics
+  pipe is firing into the Vercel dashboard. **Unit 11 / quality
+  sprint pt 1 (stripe rework) landed 2026-06-12** in three
+  commits: rewrite to source after audit found personal-blog
+  material in the seed dissection (invariant 7); pattern
+  references corrected; artifact rebuilt; `updatedAt` schema
+  field added. **Unit 11 / quality sprint pt 2 (uber rework)
+  landed 2026-06-12** in four commits: a validator chore (the
+  stats-value-in-prose check now handles composite values via
+  `→` split and emits warnings rather than errors on
+  fuzzy misses, restoring the docs-commit intent that was
+  shipped as a hard error by mistake); an article rewrite
+  (corrected dead source URL, wrong publishedAt, three
+  fabricated example figures, an understated scale, and an
+  inverted tradeoff); a pattern merge (pid-controlled-adaptive-
+  thresholds + byos-platform-design retired into a single
+  feedback-controlled-load-management pattern with 308
+  redirects from the retired URLs); and this docs commit. The
+  PidSim and CinnamonView artifact panels were also patched to
+  fix three internal-consistency issues caught alongside the
+  fidelity audit. Library state: **5 articles, 15 pattern
+  definitions (was 16: +1 merged, -2 retired this sprint;
+  +1 retry-with-backoff-and-jitter the prior sprint), 5
+  artifacts.** The measurement foundation from Unit 10 is
+  intact through both reworks. The reassessment window from
+  2026-06-04 still applies.
 
 ## Current Operating Mode
 
@@ -89,6 +98,128 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 11 / quality sprint pt 2 — Uber rework
+  (2026-06-12).** Four commits in order: `chore: stats-value-
+  in-prose -- composite-aware, warning not error` (the
+  validator gains `→`-split composite matching, the
+  normalize char set extends to `<`, `>`, `~`, `≈`, and the
+  fuzzy-miss is severity: 'warning' rather than a hard error;
+  CheckError.severity is the framework contract that makes the
+  warning vs. error distinction first-class -- the
+  no-content-changes-needed semantics fix the Unit 10 docs
+  commit always intended; +5 tests, render output gains a
+  warnings track that doesn't flip the exit code);
+  `content: uber rework -- fidelity fixes + artifact patches`
+  (article rewritten against the actual source post; new
+  feedback-controlled-load-management pattern definition added
+  alongside the article so the validator stays green at every
+  bisect point in this sprint; three artifact patches landed
+  in the same commit since they're the same content-coherent
+  change); `content: pattern merge -- retire pid-controlled
+  and byos into feedback-controlled` (pure retirements + the
+  vercel.json 308 redirects from the retired URLs; pre-deletion
+  grep confirmed zero referencing articles after the prior
+  commit pulled Uber's references); this docs commit.
+  - Source-verification motivation. The Phase 5 dissection of
+    this article (Unit 5e, 2026-06-02) predated the
+    fidelity-against-source discipline that locked in with the
+    Stripe rework. Post-Stripe audit pass found: the source URL
+    in the article returns 404 (the post lives at
+    /blog/from-static-rate-limiting-to-intelligent-load-
+    management/); the publishedAt date was 2024-11-21,
+    belonging to Uber's separate Cinnamon post, not this
+    article (corrected to 2026-04-20); the summary said
+    "Docstore and Helix" where the source says Schemaless;
+    problem ¶1 understated scale ("millions" → "tens of
+    millions", "partitions" → "clusters", "tens of petabytes"
+    of storage added); two fabricated PID-control examples
+    (a "(cross 15ms → shed 50%)" rule and a "10ms P90"
+    target, neither in the source — the source uses a fixed
+    wait "like 5 milliseconds" as the CoDel example); a
+    tradeoff that inverted the source's actual claim (the
+    original article claimed per-workload PID calibration as
+    an ongoing tuning effort, but Cinnamon's stated goal is
+    no per-service tuning; the honest cost is the calibration
+    that paid out once, centrally, at the platform level,
+    with the companion PID post's earlier-iterations stability
+    issues as evidence). PID-term material from Uber's
+    companion Cinnamon and PID-controller posts is now
+    attributed in prose by name rather than asserted as if it
+    came from this article -- same discipline the Stripe
+    rework locked in.
+  - Pattern merge rationale. Cinnamon's PID controller and
+    its BYOS pluggable-signal architecture are inseparable in
+    practice: the controller is what BYOS unifies, and BYOS is
+    the architecture that gives the controller more than one
+    input. Two separate library entries fractured the actual
+    concept and named two specific implementation choices
+    ("PID", "BYOS"). Pattern names need to survive without
+    naming an implementation or company jargon; the merged
+    feedback-controlled-load-management entry keeps both as
+    Uber's instantiations in the article's pattern note. The
+    retired patterns had zero referencing articles after the
+    Uber rework (pre-deletion grep confirmed), so the deletion
+    is clean and the merged pattern carries the conceptual
+    weight forward. Old URLs 308-redirect via vercel.json --
+    the Unit 9 SEO foundation indexed both retired slugs and
+    permanent redirects transfer that signal to the merged
+    pattern rather than wasting it on a 404.
+  - Artifact patches (three internal-consistency fixes in the
+    same content commit as the article, since the artifact
+    contradicting its own captions is the same class of issue
+    as the article contradicting its source). PidSim was
+    rewritten end-to-end: the original ran one PID system and
+    derived its "static threshold" line from that same
+    system's latency (asserting rather than demonstrating the
+    comparison); replaced with two independent loops under
+    identical traffic, each with retry feedback (the actual
+    thundering-herd mechanism), so the static loop visibly
+    flaps while the PID loop converges. CinnamonView's
+    walkthrough had three contradictions between captions and
+    rendered state -- the header limit was hardcoded to 80
+    across steps, step 4's "PID tightens further" caption
+    contradicted the fixed value (fixed with a per-step
+    limits[] array, with step 5 carrying a labelled
+    "65 → 100 (reopening)" string since recovery is a
+    curve); step 4's recovery state snapped all bars to full
+    pass while its caption said remaining t4s shed (fixed
+    with shed-25-t4 logic matching the caption); step 2's
+    description called out 80 as a specific limit value (the
+    illustrative-values disclosure now appended to the
+    description). The Unit 10 `artifact_interacted` emitter
+    survives the rewrite (smoke-checked the new bundle for
+    the slug literal + window.parent.postMessage).
+  - Validator chore detail. The composite `→` matching
+    sanity-checks against all three known composites at
+    once: Uber's `3.1s → 1.0s` (halves: 3.1s, 1.0s, both in
+    the rewritten solution prose); Discord's `500ms →
+    <100ms` (halves: 500ms, 100ms after `<` strip, both in
+    the prose "from 500ms to under 100ms"); Skipper's
+    `minutes → days` (halves: minutes, days, both in the
+    prose "span minutes to days"). The Discord and Skipper
+    composites stay unlanded (pending editorial revision and
+    teaser-vs-artifact verification from the earlier Unit 10
+    backfill flag), but the validator no longer holds them
+    back. CheckError.severity is the framework contract that
+    makes warning vs. error first-class: schema errors and
+    the max-3 rule stay hard errors (structural, not
+    phrasing-sensitive); the value-in-prose miss is now a
+    warning since normalization is intentionally best-effort
+    and a human reviewer judges fuzzy misses better than the
+    substring matcher.
+  - Verification: validator 4 checks, 0 errors; vitest 72/72
+    (was 67; +5 in stats-value-in-prose covering severity,
+    each composite shape, and a composite-fail-still-warns
+    case); `npm run compile-artifacts` 5/5 ok;
+    `npm run build` end-to-end clean -- 23 routes
+    prerendered, sitemap 22 URLs (was 24; -2 retired
+    patterns; the merged pattern was already in the count
+    from the content commit). Spot-checked
+    `dist/articles/uber-intelligent-load-management.html`:
+    new title, datePublished=2026-06-02 (addedAt
+    unchanged), dateModified=2026-06-12 (updatedAt),
+    isBasedOn.datePublished=2026-04-20 (corrected). Sitemap
+    confirmed clean of the retired pattern slugs.
 - **Unit 11 / quality sprint pt 1 — Stripe rework
   (2026-06-12).** Three commits in order: `chore: add optional
   updatedAt to Article schema` (the schema field; JSON-LD
@@ -899,30 +1030,41 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Units 9 + 10 closed and prod-verified; Unit 11 / quality
-  sprint pt 1 (stripe rework) landed 2026-06-12. Next manual-mode
-  publication awaiting article choice from the candidate list
-  (Slack shared channels, Netflix active-active, Cloudflare
-  Prometheus, Meta FOQS, GitHub sharding, DoorDash internal tools,
-  LinkedIn Brooklin). Three known follow-ups, all small +
-  non-blocking:
+- None — Units 9 + 10 closed and prod-verified; Unit 11 quality
+  sprint pts 1 (stripe) and 2 (uber) both landed 2026-06-12.
+  Next manual-mode publication awaiting article choice from the
+  candidate list (Slack shared channels, Netflix active-active,
+  Cloudflare Prometheus, Meta FOQS, GitHub sharding, DoorDash
+  internal tools, LinkedIn Brooklin). Four known follow-ups, all
+  small + non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
   - Editorial backfill of `artifact.teaser` strings and `stats[]`
-    values for the remaining four published articles (stripe
-    now has its teaser + intentional zero stats from the
-    rework). The previous round flagged the Skipper teaser
-    against the actual artifact and three composite stat values
-    (`500ms → <100ms`, `3.1s → 1.0s`, `minutes → days`) that the
-    current value-in-prose validator can't substring-match;
-    awaiting editorial revision and (optionally) a small
-    validator extension for `→`-composites.
-  - `relatedArticles` UI surface. Stripe's rework was the
-    field's first populated use; the website doesn't yet
-    render a "see also" section. Lands as a small standalone
-    unit when the next authoring cadence touches the article
-    page.
+    values for the remaining three published articles (stripe
+    and uber both landed their content in the quality sprints).
+    The earlier round flagged the Skipper teaser against the
+    actual artifact — that's still pending editorial revision.
+    The three composite stat values (`500ms → <100ms`,
+    `3.1s → 1.0s` already landed via Uber, `minutes → days`)
+    no longer block the validator: the chore in this sprint
+    teaches the matcher to split on `→` and the fuzzy-miss
+    is a warning rather than an error, so the remaining
+    composites can land as authored.
+  - `relatedArticles` UI surface. Stripe + Uber both populate
+    the field (they cross-reference each other); the website
+    doesn't yet render a "see also" section. Lands as a small
+    standalone unit when the next authoring cadence touches
+    the article page.
+  - **Prose markdown rendering with hyperlinks.** The Uber
+    rework attributes PID-term material to Uber's companion
+    Cinnamon and PID posts by name in prose. Hyperlinks
+    (`/blog/cinnamon-using-century-old-tech-to-build-a-mean-load-shedder/`,
+    `/blog/pid-controller-for-cinnamon/`) are the natural
+    rendering; the prose renderer doesn't yet support markdown
+    syntax. Lands with the deferred markdown renderer (was
+    originally scoped under Unit 7+, now decoupled from that
+    sequence).
 
 ## Developer Setup
 
@@ -1022,6 +1164,53 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Uber article fidelity fixes + pattern merge** (quality
+  audit, 2026-06-12). Source verification of the original 5e
+  dissection (against
+  `https://www.uber.com/blog/from-static-rate-limiting-to-intelligent-load-management/`)
+  found: a dead source URL (the post lives at the
+  `from-static-rate-limiting-…` path; the
+  `/blog/intelligent-load-management/` slug in the article
+  404s); wrong `publishedAt` (the 2024-11-21 date belonged to
+  Uber's separate Cinnamon post, not this article); "Helix"
+  where the source says Schemaless; two fabricated example
+  figures (15ms → shed 50%, 10ms P90 target — neither in the
+  source, whose example is a fixed wait "like 5
+  milliseconds"); understated scale ("millions" → "tens of
+  millions" requests per second across "thousands of
+  clusters"); and one tradeoff that inverted the source's
+  claim (Cinnamon advertises no per-service tuning; the
+  honest tradeoff is that calibration concentrated at the
+  platform level, paid once centrally). PID-term material
+  from Uber's companion posts is now attributed in prose by
+  name per the same convention the Stripe rework locked in.
+  Pattern merge: `pid-controlled-adaptive-thresholds` and
+  `byos-platform-design` retired into
+  `feedback-controlled-load-management` — pattern names must
+  survive without naming an implementation (PID) or a
+  company's jargon (BYOS); both live on as Uber's
+  instantiations in the article's pattern note. Old slugs
+  308-redirect. Library: 15 patterns, all general.
+- **Validator framework: warning vs. error severity is
+  first-class** (Unit 11 quality sprint pt 2, 2026-06-12).
+  `CheckError.severity` is now an optional field on the
+  framework contract (`'error' | 'warning'`, default
+  `'error'`). The validator runner tracks errors and warnings
+  separately; warnings surface in the same output format with
+  a `(warning)` tag, but only errors flip the exit code. The
+  immediate driver is the `stats-value-in-prose` check, whose
+  Unit 10 docs commit said "flag, don't block, on fuzzy
+  misses" but whose implementation shipped as exit-1 — the
+  framework now supports the docs-commit intent, and the
+  stats check uses it for the value-in-prose miss (structural
+  rules like max-3 stay hard errors). Other checks
+  (orphan-pattern-slugs, minimum-pattern-coverage,
+  artifact-path-matches-slug) keep their hard-error semantics
+  by omitting the field. The pattern is now available the
+  next time a check needs "surface but don't block": the
+  framework no longer forces every editorial discipline into
+  the binary build-passes/build-fails choice when the right
+  answer is a human-eyeballed warning.
 - **Stripe seed article reworked to source** (quality audit,
   2026-06-12). The original stripe-idempotency dissection
   (Unit 3f, the site's seed article) included mechanism detail
