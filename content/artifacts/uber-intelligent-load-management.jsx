@@ -200,7 +200,7 @@ function CinnamonView() {
   const [step, setStep] = useState(0);
   const scenarios = [
     { title: "Step 1: Traffic arrives", desc: "120 requests hit a node with capacity for 100. Cinnamon classifies them by priority tier." },
-    { title: "Step 2: PID calculates new limit", desc: "P90 latency at 25ms vs 10ms target. PID outputs: reduce concurrency limit to 80. Gradual, not 'reject all'." },
+    { title: "Step 2: PID calculates new limit", desc: "P90 latency at 25ms vs 10ms target. PID outputs: reduce concurrency limit to 80. Gradual, not 'reject all'. (Illustrative values — the post doesn't publish Cinnamon's internal targets.)" },
     { title: "Step 3: Priority-aware shedding", desc: "Need 120 → 80. Cinnamon sheds from the bottom: 40 of 50 t4 analytics requests dropped. All t1 ride queries and t2 search updates pass through." },
     { title: "Step 4: If pressure rises", desc: "If 80 isn't enough, PID tightens further. Remaining t4s go first, then t2 search updates start shedding. t1 ride pricing is the absolute last to be touched." },
     { title: "Step 5: Gradual recovery", desc: "As load decreases, PID smoothly opens limit back: 80 → 82 → 85 → 90 → 95 → 100. NOT a sudden jump (which would cause a new spike)." },
@@ -211,6 +211,10 @@ function CinnamonView() {
     { tier: "t2", label: "Search ranking updates", count: 40, color: "#f97316" },
     { tier: "t4", label: "Async analytics", count: 50, color: "#666" },
   ];
+  // Concurrency limit per step. Step 4 shows the deeper-tightening
+  // path; step 5 is a labelled "reopening" string because the recovery
+  // is a curve, not a single value.
+  const limits = [100, 100, 80, 65, "65 → 100 (reopening)"];
 
   return (
     <div>
@@ -243,14 +247,14 @@ function CinnamonView() {
         <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: "0 0 12px 0", lineHeight: 1.7 }}>{current.desc}</p>
         <div style={{ background: "#08090D", borderRadius: 6, padding: "12px 14px" }}>
           <div style={{ fontSize: 9, color: "#666", letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
-            Traffic — 120 incoming, limit {step >= 2 ? 80 : 100}
+            Traffic — 120 incoming, limit {limits[step]}
           </div>
           {breakdown.map((t) => {
             let shed = 0, passed = t.count;
             if (step >= 2 && t.tier === "t4") { shed = 40; passed = 10; }
             if (step >= 3 && t.tier === "t4") { shed = 50; passed = 0; }
             if (step >= 3 && t.tier === "t2") { shed = 15; passed = 25; }
-            if (step === 4) { shed = 0; passed = t.count; }
+            if (step === 4) { shed = t.tier === "t4" ? 25 : 0; passed = t.count - shed; }
             const passedPct = (passed / t.count) * 100;
             return (
               <div key={t.tier} style={{ marginBottom: 8 }}>
@@ -294,22 +298,45 @@ function PidSim() {
 
   useEffect(() => {
     if (running) {
-      let t = 0, integral = 0, prevError = 0, limit = 100;
-      let hist = [];
-      const TARGET = 10;
+      // Two systems simulated independently under identical external traffic.
+      // Rejected requests retry next tick (RETRY) — the actual thundering-herd
+      // mechanism. All constants are illustrative, not Uber's.
+      const TARGET = 10, THRESH = 15, C = 35, BASE = 2, K = 8, RETRY = 0.8, LAT_CAP = 60;
+      const latencyOf = (admitted) => {
+        const rho = Math.min(admitted / C, 0.9);
+        return Math.min(LAT_CAP, BASE + K * (rho / (1 - rho)));
+      };
+      let t = 0, hist = [];
+      let limit = 100, integral = 0, prevError = 0, shedP = 0; // PID system
+      let sLimit = 100, shedS = 0;                              // static system
       intervalRef.current = setInterval(() => {
         t++;
-        const externalLoad = t < 5 ? 10 : t < 15 ? 10 + (t - 5) * 4 : Math.max(10, 50 - (t - 15) * 3);
-        const actualLatency = Math.max(3, externalLoad * (100 / Math.max(limit, 20)) * 0.4 + (Math.random() * 3 - 1.5));
-        const error = actualLatency - TARGET;
-        integral += error;
-        integral = Math.max(-200, Math.min(200, integral));
-        const derivative = error - prevError;
-        prevError = error;
-        const adjustment = 0.5 * error + 0.05 * integral + 0.3 * derivative;
-        limit = Math.max(20, Math.min(100, limit - adjustment * 0.5));
-        const staticLimit = actualLatency > 15 ? 40 : 100;
-        hist.push({ t, latency: Math.round(actualLatency * 10) / 10, pidLimit: Math.round(limit), staticLimit });
+        const ext = t < 5 ? 10 : t < 15 ? 10 + (t - 5) * 4 : Math.max(10, 50 - (t - 15) * 3);
+        const noise = () => Math.random() * 2 - 1;
+        // --- PID-controlled system ---
+        const eff = ext + RETRY * shedP;
+        const adm = Math.min(eff, limit);
+        shedP = eff - adm;
+        const lat = Math.max(2, latencyOf(adm) + noise());
+        const err = Math.max(-15, Math.min(30, lat - TARGET));
+        integral = Math.max(-120, Math.min(120, integral * 0.93 + err)); // leaky, bounded (anti-windup)
+        const deriv = err - prevError;
+        prevError = err;
+        const adjustment = 0.45 * err + 0.04 * integral + 0.25 * deriv;
+        limit = Math.max(12, Math.min(100, limit - adjustment * 0.45));
+        // --- Static-threshold system (independent loop, own latency) ---
+        const effS = ext + RETRY * shedS;
+        const admS = Math.min(effS, sLimit);
+        shedS = effS - admS;
+        const latS = Math.max(2, latencyOf(admS) + noise());
+        sLimit = latS > THRESH ? 15 : 100;
+        hist.push({
+          t,
+          latency: Math.round(lat * 10) / 10,
+          staticLatency: Math.round(latS * 10) / 10,
+          pidLimit: Math.round(limit),
+          staticLimit: sLimit,
+        });
         if (hist.length > 40) hist = hist.slice(-40);
         setHistory([...hist]);
         if (t > 50) { clearInterval(intervalRef.current); setRunning(false); }
@@ -319,13 +346,15 @@ function PidSim() {
   }, [running]);
 
   const reset = () => { clearInterval(intervalRef.current); setRunning(false); setHistory([]); };
-  const maxLatency = Math.max(30, ...history.map((h) => h.latency));
+  const maxLatency = Math.max(30, ...history.map((h) => Math.max(h.latency, h.staticLatency)));
   const chartH = 130;
 
   return (
     <div>
       <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        Live simulation. Traffic spike at t=5, gradual recovery after t=15. Watch how PID adjusts gradually while static thresholds oscillate.
+        Live simulation: two identical systems under the same traffic spike (t=5, recovery after t=15).
+        One uses a static threshold, one a PID controller. Rejected requests retry — watch what that
+        does to the static system.
       </p>
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <button onClick={() => { reset(); setTimeout(() => setRunning(true), 100); }} style={{
@@ -367,10 +396,12 @@ function PidSim() {
             top: `${(1 - 10 / maxLatency) * 100}%`,
             borderTop: "1px dashed #22c55e50",
           }}>
-            <span style={{ fontSize: 8, color: "#22c55e", position: "absolute", left: 4, top: -10 }}>target 10ms</span>
+            <span style={{ fontSize: 8, color: "#22c55e", position: "absolute", left: 4, top: -10 }}>target (illustrative)</span>
           </div>
           {history.length > 1 && (
             <svg width="100%" height="100%" viewBox={`0 0 ${history.length * 10} ${chartH}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
+              <polyline fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.55"
+                points={history.map((h, i) => `${i * 10},${chartH - (h.staticLatency / maxLatency) * chartH}`).join(" ")} />
               <polyline fill="none" stroke="#06b6d4" strokeWidth="2"
                 points={history.map((h, i) => `${i * 10},${chartH - (h.latency / maxLatency) * chartH}`).join(" ")} />
               <polyline fill="none" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="4,3"
@@ -385,8 +416,9 @@ function PidSim() {
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 12, marginTop: 6, justifyContent: "center" }}>
-          <span style={{ fontSize: 9.5, color: "#06b6d4" }}>━ Actual latency</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6, justifyContent: "center" }}>
+          <span style={{ fontSize: 9.5, color: "#06b6d4" }}>━ Latency (PID)</span>
+          <span style={{ fontSize: 9.5, color: "#ef4444", opacity: 0.8 }}>━ Latency (static)</span>
           <span style={{ fontSize: 9.5, color: "#22c55e" }}>╌ PID limit</span>
           <span style={{ fontSize: 9.5, color: "#ef4444" }}>╌ Static limit</span>
         </div>
@@ -399,7 +431,15 @@ function PidSim() {
           Why PID prevents thundering herd
         </div>
         <p style={{ fontSize: 11, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          Static: latency crosses threshold → reject everything → retry storm → oscillation. PID: latency rises → limit decreases gradually → fewer requests shed each cycle → smooth curve, no mass retry storm.
+          The static system mass-rejects when latency crosses its threshold; the rejected traffic retries,
+          re-triggers the threshold, and the limit flaps open-shut while latency whipsaws. The PID system
+          sheds a little more each cycle, so retries stay small and latency converges to target — a dimmer
+          switch instead of a hammer.
+        </p>
+        <p style={{ fontSize: 9.5, color: "#666", margin: "8px 0 0 0", lineHeight: 1.6 }}>
+          Simulation values are illustrative — the post doesn't publish Cinnamon's internal targets. The
+          sourced content is the mechanism: smooth feedback-controlled shedding versus static-threshold
+          oscillation under retry load.
         </p>
       </div>
     </div>
