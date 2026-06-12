@@ -30,6 +30,13 @@ export interface CheckError {
   // `→`-prefixed line in the output. Authors keep entries to a single
   // line each.
   readonly fix?: readonly string[]
+  // 'error' (default) fails the build; 'warning' surfaces in output but
+  // does not change the exit code. Use 'warning' when the editorial
+  // intent (architecture.md, Content Contract section) is "flag, don't
+  // block" -- e.g., the stats-value-in-prose fuzzy-miss case where
+  // normalization is intentionally best-effort and a miss might mean
+  // the prose phrasing diverges, not that the stat is fabricated.
+  readonly severity?: 'error' | 'warning'
 }
 
 export interface Check {

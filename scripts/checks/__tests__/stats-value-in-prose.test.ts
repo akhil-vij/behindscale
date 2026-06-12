@@ -135,4 +135,89 @@ describe('statsValueInProse', () => {
     const errors = statsValueInProse.run(content)
     expect(errors).toHaveLength(2)
   })
+
+  it('emits the value-not-in-prose miss as a warning, the max-3 violation as an error', () => {
+    const content = makeContent({
+      articles: [
+        articleWithStats(
+          'cinnamon',
+          { solution: '1 2 3 fine' },
+          [
+            { value: '1', label: 'a', placement: 'solution' },
+            { value: '2', label: 'b', placement: 'solution' },
+            { value: '3', label: 'c', placement: 'solution' },
+            { value: '999', label: 'd-missing', placement: 'solution' },
+          ],
+        ),
+      ],
+      patterns: [pattern('p1')],
+    })
+    const errors = statsValueInProse.run(content)
+    const warnings = errors.filter((e) => e.severity === 'warning')
+    const hard = errors.filter((e) => e.severity !== 'warning')
+    expect(warnings).toHaveLength(1)
+    expect(warnings[0]?.message).toContain('999')
+    expect(hard).toHaveLength(1)
+    expect(hard[0]?.message).toContain('max is')
+  })
+
+  it('matches a composite value via → split when each half is in prose ("3.1s → 1.0s")', () => {
+    const content = makeContent({
+      articles: [
+        articleWithStats(
+          'cinnamon',
+          { solution: 'P99 latency dropped from ~3.1s to ~1.0s under overload.' },
+          [{ value: '3.1s → 1.0s', label: 'P99 latency', placement: 'solution' }],
+        ),
+      ],
+      patterns: [pattern('p1')],
+    })
+    expect(statsValueInProse.run(content)).toEqual([])
+  })
+
+  it('matches a composite whose half carries a comparator ("500ms → <100ms" vs prose "from 500ms to under 100ms")', () => {
+    const content = makeContent({
+      articles: [
+        articleWithStats(
+          'discord',
+          { solution: 'median query latency dropped from 500ms to under 100ms.' },
+          [
+            { value: '500ms → <100ms', label: 'median query latency', placement: 'solution' },
+          ],
+        ),
+      ],
+      patterns: [pattern('p1')],
+    })
+    expect(statsValueInProse.run(content)).toEqual([])
+  })
+
+  it('matches a word-only composite ("minutes → days")', () => {
+    const content = makeContent({
+      articles: [
+        articleWithStats(
+          'skipper',
+          { problem: 'workflows span minutes to days.' },
+          [{ value: 'minutes → days', label: 'workflow lifespan', placement: 'problem' }],
+        ),
+      ],
+      patterns: [pattern('p1')],
+    })
+    expect(statsValueInProse.run(content)).toEqual([])
+  })
+
+  it('still flags a composite when one half is absent from the prose', () => {
+    const content = makeContent({
+      articles: [
+        articleWithStats(
+          'cinnamon',
+          { solution: 'latency dropped to 1.0s under overload.' }, // no "3.1s"
+          [{ value: '3.1s → 1.0s', label: 'P99 latency', placement: 'solution' }],
+        ),
+      ],
+      patterns: [pattern('p1')],
+    })
+    const errors = statsValueInProse.run(content)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]?.severity).toBe('warning')
+  })
 })

@@ -429,9 +429,19 @@ Every per-article summary JSON in `content/articles/` conforms to the
   appear in the article's own prose** (problem/solution/tradeoffs/
   summary). The field is a lift, not a source of new claims;
   normalization is intentionally best-effort (strip `+`, `%`,
-  `,`, whitespace; lowercase) so `"+80%"` matches `"80 percent"`
-  and `"3.1 s"` matches `"3.1s"`. Flag, don't block, on fuzzy
-  misses.
+  `,`, `<`, `>`, `~`, `≈`, whitespace; lowercase) so `"+80%"`
+  matches `"80 percent"` and `"<100ms"` matches `"100ms"` or
+  `"under 100ms"`. Composite values that use the `→` separator
+  (e.g. `"3.1s → 1.0s"`, `"500ms → <100ms"`) are split on the
+  arrow and each half is required to match independently; the
+  monolithic form is still tried first as the simpler case. The
+  max-3 rule is a hard error; the value-in-prose miss is a
+  **warning** (surfaces in validator output, does not fail the
+  build) — fuzzy misses often mean the prose phrases the figure
+  differently rather than that the stat is fabricated, and the
+  human reviewing the warning is in a better position to judge
+  than the substring matcher. The framework supports the
+  warning/error distinction via `CheckError.severity`.
 
 ### Patterns
 
