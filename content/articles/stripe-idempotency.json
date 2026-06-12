@@ -2,8 +2,9 @@
   "slug": "stripe-idempotency",
   "title": "Designing robust and predictable APIs with idempotency",
   "url": "https://stripe.com/blog/idempotency",
-  "publishedAt": "2017-08-29",
+  "publishedAt": "2017-02-22",
   "addedAt": "2026-05-29",
+  "updatedAt": "2026-06-12",
   "source": {
     "name": "Stripe Engineering",
     "slug": "stripe-engineering",
@@ -11,25 +12,31 @@
     "url": "https://stripe.com/blog/engineering",
     "feed": "https://stripe.com/blog/feed.rss"
   },
-  "summary": "How Stripe makes payment APIs safe to retry by combining idempotency keys with atomic phase boundaries — turning network uncertainty into a non-event for the caller.",
-  "problem": "A network failure during a payment request leaves the caller uncertain whether the charge succeeded. Naive retries risk double-charging the customer; abandoning the request risks dropping a real payment. Without a coordinated scheme, every transient network hiccup forces a hard choice between two bad outcomes.",
-  "solution": "Persist an idempotency key with each request and structure the work as a sequence of atomic phases, each with its own commit point. On retry, the system reads the key's stored progress, sees which phase completed last, and resumes from the next one. The same key produces the same outcome whether the original request succeeded, failed mid-flight, or never reached the server. The caller can retry safely and indefinitely, and the server's behavior is deterministic given the key.",
+  "summary": "How Stripe makes APIs safe in an unreliable network: idempotent endpoint design where HTTP semantics allow it, client-supplied idempotency keys where operations must happen exactly once, and disciplined retry behavior — exponential backoff with jitter — so that recovering clients never become the next outage.",
+  "problem": "Networks fail at a constant ambient rate, and any call between two nodes can fail in three distinct ways: the initial connection fails before reaching the server, the call fails midway while the server is doing the work, or the operation succeeds but the connection breaks before the client hears about it. The first case is unambiguous — nothing happened, retry freely. The other two leave the client in genuine uncertainty: it cannot tell whether the operation took effect, so it doesn't know whether retrying is safe.\n\nFor most operations this ambiguity is an annoyance. For a payments API it's the worst case: retrying a charge that actually succeeded double-charges the customer, while abandoning a charge that actually failed drops real revenue. Without a coordinated scheme between client and server, every transient network hiccup forces a choice between those two bad outcomes.\n\nThe post is careful to frame how low the bar is for this problem to apply: a distributed system here means as few as two computers passing messages over a network. The Stripe API plus any one server calling it already qualifies. There is no scale threshold below which the ambiguous-failure problem disappears.",
+  "solution": "The first layer is making endpoints idempotent wherever the operation's semantics allow it — callable any number of times while guaranteeing side effects occur only once. HTTP already encodes this: per RFC 7231, PUT and DELETE are idempotent verbs, and a PUT that fully specifies the target resource (the post's example is a DNS provider creating a CNAME record) can simply be retried until it verifiably succeeds; the server treats duplicates as no-ops and returns success. For this class of operation, the retry strategy is the whole answer.\n\nFor operations that must happen exactly once — the canonical example is charging a customer — idempotency keys carry the guarantee instead. The client generates a unique ID for the logical operation and sends it with the request; the server correlates the key with the request's state on its side. Stripe implements this on all mutating (POST) endpoints via the Idempotency-Key header: retry the charge with the same key, and the customer is charged once.\n\nThe key resolves each of the three failure cases differently. On a connection failure, the retry arrives as the first time the server sees the key, and it processes normally. On a mid-operation failure, the server picks up the work and carries it through — the post is explicit that the mechanics here are heavily implementation-dependent: if the interrupted attempt was rolled back by an ACID database, the retry can safely re-execute wholesale; otherwise the server must recover state and continue the call. On a response failure — the work succeeded but the client never heard — the server simply replays the cached result of the completed operation.\n\nThe final layer is what the post calls being a good distributed citizen: a failure might be a blip, or it might be a server mid-incident, and persistent retries against the latter add load exactly when the server can least afford it. Clients should back off exponentially (waiting proportionally to 2^n across failures) and add random jitter to each wait, because synchronized failure produces synchronized retries — the thundering herd — unless individual schedules are deliberately decorrelated. Stripe's own Ruby client library implements all of it by default: automatic retries with an idempotency key, increasing backoff, jitter.",
   "tradeoffs": [
-    "Requires a durable key store with TTLs long enough to outlive all expected retry windows.",
-    "Adds per-request bookkeeping cost — every request reads and writes the key's progress record.",
-    "Phase boundaries are load-bearing design decisions; getting one wrong (too coarse, too fine, or non-atomic) reintroduces the original retry hazard the pattern was meant to eliminate."
+    "Idempotency keys move real work onto the server's bookkeeping: it must durably store key-to-state records and consult them on every request, and that storage must be retained long enough to outlive any realistic retry window. The post's response-failure case — replaying the cached result — only works if the result is still there when the retry arrives, so retention policy becomes part of the API's correctness contract, not an operational afterthought.",
+    "The burden of key discipline lands on the client. The client generates the key, decides its scope, and must never reuse a key across logically distinct operations — a client that recycles an old key for a new charge gets the old charge's cached outcome back, silently. The server cannot detect this; correctness now depends on key-generation hygiene in every integrating codebase.",
+    "The hardest failure case — a crash midway through the operation — is named but not solved by the key alone. The post says it directly: recovery behavior is heavily dependent on implementation. An ACID rollback makes wholesale retry safe, but any operation whose side effects span systems that don't share a transaction needs explicit state recovery before the call can continue. The key tells the server that this is a retry; what the server does with that knowledge is where the real engineering lives.",
+    "Good citizenship costs the individual client. Exponential backoff means a client's state can stay divergent from the server's for progressively longer windows — by the fifth failure it's waiting tens of seconds — and jitter deliberately adds more delay variance on top. The client accepts slower personal convergence so that the population of clients doesn't collectively prevent the server from recovering at all.",
+    "The two idempotency regimes don't unify. Naturally idempotent endpoints (PUT/DELETE, fully-specified resources) need no keys; exactly-once operations (POST charges) need the full key machinery. An API offering both carries two different retry contracts, and integrators must know which regime each endpoint lives in — a documentation and API-design burden the post addresses by recommending idempotency be applied liberally and explicitly."
   ],
-  "tags": ["payments", "retries", "idempotency"],
+  "tags": ["payments", "retries", "idempotency", "api-design"],
   "patterns": [
     {
       "slug": "idempotency-keys",
-      "note": "The article centers on the client-supplied idempotency key as the durable identifier of a payment attempt — same key in, same outcome out, whether the original request succeeded, failed mid-flight, or never reached the server."
+      "note": "The source of the pattern's canonical form: a client-generated unique ID sent with each mutating request (Stripe's Idempotency-Key header on all POST endpoints), letting the server resolve all three network-failure cases — process fresh, pick up and carry through, or replay the cached result. Same key in, same outcome out."
     },
     {
-      "slug": "atomic-phases",
-      "note": "Each network/database step is its own commit point, so a retry resumes from the last completed phase rather than redoing or skipping work."
+      "slug": "retry-with-backoff-and-jitter",
+      "note": "The post's 'good distributed citizen' section is a compact statement of the whole pattern: exponential backoff (2^n) so persistent failures slow the retry rate, plus random jitter so synchronized failures don't become synchronized retries (the thundering herd). Stripe's Ruby library ships the full combination — retries, keys, backoff, jitter — as default client behavior."
     }
   ],
-  "generatedAt": "2026-05-29T13:00:00.000Z",
-  "artifact": { "path": "/artifacts/stripe-idempotency/index.html" }
+  "relatedArticles": ["uber-intelligent-load-management"],
+  "generatedAt": "2026-06-12T00:00:00.000Z",
+  "artifact": {
+    "path": "/artifacts/stripe-idempotency/index.html",
+    "teaser": "Crash the same charge three ways — with and without an idempotency key."
+  }
 }

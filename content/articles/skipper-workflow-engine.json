@@ -34,6 +34,10 @@
     {
       "slug": "hibernation-vs-polling",
       "note": "Skipper's waitUntil serializes workflow state to the database and releases the executing thread. The workflow exists as a database row until signaled, consuming zero compute. This is the inverse of the queue-consumer + scheduled-job + state-table pattern that would otherwise be required for the same business logic."
+    },
+    {
+      "slug": "atomic-phases",
+      "note": "Skipper's checkpointed Actions are the pattern's embedded-library instance: each action's result is durably committed after execution, and on replay, previously completed actions return their checkpointed results instantly instead of re-executing — resume-from-last-committed-boundary applied inside a single workflow method."
     }
   ],
   "artifact": {

@@ -1,0 +1,18 @@
+{
+  "slug": "retry-with-backoff-and-jitter",
+  "name": "Retry with Backoff and Jitter",
+  "definition": "When a client retries a failed operation against a shared service, raw persistence is dangerous: the failure might be transient (retry soon and succeed) or systemic (the server is degraded, and every retry adds load at the worst possible moment). The client cannot tell which regime it is in. Exponential backoff resolves this without requiring the client to know — each successive failure waits proportionally longer (typically 2^n), so transient failures recover quickly while systemic failures see the retry rate collapse automatically.\n\nBackoff alone is not enough when many clients fail together. A server incident fails thousands of clients at nearly the same instant, and identical backoff schedules mean they all retry at nearly the same instant too — the thundering herd, where each recovery wave re-creates the overload that caused the failure. Adding random jitter to each client's wait decorrelates the population: individually each client waits a slightly arbitrary time, collectively the retry load spreads into a smooth curve the server can absorb while recovering.\n\nThe pattern is among the oldest in networked computing and among the most widely embodied: Ethernet's CSMA/CD used binary exponential backoff to arbitrate a shared wire, TCP applies it to retransmission timers, AWS SDKs ship full-jitter backoff as default retry policy, and gRPC and Envoy implement it alongside retry budgets that cap total retry volume. Client libraries for payment and infrastructure APIs (Stripe's official libraries among them) bundle it with idempotency keys so that retrying is both safe and polite by default.\n\nThe deeper principle: a retry policy is not private client behavior — it is load the rest of the system must absorb. Backoff and jitter are the client-side half of overload protection; server-side load shedding is the other half, and systems under real pressure generally need both.",
+  "whenItApplies": [
+    "Any client retrying operations against a shared remote service, where retry load lands on infrastructure other clients depend on.",
+    "Mass-failure events — a server incident, a network partition healing, a fleet-wide reconnect — where synchronized recovery attempts can re-trigger the original overload.",
+    "As the client-side complement to server-side load shedding and admission control; one without the other leaves half the overload problem unsolved.",
+    "Default behavior in SDKs and client libraries, where individual integrators cannot be relied on to implement polite retry themselves."
+  ],
+  "tradeoffs": [
+    "Individual convergence gets slower as collective stability gets stronger. A client in exponential backoff may hold divergent state for progressively longer windows, and jitter adds further variance on top; latency-sensitive callers feel this directly.",
+    "Backoff parameters are load-bearing configuration. The base wait, the multiplier, the cap, and the maximum attempt count together determine both how fast a healthy system recovers and how hard a sick one gets hit; defaults that are wrong for a workload fail quietly until an incident exposes them.",
+    "Jitter makes client behavior non-deterministic, which complicates testing, debugging, and reasoning about exact retry timing — the cost of decorrelation is reproducibility.",
+    "Backoff bounds the rate of retries but not their total volume. Long incidents with many queued callers can still deliver overwhelming aggregate retry load; retry budgets, circuit breakers, or server-side shedding are needed to cap the total, not just the rate."
+  ],
+  "category": "resilience"
+}
