@@ -4,9 +4,9 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pts 1,
-  2, and 3 (stripe + uber + airbnb reworks) landed; article
-  cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
+- **Phase 6 resumed: Units 9 + 10 closed; quality sprint
+  complete (stripe + uber + airbnb + skipper reworks);
+  article cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
   prod-verified 2026-06-11; one iframe regression from
   `cleanUrls` was caught + fixed within the hour (`fix:` commit
   `a6a31af`). Unit 10 (article reading arc + instrumentation)
@@ -41,10 +41,30 @@ Update this file after every meaningful implementation change.
   Switch as the answer to the residual self-failure case --
   the artifact's signature interaction now demonstrates the
   article's thesis rather than the article asserting it.
-  Library state unchanged at **5 articles, 15 pattern
-  definitions, 5 artifacts.** The measurement foundation from
-  Unit 10 is intact through all three reworks. The
-  reassessment window from 2026-06-04 still applies.
+  **Unit 11 / quality sprint pt 4 (skipper rework) landed
+  2026-06-13** in two commits, completing the five-article
+  sprint: the deepest of the five reworks. Fidelity fixes
+  (wrong publishedAt 2024 -> 2026; "MySQL or DynamoDB"
+  corrected to "MySQL or Airbnb's internal Unified Data Store
+  (UDS)"; a fabricated idempotency-key-derivation mechanism
+  removed from tradeoffs; a happy-path overclaim corrected to
+  the source's actual batched-checkpoint + delayed-timeout-
+  task design). Enrichment: the dissection had omitted
+  compensation (`@Compensate`, reverse-order undo), signals
+  (`@SignalMethod`), the delayed-task safety net, and the
+  direct-state-vs-event-sourcing trade -- all now covered;
+  tradeoffs went 5 -> 6. Artifact: the static "Replay &
+  Checkpoints" code-reveal tab -- the library's weakest
+  interaction by the craft standard -- replaced with a
+  ReplaySim crash-and-replay simulator on the
+  ListingPublicationWorkflow example; checkpointed actions
+  return SKIPPED on replay, waitUntil hibernates until the
+  @SignalMethod fires, and the terminal banner names the
+  exactly-once outcome explicitly. Library state unchanged at
+  **5 articles, 15 pattern definitions, 5 artifacts.** The
+  measurement foundation from Unit 10 is intact through all
+  four reworks. The reassessment window from 2026-06-04
+  still applies.
 
 ## Current Operating Mode
 
@@ -106,6 +126,126 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 11 / quality sprint pt 4 — Skipper rework
+  (2026-06-13). Closes the five-article quality sprint.**
+  Two commits: `content: skipper rework -- rewrite + crash-
+  and-replay artifact` (article rewrite + ReplaySim splice in
+  one commit since the artifact's interaction model and the
+  prose's enrichment are the same coherent change); this
+  docs commit.
+  - Source-verification motivation. The original 5b
+    dissection (2026-06-02) was authored before the fidelity
+    discipline locked in and carried the most concentrated
+    set of issues of any article in the sweep: a wrong
+    `publishedAt` (2024-08-15 belonged to neither the
+    article nor any earlier post; the source's byline reads
+    "Apr, 2026", corrected to 2026-04-01 -- the day-precision
+    floor since Medium does not expose a day on this post);
+    "MySQL or DynamoDB" as a routine state backend (the
+    source uses MySQL or Airbnb's internal Unified Data
+    Store (UDS); DynamoDB appears only in the
+    10,000-workflows/sec peak throughput figure); a
+    fabricated idempotency-key-derivation mechanism in the
+    at-least-once tradeoff (the source says actions must be
+    idempotent and stops there, never specifying a key
+    derivation); and a happy-path overclaim that Skipper
+    "only activates the persistence layer on crashes, waits,
+    or errors" (the source is explicit that the happy path
+    does batched checkpoint writes plus a delayed timeout
+    task -- "just a few database writes" -- which is the
+    actual durability guarantee on the happy path).
+  - Enrichment rationale. The original dissection had the
+    largest richness gap of the five. Four first-class
+    mechanisms the source treats as central were absent or
+    glossed: compensation (`@Compensate` annotation,
+    reverse-order undo, "eventual consistency without
+    distributed transactions") -- a primary section of the
+    post, now its own paragraph in solution and reflected in
+    new tags (`compensation`, `saga`); signals
+    (`@SignalMethod` pushing data into running workflows,
+    updating `@StateField` that `waitUntil` evaluates) --
+    the wake mechanism, now explained; the
+    delayed-timeout-task safety net -- now the core of the
+    happy-path explanation rather than a missed detail;
+    state-fields-vs-event-sourcing -- the source explicitly
+    contrasts direct state persistence with event-sourced
+    replay (leanness, no long-history replay -- but at the
+    cost of auditability), now both in solution and as
+    `tradeoffs[5]`. Tradeoffs expanded 5 -> 6, each now
+    naming a specific source-supported cost (determinism's
+    mental-model tax, at-least-once without the fabricated
+    mechanism, workflow-evolution tooling gap, replay-aware
+    observability, the embedded ceiling, the auditability
+    cost of direct state). Production numbers (over a year,
+    15+ use cases across insurance/payments/media/infra/
+    incentives/wallet, 10,000 workflows/sec peak on
+    DynamoDB) moved from summary-only to solution prose
+    where they ground the two stat callouts.
+  - Artifact upgrade rationale. The "Replay & Checkpoints"
+    tab was the only tab in the library whose interaction
+    was a code-reveal toggle (the publishListing Kotlin
+    block showed up or hid; nothing else changed). By the
+    artifact-as-thesis-demonstration standard locked in the
+    Airbnb sprint, that was the library's weakest tab. The
+    article's central thesis -- replay-based durability
+    where a crash mid-workflow rewinds to the workflow
+    method's top and checkpointed actions return their
+    saved results instead of re-executing -- had no
+    interactive demonstration. ReplaySim is sourced from
+    the post's `ListingPublicationWorkflow` example: five
+    steps spanning the post's three durability concepts
+    (action checkpointing, waitUntil hibernation,
+    deterministic branching). Two state panels separate
+    DURABLE STATE (checkpoints + `@StateField`, survive
+    crash) from IN-MEMORY (cursor + status, lost on crash).
+    Controls let the reader step forward, crash at any
+    point, send the `@SignalMethod` to wake a hibernating
+    workflow, and reset. The pedagogically load-bearing
+    moments: a checkpointed action returns SKIPPED on
+    replay instead of re-executing; waitUntil with no
+    signal releases the thread to hibernation; the terminal
+    banner after a crash explicitly states each action ran
+    exactly once on the happy path. The footer states the
+    at-least-once caveat (a crash after action execution
+    but before checkpoint write replays the action -- which
+    is why actions must be idempotent) so the simulator
+    doesn't recapitulate the article's original overclaim.
+  - Pattern definitions reviewed: `durable-workflows`,
+    `embedded-vs-centralized-orchestration`,
+    `hibernation-vs-polling`, `atomic-phases` all pass the
+    post-Uber generality bar unchanged. Their per-article
+    notes were rewritten in this article to match the new
+    prose's depth (e.g., `atomic-phases` now names
+    "resume-from-last-committed-point, with the workflow
+    method as the sequence and the checkpoint as the phase
+    boundary").
+  - Verification: validator 4 checks, 0 errors, 1 warning
+    (the "10,000 per second" stat fuzzy-misses because the
+    prose has "10,000 workflows per second" -- the word
+    "workflows" between "10,000" and "per second" splits
+    the substring; no `→` arrow so the composite split
+    doesn't apply either; the Uber-sprint chore made this
+    a warning rather than an error, surfacing it without
+    failing the build, which is the docs-commit intent the
+    chore restored); vitest 72/72 (no test changes);
+    `npm run compile-artifacts` 5/5 ok (no stray sixth
+    bundle); `npm run build` end-to-end clean, 23 routes
+    prerendered, sitemap 22 URLs. Spot-checked
+    `dist/articles/skipper-workflow-engine.html`: title
+    unchanged, datePublished=2026-06-02 (addedAt),
+    dateModified=2026-06-12 (updatedAt),
+    isBasedOn.datePublished=2026-04-01 (corrected from
+    2024-08-15). New teaser "Step the workflow, crash it
+    anywhere..." in the rendered HTML body. Both stat
+    callouts present. The corrected "MySQL or Airbnb's
+    internal Unified Data Store (UDS)" phrase in the HTML;
+    the stale "MySQL or DynamoDB" phrase absent.
+  - Sprint closeout: with this rework, every article in the
+    library has been verified against its first-party
+    source, and every artifact has at least one interactive
+    surface that lets the reader trigger the article's
+    claim rather than read it asserted. The library's
+    quality bar is now uniform across all five articles.
 - **Unit 11 / quality sprint pt 3 — Airbnb rework
   (2026-06-13).** Two commits: `content: airbnb rework --
   micro-fixes + failure-injection artifact` (the article was
@@ -1107,33 +1247,29 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 ## In Progress
 
 - None — Units 9 + 10 closed and prod-verified; Unit 11 quality
-  sprint pts 1 (stripe), 2 (uber), and 3 (airbnb) all landed
-  across 2026-06-12 and 2026-06-13. Skipper is the remaining
-  unaudited article. Next manual-mode publication awaiting
+  sprint complete across 2026-06-12 and 2026-06-13 (pts 1
+  stripe, 2 uber, 3 airbnb, 4 skipper). Every article in the
+  library is now source-verified; every artifact has a true
+  interactive surface. Next manual-mode publication awaiting
   article choice from the candidate list (Slack shared
   channels, Netflix active-active, Cloudflare Prometheus, Meta
   FOQS, GitHub sharding, DoorDash internal tools, LinkedIn
-  Brooklin). Four known follow-ups, all small + non-blocking:
+  Brooklin). Three known follow-ups, all small + non-blocking:
+  - Discord stat backfill -- the only remaining piece of the
+    Unit 10 editorial-backfill list. The Discord article's
+    teaser already landed during 5f publication; the stats
+    field is the missing piece (the earlier round had a
+    composite "500ms → <100ms" entry that fuzzy-misses but
+    no longer blocks, per the Uber-sprint chore). Lands as
+    a small content commit anytime; not architecturally
+    blocking.
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
-  - Editorial backfill of `artifact.teaser` strings and
-    `stats[]` values for the remaining two unaudited articles
-    (Discord and Skipper). Stripe, Uber, and Airbnb each
-    landed their teaser + stats during the quality sprints.
-    The earlier Unit 10 round flagged the Skipper teaser
-    against the actual artifact — still pending editorial
-    revision (likely lands with the eventual Skipper audit
-    rather than as a separate backfill commit). The composite
-    stat values no longer block the validator: the Uber
-    sprint's chore teaches the matcher to split on `→` and
-    the fuzzy-miss is a warning rather than an error, so the
-    remaining composites can land as authored.
-  - `relatedArticles` UI surface. Stripe + Uber both populate
-    the field (they cross-reference each other); the website
-    doesn't yet render a "see also" section. Lands as a small
-    standalone unit when the next authoring cadence touches
-    the article page.
+  - `relatedArticles` UI surface. Stripe + Uber cross-reference
+    each other; the website doesn't yet render a "see also"
+    section. Lands as a small standalone unit when the next
+    authoring cadence touches the article page.
   - **Prose markdown rendering with hyperlinks.** The Uber
     rework attributes PID-term material to Uber's companion
     Cinnamon and PID posts by name in prose. Hyperlinks
@@ -1242,6 +1378,33 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Skipper article rewrite + artifact rebuild + sprint
+  closeout** (quality audit, 2026-06-13). The deepest of the
+  five reworks. Fidelity fixes: wrong `publishedAt`
+  (2024-08-15 -> 2026-04-01); "MySQL or DynamoDB" as a
+  routine state backend corrected to "MySQL or Airbnb's
+  internal Unified Data Store (UDS)" (DynamoDB appears in
+  the source only in the 10,000-workflows/sec throughput
+  figure); a fabricated idempotency-key-derivation mechanism
+  removed from the at-least-once tradeoff; a happy-path
+  overclaim ("only activates persistence on crash/wait/error")
+  corrected to the source's actual batched-checkpoint +
+  delayed-timeout-task design. Enrichment: compensation
+  (`@Compensate`, reverse-order undo) added, signals
+  (`@SignalMethod`) added, the delayed-task safety net
+  promoted to the core of the happy-path explanation,
+  state-fields-vs-event-sourcing trade explicitly named in
+  both solution and tradeoffs; tradeoffs expanded 5 -> 6.
+  Artifact: the "Replay & Checkpoints" static code-reveal tab
+  -- the library's weakest interaction by the craft standard
+  locked in the Airbnb sprint -- replaced with a ReplaySim
+  crash-and-replay simulator on the
+  `ListingPublicationWorkflow` example. With this rework, the
+  five-article quality sprint closes: every article in the
+  library is source-verified, every artifact has at least one
+  interaction that lets the reader trigger the article's
+  claim rather than read it asserted, and the editorial bar
+  is uniform across the library.
 - **Airbnb article micro-fixes + artifact upgrade** (quality
   audit, 2026-06-13). Source verification of the original 5d
   dissection found this article the cleanest of the
