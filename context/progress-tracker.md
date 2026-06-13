@@ -5,8 +5,8 @@ Update this file after every meaningful implementation change.
 ## Current Phase
 
 - **Phase 6 resumed: Units 9 + 10 closed; quality sprint
-  complete (stripe + uber + airbnb + skipper reworks);
-  article cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
+  complete (stripe + uber + airbnb + skipper reworks +
+  discord enrichment); article cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
   prod-verified 2026-06-11; one iframe regression from
   `cleanUrls` was caught + fixed within the hour (`fix:` commit
   `a6a31af`). Unit 10 (article reading arc + instrumentation)
@@ -42,8 +42,7 @@ Update this file after every meaningful implementation change.
   the artifact's signature interaction now demonstrates the
   article's thesis rather than the article asserting it.
   **Unit 11 / quality sprint pt 4 (skipper rework) landed
-  2026-06-13** in two commits, completing the five-article
-  sprint: the deepest of the five reworks. Fidelity fixes
+  2026-06-13** in two commits: the deepest of the five reworks. Fidelity fixes
   (wrong publishedAt 2024 -> 2026; "MySQL or DynamoDB"
   corrected to "MySQL or Airbnb's internal Unified Data Store
   (UDS)"; a fabricated idempotency-key-derivation mechanism
@@ -60,11 +59,31 @@ Update this file after every meaningful implementation change.
   ListingPublicationWorkflow example; checkpointed actions
   return SKIPPED on replay, waitUntil hibernates until the
   @SignalMethod fires, and the terminal banner names the
-  exactly-once outcome explicitly. Library state unchanged at
-  **5 articles, 15 pattern definitions, 5 artifacts.** The
-  measurement foundation from Unit 10 is intact through all
-  four reworks. The reassessment window from 2026-06-04
-  still applies.
+  exactly-once outcome explicitly. **Unit 11 / quality sprint
+  pt 5 (discord enrichment) landed 2026-06-13** in two
+  commits, closing the five-article sprint for real. Unlike
+  the other four parts, this was an enrichment, not a
+  rewrite: the audit found Discord the library's reference
+  standard (prose verified, all five pattern notes general,
+  the artifact already four genuine interactive views).
+  Light article changes (one precision fix in problem ¶3 to
+  disambiguate Celery-queue vs Redis-cache for cross-
+  referencing readers; an `updatedAt`; the canonical Unit 10
+  stats values landed at last; a `relatedArticles` cross-link
+  to Airbnb monitoring -- the second cross-company thread
+  after Stripe<->Uber), plus a new EvolutionDiff artifact
+  view promoted to the default tab: a six-row component
+  ledger (sharding, queue, bulk indexing, cluster topology,
+  upgrades, largest-guild ceiling) with a lens toggle between
+  2017 and 2025, the sharding row marked PRESERVED in green
+  as the load-bearing decision that made the rewrite
+  possible. The Skipper docs commit's premature "sprint
+  complete" framing is corrected here; the sprint was always
+  five articles, and this is the actual closer. Library
+  state unchanged at **5 articles, 15 pattern definitions, 5
+  artifacts.** The measurement foundation from Unit 10 is
+  intact through all five parts. The reassessment window
+  from 2026-06-04 still applies.
 
 ## Current Operating Mode
 
@@ -126,9 +145,130 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
-- **Unit 11 / quality sprint pt 4 — Skipper rework
+- **Unit 11 / quality sprint pt 5 — Discord enrichment
   (2026-06-13). Closes the five-article quality sprint.**
-  Two commits: `content: skipper rework -- rewrite + crash-
+  Two commits: `content: discord evolution enrichment +
+  diff artifact view` (article touches + EvolutionDiff
+  splice in one coherent content commit); this docs commit.
+  - Source-verification motivation, inverted. Where pts 1-4
+    were source-verification reworks that found fidelity
+    errors, this one found the Discord dissection the
+    audit's reference standard: prose verified against both
+    the 2025 source post and the 2017 predecessor post
+    (`https://discord.com/blog/how-discord-indexes-billions-
+    of-messages`), all five pattern notes general and
+    accurate, the artifact already four genuinely
+    interactive views (the 2017 architecture diagram, the
+    Four Cracks selector, the 2025 redesign, the BFG
+    step-through). This commit is therefore additive
+    enrichment, not a rewrite. The Skipper docs commit
+    (19c2ed6) had prematurely framed the sprint as
+    "complete" after pt 4; the sprint was always five
+    articles, and Discord pt 5 is the actual closer. The
+    correction lands in this commit alongside the content.
+  - Article changes are light and additive: `updatedAt`
+    2026-06-12 (first material revision via the schema
+    field added in the Stripe sprint chore); one precision
+    fix in problem ¶3, sentence 1 ("Redis-backed indexing
+    queue" -> "indexing queue ... once the Redis the
+    pipeline depended on hit CPU saturation") to
+    disambiguate the 2025 failure mode (Redis-as-
+    dependency, which is what the source describes) from
+    the 2017 queue (Celery, with Redis as the shard-
+    mapping cache) for readers cross-referencing the older
+    source; `relatedArticles: ["airbnb-monitoring-reliably-
+    at-scale"]` -- the fault-isolation pattern note on this
+    article already names the Airbnb parallel explicitly,
+    and the cross-link makes that navigable, seeding the
+    library's second cross-company thread (after the
+    Stripe<->Uber overload-protection link); a teaser
+    matching the new view ("Toggle each component between
+    2017 and 2025 -- see what was replaced, and the one
+    decision that wasn't"); and three stats values (40%,
+    trillions, 500ms -> <100ms) -- the canonical Unit 10
+    backfill values that had been pending since the
+    earlier round. Closing the Unit 10 stats-backfill
+    follow-up entirely.
+  - Artifact upgrade rationale. The existing artifact was
+    already the strongest in the library by the post-
+    Airbnb interaction-as-thesis-demonstration standard --
+    four interactive views, real state, no static
+    code-reveal toggles. EvolutionDiff isn't a replacement
+    for any of them; it's a new view that captures the
+    article's throughline (per-component evolution from
+    2017 to 2025) which the other four can't surface
+    individually. Made the default landing tab so a
+    cold reader meets the article's narrative arc as the
+    artifact's signature interaction.
+  - EvolutionDiff structure. Six rows spanning the load-
+    bearing components: sharding strategy (PRESERVED in
+    green, the load-bearing constant), indexing queue
+    (Celery+Redis -> PubSub), bulk indexing (cluster fanout
+    -> Rust+tokio routing layer), cluster topology (two
+    large -> ~40 small grouped in cells), upgrades &
+    restarts (manual -> ECK operator), and the largest-
+    guild ceiling (single-shard -> BFG cell). A lens toggle
+    flips all six rows between 2017 and 2025 framing.
+    Opening any row reveals side-by-side 2017/2025 panels
+    plus "Why 2017 was right" and "Why it survived" or "The
+    limit it reached" paragraphs -- the bulk-indexing row
+    surfaces the ~40% failure math (`1 - (99/100)^50`) and
+    the upgrades row surfaces log4shell as the forcing
+    moment. The closing throughline callout states the
+    staff-level lesson explicitly: an architecture ages
+    component by component; reaching a design's boundary
+    is not the same as having chosen wrong; the choices
+    which preserve your freedom to change are the ones
+    worth getting right early.
+  - Pattern definitions reviewed: application-layer-
+    sharding, cell-architecture, queue-with-guaranteed-
+    delivery, batched-routing-by-destination,
+    fault-isolation all pass the post-Uber generality bar
+    unchanged. Their per-article notes were already
+    rewritten for depth in the original 5f publication and
+    remain accurate against the rewritten EvolutionDiff
+    structure.
+  - Verification: validator 4 checks, 0 errors, 1 warning
+    (the pre-existing Skipper `10,000 per second`
+    fuzzy-miss, carried forward; all three new Discord
+    stats pass cleanly -- "40%" and "trillions" via
+    monolithic substring match, "500ms -> <100ms" via the
+    composite-aware split-on-arrow path that finds the
+    halves "500ms" and "100ms" independently in the
+    solution prose, exactly the case the Uber-sprint chore
+    was designed for); vitest 72/72 (no test changes);
+    `npm run compile-artifacts` 5/5 ok (no stray sixth
+    bundle); `npm run build` end-to-end clean, 23 routes
+    prerendered, sitemap 22 URLs. Spot-checked
+    `dist/articles/discord-trillions-message-search.html`:
+    title unchanged, datePublished=2026-06-09 (addedAt
+    unchanged), dateModified=2026-06-12 (updatedAt),
+    isBasedOn.datePublished=2025-04-24 (unchanged -- the
+    source-post date wasn't an audit finding). New
+    teaser, three stat callouts (40%, trillions, the
+    composite), and the corrected "the Redis the pipeline
+    depended on" phrasing all render; the stale "Redis-
+    backed indexing queue" phrasing is absent.
+  - Sprint closeout (for real this time): with this
+    commit, every article in the library is verified
+    against its first-party source, and every artifact has
+    at least one interactive surface that lets the reader
+    trigger the article's claim rather than read it
+    asserted. The Unit 10 editorial-backfill follow-up is
+    closed in full -- every article has its teaser, every
+    article that warranted stats has them, the composite-
+    stat validator handles the shapes the sprint
+    surfaced. The library's editorial bar is uniform
+    across all five articles, and two cross-company
+    threads are seeded for the eventual `relatedArticles`
+    UI surface (Stripe<->Uber on overload protection;
+    Discord<->Airbnb on fault isolation).
+- **Unit 11 / quality sprint pt 4 — Skipper rework
+  (2026-06-13).** (The original docs commit for this part
+  framed it as the sprint closer; that was premature. Pt 5
+  Discord is the actual closer, per the entry above and
+  per the original sprint scope of five articles.) Two
+  commits: `content: skipper rework -- rewrite + crash-
   and-replay artifact` (article rewrite + ReplaySim splice in
   one commit since the artifact's interaction model and the
   prose's enrichment are the same coherent change); this
@@ -1246,30 +1386,31 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Units 9 + 10 closed and prod-verified; Unit 11 quality
-  sprint complete across 2026-06-12 and 2026-06-13 (pts 1
-  stripe, 2 uber, 3 airbnb, 4 skipper). Every article in the
-  library is now source-verified; every artifact has a true
-  interactive surface. Next manual-mode publication awaiting
+- None — Units 9 + 10 closed and prod-verified; Unit 11
+  quality sprint complete across 2026-06-12 and 2026-06-13
+  (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord). The
+  Unit 10 editorial-backfill follow-up is now closed in full
+  -- every article has its teaser, every article that
+  warranted stats has them. Every article in the library is
+  source-verified; every artifact has a true interactive
+  surface. Two cross-company `relatedArticles` threads seeded
+  (Stripe<->Uber on overload protection; Discord<->Airbnb on
+  fault isolation). Next manual-mode publication awaiting
   article choice from the candidate list (Slack shared
-  channels, Netflix active-active, Cloudflare Prometheus, Meta
-  FOQS, GitHub sharding, DoorDash internal tools, LinkedIn
-  Brooklin). Three known follow-ups, all small + non-blocking:
-  - Discord stat backfill -- the only remaining piece of the
-    Unit 10 editorial-backfill list. The Discord article's
-    teaser already landed during 5f publication; the stats
-    field is the missing piece (the earlier round had a
-    composite "500ms → <100ms" entry that fuzzy-misses but
-    no longer blocks, per the Uber-sprint chore). Lands as
-    a small content commit anytime; not architecturally
-    blocking.
+  channels, Netflix active-active, Cloudflare Prometheus,
+  Meta FOQS, GitHub sharding, DoorDash internal tools,
+  LinkedIn Brooklin). Two known follow-ups, both small +
+  non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
-  - `relatedArticles` UI surface. Stripe + Uber cross-reference
-    each other; the website doesn't yet render a "see also"
-    section. Lands as a small standalone unit when the next
-    authoring cadence touches the article page.
+  - `relatedArticles` UI surface. Two cross-company threads
+    now populated (Stripe<->Uber and Discord<->Airbnb); the
+    website still doesn't render a "see also" section.
+    Lands as a small standalone unit when the next
+    authoring cadence touches the article page -- the
+    second populator makes the surface materially more
+    useful than when only Stripe<->Uber existed.
   - **Prose markdown rendering with hyperlinks.** The Uber
     rework attributes PID-term material to Uber's companion
     Cinnamon and PID posts by name in prose. Hyperlinks
@@ -1378,8 +1519,41 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
-- **Skipper article rewrite + artifact rebuild + sprint
-  closeout** (quality audit, 2026-06-13). The deepest of the
+- **Discord article enrichment + capstone artifact view +
+  five-article sprint closeout** (quality audit,
+  2026-06-13). Unlike the four prior reworks, this article
+  needed no fidelity rewrite -- the audit found Discord the
+  library's reference standard. Additive changes only: a
+  precision fix to problem ¶3 (the 2017 queue was Celery
+  with Redis as the shard-mapping cache; the "Redis drops
+  under pressure" failure is the 2025-era description, now
+  phrased to not misattribute the 2017 design); a teaser
+  matching the new view; three canonical Unit 10 stat
+  values landed at last; a `relatedArticles` cross-link to
+  the Airbnb monitoring article (the fault-isolation
+  parallel the pattern note already names); a new
+  EvolutionDiff artifact view -- the centerpiece -- made
+  the default tab. The view turns the 2017->2025 evolution
+  into a per-component before/after ledger (sharding
+  PRESERVED in green; queue, bulk indexing, cluster
+  topology, upgrades, largest-guild ceiling all REPLACED in
+  indigo), with the failure math (~40% at 100 nodes) and
+  the log4shell forcing-moment surfaced where they belong.
+  The staff-level throughline: an architecture ages
+  component by component; reaching a design's boundary is
+  not the same as having chosen wrong; the choices that
+  preserve your freedom to change are the ones worth
+  getting right early. With this, the five-article sprint
+  closes for real: every article verified, every artifact
+  past the interaction bar, pattern library at 15
+  all-general entries, two cross-company threads seeded
+  (Stripe<->Uber, Discord<->Airbnb), and the prior Skipper
+  docs commit's premature "complete" framing is corrected.
+- **Skipper article rewrite + artifact rebuild** (quality
+  audit, 2026-06-13). (The original framing of this entry
+  included "sprint closeout"; the closer is actually the
+  Discord entry above. The Skipper rework remains the
+  deepest of the five reworks.) The deepest of the
   five reworks. Fidelity fixes: wrong `publishedAt`
   (2024-08-15 -> 2026-04-01); "MySQL or DynamoDB" as a
   routine state backend corrected to "MySQL or Airbnb's
