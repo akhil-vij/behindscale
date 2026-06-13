@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 const sections = [
+  { id: "evolution", label: "2017 → 2025" },
   { id: "2017", label: "2017 Architecture" },
   { id: "cracks", label: "The Four Cracks" },
   { id: "2025", label: "2025 Redesign" },
@@ -364,8 +365,176 @@ function BFGView() {
   );
 }
 
+// Centerpiece view for the Discord evolution article.
+// The throughline the article is built on: the 2017 architecture was correct
+// for its scale; specific components reached the boundaries of their design;
+// the 2025 redesign replaced each one while PRESERVING the foundational
+// application-layer-sharding decision. This view makes that legible:
+// per-component, what 2017 chose, why it was right, what limit it hit, and
+// what 2025 replaced it with — plus the one row that didn't change.
+
+const EVOLUTION_ACCENT = "#5865F2";
+
+const EVOLUTION_ROWS = [
+  {
+    id: "sharding",
+    component: "Sharding strategy",
+    preserved: true,
+    y2017: "Application-layer routing: guild_id → (cluster, index)",
+    y2025: "Unchanged — still application-layer routing",
+    why: "Rejecting Elasticsearch's internal sharding in 2017 gave Discord operational control over where data lived. That control is exactly what made the 2025 redesign possible without depending on Elasticsearch's coordination — the team could re-route by changing the mapping layer, not by waiting for the engine to rebalance.",
+    limit: "No limit. This is the decision the whole redesign was built to preserve. The 2025 post's framing: the foundation was right; everything resting on it had to change.",
+  },
+  {
+    id: "queue",
+    component: "Indexing queue",
+    y2017: "Celery task queue; Redis as shard-mapping cache + refresh tracking",
+    y2025: "Google Cloud PubSub — guaranteed delivery, tolerates large backlogs",
+    why: "In 2017 the ingest path was a Celery queue feeding bulk-index workers, with Redis serving the shard-mapping cache. A lightweight buffer was the right tool for the launch-era volume.",
+    limit: "By 2024 the indexing queue had grown into a workload that, when Elasticsearch nodes failed and the queue backed up, drove Redis to CPU saturation — at which point messages were silently dropped. A buffer's failure mode (drop under pressure) is unacceptable for the source of truth for search indexing.",
+    pattern: "queue-with-guaranteed-delivery",
+  },
+  {
+    id: "bulk",
+    component: "Bulk indexing",
+    y2017: "Batch messages from the queue; one bulk op may fan out to many nodes",
+    y2025: "Rust+tokio router: one task per (cluster, index); each bulk op targets one node",
+    why: "Batching is the throughput-optimal write path for Elasticsearch, and in a small cluster a bulk operation fanning across nodes is fine — the odds any node is down are low.",
+    limit: "Elasticsearch fails a whole bulk op if any single message in it fails. At 100 nodes, a 50-message batch spread across the cluster means a single dead node fails ~40% of bulk operations (1 − (99/100)^50). The fanout turned single-node failures into fleet-wide indexing degradation — the failure mode scaled worse as the cluster grew.",
+    pattern: "batched-routing-by-destination",
+  },
+  {
+    id: "clusters",
+    component: "Cluster topology",
+    y2017: "Two large clusters, 14 nodes; grow by adding nodes",
+    y2025: "~40 small clusters grouped into logical cells, per use case",
+    why: "Two clusters were simple to operate and 'add a node' satisfied the linear-scalability requirement cleanly. For 26 billion documents, this was comfortably within range.",
+    limit: "Past ~200 nodes, the master node's cluster-state coordination work grew faster than serving capacity — OOM crashes cascaded into indexing failures, backlogs, and query timeouts. Coordination overhead, not raw capacity, became the wall.",
+    pattern: "cell-architecture",
+  },
+  {
+    id: "upgrades",
+    component: "Upgrades & restarts",
+    y2017: "Manual; node-by-node graceful restarts on a 2-cluster fleet",
+    y2025: "Elastic Cloud on Kubernetes (ECK) operator; automated rolling restarts",
+    why: "With two clusters, manual operations were tolerable, and the team optimized for not running infrastructure it didn't have to.",
+    limit: "On 200+ node clusters, graceful node-by-node restarts would have taken prohibitively long, freezing the team on legacy OS and Elasticsearch versions. log4shell was the breaking point: patching required taking all of search offline for a maintenance window — there was no rolling-restart path.",
+    pattern: "cell-architecture",
+  },
+  {
+    id: "maxdoc",
+    component: "Largest-guild ceiling",
+    y2017: "One primary shard per index (optimal for query performance)",
+    y2025: "'BFG' cell with multi-shard indices for guilds near the limit",
+    why: "A single primary shard per index keeps every guild's messages on one node — optimal for query performance, and far below any limit for an ordinary guild.",
+    limit: "Lucene's MAX_DOC (~2 billion docs/index) was reachable by Discord's largest guilds; once hit, all indexing to that index failed. The original workaround — find and delete spam guilds — didn't scale once legitimate communities started approaching the same counts.",
+    pattern: "cell-architecture",
+  },
+];
+
+function EvolutionDiff() {
+  const [openId, setOpenId] = useState("sharding");
+  const [lens, setLens] = useState("2017"); // "2017" | "2025"
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
+        Eight years separate the two architectures. Flip the lens to read the system as it stood in each
+        era, then open any component to see why the 2017 choice was right, the specific limit it reached,
+        and what 2025 replaced it with. One row never changed — that's the point of the whole story.
+      </p>
+
+      {/* lens toggle */}
+      <div style={{ display: "inline-flex", gap: 0, marginBottom: 14, border: `1px solid ${EVOLUTION_ACCENT}40`, borderRadius: 6, overflow: "hidden" }}>
+        {[["2017", "2017 · correct for its scale"], ["2025", "2025 · re-architected"]].map(([id, label]) => (
+          <button key={id} onClick={() => setLens(id)} style={{
+            padding: "6px 12px", fontSize: 10.5, fontFamily: "inherit", cursor: "pointer", border: "none",
+            background: lens === id ? `${EVOLUTION_ACCENT}25` : "transparent",
+            color: lens === id ? "#fff" : "#777",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {EVOLUTION_ROWS.map((r) => {
+          const open = openId === r.id;
+          const accent = r.preserved ? "#22c55e" : EVOLUTION_ACCENT;
+          return (
+            <div key={r.id} style={{
+              border: `1px solid ${open ? accent + "70" : "#2a2a3a"}`,
+              borderRadius: 7, overflow: "hidden",
+              background: open ? "#111118" : "#0c0d13",
+            }}>
+              <button onClick={() => setOpenId(open ? "" : r.id)} style={{
+                width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                background: "transparent", border: "none", padding: "10px 12px",
+                display: "flex", alignItems: "center", gap: 10,
+              }}>
+                <span style={{ fontSize: 11.5, color: "#f0f0f5", fontWeight: 600, minWidth: 150 }}>{r.component}</span>
+                <span style={{ flex: 1, fontSize: 10.5, color: lens === "2017" ? "#c0c0cc" : "#777" }}>
+                  {lens === "2017" ? r.y2017 : r.y2025}
+                </span>
+                {r.preserved
+                  ? <span style={{ fontSize: 8, letterSpacing: 1, color: "#22c55e", border: "1px solid #22c55e50", borderRadius: 3, padding: "2px 6px" }}>PRESERVED</span>
+                  : <span style={{ fontSize: 8, letterSpacing: 1, color: EVOLUTION_ACCENT, border: `1px solid ${EVOLUTION_ACCENT}50`, borderRadius: 3, padding: "2px 6px" }}>REPLACED</span>}
+              </button>
+
+              {open && (
+                <div style={{ padding: "0 12px 12px" }}>
+                  {/* side-by-side */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                    <div style={{ flex: "1 1 200px", background: "#08090D", borderRadius: 5, padding: "9px 11px", border: "1px solid #2a2a3a" }}>
+                      <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>2017</div>
+                      <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.5 }}>{r.y2017}</div>
+                    </div>
+                    <div style={{ flex: "1 1 200px", background: "#08090D", borderRadius: 5, padding: "9px 11px", border: `1px solid ${accent}30` }}>
+                      <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: accent, marginBottom: 4 }}>2025</div>
+                      <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.5 }}>{r.y2025}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#22c55e", marginBottom: 3, textTransform: "uppercase" }}>Why 2017 was right</div>
+                    <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.65 }}>{r.why}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: r.preserved ? "#22c55e" : "#ef4444", marginBottom: 3, textTransform: "uppercase" }}>
+                      {r.preserved ? "Why it survived" : "The limit it reached"}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.65 }}>{r.limit}</div>
+                  </div>
+
+                  {r.pattern && (
+                    <div style={{ marginTop: 10, fontSize: 9.5, color: "#777" }}>
+                      pattern: <span style={{ color: accent }}>{r.pattern}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ marginTop: 14, padding: "11px 13px", background: "#111118", borderRadius: 6, borderLeft: "3px solid #22c55e" }}>
+        <div style={{ fontSize: 9.5, letterSpacing: 2, color: "#22c55e", textTransform: "uppercase", marginBottom: 5, fontWeight: 600 }}>
+          The throughline
+        </div>
+        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
+          Five components replaced, one preserved — and the preserved one is load-bearing. Application-layer
+          sharding wasn't just still correct in 2025; it was the decision that <em>made the rewrite
+          possible</em>. The lesson for the reader isn't "Discord rebuilt search." It's that an architecture
+          ages component by component, that reaching a design's boundary is not the same as having chosen
+          wrong, and that the choices which preserve your freedom to change are the ones worth getting right
+          early.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function DiscordTrillionsMessageSearch() {
-  const [section, setSection] = useState("2017");
+  const [section, setSection] = useState("evolution");
   return (
     <div style={{
       fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
@@ -423,6 +592,7 @@ export default function DiscordTrillionsMessageSearch() {
           ))}
         </div>
 
+        {section === "evolution" && <EvolutionDiff />}
         {section === "2017" && <Architecture2017View />}
         {section === "cracks" && <CracksView />}
         {section === "2025" && <Redesign2025View />}
