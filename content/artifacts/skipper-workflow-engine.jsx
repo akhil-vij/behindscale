@@ -3,7 +3,7 @@ import { useState } from "react";
 const sections = [
   { id: "problem", label: "The Problem" },
   { id: "embedded", label: "Embedded vs Central" },
-  { id: "replay", label: "Replay & Checkpoints" },
+  { id: "replay", label: "Crash & Replay" },
   { id: "hibernation", label: "Hibernation" },
 ];
 
@@ -95,9 +95,209 @@ const replaySteps = [
   },
 ];
 
+// Crash-and-replay simulator for Skipper's durability model.
+// Sourced from the ListingPublicationWorkflow example in the post.
+// Demonstrates: checkpointed actions skip on replay, state fields persist,
+// waitUntil hibernates, the determinism requirement, and the happy-path
+// "you only pay when something goes wrong" property.
+
+const REPLAY_ACCENT = "#22c55e";
+const REPLAY_STEPS = [
+  { id: "submit", kind: "action", code: "actions.submitPhotosForReview(listingId)", short: "submitPhotosForReview", effect: "External review request created", checkpointable: true },
+  { id: "wait", kind: "wait", code: "waitUntil({ photosApproved != null }, 24.hours)", short: "waitUntil(photosApproved)", effect: "Workflow hibernates — thread released, state in DB", checkpointable: false },
+  { id: "branch", kind: "control", code: "if (timedOut || !photosApproved) return rejected()", short: "if (timedOut || !approved)", effect: "Deterministic branch — reads @StateField, no side effect", checkpointable: false },
+  { id: "activate", kind: "action", code: "actions.activateListing(listingId)", short: "activateListing", effect: "Listing goes live (external write)", checkpointable: true },
+  { id: "notify", kind: "action", code: "actions.notifyHost(hostId, \"live!\")", short: "notifyHost", effect: "Host notified (external call)", checkpointable: true },
+];
+
+function ReplaySim() {
+  // execution log: array of { stepIdx, mode: "ran" | "replayed-skip" | "hibernate" | "crash" }
+  const [cursor, setCursor] = useState(0);        // next step to execute
+  const [checkpoints, setCheckpoints] = useState({}); // stepId -> true once committed
+  const [signaled, setSignaled] = useState(false); // photosApproved set via @SignalMethod
+  const [hibernating, setHibernating] = useState(false);
+  const [log, setLog] = useState([]);
+  const [crashedOnce, setCrashedOnce] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const reset = (hard) => {
+    setCursor(0); setLog([]); setHibernating(false); setDone(false);
+    if (hard) { setCheckpoints({}); setSignaled(false); setCrashedOnce(false); }
+  };
+
+  const step = REPLAY_STEPS[cursor];
+
+  const advance = () => {
+    if (done || !step) return;
+    if (step.kind === "wait" && !signaled) { setHibernating(true); return; } // park until signal
+    const committed = !!checkpoints[step.id];
+    let mode;
+    if (step.kind === "action") {
+      mode = committed ? "replayed-skip" : "ran";
+      if (!committed) setCheckpoints((c) => ({ ...c, [step.id]: true }));
+    } else if (step.kind === "wait") {
+      mode = "wait-pass";
+      setHibernating(false);
+    } else {
+      mode = "control";
+    }
+    setLog((l) => [...l, { stepId: step.id, mode }]);
+    if (cursor + 1 >= REPLAY_STEPS.length) setDone(true);
+    else setCursor(cursor + 1);
+  };
+
+  const crash = () => {
+    // crash mid-flight: in-memory cursor/log lost, but checkpoints + state fields survive in DB
+    setLog((l) => [...l, { stepId: step ? step.id : "end", mode: "crash" }]);
+    setCrashedOnce(true);
+    setTimeout(() => {
+      setCursor(0);            // replay from the top
+      setHibernating(false);
+      setDone(false);
+      setLog((l) => [...l, { stepId: "replay-start", mode: "replay-banner" }]);
+    }, 50);
+  };
+
+  const sendSignal = () => { setSignaled(true); setHibernating(false); };
+
+  const modeStyle = {
+    "ran": { c: "#22c55e", t: "RAN", note: "executed + checkpoint committed to DB" },
+    "replayed-skip": { c: "#06b6d4", t: "SKIPPED", note: "checkpoint found — returned saved result instantly, no re-execution" },
+    "wait-pass": { c: "#a78bfa", t: "RESUMED", note: "signal present — wait satisfied" },
+    "control": { c: "#888", t: "EVAL", note: "deterministic branch re-evaluated against persisted state" },
+    "crash": { c: "#ef4444", t: "💥 CRASH", note: "process dies — in-memory progress lost, DB checkpoints + state survive" },
+  };
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
+        Step the <code style={{ color: REPLAY_ACCENT }}>publishListing</code> workflow. Crash it anywhere — then
+        keep stepping and watch replay <em>skip</em> the actions that already committed. The workflow
+        method re-runs top-to-bottom; only the un-checkpointed work executes again.
+      </p>
+
+      {/* state panel */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>DURABLE STATE (survives crash)</div>
+          <div style={{ fontSize: 10.5, color: "#c0c0cc", lineHeight: 1.7 }}>
+            checkpoints: <span style={{ color: REPLAY_ACCENT }}>{Object.keys(checkpoints).filter((k) => checkpoints[k]).length}</span> committed<br />
+            @StateField photosApproved: <span style={{ color: signaled ? REPLAY_ACCENT : "#666" }}>{signaled ? "true" : "null"}</span>
+          </div>
+        </div>
+        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>IN-MEMORY (lost on crash)</div>
+          <div style={{ fontSize: 10.5, color: "#c0c0cc", lineHeight: 1.7 }}>
+            cursor: step <span style={{ color: "#eab308" }}>{Math.min(cursor + 1, REPLAY_STEPS.length)}</span> / {REPLAY_STEPS.length}<br />
+            status: <span style={{ color: hibernating ? "#a78bfa" : done ? REPLAY_ACCENT : "#eab308" }}>
+              {done ? "complete" : hibernating ? "hibernating" : "running"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* the workflow steps */}
+      <div style={{ background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, marginBottom: 12 }}>
+        {REPLAY_STEPS.map((s, i) => {
+          const committed = !!checkpoints[s.id];
+          const isNext = i === cursor && !done;
+          const kindColor = s.kind === "action" ? REPLAY_ACCENT : s.kind === "wait" ? "#a78bfa" : "#888";
+          return (
+            <div key={s.id} style={{
+              display: "flex", alignItems: "center", gap: 10, padding: "7px 9px", borderRadius: 5,
+              marginBottom: 3,
+              background: isNext ? `${REPLAY_ACCENT}14` : "transparent",
+              border: `1px solid ${isNext ? `${REPLAY_ACCENT}55` : "transparent"}`,
+              opacity: i > cursor && !done ? 0.5 : 1,
+            }}>
+              <span style={{
+                fontSize: 8, padding: "2px 5px", borderRadius: 3, minWidth: 48, textAlign: "center",
+                background: `${kindColor}20`, color: kindColor, border: `1px solid ${kindColor}40`, letterSpacing: 0.5,
+              }}>{s.kind.toUpperCase()}</span>
+              <code style={{ fontSize: 10.5, color: "#c0c0cc", flex: 1 }}>{s.short}</code>
+              {s.checkpointable && (
+                <span style={{ fontSize: 8.5, color: committed ? "#06b6d4" : "#444" }}>
+                  {committed ? "✓ checkpoint" : "○ uncommitted"}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* controls */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+        <button onClick={advance} disabled={done} style={replayBtn(done ? "#333" : REPLAY_ACCENT, done)}>
+          {step && step.kind === "wait" && !signaled ? "hibernate ▸" : "step ▸"}
+        </button>
+        <button onClick={crash} disabled={done && Object.keys(checkpoints).length === 0} style={replayBtn("#ef4444")}>💥 crash now</button>
+        {hibernating && <button onClick={sendSignal} style={replayBtn("#a78bfa")}>📩 signal: completePhotoReview(true)</button>}
+        <span style={{ flex: 1 }} />
+        <button onClick={() => reset(false)} style={replayBtn("#666")}>↺ replay</button>
+        <button onClick={() => reset(true)} style={replayBtn("#666")}>⟲ full reset</button>
+      </div>
+
+      {hibernating && (
+        <div style={{ fontSize: 10.5, color: "#a78bfa", background: "#1a1525", border: "1px solid #a78bfa40", borderRadius: 6, padding: "8px 10px", marginBottom: 12, lineHeight: 1.6 }}>
+          Hibernating: the thread is back in the pool and the workflow exists only as a DB row. It will
+          consume zero compute until the signal arrives or the 24h timeout fires. Send the signal to wake it.
+        </div>
+      )}
+
+      {/* execution log */}
+      {log.length > 0 && (
+        <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 8 }}>EXECUTION LOG</div>
+          {log.map((entry, i) => {
+            if (entry.mode === "replay-banner") {
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", margin: "4px 0", borderTop: "1px dashed #ef444450", borderBottom: "1px dashed #ef444450" }}>
+                  <span style={{ fontSize: 10, color: "#ef4444", letterSpacing: 1 }}>↻ REPLAY FROM TOP — same method, re-executed</span>
+                </div>
+              );
+            }
+            const ms = modeStyle[entry.mode] || modeStyle.control;
+            const s = REPLAY_STEPS.find((x) => x.id === entry.stepId);
+            return (
+              <div key={i} style={{ display: "flex", gap: 10, padding: "4px 0", alignItems: "baseline" }}>
+                <span style={{ fontSize: 8.5, color: ms.c, minWidth: 64, fontWeight: 700 }}>{ms.t}</span>
+                <span style={{ fontSize: 10.5, color: "#c0c0cc" }}>
+                  <code style={{ color: "#f0f0f5" }}>{s ? s.short : ""}</code>
+                  <span style={{ color: "#777" }}> — {ms.note}</span>
+                </span>
+              </div>
+            );
+          })}
+          {done && (
+            <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 5, background: "#0a2a1a", border: `1px solid ${REPLAY_ACCENT}`, fontSize: 11, color: "#95d5b2", lineHeight: 1.6 }}>
+              ✓ Workflow reached a terminal state.{crashedOnce && " Despite the crash, each action executed exactly once on the happy path — the replayed actions returned their checkpoints instead of re-running. That is durable execution: linear code, crash-proof outcome."}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ fontSize: 9.5, color: "#666", lineHeight: 1.7, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
+        Note the asymmetry the post emphasizes: on the happy path the engine adds only a few database
+        writes (checkpoints + a delayed timeout task as a safety net). The replay machinery is invoked
+        <em> only</em> when something goes wrong — a crash, a wait, or an error. You pay for durability
+        only when you use it. (Actions are at-least-once: a crash after executing but before the
+        checkpoint write replays the action — which is why action implementations must be idempotent.)
+      </div>
+    </div>
+  );
+}
+
+function replayBtn(color, disabled) {
+  return {
+    padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
+    border: `1px solid ${color}${disabled ? "40" : ""}`, borderRadius: 6,
+    background: `${color}18`, color, cursor: disabled ? "default" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+  };
+}
+
 export default function Skipper() {
   const [section, setSection] = useState("problem");
-  const [showReplay, setShowReplay] = useState(false);
 
   return (
     <div style={{
@@ -209,52 +409,7 @@ export default function Skipper() {
           </div>
         )}
 
-        {section === "replay" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              <strong style={{ color: "#f0f0f5" }}>Replay-based durability:</strong> on crash, the workflow method re-executes from the top. Previously completed actions return their saved checkpoint instantly instead of re-running. The control flow (workflow method) must be deterministic.
-            </p>
-            <button
-              onClick={() => setShowReplay(!showReplay)}
-              style={{
-                padding: "8px 14px",
-                fontSize: 11,
-                fontFamily: "inherit",
-                border: "1px solid #22c55e60",
-                borderRadius: 6,
-                background: showReplay ? "#22c55e20" : "transparent",
-                color: "#22c55e",
-                cursor: "pointer",
-                marginBottom: 14,
-              }}
-            >
-              {showReplay ? "Hide" : "Show"} the publishListing workflow →
-            </button>
-            {showReplay && (
-              <div style={{
-                background: "#111118",
-                border: "1px solid #22c55e30",
-                borderRadius: 8,
-                padding: "14px 16px",
-                fontFamily: "inherit",
-                fontSize: 11,
-                lineHeight: 1.7,
-              }}>
-                <div style={{ color: "#888" }}>// Kotlin workflow method — deterministic, replay-safe</div>
-                <div style={{ marginTop: 4 }}><span style={{ color: "#c792ea" }}>suspend fun</span> <span style={{ color: "#82aaff" }}>publishListing</span>(submission: ListingSubmission) {"{"}</div>
-                <div style={{ paddingLeft: 16, color: "#a0a0b0" }}>val reviewId = actions.<span style={{ color: "#82aaff" }}>submitPhotosForReview</span>(...)</div>
-                <div style={{ paddingLeft: 16, color: "#a0a0b0" }}>val timedOut = <span style={{ color: "#82aaff" }}>waitUntil</span>({"{"} photosApproved != null {"}"}, <span style={{ color: "#f78c6c" }}>24.hours</span>)</div>
-                <div style={{ paddingLeft: 16, color: "#a0a0b0" }}><span style={{ color: "#c792ea" }}>if</span> (timedOut || !photosApproved) {"{"} ... <span style={{ color: "#c792ea" }}>return</span> rejected() {"}"}</div>
-                <div style={{ paddingLeft: 16, color: "#a0a0b0" }}>actions.<span style={{ color: "#82aaff" }}>activateListing</span>(...)</div>
-                <div style={{ paddingLeft: 16, color: "#a0a0b0" }}>actions.<span style={{ color: "#82aaff" }}>notifyHost</span>(...)</div>
-                <div>{"}"}</div>
-                <div style={{ marginTop: 10, color: "#888", borderTop: "1px solid #2a2a3a", paddingTop: 8 }}>
-                  On crash: re-runs from the top. submitPhotosForReview returns its checkpoint instantly. waitUntil's condition is checked against current state. activateListing only runs if it didn't before. Linear code, durable execution.
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {section === "replay" && <ReplaySim />}
 
         {section === "hibernation" && (
           <div>
