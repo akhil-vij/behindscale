@@ -4,9 +4,9 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pts 1
-  and 2 (stripe + uber reworks) landed; article cadence
-  unblocked.** Unit 9 (SSG + SEO foundation) landed and
+- **Phase 6 resumed: Units 9 + 10 closed; quality sprint pts 1,
+  2, and 3 (stripe + uber + airbnb reworks) landed; article
+  cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
   prod-verified 2026-06-11; one iframe regression from
   `cleanUrls` was caught + fixed within the hour (`fix:` commit
   `a6a31af`). Unit 10 (article reading arc + instrumentation)
@@ -31,12 +31,20 @@ Update this file after every meaningful implementation change.
   redirects from the retired URLs); and this docs commit. The
   PidSim and CinnamonView artifact panels were also patched to
   fix three internal-consistency issues caught alongside the
-  fidelity audit. Library state: **5 articles, 15 pattern
-  definitions (was 16: +1 merged, -2 retired this sprint;
-  +1 retry-with-backoff-and-jitter the prior sprint), 5
-  artifacts.** The measurement foundation from Unit 10 is
-  intact through both reworks. The reassessment window from
-  2026-06-04 still applies.
+  fidelity audit. **Unit 11 / quality sprint pt 3 (airbnb
+  rework) landed 2026-06-13** in two commits: the article was
+  the cleanest of the five (one publishedAt micro-fix, one
+  manufactured-count fix in a pattern note); the substantive
+  work was the artifact upgrade, replacing the static Problem
+  tab with a FailureSim 2x4 matrix (two architectures x four
+  failures) where the fourth-failure case shows the Dead Man's
+  Switch as the answer to the residual self-failure case --
+  the artifact's signature interaction now demonstrates the
+  article's thesis rather than the article asserting it.
+  Library state unchanged at **5 articles, 15 pattern
+  definitions, 5 artifacts.** The measurement foundation from
+  Unit 10 is intact through all three reworks. The
+  reassessment window from 2026-06-04 still applies.
 
 ## Current Operating Mode
 
@@ -98,6 +106,74 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Unit 11 / quality sprint pt 3 — Airbnb rework
+  (2026-06-13).** Two commits: `content: airbnb rework --
+  micro-fixes + failure-injection artifact` (the article was
+  the cleanest of the five so the content delta is small;
+  the work concentrated in the artifact); this docs commit.
+  - Source-verification motivation. The Phase 5 dissection
+    (Unit 5d, 2026-06-02) of the medium.com/airbnb-
+    engineering post "Monitoring Reliably at Scale" came
+    back the cleanest of the five-article quality audit:
+    architecture (dedicated K8s + custom Envoy L7 + Dead
+    Man's Switch), components (Prometheus -> SNS ->
+    CloudWatch chain), and the 1,000+ services figure all
+    verified against the source. Two fixes lifted to a
+    content commit: publishedAt corrected from 2026-05-12 to
+    2026-05-05 per the source's `article:published_time`
+    meta tag, and a manufactured "four overlapping circular
+    dependencies" count in the
+    circular-dependency-avoidance pattern note replaced
+    with "had overlapping circular dependencies" (the
+    source never enumerates).
+  - Artifact upgrade rationale. The craft review found that
+    the original artifact's Problem tab was the only static
+    panel (Compute, Network, and Dead Man's Switch already
+    had interactive surfaces); it rendered a hard-coded
+    circular-dependency chain card that asserted the failure
+    mode without letting the reader trigger it. The article's
+    thesis ("never let your safety mechanism depend on the
+    thing it's protecting") therefore had no interactive
+    demonstration. The new FailureSim is a 2x4 matrix --
+    two architectures (shared everything; isolated) crossed
+    with four failure injections (none, K8s, Istio, the
+    observability stack itself). Before-architecture cells
+    always render NO ONE IS PAGED. After-architecture cells
+    render ON-CALL PAGED for the first three failures
+    (dedicated clusters / Envoy L7 catch the K8s and Istio
+    failures). The fourth After cell -- observability stack
+    itself failing -- is the pedagogically load-bearing case:
+    the metrics pipeline goes dark, but CloudWatch sees the
+    heartbeat silence and the page still fires. The Dead Man's
+    Switch isn't an afterthought tab any more, it's the
+    answer the matrix's last cell forces. Compute, Network,
+    and DMS tabs unchanged; the sections array's first label
+    updated from "The Problem" to "Break the Stack" to
+    match the new tab's interaction. The Fable-authored
+    standalone component file was spliced in as an internal
+    function and the staging .jsx removed from
+    content/artifacts/ so compile-artifacts doesn't build it
+    as a stray sixth bundle.
+  - Pattern definitions reviewed: fault-isolation,
+    dead-mans-switch, and circular-dependency-avoidance all
+    passed the post-Uber pattern-naming generality bar
+    without changes -- none of them name implementations or
+    company jargon. The pattern note for
+    circular-dependency-avoidance was updated as above; the
+    definition file is untouched.
+  - Verification: validator 4 checks, 0 errors; vitest 72/72
+    (no test changes); `npm run compile-artifacts` 5/5 ok
+    (no stray sixth bundle); `npm run build` end-to-end
+    clean, 23 routes prerendered, sitemap 22 URLs.
+    Spot-checked `dist/articles/airbnb-monitoring-reliably-
+    at-scale.html`: title unchanged, datePublished=2026-06-
+    02 (addedAt), dateModified=2026-06-12 (updatedAt),
+    isBasedOn.datePublished=2026-05-05 (corrected). Teaser
+    "Break each layer..." in the rendered HTML body (Unit
+    10's ArtifactTeaser card); stat "1,000+" present;
+    pattern note reads "had overlapping circular
+    dependencies", the stale "four overlapping" string is
+    absent.
 - **Unit 11 / quality sprint pt 2 — Uber rework
   (2026-06-12).** Four commits in order: `chore: stats-value-
   in-prose -- composite-aware, warning not error` (the
@@ -1031,26 +1107,28 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 ## In Progress
 
 - None — Units 9 + 10 closed and prod-verified; Unit 11 quality
-  sprint pts 1 (stripe) and 2 (uber) both landed 2026-06-12.
-  Next manual-mode publication awaiting article choice from the
-  candidate list (Slack shared channels, Netflix active-active,
-  Cloudflare Prometheus, Meta FOQS, GitHub sharding, DoorDash
-  internal tools, LinkedIn Brooklin). Four known follow-ups, all
-  small + non-blocking:
+  sprint pts 1 (stripe), 2 (uber), and 3 (airbnb) all landed
+  across 2026-06-12 and 2026-06-13. Skipper is the remaining
+  unaudited article. Next manual-mode publication awaiting
+  article choice from the candidate list (Slack shared
+  channels, Netflix active-active, Cloudflare Prometheus, Meta
+  FOQS, GitHub sharding, DoorDash internal tools, LinkedIn
+  Brooklin). Four known follow-ups, all small + non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
-  - Editorial backfill of `artifact.teaser` strings and `stats[]`
-    values for the remaining three published articles (stripe
-    and uber both landed their content in the quality sprints).
-    The earlier round flagged the Skipper teaser against the
-    actual artifact — that's still pending editorial revision.
-    The three composite stat values (`500ms → <100ms`,
-    `3.1s → 1.0s` already landed via Uber, `minutes → days`)
-    no longer block the validator: the chore in this sprint
-    teaches the matcher to split on `→` and the fuzzy-miss
-    is a warning rather than an error, so the remaining
-    composites can land as authored.
+  - Editorial backfill of `artifact.teaser` strings and
+    `stats[]` values for the remaining two unaudited articles
+    (Discord and Skipper). Stripe, Uber, and Airbnb each
+    landed their teaser + stats during the quality sprints.
+    The earlier Unit 10 round flagged the Skipper teaser
+    against the actual artifact — still pending editorial
+    revision (likely lands with the eventual Skipper audit
+    rather than as a separate backfill commit). The composite
+    stat values no longer block the validator: the Uber
+    sprint's chore teaches the matcher to split on `→` and
+    the fuzzy-miss is a warning rather than an error, so the
+    remaining composites can land as authored.
   - `relatedArticles` UI surface. Stripe + Uber both populate
     the field (they cross-reference each other); the website
     doesn't yet render a "see also" section. Lands as a small
@@ -1164,6 +1242,46 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Airbnb article micro-fixes + artifact upgrade** (quality
+  audit, 2026-06-13). Source verification of the original 5d
+  dissection found this article the cleanest of the
+  five-article audit: every figure, component, and the Dead
+  Man's Switch chain verified against the source. Two
+  micro-fixes lifted to a content commit: `publishedAt`
+  corrected from 2026-05-12 to 2026-05-05 per the source's
+  `article:published_time` meta tag; and a manufactured
+  "four overlapping circular dependencies" count in the
+  `circular-dependency-avoidance` pattern note replaced with
+  "had overlapping circular dependencies" (the source never
+  enumerates). All three of this article's pattern
+  definitions (`fault-isolation`, `dead-mans-switch`,
+  `circular-dependency-avoidance`) passed the post-Uber
+  generality bar without changes -- none of them name
+  implementations or company jargon.
+- **Artifact as thesis demonstration, not thesis assertion**
+  (Unit 11 quality sprint pt 3, 2026-06-13). Articulated
+  during the Airbnb artifact upgrade and recorded here so it
+  applies to future artifact craft reviews. An interactive
+  artifact's signature surface should let the reader
+  *trigger* the article's central claim, not read a static
+  card that asserts it. The Airbnb article's thesis ("never
+  let your safety mechanism depend on the thing it's
+  protecting") had no interactive demonstration -- the
+  original Problem tab showed a hard-coded dependency-loop
+  card. The new FailureSim collapses thesis into interaction
+  via a 2-by-4 outcome matrix (architecture x failure
+  injection), where the reader picks the same failure under
+  the before- and after-architectures and sees the page
+  outcome diverge. The pedagogically load-bearing cell is
+  After + observability-stack-fails: even with full
+  isolation, the stack itself can die, and the Dead Man's
+  Switch is the cell that turns the silence into a page --
+  the artifact teaches WHY the DMS exists rather than just
+  THAT it exists. Generalizable rule for the next artifact
+  review: if every tab is "click an option to see a
+  tradeoff" or "explore some state," the artifact is a
+  diagram, not a simulation. At least one tab should let the
+  reader break the thing.
 - **Uber article fidelity fixes + pattern merge** (quality
   audit, 2026-06-12). Source verification of the original 5e
   dissection (against
