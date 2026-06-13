@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const sections = [
-  { id: "problem", label: "The Problem" },
+  { id: "problem", label: "Break the Stack" },
   { id: "compute", label: "Compute" },
   { id: "network", label: "Network" },
   { id: "deadman", label: "Dead Man's Switch" },
@@ -60,6 +60,198 @@ const deadmanChain = [
   { label: "CloudWatch alarm", icon: "⏰", desc: "Watches SNS message rate. If heartbeats STOP, the alarm fires.", color: "#ef4444" },
   { label: "PagerDuty → on-call", icon: "🚨", desc: "CloudWatch triggers PagerDuty. Engineer gets paged. Silence itself is the signal.", color: "#ef4444" },
 ];
+
+function FailureSim() {
+  const [arch, setArch] = useState("before");
+  const [failure, setFailure] = useState("none");
+
+  const FAILURES = [
+    { id: "none", label: "Healthy" },
+    { id: "k8s", label: "💥 Shared K8s" },
+    { id: "istio", label: "💥 Istio mesh" },
+    { id: "obs", label: "💥 Observability stack" },
+  ];
+
+  // status: ok | degraded | dark | na ; paged: true/false drives the verdict
+  const MATRIX = {
+    before: {
+      none: {
+        rows: [
+          ["App services", "ok", "serving"],
+          ["Istio mesh", "ok", "routing app + telemetry"],
+          ["Metrics pipeline", "ok", "on shared K8s, via Istio"],
+          ["Alerts", "ok", "armed"],
+        ],
+        paged: null,
+        verdict: "Healthy — and every dependency loop invisible. Each line below works; what's hidden is that they all stand on the same floor.",
+      },
+      k8s: {
+        rows: [
+          ["App services", "degraded", "shared clusters failing"],
+          ["Istio mesh", "dark", "runs on the same K8s"],
+          ["Metrics pipeline", "dark", "runs on the same K8s"],
+          ["Alerts", "dark", "nothing left to evaluate them"],
+        ],
+        paged: false,
+        verdict: "Blind at the worst moment. The monitoring died with the infrastructure it monitors — no alert ever fires, no one is paged.",
+      },
+      istio: {
+        rows: [
+          ["App services", "degraded", "mesh routing failing"],
+          ["Istio mesh", "dark", "failed"],
+          ["Metrics pipeline", "dark", "metrics flow through the mesh"],
+          ["Alerts", "dark", "no data arriving"],
+        ],
+        paged: false,
+        verdict: "Metrics about the mesh needed the mesh to be delivered. The signal about the failure travels over the thing that failed.",
+      },
+      obs: {
+        rows: [
+          ["App services", "ok", "unaffected"],
+          ["Istio mesh", "ok", "routing"],
+          ["Metrics pipeline", "dark", "the stack itself failed"],
+          ["Alerts", "dark", "the alerter is the casualty"],
+        ],
+        paged: false,
+        verdict: "Who monitors the monitor? In this architecture: no one. The stack can't report its own death.",
+      },
+    },
+    after: {
+      none: {
+        rows: [
+          ["App services", "ok", "serving"],
+          ["Istio mesh", "ok", "app traffic only"],
+          ["Metrics pipeline", "ok", "dedicated clusters, via Envoy L7"],
+          ["DMS heartbeat", "ok", "Prometheus → SNS → CloudWatch, beating"],
+        ],
+        paged: null,
+        verdict: "Healthy — and now the floors are separate. Run the same failures and compare.",
+      },
+      k8s: {
+        rows: [
+          ["App services", "degraded", "shared clusters failing"],
+          ["Istio mesh", "dark", "runs on the shared K8s"],
+          ["Metrics pipeline", "ok", "dedicated clusters — different floor"],
+          ["DMS heartbeat", "ok", "still beating"],
+        ],
+        paged: true,
+        verdict: "The page goes out. Monitoring survives the exact failure it exists to catch — alerts about the K8s outage fire from infrastructure the outage can't reach.",
+      },
+      istio: {
+        rows: [
+          ["App services", "degraded", "mesh routing failing"],
+          ["Istio mesh", "dark", "failed"],
+          ["Metrics pipeline", "ok", "telemetry rides the Envoy L7 plane, outside the mesh"],
+          ["DMS heartbeat", "ok", "still beating"],
+        ],
+        paged: true,
+        verdict: "The telemetry path no longer shares the data plane it observes. Mesh fails; the news about it still arrives.",
+      },
+      obs: {
+        rows: [
+          ["App services", "ok", "unaffected"],
+          ["Istio mesh", "ok", "routing"],
+          ["Metrics pipeline", "dark", "the stack itself failed"],
+          ["DMS heartbeat", "dark", "heartbeats STOP arriving at SNS"],
+        ],
+        paged: true,
+        verdict: "The one failure the stack cannot report is caught by the absence of its heartbeat: CloudWatch sees the silence and pages on-call. Silence is the signal.",
+      },
+    },
+  };
+
+  const state = MATRIX[arch][failure];
+  const tone = (s) => (s === "ok" ? "#22c55e" : s === "degraded" ? "#eab308" : "#ef4444");
+  const word = (s) => (s === "ok" ? "OK" : s === "degraded" ? "DEGRADED" : "DARK");
+
+  return (
+    <div>
+      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
+        Break the same component in both architectures and watch who gets paged. The whole redesign is
+        the difference between the two columns of outcomes.
+      </p>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+        {[["before", "Before · shared everything"], ["after", "After · isolated"]].map(([id, label]) => (
+          <button key={id} onClick={() => setArch(id)} style={{
+            padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
+            border: `1px solid ${arch === id ? (id === "before" ? "#ef4444" : "#22c55e") : "#2a2a3a"}`,
+            borderRadius: 6,
+            background: arch === id ? (id === "before" ? "#ef444418" : "#22c55e18") : "transparent",
+            color: arch === id ? (id === "before" ? "#ef4444" : "#22c55e") : "#666",
+            cursor: "pointer",
+          }}>{label}</button>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+        {FAILURES.map((f) => (
+          <button key={f.id} onClick={() => setFailure(f.id)} style={{
+            padding: "6px 10px", fontSize: 10.5, fontFamily: "inherit",
+            border: `1px solid ${failure === f.id ? "#06b6d4" : "#2a2a3a"}`,
+            borderRadius: 5,
+            background: failure === f.id ? "#06b6d418" : "transparent",
+            color: failure === f.id ? "#06b6d4" : "#666",
+            cursor: "pointer",
+          }}>{f.label}</button>
+        ))}
+      </div>
+
+      <div style={{
+        background: "#111118",
+        border: `1px solid ${state.paged === false ? "#ef444460" : state.paged ? "#22c55e60" : "#2a2a3a"}`,
+        borderRadius: 8,
+        padding: "12px 14px",
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {state.rows.map(([name, status, note]) => (
+            <div key={name} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "7px 10px", borderRadius: 5,
+              background: `${tone(status)}10`,
+              border: `1px solid ${tone(status)}25`,
+            }}>
+              <span style={{
+                fontSize: 8.5, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
+                background: tone(status), color: "#08090D", minWidth: 56, textAlign: "center",
+                letterSpacing: 0.5,
+              }}>{word(status)}</span>
+              <span style={{ fontSize: 11.5, color: "#f0f0f5", fontWeight: 600, minWidth: 120 }}>{name}</span>
+              <span style={{ fontSize: 10.5, color: "#999" }}>{note}</span>
+            </div>
+          ))}
+        </div>
+
+        {state.paged !== null && (
+          <div style={{
+            marginTop: 10,
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: `1px solid ${state.paged ? "#22c55e" : "#ef4444"}`,
+            background: state.paged ? "#0a2a1a" : "#3a1a1a",
+            display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <span style={{ fontSize: 16 }}>{state.paged ? "🚨" : "🔇"}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: state.paged ? "#22c55e" : "#ef4444" }}>
+              {state.paged ? "ON-CALL PAGED" : "NO ONE IS PAGED"}
+            </span>
+          </div>
+        )}
+
+        <p style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.7, margin: "10px 0 0 0" }}>
+          {state.verdict}
+        </p>
+      </div>
+
+      {arch === "before" && failure === "k8s" && (
+        <div style={{ marginTop: 10, fontSize: 10.5, color: "#666", lineHeight: 1.7, padding: "0 2px" }}>
+          The loop, spelled out: app services run on shared K8s → the metrics pipeline runs on the same
+          K8s → metrics about K8s flow through Istio → Istio runs on the same K8s. One floor, everything
+          standing on it.
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AirbnbMonitoring() {
   const [section, setSection] = useState("problem");
@@ -125,57 +317,7 @@ export default function AirbnbMonitoring() {
           ))}
         </div>
 
-        {section === "problem" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              Airbnb's monitoring stack was built on the same Kubernetes clusters and Istio service mesh it was meant to observe. When the shared infrastructure failed, monitoring went dark — at exactly the moment it was needed.
-            </p>
-
-            <div style={{
-              background: "#3a1a1a",
-              border: "1px solid #ef4444",
-              borderRadius: 8,
-              padding: "14px 16px",
-              boxShadow: "0 0 20px #ef444415",
-            }}>
-              <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 2, marginBottom: 10, textTransform: "uppercase", fontWeight: 600 }}>
-                🔄 The Circular Dependency
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {[
-                  ["App services", "runs on", "Shared K8s cluster"],
-                  ["Metrics pipeline", "also runs on", "Shared K8s cluster"],
-                  ["Metrics about K8s", "flows through", "Istio service mesh"],
-                  ["Istio service mesh", "runs on", "Shared K8s cluster"],
-                ].map(([from, rel, to], i) => (
-                  <div key={i} style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    padding: "7px 10px",
-                    background: "#ef444415",
-                    borderRadius: 5,
-                    fontSize: 11.5,
-                  }}>
-                    <span style={{ color: "#f0f0f5", fontWeight: 600, minWidth: 130 }}>{from}</span>
-                    <span style={{ color: "#ef4444", fontSize: 10 }}>—{rel}→</span>
-                    <span style={{ color: "#999" }}>{to}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{
-                marginTop: 12,
-                padding: "10px 12px",
-                background: "#1a0606",
-                borderRadius: 5,
-                border: "1px solid #ef444430",
-              }}>
-                <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 600 }}>Result: </span>
-                <span style={{ fontSize: 11.5, color: "#c0c0cc" }}>
-                  K8s cluster degrades → metrics pipeline degrades → alerts don't fire → no one knows K8s is degraded.
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+        {section === "problem" && <FailureSim />}
 
         {section === "compute" && (
           <div>

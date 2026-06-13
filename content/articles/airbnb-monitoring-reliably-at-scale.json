@@ -2,8 +2,9 @@
   "slug": "airbnb-monitoring-reliably-at-scale",
   "title": "Monitoring Reliably at Scale",
   "url": "https://medium.com/airbnb-engineering/monitoring-reliably-at-scale-ca6483040930",
-  "publishedAt": "2026-05-12",
+  "publishedAt": "2026-05-05",
   "addedAt": "2026-06-02",
+  "updatedAt": "2026-06-12",
   "source": {
     "name": "Airbnb Engineering",
     "slug": "airbnb-engineering",
@@ -32,10 +33,18 @@
     },
     {
       "slug": "circular-dependency-avoidance",
-      "note": "The original monitoring architecture had four overlapping circular dependencies, each invisible until activated. The redesign maps and severs each one: dedicated clusters break the compute dependency; dedicated network plane breaks the data-flow dependency; external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how circular dependencies hide in plain sight inside 'reasonable' shared-infrastructure choices."
+      "note": "The original monitoring architecture had overlapping circular dependencies, each invisible until activated. The redesign maps and severs each one: dedicated clusters break the compute dependency; dedicated network plane breaks the data-flow dependency; external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how circular dependencies hide in plain sight inside 'reasonable' shared-infrastructure choices."
     }
   ],
   "artifact": {
-    "path": "/artifacts/airbnb-monitoring-reliably-at-scale/index.html"
-  }
+    "path": "/artifacts/airbnb-monitoring-reliably-at-scale/index.html",
+    "teaser": "Break each layer — in the old architecture and the new — and see who gets paged."
+  },
+  "stats": [
+    {
+      "value": "1,000+",
+      "label": "services routed by the dedicated Envoy L7 layer",
+      "placement": "solution"
+    }
+  ]
 }
