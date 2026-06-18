@@ -14,6 +14,13 @@
     "feed": "https://discord.com/blog/rss.xml"
   },
   {
+    "name": "Netflix Technology Blog",
+    "slug": "netflix-techblog",
+    "company": "Netflix",
+    "url": "https://netflixtechblog.com",
+    "feed": "https://netflixtechblog.com/feed"
+  },
+  {
     "name": "Stripe Engineering",
     "slug": "stripe-engineering",
     "company": "Stripe",
