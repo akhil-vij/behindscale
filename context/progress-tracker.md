@@ -79,11 +79,24 @@ Update this file after every meaningful implementation change.
   as the load-bearing decision that made the rewrite
   possible. The Skipper docs commit's premature "sprint
   complete" framing is corrected here; the sprint was always
-  five articles, and this is the actual closer. Library
-  state unchanged at **5 articles, 15 pattern definitions, 5
-  artifacts.** The measurement foundation from Unit 10 is
-  intact through all five parts. The reassessment window
-  from 2026-06-04 still applies.
+  five articles, and this is the actual closer. **Article
+  #6 (Netflix prioritized load shedding) published
+  2026-06-18**, the first new article since the sprint
+  closed -- chosen on recurrence-driven sourcing grounds.
+  The 2024 canonical Netflix post extends two existing
+  patterns (priority-aware-load-shedding,
+  feedback-controlled-load-management) the library had so
+  far seen only in Uber's storage-layer stack; the Netflix
+  service-layer instance turns both into two-company
+  patterns, the move that makes the library demonstrate its
+  thesis rather than assert it. Library state: **6
+  articles, 15 pattern definitions (unchanged), 6
+  artifacts.** Three bidirectional `relatedArticles`
+  threads now seeded: Stripe<->Uber, Discord<->Airbnb, and
+  the new Uber<->Netflix link added in the same commit.
+  The measurement foundation from Unit 10 is intact through
+  the new article. The reassessment window from 2026-06-04
+  still applies.
 
 ## Current Operating Mode
 
@@ -145,6 +158,132 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   Vitest 2.1 added to devDependencies; `npm test` runs the suite. Tests
   live colocated under `src/types/__tests__/` — pattern to repeat for
   future types.
+- **Article #6 — Netflix prioritized load shedding
+  (2026-06-18). First new article since the quality sprint
+  closed; first deliberately recurrence-driven publication.**
+  Four commits in order: `content: add netflix to
+  feeds.json` (atomic source-list addition ahead of the
+  article that needs it -- same discipline as the schema
+  chores that landed before the units consuming them);
+  `content: article #6 -- netflix prioritized load shedding`
+  (article + artifact + reciprocal Uber relatedArticles
+  cross-link in one coherent commit); `fix: netflix tech
+  blog URLs -- medium.com hosting` (the Netflix Technology
+  Blog has migrated from netflixtechblog.com to Medium
+  publication hosting; the prior two commits shipped the
+  pre-migration URLs in good faith since the legacy
+  domain still resolves via redirect; this fix lands the
+  canonical medium.com forms across feeds.json, the
+  article's url + source.url + source.feed, and the two
+  predecessor URLs in the problem prose -- the 2018 post
+  uses Medium's older subdomain-style URL while the 2020
+  and 2024 posts use the publication-style URL); this
+  docs commit.
+  - Why this article, why now. The recurrence-driven
+    framing was the editorial intent locked in during the
+    Uber sprint's pattern merge: pattern definitions were
+    deliberately authored at a generality the next
+    embodiment could land cleanly against (the merged
+    feedback-controlled-load-management entry's tradeoffs
+    and whenItApplies sections used cross-embodiment
+    framing rather than Cinnamon-specific language for
+    exactly this reason). Picking Netflix as article #6 was
+    the operational application of that intent: the 2024
+    canonical Netflix post extends two patterns that the
+    library had so far seen only in Uber's storage-layer
+    stack, applying the same shed-by-priority and
+    measure-the-system-you-have shapes at the service
+    layer of a different company's stack. The first time a
+    reader clicks the `priority-aware-load-shedding` chip
+    and sees Uber and Netflix side by side, the library's
+    central premise (cross-company pattern recurrence) is
+    demonstrated rather than asserted.
+  - Sources. The canonical 2024 post (enhancing-netflix-
+    reliability-with-service-level-prioritized-load-
+    shedding) is the publishedAt anchor (2024-06-25, the
+    source's own date). Two predecessor posts are named in
+    prose with their URLs per the prior-post convention
+    locked during the Uber rework: the 2020 gateway-level
+    prioritized-shedding post (which contributes the
+    ChAP-experimentation-for-taxonomy-drift framing folded
+    into tradeoffs[1]) and the 2018 adaptive-concurrency-
+    limits post (the gradient-formula substrate the 2024
+    work layers on top of, named verbatim in solution ¶3).
+    All three posts read in full this session;
+    netflixtechblog.com is invariant 7-compliant (Netflix's
+    official engineering blog, not Medium-as-platform).
+  - Pattern recurrence achieved.
+    `priority-aware-load-shedding` was Uber-only before
+    (Cinnamon t0-t5 at the storage layer); Netflix's
+    four-bucket framework (CRITICAL/DEGRADED/BEST_EFFORT/
+    BULK after Linux tc-prio) plus the PlayAPI two-partition
+    limiter (user-initiated guaranteed full throughput;
+    pre-fetch only excess capacity) is the service-layer
+    instance. Two companies, two stack layers, one
+    shed-lowest-value-first principle.
+    `feedback-controlled-load-management` was Uber-only
+    (Cinnamon's PID loop over queue/latency signals);
+    Netflix's adaptive concurrency limits (gradient-based,
+    TCP-Vegas-derived: `newLimit = currentLimit × gradient
+    + queueSize` where `gradient = RTTnoload / RTTactual`)
+    is the second instance. Same measure-the-system-you-
+    have, two implementations. The pattern definition --
+    deliberately authored general during the Uber merge --
+    didn't need a single edit; this commit is the
+    generality bar's first real test, and it passes.
+    `fault-isolation` was already a two-article pattern
+    (Airbnb monitoring, Discord search); the Netflix
+    article's partitioned-limiter-vs-separate-clusters
+    framing makes it three-article-across-three-companies
+    -- the strongest recurrence evidence in the library
+    after this commit.
+  - Reciprocal cross-links. Netflix article references
+    `[uber-intelligent-load-management, stripe-idempotency]`
+    at write time. The Uber article was updated in the
+    same commit to reference
+    `[netflix-prioritized-load-shedding, stripe-idempotency]`
+    (was just `[stripe-idempotency]`). The load-management
+    `relatedArticles` thread is now bidirectional;
+    Stripe<->Uber and Discord<->Airbnb threads
+    (established during the quality sprint) carry forward
+    unchanged. Three two-way pairings, ready for the
+    eventual `relatedArticles` UI surface.
+  - Artifact. Three views in a single sectioned artifact:
+    InjectionView (default landing tab, the signature
+    interaction -- inject latency or failure into pre-fetch
+    traffic, toggle baseline vs prioritized, watch the
+    outcome diverge); CurvesView (the 2020 cubic
+    shedding-curve rendered from three published anchor
+    points with the cubic interpolation labeled in-artifact
+    as such -- the shape is the load-bearing claim, not the
+    intermediate values); LimitView (the 2018 adaptive-
+    limits sim running the real gradient formula with
+    illustrative capacity values, demonstrating the
+    probe-and-back-off saw-tooth and re-convergence).
+    Bundle smoke-checked for the Unit 10 emitter wiring
+    (artifact:interacted, slug literal,
+    window.parent.postMessage); intact.
+  - Verification: validator 4 checks, 0 errors, 1 warning
+    (the pre-existing Skipper `10,000 per second`
+    fuzzy-miss, carried forward; all three new Netflix
+    stats pass cleanly via monolithic substring match --
+    `12x`, `>99.4%` after `<>%` strip matching `99.4`,
+    `6x`); vitest 72/72 (no test changes); `npm run
+    compile-artifacts` 6/6 ok (was 5; +1 Netflix);
+    `npm run build` end-to-end clean, 24 routes
+    prerendered (was 23: +1 article page), 23 URLs in
+    sitemap. Spot-checked
+    `dist/articles/netflix-prioritized-load-shedding.html`:
+    new title, datePublished=2026-06-13 (addedAt),
+    dateModified=2026-06-13 (no updatedAt set; mirrors
+    addedAt per the default fallback),
+    isBasedOn.datePublished=2024-06-25 (the canonical
+    Netflix post's source date). Pattern-detail spot-
+    checks (the recurrence visible on the page, which is
+    the strategic point of this publication):
+    priority-aware-load-shedding now lists Uber and
+    Netflix; feedback-controlled-load-management same;
+    fault-isolation now lists Airbnb, Discord, Netflix.
 - **Unit 11 / quality sprint pt 5 — Discord enrichment
   (2026-06-13). Closes the five-article quality sprint.**
   Two commits: `content: discord evolution enrichment +
@@ -1388,37 +1527,50 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 - None — Units 9 + 10 closed and prod-verified; Unit 11
   quality sprint complete across 2026-06-12 and 2026-06-13
-  (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord). The
-  Unit 10 editorial-backfill follow-up is now closed in full
-  -- every article has its teaser, every article that
-  warranted stats has them. Every article in the library is
-  source-verified; every artifact has a true interactive
-  surface. Two cross-company `relatedArticles` threads seeded
-  (Stripe<->Uber on overload protection; Discord<->Airbnb on
-  fault isolation). Next manual-mode publication awaiting
-  article choice from the candidate list (Slack shared
-  channels, Netflix active-active, Cloudflare Prometheus,
-  Meta FOQS, GitHub sharding, DoorDash internal tools,
-  LinkedIn Brooklin). Two known follow-ups, both small +
+  (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord);
+  article #6 (Netflix prioritized load shedding) published
+  2026-06-18 as the first recurrence-driven pick. The
+  Unit 10 editorial-backfill follow-up remains closed.
+  Every article in the library is source-verified; every
+  artifact has a true interactive surface. Three two-way
+  `relatedArticles` threads now seeded: Stripe<->Uber
+  (overload protection, from the sprint), Discord<->Airbnb
+  (fault isolation, from the sprint), and Uber<->Netflix
+  (load management, from article #6). Two pattern
+  definitions made the jump from one-company to two-company
+  with this article (priority-aware-load-shedding,
+  feedback-controlled-load-management); fault-isolation
+  jumped from two-company to three-company. Next
+  manual-mode publication awaiting article choice from the
+  remaining candidate list (Slack shared channels, Netflix
+  active-active, Cloudflare Prometheus, Meta FOQS, GitHub
+  sharding, DoorDash internal tools, LinkedIn Brooklin --
+  Netflix prioritized load shedding consumed the "Netflix"
+  slot from this list). Two known follow-ups, both small +
   non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
-  - `relatedArticles` UI surface. Two cross-company threads
-    now populated (Stripe<->Uber and Discord<->Airbnb); the
-    website still doesn't render a "see also" section.
-    Lands as a small standalone unit when the next
-    authoring cadence touches the article page -- the
-    second populator makes the surface materially more
-    useful than when only Stripe<->Uber existed.
+  - `relatedArticles` UI surface. Three cross-company
+    threads now populate the field (Stripe<->Uber,
+    Discord<->Airbnb, Uber<->Netflix); the website still
+    doesn't render a "see also" section. Lands as a small
+    standalone unit when the next authoring cadence
+    touches the article page -- the third populator
+    materially raises the surface's usefulness from a
+    two-callers warrant to a three-callers warrant, with
+    one of the articles (Uber) now linked from both
+    Stripe and Netflix.
   - **Prose markdown rendering with hyperlinks.** The Uber
     rework attributes PID-term material to Uber's companion
     Cinnamon and PID posts by name in prose. Hyperlinks
     (`/blog/cinnamon-using-century-old-tech-to-build-a-mean-load-shedder/`,
     `/blog/pid-controller-for-cinnamon/`) are the natural
     rendering; the prose renderer doesn't yet support markdown
-    syntax. Lands with the deferred markdown renderer (was
-    originally scoped under Unit 7+, now decoupled from that
+    syntax. The Netflix article adds two more prose-URL
+    callers (its 2018 and 2020 predecessor links). Lands
+    with the deferred markdown renderer (was originally
+    scoped under Unit 7+, now decoupled from that
     sequence).
 
 ## Developer Setup
@@ -1519,6 +1671,33 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **Article #6 (Netflix prioritized load shedding) chosen
+  on recurrence-driven sourcing grounds** (2026-06-18).
+  First publication where the article was picked
+  specifically because it would make two existing patterns
+  recur across a second company, rather than because of
+  its individual merit. The selection criterion was made
+  operational by the Uber sprint's pattern-merge work,
+  which authored `feedback-controlled-load-management`
+  (and re-authored `priority-aware-load-shedding`) at a
+  generality that anticipated a non-Uber embodiment --
+  the merge's correctness depended on that generality
+  bar holding. The Netflix article is the first real test
+  of that bar; both patterns took the new embodiment
+  without a single edit to their definition files. The
+  decision rule going forward: when picking the next
+  article, weigh the cross-pattern recurrence it would
+  unlock (pattern jumps from one company to two, or two
+  to three) alongside the article's standalone merit; the
+  recurrence dimension is what makes the library
+  compound, and is what a senior/staff reader is most
+  likely to notice. A side effect of this article: a
+  hosting-migration fix landed in the same publication
+  series (Netflix Tech Blog moved from netflixtechblog.com
+  to medium.com/@netflixtechblog at some point post-2018;
+  the prior two commits used the legacy URLs, the fix
+  commit landed canonical medium.com forms across feeds,
+  the article, and the two predecessor prose URLs).
 - **Discord article enrichment + capstone artifact view +
   five-article sprint closeout** (quality audit,
   2026-06-13). Unlike the four prior reworks, this article
