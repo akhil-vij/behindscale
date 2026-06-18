@@ -17,8 +17,8 @@
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",
-    "url": "https://netflixtechblog.com",
-    "feed": "https://netflixtechblog.com/feed"
+    "url": "https://medium.com/@netflixtechblog",
+    "feed": "https://medium.com/feed/netflix-techblog"
   },
   {
     "name": "Stripe Engineering",
