@@ -32,7 +32,7 @@
       "note": "Cinnamon is the worked instance: a PID loop over queue and latency signals smoothly adjusts admission instead of snapping a static threshold, and the BYOS design extends the same loop to any normalized overload signal — commit lag, write bytes, memory pressure — unifying what were previously competing per-signal limiters into one coherent decision path."
     }
   ],
-  "relatedArticles": ["stripe-idempotency"],
+  "relatedArticles": ["netflix-prioritized-load-shedding", "stripe-idempotency"],
   "artifact": {
     "path": "/artifacts/uber-intelligent-load-management/index.html",
     "teaser": "Drive the PID controller: push simulated load and watch the thresholds adapt."
