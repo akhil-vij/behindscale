@@ -1,0 +1,18 @@
+{
+  "slug": "logical-physical-migration-split",
+  "name": "Logical–Physical Migration Split",
+  "category": "resilience",
+  "definition": "Split a high-risk storage or topology migration into two phases with different rollback costs. In the logical phase, the target topology is made real to every client — through views, routing rules, proxies, or flags — while the physical layout underneath stays unchanged; the system behaves, from the application's perspective, as if the migration had already happened. Because nothing has physically moved, rollback is a configuration change measured in seconds, and the new behavior can be ramped gradually under live production traffic. Only after the logical world has proven itself does the physical phase run: data actually moves, and the hard-to-reverse step executes against a topology that is no longer novel.\n\nThe insight behind the split is that most migration risk lives in the new behavior, not in the data movement. Wrong routing, unsupported query shapes, application assumptions about transactions or ordering — these are the failures that cause incidents, and they can all be exercised without relocating a byte. Rehearsing them where reversal is cheap converts unknown unknowns into found bugs; the physical step then carries only the risks that genuinely require moving data to discover. Shadow techniques compound the effect: replaying or mirroring live traffic through the candidate topology and comparing results against the incumbent turns production itself into the test harness, without production depending on the outcome.\n\nThe same shape appears wherever a one-way door can be preceded by a cheap dress rehearsal: expand/contract schema migrations that add the new structure before any code depends on it; branch-by-abstraction refactors that route through an interface before swapping implementations; dark reads and shadow traffic that compare a candidate system's answers against the incumbent's before cutover. The common discipline is ordering — sequence the migration so that every reversible validation happens before the irreversible step, never after.",
+  "whenItApplies": [
+    "Storage migrations, shard splits, and datastore replacements where the physical cutover is expensive or impossible to reverse",
+    "When the target topology's behavior — routing, query support, transaction semantics — can be expressed through an indirection layer over unchanged infrastructure",
+    "When live production traffic is the only realistic test of the new behavior",
+    "When incremental ramp-up and near-instant rollback are requirements rather than luxuries"
+  ],
+  "tradeoffs": [
+    "The indirection layer (views, proxies, flags) adds overhead and can itself perturb the behavior being validated — it must be measured, not assumed",
+    "Two worlds run during the transition: more configuration, more operational surface, a longer total timeline",
+    "Rollback asymmetry returns the moment the physical step executes; the split changes when risk is taken, not whether",
+    "Confidence is bounded by traffic coverage during the rehearsal — behaviors not exercised logically remain unknown physically"
+  ]
+}

@@ -14,6 +14,13 @@
     "feed": "https://discord.com/blog/rss.xml"
   },
   {
+    "name": "Figma Blog",
+    "slug": "figma-blog",
+    "company": "Figma",
+    "url": "https://www.figma.com/blog/",
+    "feed": "https://www.figma.com/blog/rss/"
+  },
+  {
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",
