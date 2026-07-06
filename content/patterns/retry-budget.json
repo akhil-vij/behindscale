@@ -1,0 +1,16 @@
+{
+  "slug": "retry-budget",
+  "name": "Retry Budget",
+  "category": "resilience",
+  "definition": "Bound retry amplification mechanically by giving each client a local budget — typically a token bucket — that retries spend. While tokens remain, transient failures are masked freely; when the bucket empties, retrying continues only at a fixed, low rate. The budget converts the retry storm from a behavioral risk (hoping clients back off enough) into an arithmetic bound: no client can more than marginally multiply its offered load, no matter how long the dependency stays down.\n\nThe pattern's strongest form ships the budget as default platform behavior — in the SDK, the service mesh, or the RPC framework — so the safe behavior is ambient rather than per-team discipline.",
+  "whenItApplies": [
+    "Client fleets calling shared dependencies whose failures are sometimes caused by overload — where retries would amplify the cause",
+    "Platforms (SDKs, meshes, RPC layers) positioned to make bounded retrying the default for every consumer",
+    "Systems where backoff and jitter alone cannot bound aggregate retry load during extended outages"
+  ],
+  "tradeoffs": [
+    "Budgets throttle retries during long runs of genuinely transient faults, where more retrying would have been safe",
+    "The bound is per-client and local; aggregate fleet amplification is emergent, not centrally guaranteed",
+    "Sizing the bucket is a policy decision — too small masks nothing, too large bounds nothing"
+  ]
+}

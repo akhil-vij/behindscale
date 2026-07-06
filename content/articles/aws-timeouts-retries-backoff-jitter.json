@@ -1,0 +1,68 @@
+{
+  "slug": "aws-timeouts-retries-backoff-jitter",
+  "title": "The Selfish Retry: Timeouts, Backoff, and Jitter at Amazon",
+  "url": "https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/",
+  "publishedAt": "2019-11-25",
+  "addedAt": "2026-07-06",
+  "source": {
+    "name": "Amazon Builders' Library",
+    "slug": "amazon-builders-library",
+    "company": "Amazon (AWS)",
+    "url": "https://aws.amazon.com/builders-library/",
+    "feed": "https://aws.amazon.com/builders-library/"
+  },
+  "summary": "Marc Brooker's Builders' Library article is Amazon's operational doctrine for the three tools every remote call needs: timeouts so failures surface instead of hanging, retries so transient faults get masked, and backoff with jitter so the masking doesn't become the next outage. Its sharpest idea is that retries are selfish — a client retrying spends more of the server's capacity to improve its own odds, which amplifies load precisely when the dependency is least able to absorb it. Amazon's answers: retry only when the dependency looks healthy and stop when retries aren't improving availability; throttle retries client-side with a token bucket (built into the AWS SDK since 2016); treat side-effecting APIs as unsafe to retry unless they're idempotent, the way EC2 RunInstances is via client tokens; and add jitter not just to retries but to every timer, periodic job, and piece of delayed work, because correlated schedules manufacture their own load spikes.",
+  "crux": "A retry is a bet placed with someone else's money: the client spends the server's capacity to improve its own request's odds. When failures are transient and random, the bet pays — a surprisingly large fraction of faults vanish on a second attempt. But when failures are caused by overload, every client making the same selfish bet multiplies the load on a dependency at the exact moment it has the least capacity to spare — and plain exponential backoff doesn't save you, because backed-off clients that failed together retry together, re-forming the spike they were meant to dissolve. Retries amplify overload, and correlation defeats backoff.",
+  "cruxTag": "retry-amplified-overload",
+  "problem": "Whenever one system calls another, failure can come from anywhere in the stack — servers, networks, load balancers, software, operating systems, operators. Amazon's stance is that systems which never fail cannot be built, so systems must tolerate failure without magnifying a small percentage of faults into a complete outage. The magnification is the hard part, and it arrives through the very tools meant to provide the tolerance.\n\nMany failures first appear as slowness: requests taking longer than usual, possibly never completing. A client waiting on such a request holds its resources — memory, threads, connections — for the duration, and a server doing the same accumulates the load of requests whose callers may have long stopped caring. Unbounded waiting converts one component's slowness into everyone's resource exhaustion, which is what timeouts exist to prevent. But timeouts create the ambiguity retries must then paper over: a timed-out call may or may not have executed, and its side effects may or may not have happened.\n\nRetries resolve the availability half of that problem brutally well — repeat the call and most transient faults disappear. The cost is the crux: retrying is selfish. Each retry asks an already-struggling dependency to spend capacity twice, or three times, for one unit of client value. If the underlying failure is overload, a fleet of retrying clients converts a brownout into a sustained storm, and the system can stay down under retry pressure long after the original cause has passed. Backoff — spacing retries out with exponentially growing waits — keeps the load on the backend more even, but has its own failure mode: correlation. Clients that failed at the same moment back off by the same schedule and return at the same moment, re-creating contention in synchronized waves. And traffic at Amazon doesn't arrive smoothly to begin with — client behavior, failure recovery, and even ordinary cron jobs produce large bursts, so anything that synchronizes clients further is manufacturing the next spike.",
+  "solution": "Timeouts come first, and Amazon's practice is uncompromising: set one on any remote call — and on any call across processes even on the same server — covering both connection and request phases. The value is chosen deliberately rather than folklorically, from the dependency's measured latency distribution, by picking an acceptable rate of false timeouts: set the bound where only a chosen small fraction of genuinely healthy requests would be cut off. Too generous and resources pool behind slow calls; too aggressive and the timeout itself manufactures retries.\n\nRetries are then applied with the article's defining caution. Because retries amplify load on a failing dependency, Amazon retries only when there is evidence the dependency is healthy, and stops retrying when retries are not improving availability — spending capacity on retries that cannot succeed only deepens an overload. The enforcement mechanism is mechanical rather than aspirational: clients throttle their own retries with a local token bucket, retrying freely while tokens remain and at a fixed, bounded rate once they are exhausted. That behavior shipped inside the AWS SDK in 2016, so every customer using the SDK carries the protection by default — the platform makes the safe behavior the ambient one.\n\nWhether to retry at all is an API-contract question before it is a client question. A timeout does not mean the side effects didn't happen, so APIs with side effects are unsafe to retry unless they provide idempotency — the guarantee that effects occur once no matter how many attempts arrive. Read-only APIs are typically idempotent already; resource-creating APIs may not be, which is why EC2's RunInstances offers an explicit token-based mechanism: the client supplies a token, retries carry the same token, and the second launch request becomes a harmless echo of the first rather than a second fleet of instances.\n\nBackoff spreads retries in time — capped exponential growth between attempts keeps backend load even — but backoff alone leaves the correlation problem: clients that failed together return together. Jitter, a randomized component in the wait, spreads the synchronized wave into an approximately constant rate, and the article points to Amazon's analysis of jitter strategies for how much to add and how. Then comes the observation that elevates the article beyond retry hygiene: jitter isn't only for retries. Traffic to Amazon services spikes in bursts short enough to hide inside aggregated metrics, and much of that burstiness is self-inflicted — clients calling on regular intervals line up with each other, cron jobs cluster at the top of the hour and the first seconds after midnight. On systems like EBS and Lambda, deliberately jittering clients' periodic workloads let the same work complete with less server capacity. Amazon therefore considers adding jitter to all timers, periodic jobs, and delayed work — chosen consistently per host rather than freshly random, so that under overload the pattern remains legible to a debugging human.",
+  "tradeoffs": [
+    "Every timeout is a purchased false-failure rate. Choosing the bound from the latency distribution means deliberately deciding what fraction of healthy-but-slow requests will be killed and retried — a cost paid in duplicate work and, for non-idempotent calls, in ambiguity. The alternative of generous timeouts pays differently: resources held hostage behind slow calls, and failure detection so late it stops being detection. The article's contribution is refusing to let the number be folklore; the trade itself cannot be refused.",
+    "Health-gated retries trade masking power for stability. Retrying only when the dependency looks healthy, and stopping when retries aren't improving availability, means deliberately not masking exactly the failures customers feel most — the deep ones. That is the point: during overload, the retry that might have saved one request instead taxes every request. The client accepts worse per-request odds in the bad times to keep the bad times short, a choice that only makes sense fleet-wide, which is why it lives in the SDK rather than in each team's judgment.",
+    "The token bucket makes retry capacity a budget, and budgets misfire at the margins. While tokens last, retries are free and transient blips get fully masked; once exhausted, retrying continues at a fixed rate — which bounds amplification during a real overload but also throttles retries during an extended run of genuinely transient faults, where more retrying would have been safe. Client-side budgets are also local knowledge: each client caps its own selfishness without seeing the fleet's total, so the bound on aggregate amplification is emergent rather than guaranteed.",
+    "Idempotency moves the retry problem into the API contract, where someone must pay to keep it. Token mechanisms like RunInstances' make retries safe by making the server remember — state, expiry policy, and semantics that every new operation must now define. Declaring reads idempotent and creates token-guarded sounds clean until an API's side effects are subtle (metering, notifications, audit trails), at which point 'safe to retry' becomes a per-endpoint proof obligation rather than a property. Amazon's framing is honest: good API design is a precondition for safe clients, not a substitute for them.",
+    "Jitter buys smoothness by spending predictability, which is why the article insists on consistent per-host jitter. Randomizing every timer and periodic job flattens the fleet's aggregate load, but a system whose every action is randomly displaced is harder for a human to reason about during an incident. Choosing the jitter deterministically per host keeps individual behavior legible — the same host always fires at the same offset — while the fleet stays spread. It is a small design detail carrying a large operational philosophy: optimizations must not cost you the ability to debug the system they optimize.",
+    "All three tools tune a tension none of them resolves: masking failures versus revealing them. Timeouts surface slowness that patience would hide; retries hide faults that surfacing would let you fix; backoff and jitter hide the hiding's cost. A system tuned for maximum masking looks perfectly healthy right up until it collapses; one tuned for maximum revelation pages humans for noise. The article's quiet position — retry, but only while it demonstrably improves availability — is a rule for continuously re-deciding where on that line to stand, not a resolution of it."
+  ],
+  "tags": [
+    "resilience",
+    "retries",
+    "timeouts",
+    "client-design",
+    "aws"
+  ],
+  "patterns": [
+    {
+      "slug": "retry-with-backoff-and-jitter",
+      "note": "This article is the pattern's operational doctrine from its origin company: capped exponential backoff to even out load, jitter to break the correlation that makes backed-off clients return in synchronized waves, and the insight that jitter belongs on all periodic work, not just retries. With Stripe the pattern recurs from the API-provider side; here it is the client fleet's discipline."
+    },
+    {
+      "slug": "idempotency-keys",
+      "note": "EC2 RunInstances' client token is the same mechanism Stripe exposes as the Idempotency-Key header: the client names the operation, retries repeat the name, and the server deduplicates — converting an unsafe-to-retry, side-effecting call into a safe one. Second company, same contract: retry safety is purchased at API-design time."
+    },
+    {
+      "slug": "retry-budget",
+      "note": "Amazon's local token bucket bounds each client's retry amplification mechanically: retry freely while tokens remain, at a fixed rate once exhausted — shipped as default AWS SDK behavior in 2016 so the safe behavior is the ambient one. The pattern is the difference between advising clients not to storm and making storms arithmetically impossible per client."
+    }
+  ],
+  "relatedArticles": [
+    "stripe-idempotency",
+    "shopify-resilient-payments"
+  ],
+  "stats": [
+    {
+      "value": "2016",
+      "label": "year token-bucket retry throttling became default AWS SDK behavior",
+      "placement": "solution"
+    },
+    {
+      "value": "3",
+      "label": "tools in the doctrine: timeouts, retries, backoff-with-jitter",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/aws-timeouts-retries-backoff-jitter/index.html",
+    "teaser": "Brown out a dependency under a retrying client fleet, then switch on backoff, jitter, and the token bucket one at a time — and watch the retry storm dissolve."
+  }
+}

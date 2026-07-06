@@ -1,5 +1,12 @@
 [
   {
+    "name": "Amazon Builders' Library",
+    "slug": "amazon-builders-library",
+    "company": "Amazon (AWS)",
+    "url": "https://aws.amazon.com/builders-library/",
+    "feed": "https://aws.amazon.com/builders-library/"
+  },
+  {
     "name": "Airbnb Engineering",
     "slug": "airbnb-engineering",
     "company": "Airbnb",
