@@ -21,6 +21,13 @@
     "feed": "https://www.figma.com/blog/rss/"
   },
   {
+    "name": "The GitHub Blog",
+    "slug": "github-blog",
+    "company": "GitHub",
+    "url": "https://github.blog",
+    "feed": "https://github.blog/engineering/feed/"
+  },
+  {
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",

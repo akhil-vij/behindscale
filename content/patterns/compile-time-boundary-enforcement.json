@@ -1,0 +1,16 @@
+{
+  "slug": "compile-time-boundary-enforcement",
+  "name": "Compile-Time Boundary Enforcement",
+  "category": "consistency",
+  "definition": "Declare an architectural boundary as data, then enforce it with automated checks that fail the build — or flag the violation in development — whenever code crosses it. The boundary becomes real the day it is declared, not the day the underlying systems are actually separated: developers hit violations at their desks, CI blocks new coupling from landing, and existing violations are converted into an explicit, annotated backlog that must reach zero before the physical separation can proceed.\n\nThe pattern's power is temporal. Long-running migrations — splitting a database, extracting a service, partitioning a module — take months or years, and during that window the codebase keeps changing under the migration's feet. Enforcement at development time freezes the boundary's erosion: the migration can only move forward, because regressions are build failures rather than operational surprises discovered after data has moved.\n\nStatic checks cannot see everything — dynamically constructed queries, runtime reflection, and cross-cutting transactions evade them — so mature implementations pair the compile-time check with a sampled runtime check in production that maps where the boundary is actually crossed, feeding the burndown list.",
+  "whenItApplies": [
+    "Splitting a database, monolith, or module estate where the separation will take months and the code keeps evolving meanwhile",
+    "Enforcing ownership or dependency boundaries between teams sharing one codebase",
+    "Preventing regression during any long-running migration whose invariant can be expressed as 'this code must not reference that'"
+  ],
+  "tradeoffs": [
+    "Exemption annotations institutionalize debt: the checker stops new violations but cannot burn down old ones — that remains sustained human work the tool merely makes visible",
+    "Static analysis misses runtime-constructed access; a production-side sampled check is usually needed to close the gap",
+    "The tool enforces whatever boundary was declared — a wrong domain decomposition gets enforced just as rigorously as a right one"
+  ]
+}
