@@ -83,6 +83,12 @@ export function checkArticle(value: unknown): Result {
   const sourceResult = checkSource(value.source)
   if (!sourceResult.ok) return fail('`source`: ' + sourceResult.reason)
   if (typeof value.summary !== 'string') return fail('`summary` expected string')
+  if (typeof value.crux !== 'string') return fail('`crux` expected string (Taste Doc §3.5; 2-4 sentences, near-source, names the bottleneck)')
+  if (value.crux.trim().length === 0) return fail('`crux` expected non-empty string')
+  if (typeof value.cruxTag !== 'string') return fail('`cruxTag` expected string (lowercase-kebab-case slug, e.g. "ambiguous-failure-under-retry")')
+  if (!KEBAB_CASE.test(value.cruxTag)) {
+    return fail(`\`cruxTag\` expected lowercase-kebab-case (got "${value.cruxTag}"; pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
+  }
   if (typeof value.problem !== 'string') return fail('`problem` expected string')
   if (typeof value.solution !== 'string') return fail('`solution` expected string')
   if (!isStringArray(value.tradeoffs)) return fail('`tradeoffs` expected string[]')
@@ -122,6 +128,15 @@ export function checkArticle(value: unknown): Result {
 }
 
 const STAT_PLACEMENTS = new Set(['problem', 'solution', 'tradeoffs'])
+
+// Article.cruxTag normalization contract (Taste Doc §3.5 / architecture.md
+// Content Contract). Same shape as any other kebab-case slug in the repo
+// (article slug, pattern slug, source slug): lowercase alphanumerics
+// with single hyphens separating tokens. Not shared with those checks
+// because cruxTag has no uniqueness rule -- reuse across articles IS
+// the taxonomy demonstrating itself -- and no orphan rule -- there are
+// no cruxTag definition files.
+const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 export function checkArticleStat(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')

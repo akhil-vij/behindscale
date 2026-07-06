@@ -17,6 +17,8 @@ const validArticle = {
   addedAt: '2026-05-29',
   source: validSource,
   summary: 'How Stripe makes payment APIs safe to retry by combining idempotency keys with atomic phase boundaries.',
+  crux: 'Two of the three network-call failure modes leave the client unable to tell whether the operation happened, and for a payments API both guesses are catastrophic.',
+  cruxTag: 'ambiguous-failure-under-retry',
   problem: 'Network failures during payment requests leave the client uncertain whether the charge succeeded.',
   solution: 'Idempotency keys persisted alongside each phase let retries resume safely from the last committed boundary.',
   tradeoffs: [
@@ -56,6 +58,45 @@ describe('Article', () => {
 
   it('rejects when updatedAt is present but not a string', () => {
     expect(isArticle({ ...validArticle, updatedAt: 20260612 })).toBe(false)
+  })
+
+  it('rejects when crux is missing', () => {
+    const malformed: Record<string, unknown> = { ...validArticle }
+    delete malformed.crux
+    expect(isArticle(malformed)).toBe(false)
+  })
+
+  it('rejects when crux is an empty string', () => {
+    expect(isArticle({ ...validArticle, crux: '   ' })).toBe(false)
+  })
+
+  it('rejects when cruxTag is missing', () => {
+    const malformed: Record<string, unknown> = { ...validArticle }
+    delete malformed.cruxTag
+    expect(isArticle(malformed)).toBe(false)
+  })
+
+  it('rejects a non-kebab-case cruxTag (uppercase)', () => {
+    expect(isArticle({ ...validArticle, cruxTag: 'Ambiguous-Failure' })).toBe(false)
+  })
+
+  it('rejects a non-kebab-case cruxTag (leading hyphen)', () => {
+    expect(isArticle({ ...validArticle, cruxTag: '-ambiguous-failure' })).toBe(false)
+  })
+
+  it('rejects a non-kebab-case cruxTag (double hyphen)', () => {
+    expect(isArticle({ ...validArticle, cruxTag: 'ambiguous--failure' })).toBe(false)
+  })
+
+  it('rejects a non-kebab-case cruxTag (underscore)', () => {
+    expect(isArticle({ ...validArticle, cruxTag: 'ambiguous_failure' })).toBe(false)
+  })
+
+  it('accepts multiple articles sharing the same cruxTag (reuse is the point)', () => {
+    const stripe = { ...validArticle, slug: 'a', cruxTag: 'ambiguous-failure-under-retry' }
+    const shopify = { ...validArticle, slug: 'b', cruxTag: 'ambiguous-failure-under-retry' }
+    expect(isArticle(stripe)).toBe(true)
+    expect(isArticle(shopify)).toBe(true)
   })
 
   it('accepts a summary-only article (artifact = null)', () => {

@@ -4,13 +4,15 @@ import type { ArticleStat } from '../types'
 import { articleBySlug, patternBySlug } from '../content'
 import ArtifactEmbed from '../components/ArtifactEmbed'
 import ArtifactTeaser from '../components/ArtifactTeaser'
+import CruxCallout from '../components/CruxCallout'
 import PatternChip from '../components/PatternChip'
 import Prose from '../components/Prose'
 import SourceAttribution from '../components/SourceAttribution'
 import StatsRow from '../components/StatCallout'
 
-// Article reading arc (Unit 10, architecture.md): header → top
-// pattern chips (wayfinding) → summary → artifact teaser → Problem →
+// Article reading arc (Unit 10 + 2026-07-05 crux addition,
+// architecture.md): header → top pattern chips (wayfinding) →
+// summary → THE CRUX → artifact teaser → Problem →
 // (stats[placement=problem]) → Solution → (stats[placement=solution])
 // → ARTIFACT EMBED (anchor "#artifact") → Tradeoffs →
 // (stats[placement=tradeoffs]) → Patterns (full, with notes).
@@ -86,6 +88,12 @@ export default function ArticleDetail() {
         <p className="mt-6 text-lg leading-relaxed text-text-secondary">
           {article.summary}
         </p>
+
+        {/* THE CRUX (2026-07-05): the article's named bottleneck,
+            placed before Problem so the is-this-my-problem scan
+            happens first. Editorial (light) surface. Same crux is
+            compressed inside the artifact's context block. */}
+        <CruxCallout crux={article.crux} />
 
         {/* Artifact teaser (Unit 10): renders only when teaser is
             present. Specificity principle. */}

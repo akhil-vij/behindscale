@@ -20,6 +20,8 @@ export function article(slug: string, patternSlugs: readonly string[]): Article 
       feed: 'https://example.com/engineering.rss',
     },
     summary: '',
+    crux: 'placeholder crux for test fixture -- not editorial output.',
+    cruxTag: 'test-fixture-crux',
     problem: '',
     solution: '',
     tradeoffs: [],

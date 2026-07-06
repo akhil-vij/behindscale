@@ -23,6 +23,24 @@ export interface Article {
   updatedAt?: string
   source: Source
   summary: string
+  // The article's named bottleneck. Two to four sentences in
+  // near-source language, stating the ONE hard problem the system
+  // exists to solve -- never the topic, never the solution.
+  // Rendered as the "THE CRUX" callout on the article page between
+  // `summary` and the artifact teaser (architecture.md Article
+  // Reading Arc). Also compressed into the artifact's context
+  // block's PROBLEM line. Required (Taste Doc §3.5; schema'd
+  // 2026-07-05).
+  crux: string
+  // The bottleneck *class* the crux belongs to (kebab-case).
+  // e.g. `ambiguous-failure-under-retry`,
+  // `priority-blind-load-shedding`. The library's second taxonomy
+  // axis -- patterns name solutions, cruxTags name problems.
+  // **Reuse across articles is the point** so uniqueness is NOT
+  // enforced. There are no cruxTag definition files; recurrence is
+  // derived by grouping articles on equal tags. A `/bottlenecks`
+  // surface is deferred work.
+  cruxTag: string
   problem: string
   solution: string
   tradeoffs: string[]
