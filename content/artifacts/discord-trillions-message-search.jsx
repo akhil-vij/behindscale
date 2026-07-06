@@ -1,603 +1,347 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const sections = [
-  { id: "evolution", label: "2017 → 2025" },
-  { id: "2017", label: "2017 Architecture" },
-  { id: "cracks", label: "The Four Cracks" },
-  { id: "2025", label: "2025 Redesign" },
-  { id: "bfg", label: "BFG Deep Dive" },
-];
-
-const cracks = [
-  {
-    id: "redis-drops",
-    title: "Redis queue dropped messages",
-    color: "#ef4444",
-    icon: "💧",
-    summary: "Indexing queue under sustained pressure → Redis CPU saturation → silent message drops.",
-    detail: "When Elasticsearch nodes failed, the indexing queue backed up. Once Redis hit CPU saturation, messages began silently dropping. The original design treated Redis as a lightweight buffer — appropriate for the original scale, but indexing traffic had grown past what Redis as a buffer could absorb without loss.",
-    fix: "Migrate to PubSub. Guaranteed delivery, tolerates large backlogs without dropping. Elasticsearch failures now produce indexing slowdowns rather than data loss.",
-  },
-  {
-    id: "fanout",
-    title: "Bulk indexing fault-intolerant",
-    color: "#f97316",
-    icon: "🌪",
-    summary: "One batch of 50 messages could touch 50 nodes. Any single node failure → entire batch fails.",
-    detail: "Elasticsearch bulk-operation semantics: the entire operation is considered failed if any single message fails. With a 100-node cluster and 50-item batches, a single failed node caused approximately 40% of bulk operations to fail. The fanout amplification turned single-point failures into fleet-wide indexing degradation.",
-    fix: "Route messages by destination (cluster + index) before bulk indexing. Each bulk operation now targets exactly one Elasticsearch node. A single-node failure affects only its own destination's batches.",
-  },
-  {
-    id: "coordination",
-    title: "Cluster coordination overhead",
-    color: "#eab308",
-    icon: "⚙",
-    summary: "200+ node clusters → master node OOM → indexing failures, query timeouts, cascading degradation.",
-    detail: "Elasticsearch cluster-state grows with the number of nodes and indices. As Discord's clusters scaled past 200 nodes, the master node's coordination work began causing OOM crashes. The crashes triggered indexing failures, growing backlogs, query timeouts — and the kind of cascading failure modes that are operationally difficult to recover from quickly.",
-    fix: "Forty smaller clusters instead of two large ones, grouped into logical 'cells.' Each cluster small enough that master coordination overhead stays bounded.",
-  },
-  {
-    id: "upgrades",
-    title: "No path to rolling restarts",
-    color: "#a78bfa",
-    icon: "🔒",
-    summary: "log4shell patching required taking the entire search system offline. No graceful upgrade path.",
-    detail: "The 200+ node clusters required graceful node-by-node restarts that would have taken prohibitively long. The team was locked into legacy OS and Elasticsearch versions. The log4shell vulnerability brought this to a head: patching required taking the entire search system offline for a maintenance window because no rolling-restart strategy was operationally feasible.",
-    fix: "Elasticsearch on Kubernetes via the ECK operator. Automated OS upgrades. Ergonomic tooling for rolling restarts. The smaller clusters make graceful rolls feasible.",
-  },
-  {
-    id: "max-doc",
-    title: "Lucene MAX_DOC limit",
-    color: "#06b6d4",
-    icon: "📛",
-    summary: "Indices approaching 2B documents → all indexing operations fail.",
-    detail: "Lucene's MAX_DOC limit is approximately 2 billion documents per index. Discord's largest guilds were beginning to approach this limit; once an index hit MAX_DOC, all indexing to that index failed. The original workaround was identifying and deleting spam guilds, but legitimate communities were accumulating similar message counts.",
-    fix: "'Big Freaking Guilds' (BFGs) get a dedicated cell with multi-shard indices. Spread across multiple primary shards to scale past the per-shard MAX_DOC limit.",
-  },
-];
-
-const components2017 = [
-  { name: "Message Queue", impl: "Redis", role: "Real-time message buffering", color: "#ef4444" },
-  { name: "Index Workers", impl: "Python/Celery", role: "Pull batches, bulk-index to Elasticsearch", color: "#a78bfa" },
-  { name: "Shard Mapping", impl: "Cassandra + Redis cache", role: "Persistent guild→shard, cached for hot reads", color: "#3b82f6" },
-  { name: "Shard Allocator", impl: "Redis sorted set", role: "Weighted assignment of new guilds to less-loaded shards", color: "#06b6d4" },
-  { name: "Service Discovery", impl: "etcd", role: "Cluster topology and node discovery", color: "#eab308" },
-  { name: "Search API", impl: "Python", role: "Query routing, permission checks", color: "#f97316" },
-  { name: "Storage", impl: "2 Elasticsearch clusters", role: "Each guild's messages on one Shard (cluster+index)", color: "#22c55e" },
-];
-
-const cells2025 = [
-  {
-    name: "guild-messages",
-    purpose: "Messages from regular guilds",
-    sharding: "by guild_id",
-    color: "#5865F2",
-    detail: "The largest cell. Messages sharded by guild_id, single-primary-shard indices (optimized for query performance — all of a guild's messages on one node).",
-  },
-  {
-    name: "user-dm-messages",
-    purpose: "Direct messages, sharded by user",
-    sharding: "by user_id",
-    color: "#06b6d4",
-    detail: "Enables cross-DM search. Each DM message indexed twice (once per recipient's user_id-sharded index) — 2x storage, but eliminates the query-time fanout problem.",
-  },
-  {
-    name: "BFG cell",
-    purpose: "Big Freaking Guilds approaching MAX_DOC",
-    sharding: "by guild_id, multi-shard",
-    color: "#f97316",
-    detail: "Dedicated cell for outlier guilds. Multi-primary-shard indices accept query coordination overhead in exchange for scaling past Lucene's 2B-document limit per shard.",
-  },
-];
-
-const bfgFlow = [
-  { step: 1, label: "Identify BFG", detail: "A guild's message count approaches Lucene's MAX_DOC threshold on its current index." },
-  { step: 2, label: "Create new index", detail: "New index in the BFG cell, with 2x the primary shard count of the current index." },
-  { step: 3, label: "Dual-index", detail: "New messages now written to BOTH the old index AND the new BFG index." },
-  { step: 4, label: "Historical reindex", detail: "Background job copies the guild's existing messages from the old index into the new BFG index. Queries still served from old index." },
-  { step: 5, label: "Cutover queries", detail: "Once historical reindex completes and the new BFG index is verified, query traffic switches to the new index." },
-  { step: 6, label: "Cleanup", detail: "Stop writing to the old index. Delete the guild's data from it. Old index returns capacity for other guilds." },
-];
-
-function Architecture2017View() {
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-        Discord's 2017 architecture (documented by Jake Heinz) routed messages in application code to a pool of smaller Elasticsearch clusters. The team explicitly rejected having Elasticsearch shard internally — a decision that would prove central to the system's future evolution.
-      </p>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #5865F240",
-        borderRadius: 8,
-        padding: "14px 16px",
-        marginBottom: 14,
-      }}>
-        <div style={{ fontSize: 10, color: "#5865F2", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-          The Core Decision
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          Each guild's messages live on a single <strong style={{ color: "#f0f0f5" }}>Shard</strong> — Discord's term for a (cluster, index) pair. Application-layer routing maps guild_id → Shard. Elasticsearch sees only the operations it's told to perform; it doesn't make routing decisions on the application's behalf.
-        </p>
-      </div>
-      <div style={{ fontSize: 10, color: "#666", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-        Components
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {components2017.map((c) => (
-          <div key={c.name} style={{
-            display: "flex", alignItems: "center", gap: 10,
-            padding: "8px 12px", borderRadius: 5,
-            background: `${c.color}10`, border: `1px solid ${c.color}25`,
-          }}>
-            <span style={{ fontSize: 11.5, color: c.color, fontWeight: 700, minWidth: 130 }}>{c.name}</span>
-            <span style={{ fontSize: 10, color: "#888", minWidth: 130 }}>{c.impl}</span>
-            <span style={{ fontSize: 11, color: "#c0c0cc", flex: 1 }}>{c.role}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{
-        marginTop: 14, padding: "12px 14px",
-        background: "#111118", borderRadius: 6, borderLeft: "3px solid #5865F2",
-      }}>
-        <div style={{ fontSize: 10, color: "#5865F2", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>
-          What worked for 8 years
-        </div>
-        <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-          The system grew to ~26 billion documents across 14 nodes in 2 clusters, with stable performance and minimal operational intervention. Median latency held steady as the library grew. The application-layer-sharding decision was vindicated: Discord retained operational control over its storage and could evolve the strategy without depending on Elasticsearch's coordination.
-        </div>
-      </div>
-    </div>
-  );
+// ---------- deterministic PRNG (mulberry32) ----------
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-function CracksView() {
-  const [selected, setSelected] = useState(cracks[0].id);
-  const c = cracks.find((x) => x.id === selected);
+// ---------- constants (scaled down; labeled on screen) ----------
+const ACCENT = "#5865F2";
+const RED = "#ef4444";
+const AMBER = "#eab308";
+const GREEN = "#22c55e";
+const DT = 0.1;
+const NODES = 20;              // 2017: one cluster of 20. 2025: same 20 across cells.
+const SPREAD = 10;             // distinct nodes a mixed 2017 batch touches
+const ARRIVAL = 50;            // msgs/s
+const DRAIN = 60;              // worker capacity, msgs/s
+const REDIS_CAP = 90;          // queue depth where Redis CPU maxes and drops begin
+const DEAD_NODE = 7;
+const RESTART_PER_NODE = 0.6;  // s, 2025 rolling restart
+const DARK_WINDOW = 6;         // s, 2017 full-offline patch window
+// fan-out failure odds with one dead node: 1 - (19/20)^SPREAD ~= 40% — the post's math, scaled
 
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-        By 2024, the 2017 architecture had reached five specific limits. None were design errors — they were the boundaries of choices that had been correct at the original scale. Click each to see the failure mode and the redesign's response.
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
-        {cracks.map((crack) => (
-          <button
-            key={crack.id}
-            onClick={() => setSelected(crack.id)}
-            style={{
-              textAlign: "left",
-              padding: "10px 14px",
-              borderRadius: 6,
-              border: `1px solid ${selected === crack.id ? crack.color + "80" : "#2a2a3a"}`,
-              background: selected === crack.id ? `${crack.color}15` : "#0c0d13",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <span style={{ fontSize: 16 }}>{crack.icon}</span>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11.5, color: selected === crack.id ? "#f0f0f5" : "#c0c0cc", fontWeight: 600, marginBottom: 2 }}>
-                {crack.title}
-              </div>
-              <div style={{ fontSize: 10, color: "#888", lineHeight: 1.5 }}>{crack.summary}</div>
-            </div>
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: "#111118",
-        border: `1px solid ${c.color}50`,
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ fontSize: 10, color: c.color, letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-          What happened
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: "0 0 14px 0", lineHeight: 1.7 }}>{c.detail}</p>
-        <div style={{ padding: "10px 12px", background: "#08090D", borderRadius: 5, border: `1px solid ${c.color}30` }}>
-          <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>
-            How the 2025 redesign solves it
-          </div>
-          <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.7 }}>{c.fix}</div>
-        </div>
-      </div>
-    </div>
-  );
+const INJECTIONS = [
+  { id: "none", label: "HEALTHY", hint: "steady indexing traffic" },
+  { id: "kill", label: "KILL A NODE", hint: "one data node dies — the post's 40% arithmetic" },
+  { id: "log4", label: "LOG4SHELL PATCH", hint: "every node must restart with patched configs" },
+  { id: "bfg", label: "GUILD HITS 2 BILLION", hint: "one index reaches Lucene's MAX_DOC ceiling" },
+];
+
+function verdictOf(era, injection, live) {
+  const V = (sev, code, text) => ({ sev, code, text });
+  const { dropped, success, restartDone } = live;
+  if (injection === "none") {
+    if (era === "2017") return V("ok", "WORKED — AT BILLIONS", "Two big clusters, lazy indexing, a Redis queue feeding bulk-index workers: performant, cost-effective, easy to operate. Every crack this artifact injects appeared only when the volume grew a thousandfold.");
+    return V("ok", "SAME DECISION, NEW EVERYTHING AROUND IT", "Messages still route to their shard in application code — the 2017 decision, untouched. Around it: PubSub instead of Redis, a router batching by destination, and cells of small clusters on Kubernetes with dedicated master, ingest, and data roles.");
+  }
+  if (injection === "kill") {
+    if (era === "2017") return V("bad", "ONE NODE DOWN — 40% OF BATCHES FAILING", `A batch of 50 messages fans out across the cluster, and one dead node fails the whole batch. Failures re-enqueue and the queue backs up toward the Redis ceiling${dropped > 0 ? ` — CPU maxed, ${Math.round(dropped)} messages dropped and counting. Search is silently going incomplete.` : " — watch it climb: once CPU maxes, messages start dropping, silently gone from search."}`);
+    return V("ok", "ONE NODE DOWN — THAT NODE'S PROBLEM", `The router batched by destination, so each bulk operation talks to a single node: only the dead node's sub-batches retry (success holding at ${success}%). PubSub holds the backlog with guaranteed delivery — indexing slows, nothing is lost. Dropped: ${Math.round(dropped)}.`);
+  }
+  if (injection === "log4") {
+    if (era === "2017") return V("bad", "PATCHING MEANS GOING DARK", `No safe rolling-restart path existed — log4shell forced taking search fully offline to restart every node with patched configs. The queue slams into its ceiling while the fleet reboots: ${Math.round(dropped)} messages dropped and counting.`);
+    return restartDone
+      ? V("ok", "PATCHED — NOBODY NOTICED", `Every node restarted, one at a time, while indexing continued (success ${success}%, dropped ${Math.round(dropped)}). With ECK, restarts and OS upgrades are automated routine, not an outage.`)
+      : V("ok", "ROLLING RESTART IN PROGRESS", `ECK restarts nodes one at a time — the amber sweep — while shard allocation keeps every index served. Success holding at ${success}%; dropped: ${Math.round(dropped)}.`);
+  }
+  // bfg
+  if (era === "2017") return V("bad", "THE TWO-BILLION WALL", "Each Elasticsearch index is a single Lucene index underneath, and Lucene has a MAX_DOC ceiling of about two billion. The biggest guilds hit it — every indexing operation for that index fails — and the recovery was finding large spammy guilds to delete. Not a strategy.");
+  return V("ok", "A CELL FOR GIANTS", "Big guilds get a dedicated BFG cell whose indices run multiple primary shards, sidestepping the single-Lucene-index ceiling. Growing guilds migrate in via a six-step dual-index flow — new index, double writes, historical backfill, query switch, cleanup — with search up throughout. The cell abstraction, paying rent.");
 }
 
-function Redesign2025View() {
-  const [selected, setSelected] = useState(0);
-  const cell = cells2025[selected];
+const PROBES = {
+  guild: {
+    "2017": { badge: "PRESERVED", text: "hash(guild_id) → index + cluster, computed in application code. All of a guild's messages live together, so one query touches one place." },
+    "2025": { badge: "PRESERVED", text: "hash(guild_id) → index + cluster — the same application-code routing, now resolving into a cell. The one decision the rewrite kept." },
+  },
+  dm: {
+    "2017": { badge: null, text: "DMs shard by channel, exactly like guilds. Searching across all your DMs would mean querying every one of them separately — so it didn't exist." },
+    "2025": { badge: "EXTENDED", text: "DMs now index twice: by channel, and by user_id into the dedicated user-dm cell — so one query searches every DM you have. The preserved decision didn't just survive; it gained a dimension." },
+  },
+};
+
+export default function BlastRadius() {
+  const [era, setEra] = useState("2017");
+  const [injection, setInjection] = useState("none");
+  const [probe, setProbe] = useState(null); // "guild" | "dm" | null
+  const [, force] = useState(0);
+  const w = useRef(null);
+
+  const freshWorld = () => ({
+    t: 0, rng: mulberry32(42),
+    queue: 0, dropped: 0, indexed: 0,
+    outcomes: [],           // rolling batch outcomes (1 success / 0 fail)
+    lit: new Set(),         // nodes flashing this tick
+    restartIdx: -1,         // 2025 rolling restart position
+    restartDone: false,
+    darkUntil: 0,           // 2017 offline window end
+  });
+  if (!w.current) w.current = freshWorld();
+  const resetWorld = () => { w.current = freshWorld(); };
+
+  const pickEra = (e) => { setEra(e); setInjection("none"); setProbe(null); resetWorld(); };
+  const pickInjection = (id) => {
+    setInjection(id); setProbe(null); resetWorld();
+    if (id === "log4") {
+      if (era === "2017") w.current.darkUntil = DARK_WINDOW;
+      else w.current.restartIdx = 0;
+    }
+  };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const W = w.current;
+      W.t += DT;
+      W.lit = new Set();
+
+      // node availability this tick
+      const deadNodes = new Set();
+      if (injection === "kill") deadNodes.add(DEAD_NODE);
+      let restarting = -1;
+      if (injection === "log4") {
+        if (era === "2017") {
+          if (W.t < W.darkUntil) for (let i = 0; i < NODES; i++) deadNodes.add(i);
+        } else if (W.restartIdx >= 0 && W.restartIdx < NODES) {
+          restarting = Math.floor(W.t / RESTART_PER_NODE);
+          if (restarting >= NODES) { W.restartIdx = NODES; W.restartDone = true; restarting = -1; }
+          else { W.restartIdx = restarting; deadNodes.add(restarting); }
+        }
+      }
+
+      // arrivals
+      W.queue += ARRIVAL * DT * (0.9 + W.rng() * 0.2);
+
+      // drain
+      let toProcess = Math.min(W.queue, DRAIN * DT);
+      if (toProcess > 0.5) {
+        if (era === "2017") {
+          // one mixed batch fanning out across SPREAD distinct nodes
+          let fail = false;
+          for (let i = 0; i < SPREAD; i++) {
+            const n = Math.floor(W.rng() * NODES);
+            if (deadNodes.has(n)) fail = true; else W.lit.add(n);
+          }
+          if (deadNodes.size >= NODES) fail = true; // fully dark
+          W.outcomes.push(fail ? 0 : 1);
+          if (fail) {
+            // whole batch re-enqueues (retry) — queue does not shrink
+          } else {
+            W.queue -= toProcess; W.indexed += toProcess;
+          }
+        } else {
+          // router: per-destination sub-batches, each touching exactly one node
+          const subs = 8;
+          let retried = 0;
+          for (let i = 0; i < subs; i++) {
+            const n = Math.floor(W.rng() * NODES);
+            if (deadNodes.has(n)) { retried += toProcess / subs; W.outcomes.push(0); }
+            else { W.lit.add(n); W.outcomes.push(1); }
+          }
+          W.queue -= (toProcess - retried); // retried share stays in the backlog
+          W.indexed += toProcess - retried;
+        }
+      }
+      if (W.outcomes.length > 60) W.outcomes.splice(0, W.outcomes.length - 60);
+
+      // queue ceiling: Redis drops above cap; PubSub tolerates backlogs
+      if (era === "2017" && W.queue > REDIS_CAP) {
+        W.dropped += W.queue - REDIS_CAP;
+        W.queue = REDIS_CAP;
+      }
+
+      force((x) => x + 1);
+    }, 100);
+    return () => clearInterval(id);
+  }, [era, injection]);
+
+  // ---------- derived ----------
+  const W = w.current;
+  const success = W.outcomes.length ? Math.round((W.outcomes.reduce((a, b) => a + b, 0) / W.outcomes.length) * 100) : 100;
+  const isDark = era === "2017" && injection === "log4" && W.t < W.darkUntil;
+  const v = verdictOf(era, injection, { dropped: W.dropped, success, restartDone: W.restartDone });
+  const sevColor = v.sev === "ok" ? GREEN : RED;
+  const probeInfo = probe ? PROBES[probe][era] : null;
+
+  // ---------- styles ----------
+  const mono = "'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace";
+  const S = {
+    root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
+    eyebrow: { color: ACCENT, fontSize: 10, letterSpacing: 2 },
+    h1: { color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 },
+    sub: { color: "#8b90a0", fontSize: 11, margin: 0 },
+    panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
+    label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
+    btn: (on, disabled) => ({
+      display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
+      border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#c7ccff" : "#8b90a0",
+      background: on ? "rgba(88,101,242,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11,
+    }),
+  };
+
+  const NodeDot = ({ idx }) => {
+    const dead = (injection === "kill" && idx === DEAD_NODE) || isDark;
+    const restarting = era === "2025" && injection === "log4" && !W.restartDone && idx === W.restartIdx;
+    const lit = W.lit.has(idx) && !dead && !restarting;
+    const bfgFull = injection === "bfg" && era === "2017" && idx === 3;
+    const color = dead || bfgFull ? RED : restarting ? AMBER : lit ? ACCENT : "#2a2f45";
+    return (
+      <div title={`node ${idx}`} style={{
+        width: 14, height: 14, borderRadius: 3, background: color,
+        border: `1px solid ${dead || bfgFull ? RED : restarting ? AMBER : "#343a55"}`,
+        transition: "background 150ms",
+      }} />
+    );
+  };
+
+  const nodeRange = (a, b) => Array.from({ length: b - a }, (_, i) => a + i);
+
   return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-        Two large clusters became forty smaller ones, grouped into logical <strong style={{ color: "#f0f0f5" }}>cells</strong> dedicated to specific use cases. Application-layer sharding is preserved; everything else was replaced.
-      </p>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #5865F240",
-        borderRadius: 8,
-        padding: "14px 16px",
-        marginBottom: 14,
-      }}>
-        <div style={{ fontSize: 10, color: "#5865F2", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-          The Cell Concept
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: "0 0 10px 0", lineHeight: 1.7 }}>
-          A cell is a logical group of Elasticsearch clusters dedicated to a specific use case. Each cluster within a cell runs dedicated ingest, master-eligible, and data nodes, with zone-aware shard allocation. Each cell can be tuned for its workload independently.
-        </p>
-        <div style={{ fontSize: 10, color: "#888", lineHeight: 1.6, fontStyle: "italic" }}>
-          Click a cell to see its purpose and sharding strategy.
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-        {cells2025.map((c, i) => (
-          <button
-            key={c.name}
-            onClick={() => setSelected(i)}
-            style={{
-              flex: "1 1 auto", minWidth: 120,
-              padding: "10px 12px",
-              borderRadius: 6,
-              border: `1px solid ${selected === i ? c.color : "#2a2a3a"}`,
-              background: selected === i ? `${c.color}18` : "#0c0d13",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              textAlign: "left",
-            }}
-          >
-            <div style={{ fontSize: 11, color: c.color, fontWeight: 700, marginBottom: 3 }}>{c.name}</div>
-            <div style={{ fontSize: 9, color: "#888", letterSpacing: 1, textTransform: "uppercase" }}>{c.sharding}</div>
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: "#111118",
-        border: `1px solid ${cell.color}50`,
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 9, color: cell.color, letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, padding: "2px 6px", background: `${cell.color}20`, borderRadius: 3 }}>
-            {cell.sharding}
-          </span>
-          <span style={{ fontSize: 12.5, color: "#f0f0f5", fontWeight: 600 }}>{cell.purpose}</span>
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>{cell.detail}</p>
-      </div>
-      <div style={{ marginTop: 16 }}>
-        <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-          Production Results
-        </div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {[
-            { value: "trillions", unit: "messages indexed", label: "from billions", color: "#5865F2" },
-            { value: "2x", unit: "indexing throughput", label: "vs 2017 architecture", color: "#22c55e" },
-            { value: "<100ms", unit: "median latency", label: "from 500ms", color: "#06b6d4" },
-            { value: "<500ms", unit: "p99 latency", label: "from 1 second", color: "#a78bfa" },
-            { value: "40", unit: "clusters", label: "from 2", color: "#f97316" },
-          ].map((m) => (
-            <div key={m.unit} style={{
-              flex: "1 1 110px",
-              padding: "8px 10px", textAlign: "center",
-              background: `${m.color}10`, borderRadius: 5, border: `1px solid ${m.color}25`,
-            }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: m.color }}>{m.value}</div>
-              <div style={{ fontSize: 9, color: m.color, opacity: 0.85 }}>{m.unit}</div>
-              <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>{m.label}</div>
-            </div>
+    <div style={S.root}>
+      <div style={S.eyebrow}>DISCORD · TRILLIONS OF MESSAGES — INTERACTIVE</div>
+      <div style={S.h1}>The blast radius</div>
+      <p style={S.sub}>The same indexing pipeline, eight years apart. Break it in 2017, break it in 2025 — and measure how far each failure reaches.</p>
+
+      <ContextBlock />
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
+        {/* controls */}
+        <div style={{ ...S.panel, flex: "1 1 240px", minWidth: 240 }}>
+          <div style={S.label}>ARCHITECTURE</div>
+          <button style={S.btn(era === "2017", false)} onClick={() => pickEra("2017")}>2017 · TWO BIG CLUSTERS<div style={{ color: "#6b7080", fontSize: 10 }}>Redis queue → mixed batches → one large cluster</div></button>
+          <button style={S.btn(era === "2025", false)} onClick={() => pickEra("2025")}>2025 · CELLS OF SMALL CLUSTERS<div style={{ color: "#6b7080", fontSize: 10 }}>PubSub → router batches by destination → cells on k8s</div></button>
+
+          <div style={{ ...S.label, marginTop: 14 }}>BREAK SOMETHING</div>
+          {INJECTIONS.map((inj) => (
+            <button key={inj.id} style={S.btn(injection === inj.id, false)} onClick={() => pickInjection(inj.id)}>
+              {inj.label}<div style={{ color: "#6b7080", fontSize: 10 }}>{inj.hint}</div>
+            </button>
           ))}
+
+          <div style={{ ...S.label, marginTop: 14 }}>TRACE A MESSAGE</div>
+          <button style={S.btn(probe === "guild", false)} onClick={() => setProbe(probe === "guild" ? null : "guild")}>WHERE DOES A GUILD MESSAGE GO?</button>
+          <button style={S.btn(probe === "dm", false)} onClick={() => setProbe(probe === "dm" ? null : "dm")}>WHERE DOES A DM GO?</button>
+
+          <button style={{ ...S.btn(false, false), marginTop: 14 }} onClick={resetWorld}>↺ RESET RUN · t = {W.t.toFixed(1)}s</button>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function BFGView() {
-  const [step, setStep] = useState(0);
-  const s = bfgFlow[step];
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-        Lucene's <strong style={{ color: "#f0f0f5" }}>MAX_DOC limit (≈2 billion documents per index)</strong> threatened indexing for guilds approaching the limit. The BFG cell handles outliers with multi-shard indices, with a careful reindexing flow that keeps the system available throughout.
-      </p>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #f9731640",
-        borderRadius: 8,
-        padding: "14px 16px",
-        marginBottom: 14,
-      }}>
-        <div style={{ fontSize: 10, color: "#f97316", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-          Why dedicated cells for outliers
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          Most Discord guilds fit comfortably under MAX_DOC and benefit from single-shard indices (faster queries, no coordination overhead). A small number of very-large guilds need multi-shard indices to scale past MAX_DOC, accepting the query-time coordination cost. Giving BFGs a dedicated cell isolates their multi-shard cost from the rest of the workload.
-        </p>
-      </div>
-      <div style={{ fontSize: 10, color: "#666", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-        Reindexing Flow
-      </div>
-      <div style={{ display: "flex", gap: 4, marginBottom: 14, flexWrap: "wrap" }}>
-        {bfgFlow.map((b, i) => (
-          <button
-            key={b.step}
-            onClick={() => setStep(i)}
-            style={{
-              padding: "7px 11px", fontSize: 11, fontFamily: "inherit",
-              border: `1px solid ${step === i ? "#f97316" : "#2a2a3a"}`,
-              borderRadius: 4,
-              background: step === i ? "#f9731618" : "transparent",
-              color: step === i ? "#f97316" : "#666",
-              cursor: "pointer",
-            }}
-          >
-            {b.step}
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #f9731650",
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ fontSize: 10, color: "#f97316", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>
-          Step {s.step}: {s.label}
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>{s.detail}</p>
-      </div>
-      <div style={{
-        marginTop: 14, padding: "10px 12px",
-        background: "#22c55e15", borderRadius: 6, border: "1px solid #22c55e30",
-      }}>
-        <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, fontWeight: 600 }}>
-          Why dual-indexing matters
-        </div>
-        <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.7 }}>
-          The dual-write period (step 3) ensures the new index catches up with reality before queries cut over. The system never goes through a state where new messages would be lost or where queries would return incomplete results. Operational complexity in exchange for zero-downtime reindexing of guilds with billions of messages.
-        </div>
-      </div>
-    </div>
-  );
-}
+        {/* verdict + pipeline */}
+        <div style={{ flex: "2 1 400px", minWidth: 300 }}>
+          <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${sevColor}`, background: `${sevColor}14`, marginBottom: 12 }}>
+            <div style={{ color: sevColor, fontWeight: 700 }}>{v.code}</div>
+            <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.6 }}>{v.text}</div>
+          </div>
 
-// Centerpiece view for the Discord evolution article.
-// The throughline the article is built on: the 2017 architecture was correct
-// for its scale; specific components reached the boundaries of their design;
-// the 2025 redesign replaced each one while PRESERVING the foundational
-// application-layer-sharding decision. This view makes that legible:
-// per-component, what 2017 chose, why it was right, what limit it hit, and
-// what 2025 replaced it with — plus the one row that didn't change.
+          {probeInfo && (
+            <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${ACCENT}`, background: "rgba(88,101,242,0.08)", marginBottom: 12 }}>
+              <div style={{ color: ACCENT, fontWeight: 700, fontSize: 11 }}>
+                {probe === "guild" ? "ROUTE: GUILD MESSAGE" : "ROUTE: DIRECT MESSAGE"}
+                {probeInfo.badge && <span style={{ marginLeft: 8, padding: "1px 6px", borderRadius: 4, fontSize: 9, letterSpacing: 1, background: probeInfo.badge === "PRESERVED" ? "rgba(34,197,94,0.15)" : "rgba(88,101,242,0.2)", color: probeInfo.badge === "PRESERVED" ? GREEN : "#c7ccff", border: `1px solid ${probeInfo.badge === "PRESERVED" ? GREEN : ACCENT}` }}>{probeInfo.badge}</span>}
+              </div>
+              <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.6 }}>{probeInfo.text}</div>
+            </div>
+          )}
 
-const EVOLUTION_ACCENT = "#5865F2";
+          <div style={S.panel}>
+            {/* pipeline: queue -> workers/router -> nodes */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "stretch" }}>
+              <div style={{ flex: "1 1 150px", background: "#0c0d13", border: `1px solid ${era === "2017" && W.queue >= REDIS_CAP - 1 ? RED : "#2a2a3a"}`, borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>{era === "2017" ? "REDIS QUEUE" : "PUBSUB QUEUE"}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: era === "2017" && W.queue >= REDIS_CAP - 1 ? RED : W.queue > 40 ? AMBER : "#c8cdd8" }}>{Math.round(W.queue)} msgs</div>
+                <div style={{ height: 8, background: "#1a1b24", borderRadius: 4, marginTop: 5, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${Math.min(100, (W.queue / REDIS_CAP) * 100)}%`, background: era === "2017" && W.queue >= REDIS_CAP - 1 ? RED : ACCENT, transition: "width 150ms" }} />
+                </div>
+                <div style={{ fontSize: 9, color: "#6b7080", marginTop: 4 }}>{era === "2017" ? `drops above ${REDIS_CAP} (CPU maxed)` : "guaranteed delivery — backlogs tolerated"}</div>
+              </div>
+              <div style={{ flex: "1 1 130px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>{era === "2017" ? "WORKERS — MIXED BATCHES" : "MESSAGE ROUTER (RUST)"}</div>
+                <div style={{ fontSize: 10.5, color: "#8b90a0", marginTop: 4, lineHeight: 1.5 }}>
+                  {era === "2017" ? `a 50-message batch touches ~${SPREAD} of ${NODES} nodes; one bad node fails it all` : "batches grouped by destination — each bulk op talks to exactly one index and node"}
+                </div>
+              </div>
+            </div>
 
-const EVOLUTION_ROWS = [
-  {
-    id: "sharding",
-    component: "Sharding strategy",
-    preserved: true,
-    y2017: "Application-layer routing: guild_id → (cluster, index)",
-    y2025: "Unchanged — still application-layer routing",
-    why: "Rejecting Elasticsearch's internal sharding in 2017 gave Discord operational control over where data lived. That control is exactly what made the 2025 redesign possible without depending on Elasticsearch's coordination — the team could re-route by changing the mapping layer, not by waiting for the engine to rebalance.",
-    limit: "No limit. This is the decision the whole redesign was built to preserve. The 2025 post's framing: the foundation was right; everything resting on it had to change.",
-  },
-  {
-    id: "queue",
-    component: "Indexing queue",
-    y2017: "Celery task queue; Redis as shard-mapping cache + refresh tracking",
-    y2025: "Google Cloud PubSub — guaranteed delivery, tolerates large backlogs",
-    why: "In 2017 the ingest path was a Celery queue feeding bulk-index workers, with Redis serving the shard-mapping cache. A lightweight buffer was the right tool for the launch-era volume.",
-    limit: "By 2024 the indexing queue had grown into a workload that, when Elasticsearch nodes failed and the queue backed up, drove Redis to CPU saturation — at which point messages were silently dropped. A buffer's failure mode (drop under pressure) is unacceptable for the source of truth for search indexing.",
-    pattern: "queue-with-guaranteed-delivery",
-  },
-  {
-    id: "bulk",
-    component: "Bulk indexing",
-    y2017: "Batch messages from the queue; one bulk op may fan out to many nodes",
-    y2025: "Rust+tokio router: one task per (cluster, index); each bulk op targets one node",
-    why: "Batching is the throughput-optimal write path for Elasticsearch, and in a small cluster a bulk operation fanning across nodes is fine — the odds any node is down are low.",
-    limit: "Elasticsearch fails a whole bulk op if any single message in it fails. At 100 nodes, a 50-message batch spread across the cluster means a single dead node fails ~40% of bulk operations (1 − (99/100)^50). The fanout turned single-node failures into fleet-wide indexing degradation — the failure mode scaled worse as the cluster grew.",
-    pattern: "batched-routing-by-destination",
-  },
-  {
-    id: "clusters",
-    component: "Cluster topology",
-    y2017: "Two large clusters, 14 nodes; grow by adding nodes",
-    y2025: "~40 small clusters grouped into logical cells, per use case",
-    why: "Two clusters were simple to operate and 'add a node' satisfied the linear-scalability requirement cleanly. For 26 billion documents, this was comfortably within range.",
-    limit: "Past ~200 nodes, the master node's cluster-state coordination work grew faster than serving capacity — OOM crashes cascaded into indexing failures, backlogs, and query timeouts. Coordination overhead, not raw capacity, became the wall.",
-    pattern: "cell-architecture",
-  },
-  {
-    id: "upgrades",
-    component: "Upgrades & restarts",
-    y2017: "Manual; node-by-node graceful restarts on a 2-cluster fleet",
-    y2025: "Elastic Cloud on Kubernetes (ECK) operator; automated rolling restarts",
-    why: "With two clusters, manual operations were tolerable, and the team optimized for not running infrastructure it didn't have to.",
-    limit: "On 200+ node clusters, graceful node-by-node restarts would have taken prohibitively long, freezing the team on legacy OS and Elasticsearch versions. log4shell was the breaking point: patching required taking all of search offline for a maintenance window — there was no rolling-restart path.",
-    pattern: "cell-architecture",
-  },
-  {
-    id: "maxdoc",
-    component: "Largest-guild ceiling",
-    y2017: "One primary shard per index (optimal for query performance)",
-    y2025: "'BFG' cell with multi-shard indices for guilds near the limit",
-    why: "A single primary shard per index keeps every guild's messages on one node — optimal for query performance, and far below any limit for an ordinary guild.",
-    limit: "Lucene's MAX_DOC (~2 billion docs/index) was reachable by Discord's largest guilds; once hit, all indexing to that index failed. The original workaround — find and delete spam guilds — didn't scale once legitimate communities started approaching the same counts.",
-    pattern: "cell-architecture",
-  },
-];
-
-function EvolutionDiff() {
-  const [openId, setOpenId] = useState("sharding");
-  const [lens, setLens] = useState("2017"); // "2017" | "2025"
-
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        Eight years separate the two architectures. Flip the lens to read the system as it stood in each
-        era, then open any component to see why the 2017 choice was right, the specific limit it reached,
-        and what 2025 replaced it with. One row never changed — that's the point of the whole story.
-      </p>
-
-      {/* lens toggle */}
-      <div style={{ display: "inline-flex", gap: 0, marginBottom: 14, border: `1px solid ${EVOLUTION_ACCENT}40`, borderRadius: 6, overflow: "hidden" }}>
-        {[["2017", "2017 · correct for its scale"], ["2025", "2025 · re-architected"]].map(([id, label]) => (
-          <button key={id} onClick={() => setLens(id)} style={{
-            padding: "6px 12px", fontSize: 10.5, fontFamily: "inherit", cursor: "pointer", border: "none",
-            background: lens === id ? `${EVOLUTION_ACCENT}25` : "transparent",
-            color: lens === id ? "#fff" : "#777",
-          }}>{label}</button>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {EVOLUTION_ROWS.map((r) => {
-          const open = openId === r.id;
-          const accent = r.preserved ? "#22c55e" : EVOLUTION_ACCENT;
-          return (
-            <div key={r.id} style={{
-              border: `1px solid ${open ? accent + "70" : "#2a2a3a"}`,
-              borderRadius: 7, overflow: "hidden",
-              background: open ? "#111118" : "#0c0d13",
-            }}>
-              <button onClick={() => setOpenId(open ? "" : r.id)} style={{
-                width: "100%", textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                background: "transparent", border: "none", padding: "10px 12px",
-                display: "flex", alignItems: "center", gap: 10,
-              }}>
-                <span style={{ fontSize: 11.5, color: "#f0f0f5", fontWeight: 600, minWidth: 150 }}>{r.component}</span>
-                <span style={{ flex: 1, fontSize: 10.5, color: lens === "2017" ? "#c0c0cc" : "#777" }}>
-                  {lens === "2017" ? r.y2017 : r.y2025}
-                </span>
-                {r.preserved
-                  ? <span style={{ fontSize: 8, letterSpacing: 1, color: "#22c55e", border: "1px solid #22c55e50", borderRadius: 3, padding: "2px 6px" }}>PRESERVED</span>
-                  : <span style={{ fontSize: 8, letterSpacing: 1, color: EVOLUTION_ACCENT, border: `1px solid ${EVOLUTION_ACCENT}50`, borderRadius: 3, padding: "2px 6px" }}>REPLACED</span>}
-              </button>
-
-              {open && (
-                <div style={{ padding: "0 12px 12px" }}>
-                  {/* side-by-side */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-                    <div style={{ flex: "1 1 200px", background: "#08090D", borderRadius: 5, padding: "9px 11px", border: "1px solid #2a2a3a" }}>
-                      <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>2017</div>
-                      <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.5 }}>{r.y2017}</div>
-                    </div>
-                    <div style={{ flex: "1 1 200px", background: "#08090D", borderRadius: 5, padding: "9px 11px", border: `1px solid ${accent}30` }}>
-                      <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: accent, marginBottom: 4 }}>2025</div>
-                      <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.5 }}>{r.y2025}</div>
+            {/* the node grid */}
+            <div style={{ marginTop: 12 }}>
+              {era === "2017" ? (
+                <div style={{ background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: 10 }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080", marginBottom: 8 }}>ONE LARGE CLUSTER — {NODES} NODES, SHARED EVERYTHING{isDark ? " · OFFLINE FOR PATCHING" : ""}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {nodeRange(0, NODES).map((i) => <NodeDot key={i} idx={i} />)}
+                  </div>
+                  {injection === "bfg" && <div style={{ fontSize: 9.5, color: RED, marginTop: 6 }}>■ index on node 3: FULL — Lucene MAX_DOC reached; all its indexing fails</div>}
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <div style={{ flex: "2 1 220px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080", marginBottom: 8 }}>GUILD-MESSAGES CELL — 2 SMALL CLUSTERS · dedicated master / ingest / data roles</div>
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, maxWidth: 130 }}>{nodeRange(0, 6).map((i) => <NodeDot key={i} idx={i} />)}</div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, maxWidth: 130 }}>{nodeRange(6, 12).map((i) => <NodeDot key={i} idx={i} />)}</div>
                     </div>
                   </div>
-
-                  <div style={{ marginBottom: 8 }}>
-                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#22c55e", marginBottom: 3, textTransform: "uppercase" }}>Why 2017 was right</div>
-                    <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.65 }}>{r.why}</div>
+                  <div style={{ flex: "1 1 130px", background: "#0c0d13", border: `1px solid ${injection === "bfg" ? ACCENT : "#2a2a3a"}`, borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: injection === "bfg" ? "#c7ccff" : "#6b7080", marginBottom: 8 }}>BFG CELL — multi-primary-shard indices</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{nodeRange(12, 16).map((i) => <NodeDot key={i} idx={i} />)}</div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: r.preserved ? "#22c55e" : "#ef4444", marginBottom: 3, textTransform: "uppercase" }}>
-                      {r.preserved ? "Why it survived" : "The limit it reached"}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.65 }}>{r.limit}</div>
+                  <div style={{ flex: "1 1 130px", background: "#0c0d13", border: `1px solid ${probe === "dm" ? ACCENT : "#2a2a3a"}`, borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 9, letterSpacing: 1.5, color: probe === "dm" ? "#c7ccff" : "#6b7080", marginBottom: 8 }}>USER-DM CELL — sharded by user_id</div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>{nodeRange(16, 20).map((i) => <NodeDot key={i} idx={i} />)}</div>
                   </div>
-
-                  {r.pattern && (
-                    <div style={{ marginTop: 10, fontSize: 9.5, color: "#777" }}>
-                      pattern: <span style={{ color: accent }}>{r.pattern}</span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
-          );
-        })}
+
+            {/* meters */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              <div style={{ flex: "1 1 120px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>BULK SUCCESS</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: success > 90 ? GREEN : success > 65 ? AMBER : RED }}>{success}%</div>
+              </div>
+              <div style={{ flex: "1 1 120px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>INDEXED</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: "#c8cdd8" }}>{Math.round(W.indexed)}</div>
+              </div>
+              <div style={{ flex: "1 1 120px", background: "#0c0d13", border: `1px solid ${W.dropped > 0 ? RED : "#2a2a3a"}`, borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: W.dropped > 0 ? RED : "#6b7080" }}>DROPPED — GONE FROM SEARCH</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: W.dropped > 0 ? RED : GREEN }}>{Math.round(W.dropped)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style={{ marginTop: 14, padding: "11px 13px", background: "#111118", borderRadius: 6, borderLeft: "3px solid #22c55e" }}>
-        <div style={{ fontSize: 9.5, letterSpacing: 2, color: "#22c55e", textTransform: "uppercase", marginBottom: 5, fontWeight: 600 }}>
-          The throughline
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          Five components replaced, one preserved — and the preserved one is load-bearing. Application-layer
-          sharding wasn't just still correct in 2025; it was the decision that <em>made the rewrite
-          possible</em>. The lesson for the reader isn't "Discord rebuilt search." It's that an architecture
-          ages component by component, that reaching a design's boundary is not the same as having chosen
-          wrong, and that the choices which preserve your freedom to change are the ones worth getting right
-          early.
-        </p>
+      <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
+        Node counts, rates, and the queue ceiling are scaled down; the failure arithmetic is the post's (one dead node in a cluster a mixed batch sprays across fails ~40% of bulk operations — here 1 of {NODES} nodes with batches touching {SPREAD}, same math shape). The sourced mechanisms: a Redis-backed queue that dropped messages once CPU maxed under backlog; bulk batches fanning out so one node failure failed the batch; large clusters whose coordination overhead grew until masters OOMed (the reason cells of small clusters exist — capped near 200M messages / 50GB per index, dedicated node roles, zone-aware shard allocation); no rolling-restart path until Elasticsearch moved onto Kubernetes with ECK; Lucene's ~2-billion MAX_DOC ceiling and the BFG cell's multi-primary-shard indices with a six-step dual-index migration; PubSub's guaranteed delivery turning node failures into slowdowns instead of losses; and a Rust message router batching by destination. Measured results: trillions of messages indexed, ~2x indexing throughput, median query latency 500ms to under 100ms, p99 1s to under 500ms, across 40 clusters. The routing decision — application code hashing a message to its shard — is 2017's, unchanged.
+        {" "}
+        <a href="https://behindscale.com/articles/discord-trillions-message-search" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
     </div>
   );
 }
 
-export default function DiscordTrillionsMessageSearch() {
-  const [section, setSection] = useState("evolution");
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#5865F2", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "10px 0 0", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
   return (
-    <div style={{
-      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-      background: "#08090D",
-      color: "#C8CDD8",
-      minHeight: "100vh",
-      padding: "20px 16px",
-      boxSizing: "border-box",
-    }}>
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, letterSpacing: 4, color: "#5865F2", marginBottom: 6, textTransform: "uppercase" }}>
-            Discord · Search Infrastructure
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f0f0f5", margin: 0, lineHeight: 1.3 }}>
-            How Discord Indexes Trillions of Messages
-          </h1>
-          <p style={{ fontSize: 12, color: "#888", marginTop: 6, lineHeight: 1.6 }}>
-            Eight years and three orders of magnitude separate Discord's original 2017 search architecture from its 2025 redesign. The application-layer-sharding decision is preserved; everything else was rebuilt.
-          </p>
-        </div>
-
-        <div style={{
-          background: "#111118",
-          border: "1px solid #2a2a3a",
-          borderRadius: 8,
-          padding: "14px 16px",
-          marginBottom: 18,
-          borderLeft: "3px solid #5865F2",
-        }}>
-          <div style={{ fontSize: 10, color: "#5865F2", letterSpacing: 2, marginBottom: 6, textTransform: "uppercase" }}>
-            The Key Insight
-          </div>
-          <p style={{ fontSize: 12, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-            The 2017 design wasn't wrong — it served well for eight years. The 2025 redesign isn't a correction; it's the next iteration of a system that grew into the boundaries of its original choices. The decision the team got right early (application-layer routing) is the one that made the later redesign possible.
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSection(s.id)}
-              style={{
-                padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
-                border: `1px solid ${section === s.id ? "#5865F2" : "#2a2a3a"}`,
-                borderRadius: 6,
-                background: section === s.id ? "#5865F218" : "transparent",
-                color: section === s.id ? "#5865F2" : "#666",
-                cursor: "pointer",
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {section === "evolution" && <EvolutionDiff />}
-        {section === "2017" && <Architecture2017View />}
-        {section === "cracks" && <CracksView />}
-        {section === "2025" && <Redesign2025View />}
-        {section === "bfg" && <BFGView />}
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>By trillions of messages, the failure modes all pointed at cluster bigness: one failed node in a 100-node cluster failed roughly 40% of bulk indexing operations, past 200 nodes the master's coordination work triggered OOM cascades, and rolling restarts got so slow the team ran unpatched versions until log4shell forced a full outage.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Keep the 2017 decision that aged well — route messages to shards in application code — and replace everything it routes to: many small Elasticsearch cells instead of a few giant clusters, a queue that guarantees delivery instead of Redis, and indexing batched by destination.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Kill the same node in 2017 and 2025 and compare the blast radius. Force the log4shell patch. Run a guild into the two-billion-document wall. Then trace a guild message and a DM through both eras — and find the one decision that never changed.</div>
     </div>
   );
 }

@@ -22,7 +22,6 @@ function Pill({ active, onClick, children, color = ACCENT }) {
 
 // ----- View 1: failure injection (the post's own FIT experiment) -----
 function InjectionView() {
-  const [prioritized, setPrioritized] = useState(true);
   const [injected, setInjected] = useState(false);
   const [t, setT] = useState(0);
   const raf = useRef(null);
@@ -35,64 +34,68 @@ function InjectionView() {
   // availability model: baseline sheds both equally; prioritized protects user-initiated.
   // values are illustrative of the post's described result (baseline both drop together;
   // canary user-initiated holds ~100%, pre-fetch drops).
-  const load = injected ? 1 : 0;
   const wobble = Math.sin(t / 3) * 2;
-  let userAvail, prefetchAvail;
-  if (!injected) {
-    userAvail = 100; prefetchAvail = 100;
-  } else if (prioritized) {
-    userAvail = 100;                       // protected
-    prefetchAvail = 22 + wobble;           // sheds to ~20%
-  } else {
-    userAvail = 38 + wobble;               // both drop together
-    prefetchAvail = 36 + wobble;
-  }
+  const inst = (prioritized) => {
+    if (!injected) return { user: 100, prefetch: 100 };
+    if (prioritized) return { user: 100, prefetch: 22 + wobble };
+    return { user: 38 + wobble, prefetch: 36 + wobble };
+  };
+  const baseline = inst(false);
+  const canary = inst(true);
 
   const Bar = ({ label, val, color }) => (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginBottom: 4 }}>
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, marginBottom: 4 }}>
         <span style={{ color: TEXT }}>{label}</span>
-        <span style={{ color, fontWeight: 700 }}>{val.toFixed(0)}% available</span>
+        <span style={{ color, fontWeight: 700 }}>{val.toFixed(0)}%</span>
       </div>
-      <div style={{ height: 14, background: "#1a1a22", borderRadius: 7, overflow: "hidden" }}>
+      <div style={{ height: 12, background: "#1a1a22", borderRadius: 6, overflow: "hidden" }}>
         <div style={{
           height: "100%", width: `${val}%`, background: color,
-          borderRadius: 7, transition: "width 200ms",
+          borderRadius: 6, transition: "width 200ms",
         }} />
       </div>
+    </div>
+  );
+
+  const Instance = ({ title, data, highlight }) => (
+    <div style={{
+      flex: "1 1 240px", minWidth: 220, background: PANEL, borderRadius: 8, padding: "12px 14px 6px",
+      border: `1px solid ${injected && highlight ? CRIT + "66" : BORDER}`,
+    }}>
+      <div style={{ fontSize: 9, letterSpacing: 2, color: injected && highlight ? CRIT : MUTED, marginBottom: 10 }}>{title}</div>
+      <Bar label="User-initiated (press play)" val={data.user} color={CRIT} />
+      <Bar label="Pre-fetch (browsing, optimistic)" val={data.prefetch} color={PREFETCH} />
     </div>
   );
 
   return (
     <div>
       <p style={{ fontSize: 12, color: TEXT, lineHeight: 1.7, marginBottom: 12 }}>
-        Netflix's actual validation test: inject 2s of latency into pre-fetch calls (normally &lt;200ms p99)
-        and compare a baseline instance against one with prioritized shedding. Flip the toggle, then inject.
+        Netflix's actual validation test, reproduced in shape: the same 2s of latency injected into
+        pre-fetch calls (normally &lt;200ms p99) on two instances at once — a baseline limiter and a
+        prioritized canary. One button, both outcomes.
       </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        <Pill active={!prioritized} color={MUTED} onClick={() => setPrioritized(false)}>baseline limiter</Pill>
-        <Pill active={prioritized} color={CRIT} onClick={() => setPrioritized(true)}>prioritized limiter</Pill>
-        <span style={{ flex: 1 }} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
         <Pill active={injected} color={ACCENT} onClick={() => setInjected(!injected)}>
-          {injected ? "⏹ stop injection" : "💉 inject 2s latency → pre-fetch"}
+          {injected ? "⏹ stop injection" : "💉 inject 2s latency → pre-fetch (both instances)"}
         </Pill>
       </div>
 
-      <div style={{ background: PANEL, border: `1px solid ${injected ? (prioritized ? CRIT : ACCENT) + "55" : BORDER}`, borderRadius: 8, padding: "16px 16px 8px" }}>
-        <Bar label="User-initiated (press play)" val={userAvail} color={CRIT} />
-        <Bar label="Pre-fetch (browsing, optimistic)" val={prefetchAvail} color={PREFETCH} />
-        <div style={{
-          marginTop: 6, padding: "9px 11px", borderRadius: 6, fontSize: 11.5, lineHeight: 1.6,
-          border: `1px solid ${!injected ? BORDER : prioritized ? CRIT : ACCENT}`,
-          background: !injected ? "transparent" : prioritized ? "#0a2a1a" : "#2a1316",
-          color: !injected ? MUTED : prioritized ? "#95d5b2" : "#ffa8a8",
-        }}>
-          {!injected
-            ? "Steady state: no throttling at all. Prioritization has zero effect until the server hits its concurrency limit."
-            : prioritized
-              ? "User-initiated holds at 100% — pre-fetch absorbs the entire hit. The user presses play and it works; the optimistic browsing path is what degrades."
-              : "Both drop together. The limiter shed playback starts and pre-fetch equally, even though the system had capacity to serve all the user-initiated work."}
-        </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+        <Instance title="BASELINE INSTANCE — single limiter" data={baseline} highlight={false} />
+        <Instance title="PRIORITIZED CANARY — partitioned limiter" data={canary} highlight={true} />
+      </div>
+
+      <div style={{
+        marginTop: 12, padding: "10px 12px", borderRadius: 6, fontSize: 11.5, lineHeight: 1.6,
+        border: `1px solid ${injected ? CRIT : BORDER}`,
+        background: injected ? "#0a2a1a" : "transparent",
+        color: injected ? "#95d5b2" : MUTED,
+      }}>
+        {!injected
+          ? "Steady state: no throttling on either instance. Prioritization has zero effect until the server hits its concurrency limit — the partition costs nothing when there is nothing to shed."
+          : "Same injection, same traffic. The baseline shed playback starts and pre-fetch together — even though it had the capacity to serve all the user-initiated work. The canary spent its entire shed budget on the traffic a user never notices: user-initiated holds at 100% while pre-fetch absorbs the hit."}
       </div>
 
       <div style={{ fontSize: 9.5, color: MUTED, lineHeight: 1.7, marginTop: 10 }}>
@@ -257,6 +260,26 @@ function LimitView() {
   );
 }
 
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#E50914", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "0 0 14px", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
+  return (
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>PlayAPI's single concurrency limiter throttled all traffic equally: a burst of optional pre-fetch requests crowded out the user-initiated requests that gate playback, and under backend latency it shed both alike — failing playback starts while capacity for them still existed. Separate clusters would fix it at a permanent price: two fleets sized for peak instead of one.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Partition one limiter by priority inside the service: user-initiated requests get guaranteed capacity, pre-fetch borrows only what is spare, and shedding starts with the traffic a user will never notice — the isolation without the second cluster.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Inject latency into pre-fetch traffic and watch a baseline instance and a prioritized canary take the same hit side by side. The other tabs hold the two shedding curves and the adaptive limit.</div>
+    </div>
+  );
+}
+
 export default function NetflixLoadShedding() {
   const [tab, setTab] = useState("inject");
   return (
@@ -278,6 +301,8 @@ export default function NetflixLoadShedding() {
           </p>
         </div>
 
+        <ContextBlock />
+
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
           <Pill active={tab === "inject"} onClick={() => setTab("inject")}>① failure injection</Pill>
           <Pill active={tab === "curves"} onClick={() => setTab("curves")}>② two shedding curves</Pill>
@@ -289,7 +314,8 @@ export default function NetflixLoadShedding() {
         <div style={{ fontSize: 9, color: "#555", marginTop: 20, lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 10 }}>
           Mechanisms and the failure-injection result are from the 2024 service-level post; the gateway cubic
           curve from the 2020 post; the adaptive-limit formula from the 2018 post. Simulation magnitudes are
-          illustrative where the posts don't publish exact internal values; the sourced content is the mechanism.
+          illustrative where the posts don't publish exact internal values; the sourced content is the mechanism.{" "}
+          <a href="https://behindscale.com/articles/netflix-prioritized-load-shedding" target="_blank" rel="noopener noreferrer" style={{ color: "#E50914", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
         </div>
       </div>
     </div>

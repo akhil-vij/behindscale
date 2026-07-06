@@ -1,9 +1,9 @@
 import { useState } from "react";
 
 const sections = [
+  { id: "replay", label: "Crash & Replay" },
   { id: "problem", label: "The Problem" },
   { id: "embedded", label: "Embedded vs Central" },
-  { id: "replay", label: "Crash & Replay" },
   { id: "hibernation", label: "Hibernation" },
 ];
 
@@ -119,10 +119,11 @@ function ReplaySim() {
   const [log, setLog] = useState([]);
   const [crashedOnce, setCrashedOnce] = useState(false);
   const [done, setDone] = useState(false);
+  const [execCounts, setExecCounts] = useState({}); // stepId -> times the external effect actually happened
 
   const reset = (hard) => {
     setCursor(0); setLog([]); setHibernating(false); setDone(false);
-    if (hard) { setCheckpoints({}); setSignaled(false); setCrashedOnce(false); }
+    if (hard) { setCheckpoints({}); setSignaled(false); setCrashedOnce(false); setExecCounts({}); }
   };
 
   const step = REPLAY_STEPS[cursor];
@@ -134,7 +135,10 @@ function ReplaySim() {
     let mode;
     if (step.kind === "action") {
       mode = committed ? "replayed-skip" : "ran";
-      if (!committed) setCheckpoints((c) => ({ ...c, [step.id]: true }));
+      if (!committed) {
+        setCheckpoints((c) => ({ ...c, [step.id]: true }));
+        setExecCounts((c) => ({ ...c, [step.id]: (c[step.id] || 0) + 1 }));
+      }
     } else if (step.kind === "wait") {
       mode = "wait-pass";
       setHibernating(false);
@@ -158,6 +162,21 @@ function ReplaySim() {
     }, 50);
   };
 
+  const crashInWindow = () => {
+    // the at-least-once window: the action's external effect happens,
+    // but the process dies before the checkpoint write reaches the DB
+    if (!step || step.kind !== "action" || checkpoints[step.id]) return;
+    setExecCounts((c) => ({ ...c, [step.id]: (c[step.id] || 0) + 1 }));
+    setLog((l) => [...l, { stepId: step.id, mode: "crash-window" }]);
+    setCrashedOnce(true);
+    setTimeout(() => {
+      setCursor(0);
+      setHibernating(false);
+      setDone(false);
+      setLog((l) => [...l, { stepId: "replay-start", mode: "replay-banner" }]);
+    }, 50);
+  };
+
   const sendSignal = () => { setSignaled(true); setHibernating(false); };
 
   const modeStyle = {
@@ -166,6 +185,7 @@ function ReplaySim() {
     "wait-pass": { c: "#a78bfa", t: "RESUMED", note: "signal present — wait satisfied" },
     "control": { c: "#888", t: "EVAL", note: "deterministic branch re-evaluated against persisted state" },
     "crash": { c: "#ef4444", t: "💥 CRASH", note: "process dies — in-memory progress lost, DB checkpoints + state survive" },
+    "crash-window": { c: "#ef4444", t: "💥 CRASH", note: "action EXECUTED, but the process died before the checkpoint write — the DB never learned it ran" },
   };
 
   return (
@@ -183,6 +203,21 @@ function ReplaySim() {
           <div style={{ fontSize: 10.5, color: "#c0c0cc", lineHeight: 1.7 }}>
             checkpoints: <span style={{ color: REPLAY_ACCENT }}>{Object.keys(checkpoints).filter((k) => checkpoints[k]).length}</span> committed<br />
             @StateField photosApproved: <span style={{ color: signaled ? REPLAY_ACCENT : "#666" }}>{signaled ? "true" : "null"}</span>
+          </div>
+        </div>
+        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>EXTERNAL WORLD (what actually happened)</div>
+          <div style={{ fontSize: 10.5, lineHeight: 1.7 }}>
+            {Object.keys(execCounts).length === 0 ? (
+              <span style={{ color: "#666" }}>no external effects yet</span>
+            ) : (
+              REPLAY_STEPS.filter((x) => execCounts[x.id]).map((x) => (
+                <div key={x.id} style={{ color: execCounts[x.id] > 1 ? "#eab308" : "#c0c0cc" }}>
+                  {x.short}: <span style={{ color: execCounts[x.id] > 1 ? "#eab308" : REPLAY_ACCENT }}>{execCounts[x.id]}×</span>
+                  {execCounts[x.id] > 1 ? " ⚠ duplicate" : ""}
+                </div>
+              ))
+            )}
           </div>
         </div>
         <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
@@ -231,6 +266,9 @@ function ReplaySim() {
           {step && step.kind === "wait" && !signaled ? "hibernate ▸" : "step ▸"}
         </button>
         <button onClick={crash} disabled={done && Object.keys(checkpoints).length === 0} style={replayBtn("#ef4444")}>💥 crash now</button>
+        {step && step.kind === "action" && !checkpoints[step.id] && !done && (
+          <button onClick={crashInWindow} style={replayBtn("#eab308")}>💥 crash in the checkpoint window</button>
+        )}
         {hibernating && <button onClick={sendSignal} style={replayBtn("#a78bfa")}>📩 signal: completePhotoReview(true)</button>}
         <span style={{ flex: 1 }} />
         <button onClick={() => reset(false)} style={replayBtn("#666")}>↺ replay</button>
@@ -268,11 +306,19 @@ function ReplaySim() {
               </div>
             );
           })}
-          {done && (
-            <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 5, background: "#0a2a1a", border: `1px solid ${REPLAY_ACCENT}`, fontSize: 11, color: "#95d5b2", lineHeight: 1.6 }}>
-              ✓ Workflow reached a terminal state.{crashedOnce && " Despite the crash, each action executed exactly once on the happy path — the replayed actions returned their checkpoints instead of re-running. That is durable execution: linear code, crash-proof outcome."}
-            </div>
-          )}
+          {done && (() => {
+            const dups = REPLAY_STEPS.filter((x) => (execCounts[x.id] || 0) > 1);
+            const clean = dups.length === 0;
+            return (
+              <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 5, background: clean ? "#0a2a1a" : "#2a220a", border: `1px solid ${clean ? REPLAY_ACCENT : "#eab308"}`, fontSize: 11, color: clean ? "#95d5b2" : "#f0dc8c", lineHeight: 1.6 }}>
+                {clean ? (
+                  <>✓ Workflow reached a terminal state.{crashedOnce && " Despite the crash, every external effect happened exactly once — check the EXTERNAL WORLD panel. The replayed actions returned their checkpoints instead of re-running. That is durable execution: linear code, crash-proof outcome."}</>
+                ) : (
+                  <>⚠ Terminal state reached — but {dups.map((d) => d.short).join(", ")} executed {dups.map((d) => execCounts[d.id] + "×").join(", ")}. A crash in the window between an action executing and its checkpoint committing replays that action: checkpointed actions are at-least-once, not exactly-once — which is precisely why the post requires action implementations to be idempotent. (The Stripe dissection is the deep dive on making that safe.)</>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -296,8 +342,28 @@ function replayBtn(color, disabled) {
   };
 }
 
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#22c55e", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "0 0 14px", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
+  return (
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A multi-step process that crashes between steps leaves the outcome to chance — a timed-out caller retries into a duplicate payout, or partial state corrupts what follows — and for workflows spanning hours to days, interruption is the expected case, not the edge. A central orchestration cluster fixes this at a blast-radius cost Airbnb's Tier-0 services could not accept: one outage stops every dependent service's workflows.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Ship the engine as a library inside each service instead: durability comes from replaying the workflow method against checkpointed actions — committed steps are skipped, not re-executed — and long waits hibernate to zero compute until a signal arrives.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Step the workflow and crash it anywhere — replay skips the checkpointed actions. Then crash inside the checkpoint window and watch an action run twice: the reason action implementations must be idempotent. Wake the hibernating wait with the signal.</div>
+    </div>
+  );
+}
+
 export default function Skipper() {
-  const [section, setSection] = useState("problem");
+  const [section, setSection] = useState("replay");
 
   return (
     <div style={{
@@ -320,6 +386,8 @@ export default function Skipper() {
             Durable, multi-step workflows as a library inside each service — not a central cluster. Replay-based recovery, hibernation between waits, full reuse of the service's existing DB.
           </p>
         </div>
+
+        <ContextBlock />
 
         <div style={{ display: "flex", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
           {sections.map((s) => (
@@ -468,6 +536,10 @@ export default function Skipper() {
             </div>
           </div>
         )}
+
+        <div style={{ fontSize: 9, color: "#555", marginTop: 20, lineHeight: 1.6, borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
+          <a href="https://behindscale.com/articles/skipper-workflow-engine" target="_blank" rel="noopener noreferrer" style={{ color: "#22c55e", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+        </div>
       </div>
     </div>
   );

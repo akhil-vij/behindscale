@@ -1,680 +1,398 @@
 import { useState, useEffect, useRef } from "react";
 
-const sections = [
-  { id: "evolution", label: "Evolution" },
-  { id: "codel", label: "CoDel" },
-  { id: "cinnamon", label: "Cinnamon" },
-  { id: "pid", label: "PID Sim" },
-  { id: "byos", label: "BYOS" },
-];
-
-const phases = [
-  {
-    id: "phase1",
-    label: "Phase 1",
-    title: "Quota-based rate limiting",
-    where: "Stateless query engine",
-    verdict: "Failed",
-    verdictColor: "#ef4444",
-    color: "#ef4444",
-    icon: "✕",
-    desc: "Assign capacity-unit cost per request, track usage in Redis, reject at quota.",
-    problems: [
-      "Every request needed a Redis call — new point of failure plus latency",
-      "Cost model was broken: full table scan = same cost as single row read",
-      "Stateless layer couldn't track health of 1000s of storage partitions",
-      "Static quotas required constant manual tuning",
-    ],
-    insight: "Overload management must live close to the storage nodes, not the routing layer.",
-  },
-  {
-    id: "phase2",
-    label: "Phase 2",
-    title: "CoDel + Scorecard + Regulators",
-    where: "Storage engine",
-    verdict: "Foundation",
-    verdictColor: "#eab308",
-    color: "#eab308",
-    icon: "○",
-    desc: "CoDel queues (wait-time based shedding, LIFO under pressure), Scorecard (per-tenant concurrency), Regulators (write bytes, hot keys, memory).",
-    problems: [
-      "Priority-blind — shed critical traffic and batch jobs equally",
-      "Static thresholds caused thundering herd on mass rejection",
-      "Fixed wait times produced overload → reject all → retry storm cycles",
-    ],
-    insight: "Stability improved but lacks nuance. Need priority awareness and dynamic adaptation.",
-  },
-  {
-    id: "phase3",
-    label: "Phase 3",
-    title: "Cinnamon — unified load manager",
-    where: "Storage engine",
-    verdict: "Production",
-    verdictColor: "#22c55e",
-    color: "#22c55e",
-    icon: "✓",
-    desc: "Priority-aware shedding (t0-t5), PID controller for dynamic thresholds, pluggable signals (BYOS), unified decision loop.",
-    problems: [],
-    insight: "Shed smarter: lowest priority first, adapt dynamically, single control loop for all signals.",
-  },
-];
-
-const tiers = [
-  { tier: "t0", desc: "Critical infrastructure services", color: "#ef4444", shed: "Last (almost never)" },
-  { tier: "t1", desc: "User-facing: rides, pricing, payments", color: "#f97316", shed: "Only under extreme overload" },
-  { tier: "t2", desc: "Important but deferrable", color: "#eab308", shed: "When system is stressed" },
-  { tier: "t3-t5", desc: "Async jobs, pipelines, aggregators", color: "#666", shed: "First to go" },
-];
-
-const signals = [
-  {
-    name: "Inflight concurrency",
-    type: "Local",
-    icon: "🔢",
-    color: "#3b82f6",
-    what: "Number of requests currently being processed on this node.",
-    example: "A batch job sends 500 concurrent requests to a single partition. Concurrency spikes from 60 to 500. PID tightens limit, batch (t4) requests shed, ride queries (t1) sail through.",
-  },
-  {
-    name: "Follower commit lag",
-    type: "Remote",
-    icon: "📡",
-    color: "#a78bfa",
-    what: "How far behind follower replicas are from the leader in Raft replication.",
-    example: "Lag rises to 30 seconds. Before BYOS: external limiter fights internal load manager (split-brain). After BYOS: single PID loop reduces write limit gradually, lag stabilizes, no oscillation.",
-  },
-  {
-    name: "Write bytes volume",
-    type: "I/O",
-    icon: "💾",
-    color: "#f97316",
-    what: "Total bytes being written concurrently to disk.",
-    example: "Migration job sends 50 bulk inserts of 5MB each. QPS only 50, concurrency limit unhit. But disk I/O pegged. Write bytes regulator throttles the migration specifically.",
-  },
-  {
-    name: "Hot partition key",
-    type: "Skew",
-    icon: "🔥",
-    color: "#ef4444",
-    what: "Traffic concentrated on a single partition key within a shard.",
-    example: "Viral moment: 10,000 reads/sec on one user's row. Partition key regulator caps traffic to that specific key at 2,000/sec, protecting the shard for all other users.",
-  },
-  {
-    name: "Memory pressure",
-    type: "Resource",
-    icon: "🧠",
-    color: "#eab308",
-    what: "Available process memory on the storage node.",
-    example: "Scan query buffers a 2GB result set. Free heap drops from 4GB to 500MB. Memory regulator triggers and rejects new requests until memory stabilizes.",
-  },
-  {
-    name: "Goroutine count",
-    type: "Resource",
-    icon: "⚙️",
-    color: "#06b6d4",
-    what: "Total goroutines in the process.",
-    example: "Overload spikes goroutines from 5K to 150K. Scheduler overhead alone adds 50ms latency. Regulator caps admission, stabilizes at 10K.",
-  },
-];
-
-function CoDelDeepDive() {
-  const [mode, setMode] = useState("normal");
-  const items = mode === "normal"
-    ? [
-        { id: 1, age: "1ms", status: "process", label: "Oldest → process first (FIFO)" },
-        { id: 2, age: "0.8ms", status: "process" },
-        { id: 3, age: "0.5ms", status: "process" },
-        { id: 4, age: "0.2ms", status: "process" },
-      ]
-    : [
-        { id: 1, age: "120ms", status: "drop", label: "Oldest → stale, client likely timed out" },
-        { id: 2, age: "95ms", status: "drop" },
-        { id: 3, age: "60ms", status: "drop" },
-        { id: 4, age: "8ms", status: "process", label: "Newest → still fresh, process first (LIFO)" },
-        { id: 5, age: "3ms", status: "process" },
-        { id: 6, age: "1ms", status: "process" },
-      ];
-
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        CoDel uses <strong style={{ color: "#f0f0f5" }}>queue wait time</strong>, not queue length. Under pressure, it flips from FIFO to LIFO.
-      </p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        {["normal", "overload"].map((m) => (
-          <button key={m} onClick={() => setMode(m)} style={{
-            padding: "6px 12px", fontSize: 11, fontFamily: "inherit",
-            border: `1px solid ${mode === m ? (m === "normal" ? "#22c55e" : "#ef4444") : "#2a2a3a"}`,
-            borderRadius: 5,
-            background: mode === m ? (m === "normal" ? "#22c55e18" : "#ef444418") : "transparent",
-            color: mode === m ? (m === "normal" ? "#22c55e" : "#ef4444") : "#666",
-            cursor: "pointer",
-          }}>
-            {m === "normal" ? "🟢 Normal" : "🔴 Overload"}
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: mode === "normal" ? "#0a2a1a" : "#3a1a1a",
-        border: `1px solid ${mode === "normal" ? "#22c55e" : "#ef4444"}`,
-        borderRadius: 8, padding: "12px 14px",
-      }}>
-        <div style={{ fontSize: 10, color: mode === "normal" ? "#22c55e" : "#ef4444", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10, fontWeight: 600 }}>
-          {mode === "normal" ? "FIFO mode — process oldest first" : "LIFO mode — process newest, drop stale"}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {items.map((item) => (
-            <div key={item.id} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "7px 10px", borderRadius: 5,
-              background: item.status === "drop" ? "#ef444418" : "#22c55e18",
-              border: `1px solid ${item.status === "drop" ? "#ef4444" : "#22c55e"}25`,
-            }}>
-              <span style={{
-                fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3,
-                background: item.status === "drop" ? "#ef4444" : "#22c55e", color: "#fff",
-              }}>
-                {item.status === "drop" ? "DROP" : "PROC"}
-              </span>
-              <span style={{ fontSize: 11, color: "#888", minWidth: 50 }}>age: {item.age}</span>
-              {item.label && <span style={{ fontSize: 11, color: "#c0c0cc", fontStyle: "italic" }}>{item.label}</span>}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{
-        marginTop: 12, padding: "12px 14px",
-        background: "#111118", borderRadius: 6, borderLeft: "3px solid #eab308",
-      }}>
-        <div style={{ fontSize: 10, color: "#eab308", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>
-          Why LIFO under overload?
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          Old requests have likely timed out on the client side. Processing them wastes resources on work the caller already retried. Fresh requests still have a chance to succeed.
-        </p>
-      </div>
-    </div>
-  );
+// ---------- deterministic PRNG (mulberry32) ----------
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-function CinnamonView() {
-  const [step, setStep] = useState(0);
-  const scenarios = [
-    { title: "Step 1: Traffic arrives", desc: "120 requests hit a node with capacity for 100. Cinnamon classifies them by priority tier." },
-    { title: "Step 2: PID calculates new limit", desc: "P90 latency at 25ms vs 10ms target. PID outputs: reduce concurrency limit to 80. Gradual, not 'reject all'. (Illustrative values — the post doesn't publish Cinnamon's internal targets.)" },
-    { title: "Step 3: Priority-aware shedding", desc: "Need 120 → 80. Cinnamon sheds from the bottom: 40 of 50 t4 analytics requests dropped. All t1 ride queries and t2 search updates pass through." },
-    { title: "Step 4: If pressure rises", desc: "If 80 isn't enough, PID tightens further. Remaining t4s go first, then t2 search updates start shedding. t1 ride pricing is the absolute last to be touched." },
-    { title: "Step 5: Gradual recovery", desc: "As load decreases, PID smoothly opens limit back: 80 → 82 → 85 → 90 → 95 → 100. NOT a sudden jump (which would cause a new spike)." },
-  ];
-  const current = scenarios[step];
-  const breakdown = [
-    { tier: "t1", label: "Ride pricing queries", count: 30, color: "#ef4444" },
-    { tier: "t2", label: "Search ranking updates", count: 40, color: "#f97316" },
-    { tier: "t4", label: "Async analytics", count: 50, color: "#666" },
-  ];
-  // Concurrency limit per step. Step 4 shows the deeper-tightening
-  // path; step 5 is a labelled "reopening" string because the recovery
-  // is a curve, not a single value.
-  const limits = [100, 100, 80, 65, "65 → 100 (reopening)"];
+// ---------- constants (illustrative — labeled on screen) ----------
+const ACCENT = "#f97316";       // t1, the protected tier
+const T3C = "#9aa3b2";          // t3 internal services
+const T5C = "#5f6b7a";          // t5 batch pipelines
+const RED = "#ef4444";
+const AMBER = "#eab308";
+const GREEN = "#22c55e";
+const DT = 0.1;                  // sim seconds per tick
+const CAPACITY = 100;            // node service rate, rps (illustrative)
+const FOLLOWER_CAP = 55;         // follower apply rate, rps (illustrative)
+const BASE = { t1: 35, t3: 15, t5: 20 };
+const TIER_META = {
+  t1: { label: "t1 · rides + payments", color: ACCENT },
+  t3: { label: "t3 · internal services", color: T3C },
+  t5: { label: "t5 · batch pipelines", color: T5C },
+};
 
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        Concrete overload scenario, step by step. This is what makes Cinnamon "intelligent".
-      </p>
-      <div style={{ display: "flex", gap: 4, marginBottom: 14 }}>
-        {scenarios.map((_, i) => (
-          <button key={i} onClick={() => setStep(i)} style={{
-            padding: "5px 10px", fontSize: 10, fontFamily: "inherit",
-            border: `1px solid ${step === i ? "#f97316" : "#2a2a3a"}`,
-            borderRadius: 4,
-            background: step === i ? "#f9731618" : "transparent",
-            color: step === i ? "#f97316" : "#666",
-            cursor: "pointer",
-          }}>
-            {i + 1}
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #f9731640",
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ fontSize: 10, color: "#f97316", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>
-          {current.title}
-        </div>
-        <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: "0 0 12px 0", lineHeight: 1.7 }}>{current.desc}</p>
-        <div style={{ background: "#08090D", borderRadius: 6, padding: "12px 14px" }}>
-          <div style={{ fontSize: 9, color: "#666", letterSpacing: 1, marginBottom: 8, textTransform: "uppercase" }}>
-            Traffic — 120 incoming, limit {limits[step]}
-          </div>
-          {breakdown.map((t) => {
-            let shed = 0, passed = t.count;
-            if (step >= 2 && t.tier === "t4") { shed = 40; passed = 10; }
-            if (step >= 3 && t.tier === "t4") { shed = 50; passed = 0; }
-            if (step >= 3 && t.tier === "t2") { shed = 15; passed = 25; }
-            if (step === 4) { shed = t.tier === "t4" ? 25 : 0; passed = t.count - shed; }
-            const passedPct = (passed / t.count) * 100;
-            return (
-              <div key={t.tier} style={{ marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: t.color, minWidth: 22 }}>{t.tier}</span>
-                    <span style={{ fontSize: 10.5, color: "#c0c0cc" }}>{t.label}</span>
-                  </div>
-                  <div style={{ fontSize: 9.5, color: shed > 0 ? "#ef4444" : "#22c55e" }}>
-                    {shed > 0 ? `${shed} shed / ${passed} pass` : `${passed} pass`}
-                  </div>
-                </div>
-                <div style={{ height: 6, background: "#1a1a2a", borderRadius: 3, overflow: "hidden", display: "flex" }}>
-                  <div style={{ width: `${passedPct}%`, background: t.color, transition: "width 0.4s ease" }} />
-                  {shed > 0 && <div style={{ width: `${100 - passedPct}%`, background: "#ef444460", transition: "width 0.4s ease" }} />}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div style={{
-        marginTop: 12, padding: "10px 12px",
-        background: "#22c55e18",
-        borderRadius: 6,
-        border: "1px solid #22c55e30",
-      }}>
-        <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, marginBottom: 4 }}>Cinnamon vs CoDel here:</div>
-        <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.5 }}>
-          CoDel would drop 20 random requests regardless of type. Cinnamon drops 40 analytics jobs while all 30 ride queries + 40 search updates pass through.
-        </div>
-      </div>
-    </div>
-  );
+const PHASES = [
+  { id: "quota", label: "PHASE 1 · QUOTA AT THE QUERY LAYER", caption: "Static per-tenant budgets in the stateless query engine, priced in capacity units, usage tracked in a central Redis. Every request pays the Redis hop before touching storage." },
+  { id: "codel", label: "PHASE 2 · CODEL + SCORECARD", caption: "Control moves into the storage node: CoDel queues shed on wait time (not length), and Scorecard caps each tenant's concurrency. Stability arrives — judgment doesn't." },
+  { id: "cinnamon", label: "PHASE 3 · CINNAMON", caption: "Requests carry priority tiers (t0–t5, three shown). A PID controller walks the admission threshold against measured latency; BYOS lets any overload signal join the same loop." },
+];
+
+const SCENARIOS = [
+  { id: "baseline", label: "BASELINE", hint: "healthy traffic, ~70% utilization" },
+  { id: "batch", label: "BATCH SPIKE", hint: "t5 pipelines quadruple — the post's most common cause" },
+  { id: "noisy", label: "NOISY TENANT", hint: "one t3 tenant floods shared storage" },
+  { id: "retry", label: "RETRY PRESSURE", hint: "rejected requests come back — together" },
+  { id: "lag", label: "FOLLOWER LAG", hint: "leader healthy; followers falling behind" },
+];
+
+function offeredFor(scenario) {
+  if (scenario === "batch") return { t1: 35, t3: 15, t5: 80 };
+  if (scenario === "noisy") return { t1: 35, t3: 85, t5: 20 }; // t3 = 15 normal + 70 noisy
+  if (scenario === "retry") return { t1: 45, t3: 25, t5: 40 };
+  return { ...BASE };
 }
 
-function PidSim() {
-  const [running, setRunning] = useState(false);
-  const [history, setHistory] = useState([]);
-  const intervalRef = useRef(null);
+// ---------- verdict copy (phase x scenario, + BYOS variant) ----------
+function verdictOf(phase, scenario, byos, live) {
+  const V = (sev, code, text) => ({ sev, code, text });
+  const { t1Avail, latMs, lagS, lagTrend } = live;
+  if (scenario === "baseline") {
+    if (phase === "quota") return V("ok", "HEALTHY — WITH A STANDING TAX", "70 rps against ~100 capacity. But note the constant cost: every request detours through Redis for quota accounting — an extra network hop and a new failure point, bought before any overload has arrived.");
+    if (phase === "codel") return V("ok", "HEALTHY — CONTROL AT REST", "Queues empty, shedding idle. The machinery lives inside the storage node, so its cost at rest is near zero — no extra hop, no external dependency.");
+    return V("ok", "HEALTHY — PRIORITY COSTS NOTHING YET", "Tiers and the PID engage only under pressure. The same property Netflix found at the service layer: prioritization is free until the limiter has something to decide.");
+  }
+  if (scenario === "batch") {
+    if (phase === "quota") return V("bad", "QUOTAS GREEN · NODE SATURATED", `The batch tenant never exceeds its budget — scans meter far below their true cost — so the query layer sheds nothing while the node drowns. P99 is at ${latMs >= 3000 ? "3.1s" : Math.round(latMs) + "ms"} for everyone, rides included. The layer with the decision cannot see the layer with the problem.`);
+    if (phase === "codel") return V("mixed", "STABLE — BUT LOOK WHO PAID", `CoDel sheds on queue delay and the node survives; accepted requests succeed again. But the drop budget was spent blind: every tier cut proportionally — t1 availability ${t1Avail}%. Rides paid to protect pipelines.`);
+    return V("ok", "BUDGET SPENT BOTTOM-UP", `t5 absorbs the entire cut; t1 holds at ${t1Avail}%. This is the regime the post measured: +80% throughput under overload, P99 from 3.1s to 1.0s.`);
+  }
+  if (scenario === "noisy") {
+    if (phase === "quota") return V("bad", "CLIPPED LATE, HOT ANYWAY", "The static quota eventually clips the flood — but it was sized for a different month's capacity, the cost model undercounts, and by the time the budget bites, every other tenant is already feeling the node run hot.");
+    if (phase === "codel") return V("ok", "SCORECARD'S CASE — CONTAINED", `The tenant hits its concurrency cap at the node and is boxed in deterministically, without punishing anyone else — t1 availability ${t1Avail}%. Fairness turns out to be a separate mechanism from overload.`);
+    return V("ok", "STILL SCORECARD'S CASE", "The containment is Scorecard's, carried forward into the Cinnamon era; tiers add nothing here. Not every failure needs the newest tool — the post keeps both.");
+  }
+  if (scenario === "retry") {
+    if (phase === "quota") return V("bad", "THE HERD MEETS THE WINDOW", "Rejected callers return in sync, the quota window admits a fresh batch, exhausts, rejects the rest together — and the cycle repeats. Watch the shed trace spike in rhythm.");
+    if (phase === "codel") return V("bad", "THE POST'S OWN DIAGNOSIS", "Fixed wait times reject in bursts; the rejected retry together; the system oscillates between overload and idle. The hammer pattern in the shed trace below is Figure 16's left-hand side.");
+    return V("ok", "THE DIMMER, NOT THE HAMMER", "The PID sheds early, smoothly, and only as much as needed — fewer premature rejections, so retries spread out instead of synchronizing. The shed trace flattens; the cycle never forms.");
+  }
+  // lag
+  if (phase === "quota") return V("bad", "NO LOCAL SIGNAL WILL EVER FIRE", `The leader is healthy and every quota is green — but followers are falling behind. Commit index lag: ${lagS}s and climbing. The overload is real; it just isn't where the meter is.`);
+  if (phase === "codel") return V("bad", "THE QUEUES ARE FINE. THAT'S THE PROBLEM.", `CoDel watches its own queues; they're empty. The overload is one hop away and invisible — lag ${lagS}s. (The traditional fix, external token-bucket limiters, brought split-brain and globally suboptimal shedding.)`);
+  if (!byos) return V("bad", "CONCURRENCY-ONLY SHEDDING IS BLIND HERE", `Local signals green, lag at ${lagS}s and ${lagTrend > 0.05 ? "climbing" : "high"}. A shedder that only understands its own inflight count cannot see a distributed signal. Flip BYOS on.`);
+  return V("ok", "ONE LOOP, ANY SIGNAL", `The follower's commit lag plugs into the same admission path as every local signal; the leader sheds t5 until the followers ${lagTrend < -0.01 ? "catch up — lag draining" : "stabilize"} (${lagS}s). This is the platform the post ends on: a general-purpose overload control engine.`);
+}
+
+// ---------- component ----------
+export default function DropBudget() {
+  const [phase, setPhase] = useState("quota");
+  const [scenario, setScenario] = useState("baseline");
+  const [byos, setByos] = useState(false);
+  const [, force] = useState(0);
+  const w = useRef(null); // sim world
+
+  const freshWorld = () => ({
+    t: 0,
+    rng: mulberry32(42),
+    queue: 0,                 // backlog, requests
+    dropped: { t1: 0, t3: 0, t5: 0 },  // cumulative counts
+    offeredCum: { t1: 0, t3: 0, t5: 0 },
+    acceptedCum: { t1: 0, t3: 0, t5: 0 },
+    lag: 0,
+    lagPrev: 0,
+    shedHist: [],             // rps shed per tick (for the trace)
+    pidShed: 0,               // smoothed shed rate (phase 3)
+    retries: [],              // [{at, tier, n}]
+    quotaWindowStart: 0,
+    quotaUsed: { t1: 0, t3: 0, t5: 0 },
+  });
+  if (!w.current) w.current = freshWorld();
+
+  const resetWorld = () => { w.current = freshWorld(); };
+
+  const pickPhase = (p) => { setPhase(p); if (p !== "cinnamon") setByos(false); resetWorld(); };
+  const pickScenario = (s) => { setScenario(s); resetWorld(); };
+  const toggleByos = () => { setByos((b) => !b); resetWorld(); };
 
   useEffect(() => {
-    if (running) {
-      // Two systems simulated independently under identical external traffic.
-      // Rejected requests retry next tick (RETRY) — the actual thundering-herd
-      // mechanism. All constants are illustrative, not Uber's.
-      const TARGET = 10, THRESH = 15, C = 35, BASE = 2, K = 8, RETRY = 0.8, LAT_CAP = 60;
-      const latencyOf = (admitted) => {
-        const rho = Math.min(admitted / C, 0.9);
-        return Math.min(LAT_CAP, BASE + K * (rho / (1 - rho)));
-      };
-      let t = 0, hist = [];
-      let limit = 100, integral = 0, prevError = 0, shedP = 0; // PID system
-      let sLimit = 100, shedS = 0;                              // static system
-      intervalRef.current = setInterval(() => {
-        t++;
-        const ext = t < 5 ? 10 : t < 15 ? 10 + (t - 5) * 4 : Math.max(10, 50 - (t - 15) * 3);
-        const noise = () => Math.random() * 2 - 1;
-        // --- PID-controlled system ---
-        const eff = ext + RETRY * shedP;
-        const adm = Math.min(eff, limit);
-        shedP = eff - adm;
-        const lat = Math.max(2, latencyOf(adm) + noise());
-        const err = Math.max(-15, Math.min(30, lat - TARGET));
-        integral = Math.max(-120, Math.min(120, integral * 0.93 + err)); // leaky, bounded (anti-windup)
-        const deriv = err - prevError;
-        prevError = err;
-        const adjustment = 0.45 * err + 0.04 * integral + 0.25 * deriv;
-        limit = Math.max(12, Math.min(100, limit - adjustment * 0.45));
-        // --- Static-threshold system (independent loop, own latency) ---
-        const effS = ext + RETRY * shedS;
-        const admS = Math.min(effS, sLimit);
-        shedS = effS - admS;
-        const latS = Math.max(2, latencyOf(admS) + noise());
-        sLimit = latS > THRESH ? 15 : 100;
-        hist.push({
-          t,
-          latency: Math.round(lat * 10) / 10,
-          staticLatency: Math.round(latS * 10) / 10,
-          pidLimit: Math.round(limit),
-          staticLimit: sLimit,
-        });
-        if (hist.length > 40) hist = hist.slice(-40);
-        setHistory([...hist]);
-        if (t > 50) { clearInterval(intervalRef.current); setRunning(false); }
-      }, 300);
-    }
-    return () => clearInterval(intervalRef.current);
-  }, [running]);
+    const id = setInterval(() => {
+      const W = w.current;
+      W.t += DT;
 
-  const reset = () => { clearInterval(intervalRef.current); setRunning(false); setHistory([]); };
-  const maxLatency = Math.max(30, ...history.map((h) => Math.max(h.latency, h.staticLatency)));
-  const chartH = 130;
+      // --- arrivals this tick (requests) ---
+      const offered = offeredFor(scenario);
+      const arr = {};
+      for (const k of ["t1", "t3", "t5"]) {
+        const jitter = 0.9 + W.rng() * 0.2;
+        arr[k] = offered[k] * jitter * DT;
+      }
+      // due retries re-arrive
+      if (scenario === "retry") {
+        const due = W.retries.filter((r) => r.at <= W.t);
+        W.retries = W.retries.filter((r) => r.at > W.t);
+        for (const r of due) arr[r.tier] += r.n;
+      }
+      for (const k of ["t1", "t3", "t5"]) W.offeredCum[k] += arr[k];
+
+      // --- phase admission logic ---
+      const acc = { ...arr };
+      const shed = { t1: 0, t3: 0, t5: 0 };
+      const doShed = (tier, n) => { n = Math.min(n, acc[tier]); acc[tier] -= n; shed[tier] += n; };
+
+      if (phase === "quota") {
+        // static per-tier quotas per 1s window; t5's metered cost is HALF its real load
+        if (W.t - W.quotaWindowStart >= 1) { W.quotaWindowStart = W.t; W.quotaUsed = { t1: 0, t3: 0, t5: 0 }; }
+        const QUOTA = { t1: 50, t3: 40, t5: 60 };       // metered units
+        const METER = { t1: 1, t3: 1, t5: 0.5 };         // cost-model imprecision
+        for (const k of ["t1", "t3", "t5"]) {
+          const metered = arr[k] * METER[k];
+          const room = Math.max(0, QUOTA[k] * DT * 10 - W.quotaUsed[k]); // quota per window
+          const admitMetered = Math.min(metered, room);
+          W.quotaUsed[k] += admitMetered;
+          const admit = admitMetered / METER[k];
+          doShed(k, arr[k] - admit);
+        }
+      } else if (phase === "codel") {
+        // scorecard: cap the noisy tenant's slice of t3 at 25 rps equivalent
+        if (scenario === "noisy") {
+          const noisyArr = 70 * DT * (arr.t3 / (85 * DT)); // noisy share of this tick's t3
+          const capPerTick = 25 * DT;
+          if (noisyArr > capPerTick) doShed("t3", noisyArr - capPerTick);
+        }
+        // codel: queue absorbs; when queue delay exceeds target, bulk-shed the excess (tier-blind)
+        const inflow = acc.t1 + acc.t3 + acc.t5;
+        W.queue += inflow - CAPACITY * DT;
+        if (W.queue < 0) W.queue = 0;
+        const delay = W.queue / CAPACITY;
+        if (delay > 0.06) {
+          // hammer: shed the whole backlog above target at once, proportional to arrival mix
+          let excess = W.queue - 0.02 * CAPACITY;
+          W.queue -= excess;
+          const tot = acc.t1 + acc.t3 + acc.t5 || 1;
+          for (const k of ["t1", "t3", "t5"]) {
+            const cut = excess * (acc[k] / tot);
+            shed[k] += cut; // shed from backlog attributed by mix
+          }
+        }
+      } else {
+        // cinnamon: PID-smoothed shed rate, taken strictly bottom-up (t5 -> t3 -> t1)
+        // scorecard carried forward:
+        if (scenario === "noisy") {
+          const noisyArr = 70 * DT * (arr.t3 / (85 * DT));
+          const capPerTick = 25 * DT;
+          if (noisyArr > capPerTick) doShed("t3", noisyArr - capPerTick);
+        }
+        const inflow = (acc.t1 + acc.t3 + acc.t5) / DT; // rps after scorecard
+        let target = Math.max(0, inflow - CAPACITY * 0.95);
+        if (scenario === "lag" && byos) target = Math.max(target, inflow - FOLLOWER_CAP);
+        W.pidShed += 0.18 * (target - W.pidShed);         // the dimmer
+        let toShed = Math.max(0, W.pidShed) * DT;
+        for (const k of ["t5", "t3", "t1"]) { const cut = Math.min(toShed, acc[k]); doShed(k, cut); toShed -= cut; }
+        // small queue dynamics for latency realism
+        W.queue += (acc.t1 + acc.t3 + acc.t5) - CAPACITY * DT;
+        if (W.queue < 0) W.queue = 0;
+      }
+
+      // phase 1 has no node-side relief: backlog grows when admitted > capacity
+      if (phase === "quota") {
+        W.queue += (acc.t1 + acc.t3 + acc.t5) - CAPACITY * DT;
+        if (W.queue < 0) W.queue = 0;
+        W.queue = Math.min(W.queue, CAPACITY * 3.07); // saturate at the sourced 3.1s anchor
+      }
+
+      // retries: 80% of shed comes back 1.5s later (retry scenario only)
+      if (scenario === "retry") {
+        for (const k of ["t1", "t3", "t5"]) {
+          if (shed[k] > 0.001) W.retries.push({ at: W.t + 1.5, tier: k, n: shed[k] * 0.8 });
+        }
+      }
+
+      // follower lag (lag scenario): grows when accepted rate exceeds follower capacity
+      if (scenario === "lag") {
+        const accRate = (acc.t1 + acc.t3 + acc.t5) / DT;
+        W.lagPrev = W.lag;
+        W.lag += Math.max(0, accRate - FOLLOWER_CAP) * DT * 0.02;
+        if (accRate < FOLLOWER_CAP) W.lag = Math.max(0, W.lag - (FOLLOWER_CAP - accRate) * DT * 0.01);
+      }
+
+      for (const k of ["t1", "t3", "t5"]) { W.dropped[k] += shed[k]; W.acceptedCum[k] += acc[k]; }
+      const shedRate = (shed.t1 + shed.t3 + shed.t5) / DT;
+      W.shedHist.push(shedRate);
+      if (W.shedHist.length > 120) W.shedHist.shift();
+
+      force((x) => x + 1);
+    }, 100);
+    return () => clearInterval(id);
+  }, [phase, scenario, byos]);
+
+  // ---------- derived display values ----------
+  const W = w.current;
+  const offered = offeredFor(scenario);
+  const latMs = Math.min(3100, 30 + (W.queue / CAPACITY) * 1000);
+  const t1Avail = W.offeredCum.t1 > 0.5 ? Math.round((W.acceptedCum.t1 / W.offeredCum.t1) * 100) : 100;
+  const lagS = W.lag.toFixed(1);
+  const lagTrend = W.lag - W.lagPrev;
+  const droppedTotal = W.dropped.t1 + W.dropped.t3 + W.dropped.t5;
+  const v = verdictOf(phase, scenario, byos, { t1Avail, latMs, lagS, lagTrend });
+  const sevColor = v.sev === "ok" ? GREEN : v.sev === "mixed" ? AMBER : RED;
+  const offeredTotal = offered.t1 + offered.t3 + offered.t5;
+  const maxShed = Math.max(10, ...W.shedHist);
+
+  // ---------- styles ----------
+  const mono = "'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace";
+  const S = {
+    root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
+    eyebrow: { color: ACCENT, fontSize: 10, letterSpacing: 2 },
+    h1: { color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 },
+    sub: { color: "#8b90a0", fontSize: 11, margin: 0 },
+    panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
+    label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
+    btn: (on, disabled) => ({
+      display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
+      border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffd7b0" : "#8b90a0",
+      background: on ? "rgba(249,115,22,0.08)" : "#0c0d13", fontFamily: mono, fontSize: 11,
+    }),
+    bar: { height: 10, borderRadius: 5, background: "#1a1b24", overflow: "hidden", display: "flex" },
+  };
+
+  const TierBar = ({ values, denom, height = 10 }) => (
+    <div style={{ ...S.bar, height }}>
+      {["t1", "t3", "t5"].map((k) => (
+        <div key={k} style={{ width: `${(values[k] / denom) * 100}%`, background: TIER_META[k].color, transition: "width 200ms" }} />
+      ))}
+    </div>
+  );
 
   return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        Live simulation: two identical systems under the same traffic spike (t=5, recovery after t=15).
-        One uses a static threshold, one a PID controller. Rejected requests retry — watch what that
-        does to the static system.
-      </p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <button onClick={() => { reset(); setTimeout(() => setRunning(true), 100); }} style={{
-          padding: "7px 14px", fontSize: 11, fontFamily: "inherit",
-          border: "1px solid #06b6d4", borderRadius: 5,
-          background: "#06b6d418", color: "#06b6d4", cursor: "pointer",
-        }}>▶ Run simulation</button>
-        <button onClick={reset} style={{
-          padding: "7px 14px", fontSize: 11, fontFamily: "inherit",
-          border: "1px solid #2a2a3a", borderRadius: 5,
-          background: "transparent", color: "#666", cursor: "pointer",
-        }}>Reset</button>
-      </div>
-      <div style={{
-        background: "#111118",
-        border: "1px solid #06b6d440",
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          {[
-            { letter: "P", name: "Proportional", q: "How bad now?", color: "#3b82f6" },
-            { letter: "I", name: "Integral", q: "How bad overall?", color: "#a78bfa" },
-            { letter: "D", name: "Derivative", q: "Getting worse?", color: "#f97316" },
-          ].map((p) => (
-            <div key={p.letter} style={{
-              flex: 1, padding: "8px 6px", background: "#08090D", borderRadius: 5,
-              border: `1px solid ${p.color}30`, textAlign: "center",
-            }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: p.color }}>{p.letter}</div>
-              <div style={{ fontSize: 9, color: "#c0c0cc", fontWeight: 600 }}>{p.name}</div>
-              <div style={{ fontSize: 9, color: p.color, marginTop: 2, fontStyle: "italic" }}>{p.q}</div>
-            </div>
+    <div style={S.root}>
+      <div style={S.eyebrow}>UBER · INTELLIGENT LOAD MANAGEMENT — INTERACTIVE</div>
+      <div style={S.h1}>The drop budget</div>
+      <p style={S.sub}>One storage node, three generations of overload control, four ways to hurt it. The question each generation answers differently: when you must drop work — whose?</p>
+
+      <ContextBlock />
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
+        {/* left: controls */}
+        <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
+          <div style={S.label}>GENERATION</div>
+          {PHASES.map((p) => (
+            <button key={p.id} style={S.btn(phase === p.id, false)} onClick={() => pickPhase(p.id)}>{p.label}</button>
           ))}
-        </div>
-        <div style={{ position: "relative", height: chartH, background: "#08090D", borderRadius: 5, overflow: "hidden", padding: 4 }}>
-          <div style={{
-            position: "absolute", left: 0, right: 0,
-            top: `${(1 - 10 / maxLatency) * 100}%`,
-            borderTop: "1px dashed #22c55e50",
-          }}>
-            <span style={{ fontSize: 8, color: "#22c55e", position: "absolute", left: 4, top: -10 }}>target (illustrative)</span>
-          </div>
-          {history.length > 1 && (
-            <svg width="100%" height="100%" viewBox={`0 0 ${history.length * 10} ${chartH}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
-              <polyline fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.55"
-                points={history.map((h, i) => `${i * 10},${chartH - (h.staticLatency / maxLatency) * chartH}`).join(" ")} />
-              <polyline fill="none" stroke="#06b6d4" strokeWidth="2"
-                points={history.map((h, i) => `${i * 10},${chartH - (h.latency / maxLatency) * chartH}`).join(" ")} />
-              <polyline fill="none" stroke="#22c55e" strokeWidth="1.5" strokeDasharray="4,3"
-                points={history.map((h, i) => `${i * 10},${chartH - (h.pidLimit / 100) * chartH}`).join(" ")} />
-              <polyline fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="2,4"
-                points={history.map((h, i) => `${i * 10},${chartH - (h.staticLimit / 100) * chartH}`).join(" ")} />
-            </svg>
+          {phase === "cinnamon" && (
+            <button style={S.btn(byos, false)} onClick={toggleByos}>
+              BYOS — BRING YOUR OWN SIGNAL: {byos ? "ON" : "OFF"}
+              <div style={{ color: "#6b7080", fontSize: 10 }}>plug distributed signals (follower commit lag) into the same loop</div>
+            </button>
           )}
-          {history.length === 0 && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#666", fontSize: 11 }}>
-              Press "Run simulation" to start
-            </div>
-          )}
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 6, justifyContent: "center" }}>
-          <span style={{ fontSize: 9.5, color: "#06b6d4" }}>━ Latency (PID)</span>
-          <span style={{ fontSize: 9.5, color: "#ef4444", opacity: 0.8 }}>━ Latency (static)</span>
-          <span style={{ fontSize: 9.5, color: "#22c55e" }}>╌ PID limit</span>
-          <span style={{ fontSize: 9.5, color: "#ef4444" }}>╌ Static limit</span>
-        </div>
-      </div>
-      <div style={{
-        marginTop: 12, padding: "10px 12px",
-        background: "#111118", borderRadius: 5, borderLeft: "3px solid #06b6d4",
-      }}>
-        <div style={{ fontSize: 10, color: "#06b6d4", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, fontWeight: 600 }}>
-          Why PID prevents thundering herd
-        </div>
-        <p style={{ fontSize: 11, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-          The static system mass-rejects when latency crosses its threshold; the rejected traffic retries,
-          re-triggers the threshold, and the limit flaps open-shut while latency whipsaws. The PID system
-          sheds a little more each cycle, so retries stay small and latency converges to target — a dimmer
-          switch instead of a hammer.
-        </p>
-        <p style={{ fontSize: 9.5, color: "#666", margin: "8px 0 0 0", lineHeight: 1.6 }}>
-          Simulation values are illustrative — the post doesn't publish Cinnamon's internal targets. The
-          sourced content is the mechanism: smooth feedback-controlled shedding versus static-threshold
-          oscillation under retry load.
-        </p>
-      </div>
-    </div>
-  );
-}
 
-function ByosView() {
-  const [selected, setSelected] = useState(0);
-  const sig = signals[selected];
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        <strong style={{ color: "#f0f0f5" }}>Bring Your Own Signal</strong> — Cinnamon is a platform, not a point solution. Any overload signal plugs into the same PID decision loop.
-      </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
-        {signals.map((s, i) => (
-          <button key={s.name} onClick={() => setSelected(i)} style={{
-            padding: "5px 9px", fontSize: 10, fontFamily: "inherit",
-            border: `1px solid ${selected === i ? s.color : "#2a2a3a"}`,
-            borderRadius: 4,
-            background: selected === i ? `${s.color}18` : "transparent",
-            color: selected === i ? s.color : "#666",
-            cursor: "pointer",
-          }}>
-            {s.icon} {s.name}
-          </button>
-        ))}
-      </div>
-      <div style={{
-        background: "#111118",
-        border: `1px solid ${sig.color}40`,
-        borderRadius: 8,
-        padding: "14px 16px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 18 }}>{sig.icon}</span>
-          <div>
-            <div style={{ fontSize: 13, color: "#f0f0f5", fontWeight: 600 }}>{sig.name}</div>
-            <div style={{ fontSize: 9, color: sig.color, letterSpacing: 1.5, textTransform: "uppercase" }}>{sig.type}</div>
-          </div>
-        </div>
-        <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 10 }}>{sig.what}</div>
-        <div style={{ padding: "10px 12px", background: "#08090D", borderRadius: 5, border: `1px solid ${sig.color}25` }}>
-          <div style={{ fontSize: 9, color: "#eab308", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4, fontWeight: 600 }}>Concrete example</div>
-          <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.7 }}>{sig.example}</div>
-        </div>
-      </div>
-      <div style={{
-        marginTop: 12, padding: "10px 12px",
-        background: "#22c55e18",
-        borderRadius: 6,
-        border: "1px solid #22c55e30",
-      }}>
-        <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 4, fontWeight: 600 }}>
-          One brain, not N rate limiters
-        </div>
-        <div style={{ fontSize: 11, color: "#c0c0cc", lineHeight: 1.7 }}>
-          Before BYOS, each signal had its own rate limiter making independent decisions — a commit-lag limiter might throttle while the concurrency controller tries to let through (split-brain). With BYOS, all signals feed one PID loop. The controller sees the full picture and makes one coherent decision.
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function UberLoadManagement() {
-  const [section, setSection] = useState("evolution");
-  const [expanded, setExpanded] = useState(null);
-
-  return (
-    <div style={{
-      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-      background: "#08090D",
-      color: "#C8CDD8",
-      minHeight: "100vh",
-      padding: "20px 16px",
-      boxSizing: "border-box",
-    }}>
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, letterSpacing: 4, color: "#f97316", marginBottom: 6, textTransform: "uppercase" }}>
-            Uber · Distributed Databases
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f0f0f5", margin: 0, lineHeight: 1.3 }}>
-            From Static Rate Limiting to Intelligent Load Management
-          </h1>
-          <p style={{ fontSize: 12, color: "#888", marginTop: 6, lineHeight: 1.6 }}>
-            Three-phase evolution: quota-based rate limiting failed at the routing layer, CoDel stabilized but lacked nuance, and Cinnamon brings priority-aware shedding with PID-controlled dynamic thresholds.
-          </p>
-        </div>
-
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
-          {sections.map((s) => (
-            <button key={s.id} onClick={() => setSection(s.id)} style={{
-              padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
-              border: `1px solid ${section === s.id ? "#f97316" : "#2a2a3a"}`,
-              borderRadius: 6,
-              background: section === s.id ? "#f9731618" : "transparent",
-              color: section === s.id ? "#f97316" : "#666",
-              cursor: "pointer",
-            }}>
-              {s.label}
+          <div style={{ ...S.label, marginTop: 14 }}>SCENARIO</div>
+          {SCENARIOS.map((sc) => (
+            <button key={sc.id} style={S.btn(scenario === sc.id, false)} onClick={() => pickScenario(sc.id)}>
+              {sc.label}
+              <div style={{ color: "#6b7080", fontSize: 10 }}>{sc.hint}</div>
             </button>
           ))}
+          <button style={{ ...S.btn(false, false), marginTop: 14 }} onClick={resetWorld}>↺ RESET RUN · t = {W.t.toFixed(1)}s</button>
         </div>
 
-        {section === "evolution" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              Three phases from naive rate limiting to intelligent priority-aware load management. Click each phase to expand.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {phases.map((p) => (
-                <div key={p.id}>
-                  <div
-                    onClick={() => setExpanded(expanded === p.id ? null : p.id)}
-                    style={{
-                      padding: "12px 14px",
-                      background: expanded === p.id ? "#111118" : "#0c0d13",
-                      border: `1px solid ${expanded === p.id ? p.color + "60" : "#2a2a3a"}`,
-                      borderRadius: expanded === p.id ? "6px 6px 0 0" : 6,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <span style={{ fontSize: 14, color: p.color }}>{p.icon}</span>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
-                            <span style={{ fontSize: 9, color: p.color, letterSpacing: 1, textTransform: "uppercase" }}>{p.label}</span>
-                            <span style={{
-                              fontSize: 8, padding: "1px 5px", background: "#1a1a2a",
-                              border: "1px solid #2a2a3a", borderRadius: 2, color: "#999",
-                            }}>{p.where}</span>
-                          </div>
-                          <span style={{ fontSize: 12.5, color: "#f0f0f5", fontWeight: 600 }}>{p.title}</span>
-                        </div>
-                      </div>
-                      <span style={{
-                        fontSize: 9, padding: "3px 8px",
-                        background: `${p.verdictColor}20`, border: `1px solid ${p.verdictColor}40`,
-                        borderRadius: 3, color: p.verdictColor,
-                        letterSpacing: 1.5, textTransform: "uppercase",
-                      }}>{p.verdict}</span>
-                    </div>
-                  </div>
-                  {expanded === p.id && (
-                    <div style={{
-                      padding: "12px 14px", background: "#111118",
-                      border: `1px solid ${p.color}60`, borderTop: "none",
-                      borderRadius: "0 0 6px 6px",
-                    }}>
-                      <p style={{ fontSize: 11.5, color: "#c0c0cc", margin: "0 0 10px 0", lineHeight: 1.6 }}>{p.desc}</p>
-                      {p.problems.length > 0 && (
-                        <div style={{ marginBottom: 10 }}>
-                          <div style={{ fontSize: 9, color: "#ef4444", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5, fontWeight: 600 }}>Why it wasn't enough</div>
-                          {p.problems.map((prob, i) => (
-                            <div key={i} style={{ fontSize: 11, color: "#c0c0cc", padding: "2px 0", lineHeight: 1.5 }}>
-                              <span style={{ color: "#ef4444", marginRight: 5 }}>✕</span>{prob}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <div style={{ padding: "8px 12px", background: `${p.color}10`, borderRadius: 5, borderLeft: `3px solid ${p.color}` }}>
-                        <span style={{ fontSize: 9, color: p.color, letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>Key insight: </span>
-                        <span style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.6 }}>{p.insight}</span>
-                      </div>
-                    </div>
-                  )}
+        {/* right: verdict + node */}
+        <div style={{ flex: "2 1 400px", minWidth: 300 }}>
+          <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${sevColor}`, background: `${sevColor}14`, marginBottom: 12 }}>
+            <div style={{ color: sevColor, fontWeight: 700 }}>{v.code}</div>
+            <div style={{ color: "#c8cdd8", marginTop: 6, fontSize: 11.5, lineHeight: 1.6 }}>{v.text}</div>
+          </div>
+
+          <div style={S.panel}>
+            <div style={S.label}>{PHASES.find((p) => p.id === phase).caption}</div>
+
+            {/* offered vs capacity */}
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>
+                <span>OFFERED {Math.round(offeredTotal)} rps {scenario === "retry" ? "+ retries" : ""}</span>
+                <span>capacity {CAPACITY} rps</span>
+              </div>
+              <TierBar values={offered} denom={Math.max(offeredTotal, CAPACITY) * 1.15} />
+            </div>
+
+            {/* node state */}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+              <div style={{ flex: "1 1 130px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>NODE P99</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: latMs > 900 ? RED : latMs > 200 ? AMBER : GREEN }}>
+                  {latMs >= 1000 ? (latMs / 1000).toFixed(1) + "s" : Math.round(latMs) + "ms"}
                 </div>
-              ))}
-            </div>
-            <div style={{ marginTop: 18 }}>
-              <div style={{ fontSize: 10, color: "#22c55e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>Results (Cinnamon vs CoDel)</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {[
-                  { value: "+80%", unit: "throughput", label: "under overload", color: "#22c55e" },
-                  { value: "-70%", unit: "P99 latency", label: "1.0s vs 3.1s", color: "#3b82f6" },
-                  { value: "-93%", unit: "goroutines", label: "10K vs 150K", color: "#a78bfa" },
-                  { value: "-60%", unit: "heap", label: "1GB vs 5-6GB", color: "#f97316" },
-                ].map((m) => (
-                  <div key={m.unit} style={{
-                    flex: 1, minWidth: 110, textAlign: "center", padding: "8px 6px",
-                    background: `${m.color}10`, borderRadius: 5, border: `1px solid ${m.color}20`,
-                  }}>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: m.color }}>{m.value}</div>
-                    <div style={{ fontSize: 9, color: m.color, opacity: 0.8 }}>{m.unit}</div>
-                    <div style={{ fontSize: 9, color: "#888", marginTop: 3 }}>{m.label}</div>
+              </div>
+              <div style={{ flex: "1 1 130px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>T1 AVAILABILITY</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: t1Avail > 98 ? GREEN : t1Avail > 85 ? AMBER : RED }}>{t1Avail}%</div>
+              </div>
+              {scenario === "lag" && (
+                <div style={{ flex: "1 1 130px", background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 9, letterSpacing: 1.5, color: "#6b7080" }}>COMMIT INDEX LAG</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: lagTrend > 0.01 ? RED : W.lag > 0.5 ? AMBER : GREEN }}>
+                    {lagS}s {lagTrend > 0.01 ? "▲" : lagTrend < -0.005 ? "▼" : ""}
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* the drop budget — cumulative shed composition */}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>
+                <span>THE DROP BUDGET — WHO GOT SHED THIS RUN</span>
+                <span>{Math.round(droppedTotal)} requests</span>
+              </div>
+              {droppedTotal > 1 ? (
+                <>
+                  <TierBar values={W.dropped} denom={droppedTotal} height={14} />
+                  <div style={{ display: "flex", gap: 12, marginTop: 6, flexWrap: "wrap" }}>
+                    {["t1", "t3", "t5"].map((k) => (
+                      <span key={k} style={{ fontSize: 10, color: TIER_META[k].color }}>
+                        ■ {TIER_META[k].label}: {Math.round(W.dropped[k])} dropped
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 10.5, color: "#6b7080" }}>nothing shed yet</div>
+              )}
+            </div>
+
+            {/* shed trace: hammer vs dimmer */}
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>SHED TRACE (last 12s) — the hammer sheds in bursts; the dimmer sheds a steady trickle</div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 36, background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 6px" }}>
+                {W.shedHist.map((h, i) => (
+                  <div key={i} style={{ flex: 1, height: `${Math.min(100, (h / maxShed) * 100)}%`, background: h > 0.5 ? ACCENT : "#1a1b24", borderRadius: 1 }} />
                 ))}
               </div>
             </div>
           </div>
-        )}
-
-        {section === "codel" && <CoDelDeepDive />}
-
-        {section === "cinnamon" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-              Cinnamon adds priority tiers (shed lowest first) and PID-controlled dynamic thresholds.
-            </p>
-            <div style={{
-              background: "#111118",
-              border: "1px solid #f9731640",
-              borderRadius: 8,
-              padding: "12px 14px",
-              marginBottom: 14,
-            }}>
-              <div style={{ fontSize: 10, color: "#f97316", letterSpacing: 2, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
-                Priority tiers — shed lowest first
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {tiers.map((t) => (
-                  <div key={t.tier} style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "6px 10px", borderRadius: 4,
-                    background: `${t.color}10`, border: `1px solid ${t.color}20`,
-                  }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 800, color: t.color, minWidth: 36, textTransform: "uppercase" }}>{t.tier}</span>
-                    <span style={{ fontSize: 11, color: "#c0c0cc", flex: 1 }}>{t.desc}</span>
-                    <span style={{ fontSize: 9.5, color: t.color, fontStyle: "italic", textAlign: "right", minWidth: 110 }}>{t.shed}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 6, textAlign: "center", fontSize: 9.5, color: "#666", letterSpacing: 1 }}>
-                ↑ PROTECTED&nbsp;&nbsp;│&nbsp;&nbsp;SHED FIRST ↓
-              </div>
-            </div>
-            <CinnamonView />
-          </div>
-        )}
-
-        {section === "pid" && <PidSim />}
-        {section === "byos" && <ByosView />}
+        </div>
       </div>
+
+      <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
+        Rates, quotas, tier mix (three tiers shown of six), PID gains, and the follower apply rate are illustrative. The sourced mechanisms: capacity-unit quotas with usage in central Redis and an imprecise cost model (a scan returning one row meters like a point read); CoDel shedding on queue wait time with adaptive LIFO, plus Scorecard's per-tenant concurrency caps and node-local regulators (write bytes, hot partition keys, memory, goroutines — named here, not simulated); Cinnamon's t0–t5 tiers shedding lowest-first, P90-adaptive queue timeouts, an Auto Tuner on inflight limits, and PID control — the post's hammer-vs-dimmer contrast; BYOS folding distributed signals like follower commit index lag into one admission loop, replacing external token-bucket limiters that split-brained. Measured results: +80% throughput under overload, P99 3.1s→1.0s, ~93% fewer goroutines, ~60% lower heap.
+        {" "}
+        <a href="https://behindscale.com/articles/uber-intelligent-load-management" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+      </div>
+    </div>
+  );
+}
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#f97316", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "10px 0 0", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
+  return (
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>At tens of millions of requests per second, overload is routine and self-amplifying — timeouts feed retries, and one noisy tenant degrades every neighbor. Static quotas at the stateless layer could not see storage health, and shedding that treats all traffic equally spends the drop budget on rides and payments to protect batch jobs.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Move the decision into the storage engine and give it judgment: Cinnamon sheds by priority tier (t0-t5) with a PID controller walking the rejection threshold against measured latency, and any overload signal can plug into the same loop.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Pick a failure, then walk it through all three generations. Watch the drop budget — who each generation sheds — the shed trace turn from hammer to dimmer, and the one failure only BYOS can see.</div>
     </div>
   );
 }

@@ -144,10 +144,17 @@ function RetryAnatomy() {
   const [scenarioIdx, setScenarioIdx] = useState(2);
   const [keyed, setKeyed] = useState(false);
   const [step, setStep] = useState(0);
+  const [outcomes, setOutcomes] = useState({}); // `${scenario.id}:${k|n}` -> good
 
   const scenario = SCENARIOS[scenarioIdx];
   const run = keyed ? scenario.withKey : scenario.without;
   const done = step >= run.events.length;
+  const cellKey = scenario.id + (keyed ? ":k" : ":n");
+  if (done && !(cellKey in outcomes)) {
+    // record synchronously-derivable outcome; safe: guarded, converges in one render
+    setOutcomes((prev) => (cellKey in prev ? prev : { ...prev, [cellKey]: run.verdict.good }));
+  }
+  const allSix = SCENARIOS.every((sc) => (sc.id + ":n") in outcomes && (sc.id + ":k") in outcomes);
   const visible = run.events.slice(0, Math.min(step + 1, run.events.length));
   const currentKeys = keyed
     ? (visible.length ? visible[visible.length - 1].keys : "— empty —")
@@ -169,8 +176,36 @@ function RetryAnatomy() {
         <Pill active={keyed} onClick={() => mode(true)}>Idempotency-Key</Pill>
       </div>
 
-      <div style={{ fontSize: 11, color: MUTED, marginBottom: 12 }}>
+      <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>
         {scenario.title} — {scenario.sub}. Step through the attempt, then flip the key toggle and run the same crash again.
+      </div>
+
+      {/* outcome scoreboard: the 3x2 thesis, filled in by the reader's own runs */}
+      <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>
+        <div style={{ fontSize: 9, letterSpacing: 2, color: MUTED, marginBottom: 8 }}>YOUR RUNS — THE MONEY'S PERSPECTIVE</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {SCENARIOS.map((sc) => (
+            <div key={sc.id} style={{ flex: "1 1 150px", minWidth: 150 }}>
+              <div style={{ fontSize: 10, color: sc.id === scenario.id ? TEXT : MUTED, marginBottom: 4 }}>{sc.title}</div>
+              {[["n", "no key"], ["k", "keyed"]].map(([m, lbl]) => {
+                const k = sc.id + ":" + m;
+                const has = k in outcomes;
+                const isHere = sc.id === scenario.id && ((m === "k") === keyed);
+                return (
+                  <div key={m} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 11, color: has ? (outcomes[k] ? OK : BAD) : MUTED, opacity: has || isHere ? 1 : 0.55 }}>
+                    <span style={{ minWidth: 14 }}>{has ? (outcomes[k] ? "✓" : "✗") : "·"}</span>
+                    <span>{lbl}{has ? (outcomes[k] ? " — charged once" : " — money at risk") : ""}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        {allSix && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${BORDER}`, fontSize: 11, lineHeight: 1.6, color: TEXT }}>
+            All six run. Without a key, the only safe cell is the one where the failure was unambiguous — nothing reached the server. The other two force a guess with money on both sides of it. With a key, all three are the same cell: charged once.
+          </div>
+        )}
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "flex-start" }}>
@@ -357,6 +392,26 @@ function ThunderingHerd() {
   );
 }
 
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#6366F1", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "0 0 14px", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
+  return (
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Two of the three ways a network call can fail leave the client unable to tell whether the operation happened. For a payments API both guesses are catastrophic: retry a charge that actually succeeded and you double-charge the customer; abandon one that actually failed and you drop revenue. Two computers passing messages already qualify — there is no scale below which the ambiguity disappears.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Make retries safe instead of rare: idempotent endpoint design where HTTP semantics allow it, client-supplied idempotency keys where a charge must happen exactly once, and exponential backoff with jitter so a recovering fleet of clients does not become the next outage.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Crash the same charge at all three points — with and without an Idempotency-Key — and step through what the server remembers. Then open the thundering-herd view and watch what jitter does to synchronized retries.</div>
+    </div>
+  );
+}
+
 export default function StripeIdempotency() {
   const [tab, setTab] = useState("anatomy");
   return (
@@ -379,6 +434,8 @@ export default function StripeIdempotency() {
           </p>
         </div>
 
+        <ContextBlock />
+
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <Pill active={tab === "anatomy"} onClick={() => setTab("anatomy")}>① anatomy of a retry</Pill>
           <Pill active={tab === "herd"} onClick={() => setTab("herd")}>② thundering herd</Pill>
@@ -388,7 +445,8 @@ export default function StripeIdempotency() {
 
         <div style={{ fontSize: 9, color: "#555", marginTop: 20, lineHeight: 1.6, borderTop: `1px solid ${BORDER}`, paddingTop: 10 }}>
           All mechanics from the source post. Mid-operation recovery is shown as the ACID-rollback case
-          the post describes and is, in the post's own words, heavily implementation-dependent.
+          the post describes and is, in the post's own words, heavily implementation-dependent.{" "}
+          <a href="https://behindscale.com/articles/stripe-idempotency" target="_blank" rel="noopener noreferrer" style={{ color: "#6366F1", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
         </div>
       </div>
     </div>

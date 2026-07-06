@@ -64,6 +64,7 @@ const deadmanChain = [
 function FailureSim() {
   const [arch, setArch] = useState("before");
   const [failure, setFailure] = useState("none");
+  const [visited, setVisited] = useState({}); // `${arch}:${failureId}` -> paged boolean
 
   const FAILURES = [
     { id: "none", label: "Healthy" },
@@ -161,6 +162,12 @@ function FailureSim() {
   };
 
   const state = MATRIX[arch][failure];
+  const cellKey = arch + ":" + failure;
+  if (failure !== "none" && !(cellKey in visited)) {
+    setVisited((prev) => (cellKey in prev ? prev : { ...prev, [cellKey]: state.paged }));
+  }
+  const FAILS = FAILURES.filter((f) => f.id !== "none");
+  const allSix = FAILS.every((f) => ("before:" + f.id) in visited && ("after:" + f.id) in visited);
   const tone = (s) => (s === "ok" ? "#22c55e" : s === "degraded" ? "#eab308" : "#ef4444");
   const word = (s) => (s === "ok" ? "OK" : s === "degraded" ? "DEGRADED" : "DARK");
 
@@ -170,6 +177,33 @@ function FailureSim() {
         Break the same component in both architectures and watch who gets paged. The whole redesign is
         the difference between the two columns of outcomes.
       </p>
+
+      {/* who-gets-paged scoreboard — fills in as you explore the six cells */}
+      <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>
+        <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 8 }}>YOUR RUNS — WHO GETS PAGED</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {FAILS.map((f) => (
+            <div key={f.id} style={{ flex: "1 1 150px", minWidth: 150 }}>
+              <div style={{ fontSize: 10, color: f.id === failure ? "#f0f0f5" : "#666", marginBottom: 4 }}>{f.label.replace("💥 ", "")}</div>
+              {[["before", "before"], ["after", "after"]].map(([a, lbl]) => {
+                const k = a + ":" + f.id;
+                const has = k in visited;
+                return (
+                  <div key={a} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 11, color: has ? (visited[k] ? "#22c55e" : "#ef4444") : "#666", opacity: has ? 1 : 0.55 }}>
+                    <span style={{ minWidth: 16 }}>{has ? (visited[k] ? "🚨" : "🔇") : "·"}</span>
+                    <span>{lbl}{has ? (visited[k] ? " — paged" : " — silent") : ""}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        {allSix && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #2a2a3a", fontSize: 11, lineHeight: 1.6, color: "#c0c0cc" }}>
+            All six run. Before: zero pages from three failures — every alarm depended on the thing that failed, including the alarm about the monitoring itself. After: three pages from three failures — the last one raised not by a signal but by the absence of one.
+          </div>
+        )}
+      </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
         {[["before", "Before · shared everything"], ["after", "After · isolated"]].map(([id, label]) => (
@@ -253,6 +287,26 @@ function FailureSim() {
   );
 }
 
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: "#06b6d4", letterSpacing: 1.2 };
+  if (!open) return (
+    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "0 0 14px", display: "block" }}>SHOW CONTEXT ▾</button>
+  );
+  return (
+    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Airbnb's monitoring ran on the same Kubernetes clusters and Istio mesh it existed to observe — so a failure in the foundation silenced the very alerts that should have reported it. And telemetry runs orders of magnitude larger than business traffic, on a shared mesh that could not tell their priorities apart.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Never let the safety mechanism depend on the thing it protects: dedicated-but-managed compute for the observability stack, a custom Envoy network path outside the shared mesh, and a Dead Man's Switch that alarms on the absence of expected health signals — because monitoring itself can fail.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Break each layer — shared K8s, the Istio mesh, the observability stack itself — in the old architecture and then the new one, and see who gets paged.</div>
+    </div>
+  );
+}
+
 export default function AirbnbMonitoring() {
   const [section, setSection] = useState("problem");
   const [selectedCompute, setSelectedCompute] = useState(null);
@@ -280,21 +334,7 @@ export default function AirbnbMonitoring() {
           </p>
         </div>
 
-        <div style={{
-          background: "#111118",
-          border: "1px solid #2a2a3a",
-          borderRadius: 8,
-          padding: "14px 16px",
-          marginBottom: 18,
-          borderLeft: "3px solid #06b6d4",
-        }}>
-          <div style={{ fontSize: 10, color: "#06b6d4", letterSpacing: 2, marginBottom: 6, textTransform: "uppercase" }}>
-            The Key Insight
-          </div>
-          <p style={{ fontSize: 12, color: "#c0c0cc", margin: 0, lineHeight: 1.7 }}>
-            Never let your safety mechanism depend on the thing it's protecting. Monitoring that runs on the infrastructure it monitors goes dark at precisely the moment it's needed most.
-          </p>
-        </div>
+        <ContextBlock />
 
         <div style={{ display: "flex", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
           {sections.map((s) => (
@@ -578,6 +618,10 @@ export default function AirbnbMonitoring() {
             </div>
           </div>
         )}
+
+        <div style={{ fontSize: 9, color: "#555", marginTop: 20, lineHeight: 1.6, borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
+          <a href="https://behindscale.com/articles/airbnb-monitoring-reliably-at-scale" target="_blank" rel="noopener noreferrer" style={{ color: "#06b6d4", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+        </div>
       </div>
     </div>
   );
