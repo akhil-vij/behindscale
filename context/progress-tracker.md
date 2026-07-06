@@ -98,6 +98,36 @@ Update this file after every meaningful implementation change.
   the new article. The reassessment window from 2026-06-04
   still applies.
 
+- **Editorial batch in flight (2026-07-05, pending commit —
+  the largest content batch since the quality sprint).**
+  Authored in chat sessions with Fable; files staged for the
+  Claude Code agent. Contents: **(a) two new articles** —
+  Shopify resilient payments ("Ten Bounds on Failure",
+  cruxTag reuses `ambiguous-failure-under-retry`, first
+  two-company cruxTag; new `circuit-breaker` pattern) and
+  Figma Postgres sharding ("Sharding Postgres Without
+  Leaving Postgres", new cruxTag
+  `single-table-scaling-ceiling`, recurs
+  `application-layer-sharding` with Discord — slug verified
+  against the repo; new `logical-physical-migration-split`
+  pattern) — both with built, compile-verified,
+  behaviorally-tested artifacts (Shopify "The saturation
+  knee" sim; Figma "One-way doors" stage machine).
+  **(b) crux/cruxTag schema adoption** — fields added to the
+  content contract (see architecture.md), backfilled across
+  all six existing articles with owner-approved cruxes.
+  Taxonomy at 8 articles / 6 tags, two of them two-company
+  (Stripe↔Shopify, Uber↔Netflix). **(c) context-block idiom**
+  — all 8 artifacts now carry the standalone-visitor context
+  block (PROBLEM/MOVE/TRY) + article backlink; the Airbnb and
+  Discord "Key Insight" callouts were absorbed into their
+  blocks. All 8 compile under repo esbuild flags; per-artifact
+  jsdom suites pass (Shopify 14+matrix, Figma 44, six-upgrade
+  69 assertions). Website-side work the batch requires: THE
+  CRUX callout on the article page, validator support for the
+  two new fields, feeds.json entries for Shopify Engineering
+  and Figma Blog.
+
 ## Current Operating Mode
 
 Manual editorial authoring. Akhil reads engineering blogs, drafts
@@ -109,8 +139,12 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Current Goal
 
-- Stand up the repository skeleton and the shared content-contract types,
-  then a minimal website shell that renders sample content.
+- Land the 2026-07-05 editorial batch (articles #7 Shopify +
+  #8 Figma, crux schema + backfill, context-block idiom across
+  all 8 artifacts), then execute the approved artifact
+  enhancement queue: enhancements Stripe → Skipper → Netflix →
+  Airbnb, then rebuilds Uber → Discord (each with source
+  re-fetch at design time).
 
 ## Completed
 
@@ -1525,7 +1559,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- None — Units 9 + 10 closed and prod-verified; Unit 11
+- **2026-07-05 editorial batch — staged, awaiting owner QA +
+  Claude Code agent handoff.** See Current Phase for contents.
+  Gating items before commit: owner phone-viewport QA of the
+  Shopify + Figma artifacts (and spot-check of the six patched
+  ones); feeds.json entries (Shopify Engineering, Figma Blog);
+  validator + article-page support for crux/cruxTag (design
+  locked in architecture.md). Commit-ordering note: article
+  JSONs declare artifact paths, so articles and artifact
+  bundles land together per slug; `addedAt` set at prod-verify
+  per convention.
+- **Live-site staleness — needs verification/redeploy.** A
+  2026-07-05 audit found article routes and `/patterns`
+  serving pre-sprint content (Stripe atomic-phases version,
+  retired PID/BYOS patterns listed) while the home page showed
+  post-sprint content. Could be fetch-cache, could be Vercel
+  serving stale per-route SSG files. Hard-refresh check, then
+  redeploy if it reproduces.
+- Previously: Units 9 + 10 closed and prod-verified; Unit 11
   quality sprint complete across 2026-06-12 and 2026-06-13
   (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord);
   article #6 (Netflix prioritized load shedding) published
@@ -1581,7 +1632,28 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Next Up
 
-1. **Next Phase 6 publication.** Owner's article choice from the
+1. **Land the 2026-07-05 editorial batch** (see In Progress).
+2. **Artifact enhancement queue (owner-approved order).**
+   Enhancements keeping each artifact's core: Stripe (verdict
+   framing on crash scenarios — its thundering-herd tab
+   already covers backoff/jitter), Skipper (promote ReplaySim
+   to front, verdict line on re-executed vs skipped), Netflix
+   (verdict framing + sourced outcome figures on the
+   injection view), Airbnb (make Break-the-Stack the
+   centerpiece, fold tabs into injectable failures). Then
+   rebuilds around a central verdict-driven sim: Uber (phase
+   selector quota/CoDel/Cinnamon over one overload scenario —
+   pairs with Netflix as the first artifact-level divergence),
+   Discord (routing/fan-out sim in the Figma-router style).
+   Source posts re-fetched at design time per rebuild.
+3. **Source-verification errata (carried):** live Airbnb page
+   "four overlapping circular dependencies" phrasing; live
+   Skipper "10,000 workflows per second on DynamoDB" vs
+   MySQL/UDS state store; Discord four-vs-five failure-mode
+   count (article intro says four, lists five, closes with
+   "all five"; artifact tab says "The Four Cracks") — verify
+   against sources during the respective enhancement/rebuild.
+4. **Next Phase 6 publication.** Owner's article choice from the
    remaining candidate list (Slack shared channels, Netflix
    active-active, Cloudflare Prometheus, Meta FOQS, GitHub
    sharding, DoorDash internal tools, LinkedIn Brooklin), or any

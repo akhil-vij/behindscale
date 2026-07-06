@@ -167,9 +167,19 @@ flash, no race.
 **Section order on every article page** (the reading arc):
 
 ```
-header → pattern chips (wayfinding) → summary → artifact teaser
-→ Problem → Solution → [ARTIFACT EMBED] → Tradeoffs → Patterns (full)
+header → pattern chips (wayfinding) → summary → THE CRUX
+→ artifact teaser → Problem → Solution → [ARTIFACT EMBED]
+→ Tradeoffs → Patterns (full)
 ```
+
+> **THE CRUX callout** (added to the arc 2026-07-05, pending its
+> implementing commit): a short callout in the article's accent
+> rendering `article.crux` — the named bottleneck — immediately
+> after the summary. Placement rationale: the crux is the
+> is-this-my-problem scan, so it belongs before the reader commits
+> to the Problem section; and the artifact context block's
+> PROBLEM line is this same crux compressed, so reader and
+> cold-visitor entry points stay in sync by construction.
 
 The arc is **understand-problem → understand-solution → interact →
 read tradeoffs with hands-on intuition**. Tradeoffs land harder
@@ -369,6 +379,25 @@ Every per-article summary JSON in `content/articles/` conforms to the
 - `source` — required `Source` block, as documented above.
 - `summary` — required string. Short summary surfaced on article cards
   and used as the page lead on the article page.
+- `crux` — required string (Taste Doc v2 §3.5; schema'd 2026-07-05,
+  backfilled across all pre-existing articles in the same batch that
+  introduced it). Two to four sentences naming the article's
+  *bottleneck* — the thing that made the problem hard — in
+  near-source language. Never the topic, never the solution. Rendered
+  as a "THE CRUX" callout between `summary` and the artifact teaser
+  in the reading arc (see Article Reading Arc). Validator: missing
+  `crux` is an **error** — every article in the library carries one.
+- `cruxTag` — required string, lowercase-kebab-case. The bottleneck
+  *class* the crux belongs to (e.g. `ambiguous-failure-under-retry`,
+  `priority-blind-load-shedding`). This is the library's second
+  taxonomy axis: patterns name *solutions*, cruxTags name *problems*.
+  Reuse across articles is the point — a tag shared by two companies
+  is the taxonomy demonstrating its thesis — so uniqueness is
+  deliberately NOT enforced. There are no cruxTag definition files
+  yet; recurrence is derived by grouping articles on equal tags. A
+  browsable `/bottlenecks` surface is deferred work (see
+  progress-tracker.md). Validator: present + normalized kebab-case
+  is an error-level check; no orphan rule applies.
 - `problem` — required string. What the team was solving — the
   motivating problem the original post describes. Plain
   paragraph-separated text (paragraphs split on blank lines); markdown
@@ -636,6 +665,19 @@ only the pipeline reads them.)
    `postMessage` protocol between artifact and parent (artifact emits
    a request, parent decides whether to honor it) — never by adding
    sandbox flags. The sandbox is the floor; postMessage is the door.
+
+   **Standalone-visitor contract (2026-07-05).** Artifact bundles have
+   shareable standalone URLs and are routinely opened without the
+   article. Every artifact therefore ships two required elements,
+   specified in the Taste Document's artifact contract: (1) a
+   collapsible context block (THE PROBLEM / THE MOVE / TRY), expanded
+   by default, whose PROBLEM line compresses the article's `crux` and
+   whose MOVE/TRY lines describe what *this* artifact actually does —
+   no claims that don't already exist in the article; (2) a footer
+   backlink to the article route (`target="_blank"`, since the same
+   bundle renders inside the sandboxed embed iframe). Both elements
+   are additive UI inside the bundle; they do not change the sandbox,
+   the postMessage protocol, or the compile step.
 3. The pipeline and the website never import each other's **runtime code**.
    They communicate only through the generated files in `content/` and
    `public/artifacts/` (the content contract). Exception: shared schema

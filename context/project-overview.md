@@ -53,7 +53,11 @@ article feed is the *daily reading surface*; the pattern library is the
 - Searchable, filterable index of all studied articles (by company, tag,
   date, pattern).
 - Per-article page: structured summary (reading view) + embedded
-  interactive artifact (exploration view).
+  interactive artifact (exploration view). Every article names its
+  **crux** — the bottleneck that made the problem hard — as a
+  first-class element, tagged into a cross-article bottleneck
+  taxonomy (`cruxTag`) that complements the pattern library:
+  patterns name solutions, cruxes name problems.
 - Each article card and article page surfaces **pattern chips** — the 2–3
   patterns this article embodies. Clicking a chip navigates to the pattern's
   detail page.
@@ -84,6 +88,9 @@ article feed is the *daily reading surface*; the pattern library is the
 
 - Self-contained interactive React visualizations per article.
 - Rendered in isolation so a single broken artifact never breaks the site.
+- Standalone-friendly: every artifact opens with a collapsible
+  context block (the problem, the move, what to try) and links back
+  to its article, so a shared artifact URL teaches on its own.
 
 
 ## Scope
