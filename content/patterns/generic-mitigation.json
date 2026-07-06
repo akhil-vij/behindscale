@@ -1,0 +1,16 @@
+{
+  "slug": "generic-mitigation",
+  "name": "Generic Mitigation",
+  "category": "resilience",
+  "definition": "Build mitigations that can be applied before the root cause is understood: actions that reduce impact for a broad class of failures, are safe to apply experimentally, and are cheap to reverse. A generic mitigation is judged on four properties — it acts fast relative to the availability budget, it introduces no user-visible errors of its own, it can be applied incrementally so recovery can be tested at small percentages, and it does not depend on resources inside the failure domain it mitigates.\n\nThe pattern's premise is epistemic humility during incidents: diagnosis is slow and often wrong under pressure, while a small set of reversible actions — drain the zone, roll back the deploy, fail over the region, disable the feature flag — resolves most incidents without anyone knowing the cause yet. Making those actions safe to try on suspicion converts incident response from a diagnosis race into an experiment loop: apply, observe, keep or revert.",
+  "whenItApplies": [
+    "Failure modes that defeat automatic detection (gray failures, partial network faults) where human judgment must act on ambiguous evidence",
+    "Services with tight availability budgets where mitigation speed matters more than root-cause speed",
+    "Any system where the common mitigations (drain, rollback, failover, flag-off) can be made harmless enough to apply experimentally"
+  ],
+  "tradeoffs": [
+    "Generic means blunt: the mitigation over-scopes by design, evacuating healthy workloads along with sick ones",
+    "Safety properties must be engineered and continuously verified — a drain that causes errors, or depends on the failing domain, silently stops being generic",
+    "Optimizing for recovery time over prevention is a budget allocation: the same failure will happen again, cheaper"
+  ]
+}

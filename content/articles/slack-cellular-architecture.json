@@ -1,0 +1,73 @@
+{
+  "slug": "slack-cellular-architecture",
+  "title": "The Drain Button: Slack's Migration to a Cellular Architecture",
+  "url": "https://slack.engineering/slacks-migration-to-a-cellular-architecture/",
+  "publishedAt": "2023-08-22",
+  "addedAt": "2026-07-06",
+  "source": {
+    "name": "Slack Engineering",
+    "slug": "slack-engineering",
+    "company": "Slack",
+    "url": "https://slack.engineering",
+    "feed": "https://slack.engineering/feed/"
+  },
+  "summary": "On June 30, 2021, a flaky network link in one AWS availability zone degraded Slack for everyone — and the incident review's real question was why a single-AZ failure was user-visible at all. The answer: gray failure. Different components held different views of what was up, a single API request fanned out into hundreds of RPCs that all had to succeed, and strongly consistent Vitess writes pinned each shard to a single primary. Rather than solve automatic detection of gray failures, Slack spent 1.5 years migrating its most critical user-facing services to a cellular architecture: every service present in every AZ but talking only within its AZ, so an AZ becomes a drainable cell. The payoff is a button — powered by Envoy weighted clusters and the Rotor xDS control plane — that removes traffic from a sick AZ in seconds, at 1% granularity, without relying on anything inside the AZ being drained.",
+  "crux": "Slack's frontends were already built to detect and exclude failed backends — and on June 30 that machinery was structurally beaten. In a gray failure, different components hold different views of availability: systems inside the impacted AZ saw their local backends as healthy, systems outside saw the AZ as down, and even clients in the same AZ disagreed depending on which network flows crossed the failed link. With a single API request fanning out into hundreds of RPCs that must all succeed, and strongly consistent datastores requiring a single reachable primary per shard, partial, contradictory failure anywhere became user-visible errors everywhere. Automatic detection cannot converge on a failure the components cannot agree exists.",
+  "cruxTag": "gray-failure-defeats-automatic-detection",
+  "problem": "Slack runs a global edge network, but its core computation lives in multiple availability zones of a single region, us-east-1. AZs are isolated datacenters whose underlying cloud components are blast-radius-limited so they shouldn't fail together — which is supposed to let a multi-AZ service be more available than any one AZ. The June 30, 2021 incident broke that promise: a network link connecting one AZ to several others developed intermittent faults at 11:45am PDT, degrading connections between Slack servers and service for customers until the provider removed the link — then reinstated it after automated checks, and removed it permanently when it failed again that evening.\n\nThe incident review asked the uncomfortable question: why was this visible to users at all? The mechanics compound. A single API request — loading the messages in one channel — may fan out into hundreds of RPCs, each of which must complete for a correct response. Frontends continuously detect and exclude failed backends, but some failures must be recorded before a server can be excluded. And Slack's main datastore, Vitess, offers strongly consistent semantics — enormously useful to application developers, but it means every shard has exactly one primary that must be reachable for writes; if a frontend can't reach it, writes fail until the primary returns or a secondary is promoted.\n\nThe June 30 outage was a gray failure: components held different views of the system's availability. Inside the impacted AZ, local backends looked fine and remote ones looked down; outside, the impacted AZ looked down; even two clients in the same AZ disagreed, depending on whether their flows traversed the failed hardware. As the post puts it, that is a lot of complexity to ask a distributed system to handle on the way to its real job of serving messages and cat GIFs. To the engineers responding, though, the situation was obvious — nearly every graph aggregated by target AZ pointed at the same culprit. If a button existed that told every system 'this AZ is bad; avoid it,' they would have smashed it. So Slack decided to build the button.",
+  "solution": "The design goals for the drain button are exacting. One: remove as much traffic as possible from an AZ within five minutes — Slack's 99.99% SLA allows less than an hour of unavailability per year, so mitigation tools must act fast. Two: drains must not themselves cause user-visible errors, because draining is meant to be a generic mitigation — during an incident an operator should be able to try a drain before the root cause is understood, and undrain if it doesn't help; a mitigation that adds errors can't be used experimentally. Three: drains and undrains must be incremental, down to assigning 1% of traffic to test whether an AZ has truly recovered. Four: the mechanism must not rely on any resource inside the AZ being drained — no SSHing to servers to fail their healthchecks — so it works even when the AZ is completely offline.\n\nThe naive implementation — plumb a drain signal into every RPC client — collapses under Slack's heterogeneity. Services in the user-facing path are written in Hack, Go, Java, and C++, which means four implementations; service discovery spans the Envoy xDS API, the Consul API, and plain DNS, which offers no abstraction for an AZ or a partial drain; and heavily used open-source systems like Vitess would force a choice between maintaining forks and upstreaming changes.\n\nThe strategy Slack settled on is siloing. A siloed service receives traffic only from within its AZ and sends traffic only to servers in its AZ — so each service effectively becomes N virtual services, one per AZ, and the AZ itself becomes the cell. The consequence that makes everything tractable: to remove traffic from every siloed service in an AZ, you only need to stop user requests from entering that AZ. With no new work arriving, the internal services quiesce on their own. Failure of a system in one AZ is contained to that AZ, and traffic routes around it by a decision made at the front door.\n\nSiloing concentrates the entire traffic-shifting problem into one place: the systems routing user queries into the core services at us-east-1. Slack had spent years migrating its edge from HAProxy to Envoy fed by Rotor, its in-house xDS control plane — and the drain button falls out of two stock Envoy features: weighted clusters and dynamic weight assignment via RTDS. Draining an AZ means sending a signal through Rotor instructing edge load balancers to reweight their per-AZ target clusters; at weight zero, Envoy finishes in-flight requests and sends all new ones elsewhere. Propagation through the control plane takes seconds. Drains are graceful — no abandoned queries. Weights give 1% granularity. And the edge load balancers live in other regions entirely, with the control plane regionally replicated, so nothing about draining depends on the sick AZ. The post's bandwidth-by-AZ graph shows the payoff: sharp, near-vertical knees as traffic steps away from one AZ into two others. The migration to get here — siloing Slack's most critical user-facing services — took 1.5 years, with the implementation details of internal-service siloing, the services that can't be siloed, and the operational changes promised for the series' next posts.",
+  "tradeoffs": [
+    "The button's honesty depends on giving up on automation. Slack's frontends already did automatic failure detection, and the post's central admission is that gray failure defeats it — components can't converge on a failure they can't agree exists. Routing the decision through a human is a retreat from self-healing, chosen deliberately: responders could see what the machines couldn't, because humans aggregate evidence across views. The cost is that mitigation now has a human in the loop, with human latency and human pager fatigue; the design goals (five minutes, 1% steps, experiment-safe) exist precisely to make the human's action cheap enough to take on suspicion rather than proof.",
+    "Siloing spends cross-AZ capacity pooling to buy failure containment. When each service talks only within its AZ, the other AZs' healthy backends can no longer absorb a neighbor's load imbalance mid-request-path — capacity is committed per-cell, and each cell must be provisioned to carry its share plus drained traffic from a failed sibling. The pre-cellular architecture got resource-sharing for free and paid in blast radius; the cellular one inverts the trade. That N+1-per-cell headroom is a permanent, quiet cost on every fleet.",
+    "Draining works because it's generic — and generic means blunt. A drain evacuates an entire AZ's traffic regardless of whether the failure touched one service or all of them; it is the post's chosen example of a generic mitigation, usable before the root cause is known. The bluntness is the feature — during a gray failure you cannot trust your ability to scope the problem — but it means every drain over-mitigates, moving healthy workloads along with sick ones, and the organization must be comfortable paying that during every suspicious blip.",
+    "Concentrating the drain at the front door concentrates trust in the edge and its control plane. The whole design routes around per-language, per-discovery-system complexity by making Envoy reweighting the single mechanism — which makes Rotor and the edge load balancers the components that must never lie. The goals acknowledge this: the edge lives in other regions and the control plane is replicated regionally, engineering the drain path's availability to exceed the thing it drains. It is a smaller, better-defended single point of decision, not the absence of one.",
+    "Not everything silos, and consistency is the reason. The post is explicit that strongly consistent stores like Vitess pin each shard's writes to a single primary — a primary that lives in some AZ. A service whose correctness requires reaching that one box cannot pretend the AZ boundary is a wall, which is why the series immediately promises a follow-up on the services that can't be siloed. The cellular boundary is real for stateless request flow and porous for single-writer state — the architecture's honest edge, and the place where the next incident will look different rather than disappear.",
+    "The migration cost 1.5 years against an unglamorous payoff: a mitigation, not a fix. Nothing about cells prevents the next flaky network link; the investment buys the ability to stop caring about it quickly. That is a defensible bet at a 99.99% SLA — less than an hour of downtime a year makes minutes-fast generic mitigation worth more than root-cause automation — but it is a bet that reliability budgets are better spent on recovery time than on prevention, and it took most critical services being restructured to place it."
+  ],
+  "tags": [
+    "availability",
+    "cellular-architecture",
+    "envoy",
+    "aws",
+    "incident-response",
+    "networking"
+  ],
+  "patterns": [
+    {
+      "slug": "cell-architecture",
+      "note": "Slack's cells are availability zones: every service present in every AZ, no service talking across AZ boundaries, so each AZ is an independently drainable unit. The recurrence with Discord — whose cells are small Elasticsearch clusters behind application routing — is the pattern proving its generality: the cell is whatever unit you can afford to lose, sized so that losing it is routine."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "Siloing converts an AZ from a slice of every request's fan-out into a contained failure domain: a failure inside one AZ presents errors only in that AZ's frontends, instead of surfacing in all of them. The June 30 incident is the pattern's negative proof — pre-cellular, one link's gray failure was everyone's outage."
+    },
+    {
+      "slug": "generic-mitigation",
+      "note": "The drain button is the post's textbook instance and it cites the concept by name: a mitigation applicable while the root cause is still unknown, safe to apply experimentally (drain; observe; undrain if unhelpful) because it adds no errors of its own. The four design goals — fast, harmless, incremental, independent of the failing domain — are effectively the pattern's requirements written down."
+    }
+  ],
+  "relatedArticles": [
+    "discord-trillions-message-search"
+  ],
+  "stats": [
+    {
+      "value": "5 minutes",
+      "label": "design goal to remove traffic from an AZ (against a 99.99% SLA)",
+      "placement": "solution"
+    },
+    {
+      "value": "1%",
+      "label": "granularity of incremental drains and undrains",
+      "placement": "solution"
+    },
+    {
+      "value": "1.5 years",
+      "label": "to migrate Slack's most critical user-facing services to cells",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/slack-cellular-architecture/index.html",
+    "teaser": "Inject the June 30 gray failure into both topologies, watch who sees errors — then hit the drain button and step an AZ's weight to zero."
+  }
+}

@@ -42,6 +42,13 @@
     "feed": "https://shopify.engineering/blog.atom"
   },
   {
+    "name": "Slack Engineering",
+    "slug": "slack-engineering",
+    "company": "Slack",
+    "url": "https://slack.engineering",
+    "feed": "https://slack.engineering/feed/"
+  },
+  {
     "name": "Stripe Engineering",
     "slug": "stripe-engineering",
     "company": "Stripe",
