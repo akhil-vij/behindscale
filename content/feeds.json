@@ -21,6 +21,13 @@
     "feed": "https://medium.com/feed/netflix-techblog"
   },
   {
+    "name": "Shopify Engineering",
+    "slug": "shopify-engineering",
+    "company": "Shopify",
+    "url": "https://shopify.engineering/",
+    "feed": "https://shopify.engineering/blog.atom"
+  },
+  {
     "name": "Stripe Engineering",
     "slug": "stripe-engineering",
     "company": "Stripe",

@@ -1,0 +1,18 @@
+{
+  "slug": "circuit-breaker",
+  "name": "Circuit Breaker",
+  "category": "resilience",
+  "definition": "A circuit breaker wraps calls to a dependency and tracks their outcomes. While the dependency is healthy the breaker is closed and calls pass through. When failures cross a threshold — repeated timeouts or errors in a short window — the breaker opens: subsequent calls fail immediately, without attempting the dependency at all. After a cooling period the breaker lets a probe through (half-open); success closes the circuit again, failure re-opens it.\n\nThe pattern exists because timeouts alone are not cheap. A timeout bounds how long one call can wait, but while a dependency is down, every new call still pays the full timeout before failing — occupying threads, connections, and queue slots at exactly the moment the system can least afford it. Outages tend to persist rather than flicker; a breaker converts that persistence into instant, inexpensive failure, and by removing traffic it also gives the struggling dependency room to recover. Failing instantly creates the space for a designed fallback — a cached value, a degraded path, a clear error — which is application work the breaker enables but cannot do by itself.\n\nThe load-bearing design decision is the identity of the protected resource. Scope the breaker too coarsely and one sub-dependency's outage trips the circuit for traffic that would have succeeded; scope it too finely and breaker state multiplies, failure detection slows, and tuning becomes its own project. Implementations exist across most ecosystems — Semian in Ruby, Hystrix and Resilience4j on the JVM, Polly in .NET, outlier ejection in Envoy — and they share the same characteristic failure mode: a breaker that is added rather than designed, with thresholds nobody revisits and fallbacks nobody defined.",
+  "whenItApplies": [
+    "Synchronous calls to remote dependencies whose failures arrive in correlated bursts rather than independently",
+    "When waiting for a timeout is more expensive than failing fast — thread pools, connections, or queue slots are being held open",
+    "When a meaningful fallback or clean degraded path exists, or an instant error is genuinely better than a slow one",
+    "In front of dependencies that recover better when traffic is removed"
+  ],
+  "tradeoffs": [
+    "Requires understanding the application's failure modes and designing fallbacks — the breaker only creates the opportunity",
+    "Misconfigured thresholds or scope can waste substantial resources at scale, or trip healthy traffic",
+    "Resource-identifier granularity is a standing design problem: coarse scopes cause collateral tripping, fine scopes multiply tunable state",
+    "Fast failures distort latency metrics unless success and failure are graphed separately"
+  ]
+}
