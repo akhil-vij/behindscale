@@ -566,6 +566,108 @@ slugs when it sees something recurring across articles, but those proposals
 land in `progress-tracker.md` as open items, not as auto-merged
 definitions.
 
+### Bottleneck Taxonomy (crux + cruxTag)
+
+> Locked in the 2026-07-05 editorial batch (shipped
+> 2026-07-06 → 07). See `progress-tracker.md` Architecture
+> Decisions for the full rationale and
+> `docs/behindscale-taste.md` §3.5 for the editorial framing.
+> The field-level schema and validator rules are documented in
+> Content Contract → Article; this subsection captures the
+> design decision itself, so the "why" doesn't have to be
+> reconstructed from field docs.
+
+behindscale exposes **two first-class taxonomy axes across
+articles**: patterns name *solutions*, and cruxTags name
+*problems*. The pattern library existed from the start; the
+cruxTag axis was added in the 2026-07-05 batch after the
+five-article quality sprint and article #6 (Netflix) made
+clear that recurrence-driven publication — the move that
+demonstrates the library's thesis rather than asserting it —
+also applies at the problem layer. Two companies converging
+on the same reusable solution is one signal; two companies
+running into the same reusable *bottleneck* is a distinct,
+equally load-bearing signal.
+
+**Two fields, both required on every Article:**
+
+- `crux` — 2-4 sentences of near-source prose naming the
+  article's bottleneck (never the topic, never the solution).
+  Rendered as the "THE CRUX" callout in the article reading
+  arc (see Article Reading Arc). Also compressed as the
+  PROBLEM line inside every artifact's standalone-visitor
+  context block (see invariant 2, Standalone-Visitor
+  Contract), so the reader's reading arc and the cold
+  visitor's artifact-first arc stay in sync by construction.
+- `cruxTag` — a lowercase-kebab-case slug naming the
+  bottleneck *class* the crux belongs to (e.g.
+  `ambiguous-failure-under-retry`,
+  `priority-blind-load-shedding`). Field pattern:
+  `^[a-z0-9]+(-[a-z0-9]+)*$`. Position in the JSON: between
+  `summary` and `problem`, in that order — the field order
+  mirrors the reading arc's callout position, and predicate
+  checks enforce it as required.
+
+**Three design decisions that shape the axis:**
+
+1. **cruxTag reuse across articles is the point, so
+   uniqueness is deliberately NOT enforced.** A tag shared
+   by two companies is the taxonomy demonstrating its
+   thesis; forcing every tag to be unique per article would
+   defeat the entire purpose. Consequence: the validator's
+   cruxTag check is presence + kebab-case format only —
+   never uniqueness. The first three two-company tags
+   landed day one of the schema (Stripe + Shopify on
+   `ambiguous-failure-under-retry`; Uber + Netflix on
+   `priority-blind-load-shedding`; Skipper + Cadence on
+   `partial-completion-under-crashes`, the first
+   same-crux/opposite-solution pair — same bottleneck, one
+   embedded answer and one central-platform answer).
+2. **There are no cruxTag definition files.** Patterns have
+   `content/patterns/{slug}.json` files carrying authored
+   definitions, `whenItApplies`, `tradeoffs`, category;
+   cruxTags do not, and the validator has no orphan-
+   reference rule. Recurrence is derived by grouping
+   articles on equal `cruxTag` strings — the article JSONs
+   are the taxonomy's single source of truth. Rationale:
+   patterns are the *durable* layer where the library
+   compounds cross-article synthesis; the cruxTag layer is
+   the *problem-discovery* layer where the crux prose (on
+   the article) already carries the full editorial payload.
+   A separate definition file would be redundant with the
+   crux, and any generalization of the class beyond the
+   articles that instantiate it would drift from the source
+   material — exactly the failure mode the fidelity
+   discipline is designed to prevent.
+3. **A browsable `/bottlenecks` surface is deferred.** The
+   taxonomy renders correctly on the article page today
+   (THE CRUX callout) and would benefit from a
+   patterns-index-style browsable page at
+   `/bottlenecks` — grouping articles by cruxTag, showing
+   recurrence counts — once the taxonomy has enough
+   two-company recurrence to be materially interesting for
+   browsing (~5-6 two-company tags is the current
+   threshold). Tracked in `progress-tracker.md` → In
+   Progress. Building it earlier would ship a page with
+   mostly one-article groups, which would misrepresent
+   the taxonomy's payoff.
+
+**Validator (locked):**
+
+- Missing `crux` is an **error** — every article in the
+  library carries one.
+- Missing `cruxTag` or `cruxTag` failing the kebab-case
+  regex is an **error**.
+- There is NO uniqueness check on cruxTag (see decision 1).
+- There is NO orphan-reference check against a definitions
+  folder (see decision 2 — no such folder exists).
+
+Both checks fit the existing `CheckError.severity: 'error'`
+contract — no framework change needed. The value-in-prose
+warning semantics (surface, don't block) stay reserved for
+the stats field, where fuzzy matching is genuinely
+intended.
+
 ## Proposed Pattern Queue
 
 The pipeline's analyze stage (Unit 7+) may identify candidate patterns
