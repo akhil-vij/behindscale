@@ -103,11 +103,14 @@ article feed is the *daily reading surface*; the pattern library is the
 - Reading view (light, editorial) + interactive artifacts (dark, technical).
 - Pattern aggregation across articles.
 - Content sourced **exclusively from official company engineering blogs**
-  (e.g. Uber Engineering, Netflix Tech Blog, Stripe Engineering, Airbnb
-  Engineering, Cloudflare Blog, Meta Engineering). The signal-to-noise
-  ratio of first-party engineering writeups is what makes the library
-  valuable; personal blogs, third-party summaries, and aggregators dilute
-  it and are excluded.
+  (the current allowlist in `content/feeds.json`: Amazon Builders'
+  Library, Airbnb Engineering, Discord Engineering, Figma Blog, The
+  GitHub Blog, Netflix Technology Blog, Shopify Engineering, Slack
+  Engineering, Stripe Engineering, Uber Engineering — twelve articles
+  across those sources as of 2026-07-07). The signal-to-noise ratio
+  of first-party engineering writeups is what makes the library
+  valuable; personal blogs, third-party summaries, and aggregators
+  dilute it and are excluded.
 
 ### Out of Scope (initially)
 

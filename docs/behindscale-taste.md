@@ -214,14 +214,25 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-05, eight articles, six tags — check the
+The ratified taxonomy (2026-07-07, twelve articles, nine tags — check the
 article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
+`partial-completion-under-crashes` (Skipper, Cadence) ·
 `observer-shares-fate-with-observed` (Airbnb) ·
-`partial-completion-under-crashes` (Skipper) ·
 `blast-radius-scales-with-cluster-size` (Discord) ·
-`single-table-scaling-ceiling` (Figma).
+`single-table-scaling-ceiling` (Figma) ·
+`single-cluster-scaling-ceiling` (GitHub — deliberately parallel
+to Figma's tag, sibling ladder step: cluster ceiling → vertical
+partitioning; table ceiling → horizontal sharding) ·
+`gray-failure-defeats-automatic-detection` (Slack) ·
+`retry-amplified-overload` (AWS — deliberately distinct from
+`ambiguous-failure-under-retry`; this is the other retry pathology,
+amplification and correlation).
+Three tags are two-company as of the 2026-07-06 → 07 batch; the
+Skipper↔Cadence pair is the first same-crux/opposite-solution pair
+in the library (embedded-library vs central-platform durable
+execution).
 Earlier drafts of this document used speculative example tags
 (`fan-out-failure-amplification`, `cliff-shedding-and-retry-amplification`);
 those were superseded by the ratified set above — do not reintroduce them.
@@ -410,9 +421,10 @@ the reader feel it.
   with the library's existing accents (Stripe indigo `#6366F1`, Skipper green
   `#22C55E`, Airbnb cyan `#06B6D4`, Uber orange `#F97316`, Discord brand indigo
   `#5865F2`, Netflix red `#E50914`, Shopify lime `#84CC16`, Figma purple
-  `#A259FF`). The accent is for *wayfinding* — tabs, active states, key
-  callouts, the one number that matters. **~80% of the artifact is neutral
-  grayscale.** Bright decorative color is a smell.
+  `#A259FF`, GitHub blue `#58A6FF`, Cadence teal `#2DD4BF`, Slack gold
+  `#ECB22E`, AWS orange `#FF9900`). The accent is for *wayfinding* — tabs,
+  active states, key callouts, the one number that matters. **~80% of the
+  artifact is neutral grayscale.** Bright decorative color is a smell.
 - Semantic color only where it means something: green = healthy/committed/good
   outcome, red = failure/crash/bad outcome, amber = degraded/waiting. Don't
   spend these on decoration.
@@ -448,7 +460,7 @@ dismissal can't persist anyway, which conveniently forces the honest default.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All eight artifacts use nothing but React.
+  hand-roll SVG/divs. All twelve artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**

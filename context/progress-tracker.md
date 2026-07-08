@@ -98,35 +98,46 @@ Update this file after every meaningful implementation change.
   the new article. The reassessment window from 2026-06-04
   still applies.
 
-- **Editorial batch in flight (2026-07-05, pending commit —
-  the largest content batch since the quality sprint).**
-  Authored in chat sessions with Fable; files staged for the
-  Claude Code agent. Contents: **(a) two new articles** —
-  Shopify resilient payments ("Ten Bounds on Failure",
-  cruxTag reuses `ambiguous-failure-under-retry`, first
-  two-company cruxTag; new `circuit-breaker` pattern) and
-  Figma Postgres sharding ("Sharding Postgres Without
-  Leaving Postgres", new cruxTag
-  `single-table-scaling-ceiling`, recurs
-  `application-layer-sharding` with Discord — slug verified
-  against the repo; new `logical-physical-migration-split`
-  pattern) — both with built, compile-verified,
-  behaviorally-tested artifacts (Shopify "The saturation
-  knee" sim; Figma "One-way doors" stage machine).
-  **(b) crux/cruxTag schema adoption** — fields added to the
-  content contract (see architecture.md), backfilled across
-  all six existing articles with owner-approved cruxes.
-  Taxonomy at 8 articles / 6 tags, two of them two-company
-  (Stripe↔Shopify, Uber↔Netflix). **(c) context-block idiom**
-  — all 8 artifacts now carry the standalone-visitor context
-  block (PROBLEM/MOVE/TRY) + article backlink; the Airbnb and
-  Discord "Key Insight" callouts were absorbed into their
-  blocks. All 8 compile under repo esbuild flags; per-artifact
-  jsdom suites pass (Shopify 14+matrix, Figma 44, six-upgrade
-  69 assertions). Website-side work the batch requires: THE
-  CRUX callout on the article page, validator support for the
-  two new fields, feeds.json entries for Shopify Engineering
-  and Figma Blog.
+- **Editorial batch LANDED (2026-07-06 → 07, nine commits,
+  the largest content batch in the project's history).**
+  Authored in chat sessions with Fable across three review
+  bundles (round 1: library upgrade + Shopify + Figma;
+  round 2: GitHub + Uber Cadence; round 3: Slack + AWS
+  Builders' Library), then implemented and shipped by the
+  Claude Code agent in nine commits: a docs commit landing
+  the amended canonical docs + the new `docs/behindscale-
+  taste.md`; a chore commit landing the crux/cruxTag schema
+  + THE CRUX callout + backfill of the six existing article
+  JSONs; six `feat: publish <slug>` commits landing the new
+  articles + patterns + artifacts + feeds entries; one
+  `feat:` commit landing the six updated artifact sources
+  (Stripe/Netflix/Skipper/Airbnb enhanced; Uber/Discord
+  full rebuilds). All 9 commits build clean end-to-end,
+  validator 0 errors, 4 fuzzy-miss warnings (word-vs-digit
+  / unit-suffix, warning-not-error semantics as intended
+  since the Uber-sprint chore); 12/12 artifact bundles ok
+  with the standalone-visitor contract confirmed on every
+  compiled bundle. Library doubled: 6 → 12 articles across
+  12 companies; 15 → 20 pattern definitions (five new:
+  circuit-breaker, logical-physical-migration-split,
+  compile-time-boundary-enforcement, generic-mitigation,
+  retry-budget); 6 → 12 artifacts. New taxonomy axis
+  (crux + cruxTag) live at 9 tags with 3 already
+  two-company (ambiguous-failure-under-retry: Stripe +
+  Shopify; priority-blind-load-shedding: Uber + Netflix;
+  partial-completion-under-crashes: Skipper + Cadence —
+  the first same-crux/opposite-solution pair). Pattern
+  recurrences created this batch: idempotency-keys
+  3-company (Stripe + Shopify + AWS), fault-isolation
+  6-company (+Shopify, +GitHub, +Slack),
+  logical-physical-migration-split 2-company (Figma +
+  GitHub), cell-architecture 2-company (Discord + Slack),
+  retry-with-backoff-and-jitter 2-company (Stripe + AWS),
+  application-layer-sharding 2-company (Discord + Figma),
+  durable-workflows + embedded-vs-centralized-orchestration
+  both two-company both-poles (Skipper + Cadence). Pushed
+  `52efa99..178a591`; Vercel auto-deployed. Owner
+  post-deploy verification pending.
 
 ## Current Operating Mode
 
@@ -139,12 +150,18 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Current Goal
 
-- Land the 2026-07-05 editorial batch (articles #7 Shopify +
-  #8 Figma, crux schema + backfill, context-block idiom across
-  all 8 artifacts), then execute the approved artifact
-  enhancement queue: enhancements Stripe → Skipper → Netflix →
-  Airbnb, then rebuilds Uber → Discord (each with source
-  re-fetch at design time).
+- Post-batch verification and consolidation. The 9-commit
+  batch (articles #7–12; crux schema; standalone-visitor
+  artifact contract; six-artifact enhancement queue) is
+  shipped. Immediate items: owner post-deploy verification
+  of THE CRUX callout on all 12 article routes and phone-
+  viewport QA of the 12 artifacts; a follow-up chore to
+  fix the four residual value-in-prose fuzzy-miss warnings
+  (word-vs-digit / unit-suffix mismatches on GitHub 950,000,
+  Skipper 10,000, Slack 5-minutes, AWS "3"); a small
+  `docs:` commit adding a Deferred-Work entry for the
+  `/bottlenecks` cruxTag surface once the taxonomy has
+  enough two-company recurrence to warrant browsing.
 
 ## Completed
 
@@ -1559,23 +1576,50 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## In Progress
 
-- **2026-07-05 editorial batch — staged, awaiting owner QA +
-  Claude Code agent handoff.** See Current Phase for contents.
-  Gating items before commit: owner phone-viewport QA of the
-  Shopify + Figma artifacts (and spot-check of the six patched
-  ones); feeds.json entries (Shopify Engineering, Figma Blog);
-  validator + article-page support for crux/cruxTag (design
-  locked in architecture.md). Commit-ordering note: article
-  JSONs declare artifact paths, so articles and artifact
-  bundles land together per slug; `addedAt` set at prod-verify
-  per convention.
-- **Live-site staleness — needs verification/redeploy.** A
-  2026-07-05 audit found article routes and `/patterns`
-  serving pre-sprint content (Stripe atomic-phases version,
-  retired PID/BYOS patterns listed) while the home page showed
-  post-sprint content. Could be fetch-cache, could be Vercel
-  serving stale per-route SSG files. Hard-refresh check, then
-  redeploy if it reproduces.
+- **Post-batch verification (2026-07-06 → 07 batch).** Nine
+  commits shipped and Vercel auto-deployed. Owner
+  verification queue:
+  - THE CRUX callout renders between summary and artifact
+    teaser on all 12 article routes (confirmed present in
+    every prerendered HTML at build time; needs a live
+    hard-refresh check across a phone viewport per the
+    convention).
+  - Standalone-visitor artifact contract visible in each
+    of the 12 artifact bundles: THE PROBLEM / THE MOVE /
+    TRY block above the controls (expanded by default,
+    HIDE/SHOW toggle), footer backlink to the article
+    route (`target="_blank"`).
+  - Pattern-detail recurrence pages show the correct
+    company counts: `idempotency-keys` at 3 companies
+    (Stripe + Shopify + AWS), `fault-isolation` at 6,
+    `application-layer-sharding` / `cell-architecture` /
+    `logical-physical-migration-split` / `retry-with-
+    backoff-and-jitter` / `durable-workflows` /
+    `embedded-vs-centralized-orchestration` all at 2.
+  - CruxTag reuse is verifiable by hand-jumping between
+    the three two-company pairs (Stripe↔Shopify,
+    Uber↔Netflix, Skipper↔Cadence) — same cruxTag string
+    on both articles.
+  - The old "live-site staleness" 2026-07-05 audit
+    concern (article routes serving pre-sprint content
+    while the home page showed post-sprint content) is
+    now moot in principle: the Vercel deploy of
+    `52efa99..178a591` is the current serving state.
+    Kept as an item until owner confirms the fresh deploy
+    is what /articles/stripe-idempotency and /patterns
+    actually serve.
+- **Four residual value-in-prose warnings — cosmetic, land
+  as a chore commit.** Fuzzy misses where the stat value
+  and the prose phrase the same figure differently:
+  GitHub `950,000 queries/s` (prose: `950,000 queries
+  per second`), Skipper `10,000 per second` (prose:
+  `10,000 workflows per second` — carried forward from
+  the earlier sprint), Slack `5 minutes` (prose: `five
+  minutes`), AWS `3` (prose: `three tools`). None fail
+  the validator — the warning-not-error semantics were
+  designed for exactly this — and the fixes are one-
+  line each: harmonize the stat string to the prose form
+  in each affected article JSON. Lands anytime.
 - Previously: Units 9 + 10 closed and prod-verified; Unit 11
   quality sprint complete across 2026-06-12 and 2026-06-13
   (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord);
@@ -1583,35 +1627,45 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   2026-06-18 as the first recurrence-driven pick. The
   Unit 10 editorial-backfill follow-up remains closed.
   Every article in the library is source-verified; every
-  artifact has a true interactive surface. Three two-way
-  `relatedArticles` threads now seeded: Stripe<->Uber
-  (overload protection, from the sprint), Discord<->Airbnb
-  (fault isolation, from the sprint), and Uber<->Netflix
-  (load management, from article #6). Two pattern
-  definitions made the jump from one-company to two-company
-  with this article (priority-aware-load-shedding,
-  feedback-controlled-load-management); fault-isolation
-  jumped from two-company to three-company. Next
-  manual-mode publication awaiting article choice from the
-  remaining candidate list (Slack shared channels, Netflix
-  active-active, Cloudflare Prometheus, Meta FOQS, GitHub
-  sharding, DoorDash internal tools, LinkedIn Brooklin --
-  Netflix prioritized load shedding consumed the "Netflix"
-  slot from this list). Two known follow-ups, both small +
-  non-blocking:
+  artifact has a true interactive surface. `relatedArticles`
+  cross-links now form a small graph: Stripe<->Uber, Discord
+  <->Airbnb, Uber<->Netflix (all bidirectional pre-batch),
+  plus one-way links added in the batch (Shopify->Stripe,
+  Figma->Discord, GitHub->Figma, Cadence->Skipper +
+  Cadence->Uber, Slack->Discord, AWS->Stripe + AWS->Shopify).
+  With the batch landed, the cross-link surface is now
+  materially useful — most articles reach at least one
+  neighbor in one hop. Next manual-mode publication awaits
+  owner article choice from the remaining candidate list
+  (Cloudflare Prometheus, Meta FOQS, DoorDash internal
+  tools, LinkedIn Brooklin — the batch consumed the Slack
+  and GitHub slots the list carried); the recurrence-driven
+  selection criterion (weigh cross-cruxTag / cross-pattern
+  recurrence a candidate would unlock alongside its
+  standalone merit) is now the default framing. Three
+  known follow-ups, all small + non-blocking:
   - `public/og-default.png` (1200×630, dark token palette +
     wordmark) — carries over from Unit 9. Unfurlers degrade
     gracefully without it; lands as a chore commit anytime.
-  - `relatedArticles` UI surface. Three cross-company
-    threads now populate the field (Stripe<->Uber,
-    Discord<->Airbnb, Uber<->Netflix); the website still
-    doesn't render a "see also" section. Lands as a small
-    standalone unit when the next authoring cadence
-    touches the article page -- the third populator
-    materially raises the surface's usefulness from a
-    two-callers warrant to a three-callers warrant, with
-    one of the articles (Uber) now linked from both
-    Stripe and Netflix.
+  - **`relatedArticles` UI surface.** The cross-link graph
+    is now populated across most articles; the website
+    still doesn't render a "see also" section. Lands as a
+    small standalone unit when the next authoring cadence
+    touches the article page. The batch's landing raises
+    the surface's usefulness threshold from a
+    three-callers warrant to a graph-with-most-nodes-
+    reachable warrant.
+  - **`/bottlenecks` cruxTag browsable surface** (new,
+    2026-07-06). Now that the taxonomy is 9 tags with 3
+    already two-company, a browsable page grouping
+    articles by cruxTag would let a reader arrive
+    problem-first (as opposed to pattern-first via
+    `/patterns` or source-first via the source filter on
+    `/`). Deferred until either the taxonomy has enough
+    two-company recurrence to be materially interesting
+    for browsing (say 5-6 two-company tags), or the
+    next authoring cadence surfaces a natural moment to
+    build the page.
   - **Prose markdown rendering with hyperlinks.** The Uber
     rework attributes PID-term material to Uber's companion
     Cinnamon and PID posts by name in prose. Hyperlinks
@@ -1619,10 +1673,12 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     `/blog/pid-controller-for-cinnamon/`) are the natural
     rendering; the prose renderer doesn't yet support markdown
     syntax. The Netflix article adds two more prose-URL
-    callers (its 2018 and 2020 predecessor links). Lands
-    with the deferred markdown renderer (was originally
-    scoped under Unit 7+, now decoupled from that
-    sequence).
+    callers (its 2018 and 2020 predecessor links); the
+    GitHub article's problem paragraphs add several more
+    (the Vitess/YouTube reference, the Rails ActiveRecord
+    docs). Lands with the deferred markdown renderer
+    (was originally scoped under Unit 7+, now decoupled
+    from that sequence).
 
 ## Developer Setup
 
@@ -1632,34 +1688,42 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Next Up
 
-1. **Land the 2026-07-05 editorial batch** (see In Progress).
-2. **Artifact enhancement queue (owner-approved order).**
-   Enhancements keeping each artifact's core: Stripe (verdict
-   framing on crash scenarios — its thundering-herd tab
-   already covers backoff/jitter), Skipper (promote ReplaySim
-   to front, verdict line on re-executed vs skipped), Netflix
-   (verdict framing + sourced outcome figures on the
-   injection view), Airbnb (make Break-the-Stack the
-   centerpiece, fold tabs into injectable failures). Then
-   rebuilds around a central verdict-driven sim: Uber (phase
-   selector quota/CoDel/Cinnamon over one overload scenario —
-   pairs with Netflix as the first artifact-level divergence),
-   Discord (routing/fan-out sim in the Figma-router style).
-   Source posts re-fetched at design time per rebuild.
-3. **Source-verification errata (carried):** live Airbnb page
-   "four overlapping circular dependencies" phrasing; live
-   Skipper "10,000 workflows per second on DynamoDB" vs
-   MySQL/UDS state store; Discord four-vs-five failure-mode
-   count (article intro says four, lists five, closes with
-   "all five"; artifact tab says "The Four Cracks") — verify
-   against sources during the respective enhancement/rebuild.
-4. **Next Phase 6 publication.** Owner's article choice from the
-   remaining candidate list (Slack shared channels, Netflix
-   active-active, Cloudflare Prometheus, Meta FOQS, GitHub
-   sharding, DoorDash internal tools, LinkedIn Brooklin), or any
-   newly-surfaced piece. Same shape as 5f:
-   `feat: publish <article-slug>` bundling article + patterns +
-   artifact in one commit.
+1. **Owner post-deploy verification.** Hard-refresh
+   `/articles/*` on prod and confirm THE CRUX callout is
+   the third block on every article route (after header
+   and summary, before the artifact teaser); phone-viewport
+   QA of all 12 artifacts (context block expanded by
+   default, HIDE/SHOW toggle works, footer backlink
+   `target="_blank"` from inside the sandboxed embed);
+   pattern-detail spot-checks that
+   `/patterns/idempotency-keys` shows Stripe + Shopify +
+   AWS and `/patterns/fault-isolation` shows six companies.
+   Closes the "Live-site staleness" carry-over as a side
+   effect (the fresh deploy IS the new serving state).
+2. **Cosmetic warnings chore.** One-liner fixes on four
+   stat entries where the stat string and the prose
+   phrase the same figure with different notation (word
+   vs digit / with vs without unit suffix); see In
+   Progress for the exact list. Optional; the warnings
+   are surfacing intentionally.
+3. **Errata carried from the sprint** — resolve during
+   the next time each article's prose is touched, not
+   as their own commits: Airbnb "four overlapping
+   circular dependencies" (source says "several"), Skipper
+   "10,000 workflows per second on DynamoDB" vs MySQL/UDS
+   state store framing, Discord four-vs-five count (this
+   one landed as part of the batch's Discord update, so
+   the errata is resolved on Discord's side —
+   `updatedAt: 2026-07-05`). Airbnb and Skipper remain.
+4. **Next publication.** Owner's article choice from the
+   remaining candidate list (Cloudflare Prometheus, Meta
+   FOQS, DoorDash internal tools, LinkedIn Brooklin), or
+   any newly-surfaced piece. The recurrence-driven
+   selection criterion applies (weigh the cross-cruxTag
+   or cross-pattern recurrence a candidate would unlock).
+   Same commit shape: `feat: publish <article-slug>`
+   bundling article + patterns + artifact + feeds entry
+   if new.
 
 ## Deferred Work
 
@@ -1743,6 +1807,67 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Architecture Decisions
 
+- **crux + cruxTag taxonomy adopted; standalone-visitor
+  artifact contract locked** (2026-07-06 → 07 editorial
+  batch). Two structural additions to the content contract,
+  landed together across a nine-commit batch that also
+  doubled the library from 6 → 12 articles.
+  - **crux** (required 2-4 sentences of near-source prose
+    naming the article's bottleneck) and **cruxTag**
+    (required lowercase-kebab-case slug naming the
+    bottleneck *class*) sit between `summary` and
+    `problem` on every Article. Rendered as THE CRUX
+    callout on the article page immediately after
+    `summary`. Validator: missing `crux` is an error;
+    missing / non-kebab `cruxTag` is an error; there is
+    NO uniqueness rule on cruxTag (reuse across articles
+    is the entire point) and NO orphan rule (no cruxTag
+    definition files exist — recurrence is derived by
+    grouping articles on equal tags). Framework contract
+    around the article-page arc: the crux is also
+    compressed into every artifact's context-block
+    PROBLEM line, keeping reader and cold-visitor entry
+    points in sync by construction.
+  - **Standalone-visitor artifact contract** — every
+    artifact bundle ships two required elements: (1) a
+    context block above the controls (THE PROBLEM / THE
+    MOVE / TRY, expanded by default, HIDE/SHOW toggle;
+    PROBLEM compresses the article's crux, MOVE names
+    the artifact's answer in the artifact's own
+    toggle/scenario language, TRY states the reading
+    rule the interaction assumes); (2) a footer backlink
+    to `https://behindscale.com/articles/<slug>` with
+    `target="_blank"` so it works inside the sandboxed
+    embed iframe. Compression-never-second-source: the
+    block introduces no claims that don't already exist
+    in the article. Teaser-truth enforced at block
+    level: TRY line changes in the same commit as the
+    interaction it describes. Rationale: artifact
+    bundles have shareable standalone URLs and are
+    routinely opened without the article, so the
+    bundle must be self-contained enough to convert a
+    context-free toy into a self-contained lesson.
+    Locked in the docs commit's `architecture.md`
+    invariant 2 amendment (Standalone-Visitor Contract
+    paragraph) plus the new §6 subsection of the Taste
+    Document.
+  - Nine cruxTags at close, three of them two-company:
+    `ambiguous-failure-under-retry` (Stripe + Shopify),
+    `priority-blind-load-shedding` (Uber + Netflix),
+    `partial-completion-under-crashes` (Skipper +
+    Cadence — the first same-crux/opposite-solution pair).
+    The taxonomy proves itself day one of the schema by
+    construction, without needing the deferred
+    `/bottlenecks` browsable surface.
+  - Small AWS-side authoring fix during land: the AWS
+    article shipped one stat with `placement: "summary"`,
+    a value outside the locked
+    `problem | solution | tradeoffs` enum; moved to
+    `solution` (it's a solution-framing anyway) with a
+    fuzzy-miss warning (`"3"` vs prose `"three tools"`)
+    surfacing but not blocking, per the Uber-sprint chore's
+    warning-not-error semantics. Recorded in the AWS
+    publish commit's message.
 - **Article #6 (Netflix prioritized load shedding) chosen
   on recurrence-driven sourcing grounds** (2026-06-18).
   First publication where the article was picked
