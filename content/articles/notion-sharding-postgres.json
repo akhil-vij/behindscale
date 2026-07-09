@@ -1,0 +1,68 @@
+{
+  "slug": "notion-sharding-postgres",
+  "title": "Before the Wraparound: Sharding Postgres at Notion",
+  "url": "https://www.notion.com/blog/sharding-postgres-at-notion",
+  "publishedAt": "2021-10-06",
+  "addedAt": "2026-07-09",
+  "source": {
+    "name": "Notion Blog",
+    "slug": "notion-blog",
+    "company": "Notion",
+    "url": "https://www.notion.com/blog",
+    "feed": "https://www.notion.com/blog/rss"
+  },
+  "summary": "Notion's Postgres monolith carried five years and four orders of magnitude of growth before the block table's volume began defeating the instance beneath it: VACUUM stalled consistently, and behind it waited transaction-ID wraparound — the Postgres safety mechanism that stops all writes, an existential threat to the product. The answer was application-level sharding chosen over Citus and Vitess for control: 480 logical shards (a number picked for its many factors) across 32 physical databases, partitioned by workspace ID with every table transitively related to block sharded together so transactions never cross hosts. The migration ran the canonical four phases — double-write via an audit log after logical replication couldn't keep up, a three-day backfill on 96 CPUs, sampled verification plus dark reads implemented by different people than the migration, and a five-minute switchover the team's own hindsight says could have been zero.",
+  "crux": "Notion's monolith served five years and four orders of magnitude of growth before the block table's write volume began defeating the instance beneath it: Postgres VACUUM stalled consistently, and behind it waited transaction-ID wraparound — the safety mechanism where Postgres stops processing all writes, an existential threat to the product. The ceiling was soft, not hardware: query performance and upkeep processes degrade well before a table reaches its maximum hardware-bound size, so ever-bigger RDS instances — 'playing Cookie Clicker with the Resize Instance button' — could not buy the way out.",
+  "cruxTag": "single-table-scaling-ceiling",
+  "problem": "Notion's data model revolves around the block — every wiki page, project tracker, and Pokédex is trees of blocks, each a row in one table — and by mid-2020 billions of them had accumulated in a Postgres monolith that had served dutifully through five years and four orders of magnitude of growth. The strain showed the way soft limits always do: engineers on-call woke to database CPU spikes, and simple catalog-only migrations became unsafe and uncertain.\n\nThe inflection point was specific: the Postgres VACUUM process began to stall consistently, preventing the database from reclaiming disk space from dead tuples. Disk can be bought; the real threat behind a stalling vacuum was transaction-ID wraparound — the safety mechanism in which Postgres stops processing writes entirely to avoid clobbering existing data. For a product whose every keystroke is a write, wraparound was existential. The team's own aside names the deeper truth: query performance and upkeep processes often degrade well before a table reaches its maximum hardware-bound size, so vertical scaling — 'playing Cookie Clicker with the RDS Resize Instance button' — was not a viable long-term strategy even with the budget for it.\n\nThe timing carried its own tension. The aughts' blog canon warned loudly against premature sharding — maintenance burden, application-code constraints, architectural path dependence, and (the post's footnote adds) constraining the product model before the business has defined it. Notion internalized those warnings and waited — and the waiting had a price that shaped the entire migration: by the time sharding became unavoidable, the monolith was too strained to carry extra load, which ruled out convenient tools and forced frugality onto every step that followed.",
+  "solution": "Notion chose application-level sharding — their own partitioning scheme with queries routed from application logic — over packaged solutions like Citus for Postgres or Vitess for MySQL. The packages appeal in their simplicity and cross-shard tooling, but their clustering logic is opaque, and Notion wanted control over the distribution of its data. (DynamoDB was considered and deemed too risky; bare-metal NVMe Postgres was rejected for the maintenance cost of backups and replication.)\n\nThree design decisions define the scheme. First, what to shard: every table transitively reachable from block via foreign keys, sharded together — because if a block lived on one host and its comments on another, transactionality guarantees that stop at a single host could leave a deleted block with orphaned comment updates. Related data that must commit together stays together. Second, the partition key: workspace ID. Notion is a team product; every block belongs to exactly one workspace, and users query within one workspace at a time, so partitioning the workspace-UUID space into uniform buckets avoids most cross-shard joins. Third, capacity: at least 60K total IOPS of demand, self-imposed bounds of 500 GB per table and 10 TB per physical database, and a bill that scales linearly. The result: 480 logical shards — each a Postgres schema holding one copy of every sharded table — spread 15 per database across 32 physical databases. The number 480 was chosen for its factors: divisible by 2, 3, 4, 5, 6, 8, and every useful count up to 240, it lets the fleet grow 32 → 40 → 48 hosts in increments while keeping shards uniform. A power of two like 512 would force doubling the fleet at every step. Pick values with a lot of factors. They also chose separate schema-qualified tables over Postgres native partitioning, keeping a single source of truth for routing — workspace ID resolves directly to database and schema in application code, with no second routing layer inside Postgres.\n\nThe migration followed a four-phase framework: double-write, backfill, verify, switch over. For double-writing, three options were weighed — writing directly to both databases (too flaky for a critical-path store: either write failing breeds inconsistency), Postgres logical replication (the tidy choice — which couldn't keep up with the block table's write volume during its initial snapshot step), and an audit log with a catch-up script, which won: every write to a migrating table is journaled, and a catch-up process replays the journal onto the shards, making modifications as needed — including backfilling the workspace-ID partition key on the fly, because the strained monolith couldn't afford a column backfill. A reverse audit log was built and tested too, ready to replay shard-side writes back onto the monolith if the switchover had to be undone; it was never needed, and it was never optional. The backfill of historical data ran on a 96-CPU m5.24xlarge for roughly three days, comparing record versions before writing so newer updates were never clobbered — run catch-up and backfill in any order and the shards converge on the monolith.\n\nVerification got the discipline the migration's stakes demanded. A script compared sampled UUID ranges between monolith and shards, since a full scan was prohibitive. Dark reads — a flag fetching from both old and new databases, comparing, discarding the sharded copy, and logging discrepancies — bought confidence at the price of API latency. And the post's quietest, sharpest rule: the migration and verification logic were implemented by different people, because one person makes the same mistake twice and calls it a passing check. The switchover itself was five minutes of scheduled downtime, gated on the catch-up script draining the double-write backlog — and users noticed the speed improvement unprompted.",
+  "tradeoffs": [
+    "Waiting until sharding was unavoidable meant migrating from a position of weakness — the post's first hindsight lesson is simply 'shard earlier.' The strained monolith couldn't absorb the load of logical replication's snapshot or a partition-key column backfill, which forced the custom audit-log machinery and on-the-fly key backfilling. Every anti-premature-sharding essay is right about the costs of moving too soon and silent about the compounding costs of moving too late: the tools available for a migration shrink in proportion to how overdue it is.",
+    "Application-level sharding buys control and pays in ownership, permanently. Rejecting Citus and Vitess for their opaque clustering logic means Notion owns routing, rebalancing, cross-shard tooling, and every future re-shard in application code — the exact 'newfound constraints in application-level code' the aughts canon warned about, accepted with eyes open. The 480-factors choice is this tradeoff done well: when you own the scheme, you can at least design its future flexibility in; the divisibility of one integer became the fleet's entire growth plan.",
+    "Partitioning by workspace ID aligns the shards with the product's transaction boundaries — and inherits the product's skew. Colocating everything transitively related to block preserves single-host transactionality and kills most cross-shard joins, but the post itself notes a single large enterprise customer generates more load than many personal workspaces combined; uniform buckets of workspace UUIDs are uniform in count, not in weight. The scheme's honest bet is that hot-workspace skew stays manageable — and the footnoted premature-sharding danger cuts here too: shard by the wrong entity and a product pivot turns the partition key into architectural debt.",
+    "The audit log was the right tool and the expensive one. Logical replication is built in, tested by the world, and modification-free; the audit log is bespoke code on the critical write path, a catch-up script whose correctness the whole migration leans on, plus a reverse log for the road back. Notion paid the build cost because their circumstances (write volume, missing partition key) disqualified the standard tool — a reminder that migration-tool selection is dictated by the system's current strain, not by which mechanism is best in the abstract.",
+    "Verification that can actually catch the migration's errors must be independent of the migration — sampled checks, dark reads, and different authors. Sampling trades certainty for feasibility; dark reads trade latency for confidence; separate implementers trade staffing for statistical independence of mistakes. Each is a deliberate weakening of proof in exchange for proof you can afford — and the two-author rule is the cheapest strong guarantee in the whole post: correlated errors, not missing checks, are what let bad migrations pass their own tests.",
+    "Five minutes of downtime was a choice revealed as such only in hindsight. The switchover was gated on the catch-up script draining; the team's own accounting says one more week optimizing it to a sub-30-second catch-up might have allowed a hot swap at the load balancer with zero downtime. Against months of urgent work, a week for zero-versus-five-minutes looks obviously worth it — which is the lesson: downtime windows are engineering variables with a price, not fixed ceremonies, and the moment to cost them is before the maintenance banner goes up."
+  ],
+  "tags": [
+    "databases",
+    "postgres",
+    "sharding",
+    "migrations",
+    "capacity-planning"
+  ],
+  "patterns": [
+    {
+      "slug": "application-layer-sharding",
+      "note": "Notion names the approach outright: their own partitioning scheme, queries routed from application logic, chosen over Citus and Vitess because packaged clustering logic is opaque and they wanted control of data distribution. Third company in the library to make this exact call — Discord over Elasticsearch, Figma over Postgres with a query-routing service, Notion over Postgres with routing directly in application code."
+    },
+    {
+      "slug": "shard-key-colocation",
+      "note": "Both halves of the pattern in one post: shard every table transitively reachable from block so rows that must commit together live on one host (transactionality stops at a single database), and partition all of it by workspace ID so a user's queries land on one shard. The block-deleted-but-comments-orphaned example is the pattern's failure case stated plainly."
+    }
+  ],
+  "relatedArticles": [
+    "figma-postgres-sharding"
+  ],
+  "stats": [
+    {
+      "value": "480",
+      "label": "logical shards across 32 physical databases — chosen for its many factors",
+      "placement": "solution"
+    },
+    {
+      "value": "~3 days",
+      "label": "to backfill production history on a 96-CPU instance",
+      "placement": "solution"
+    },
+    {
+      "value": "5 minutes",
+      "label": "of switchover downtime — hindsight says one more week of catch-up optimization could have made it zero",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/notion-sharding-postgres/index.html",
+    "teaser": "Migrate the monolith before the wraparound: pick your double-write strategy, backfill, verify — and see what your catch-up lag costs at the switchover. Then try scaling 512 shards."
+  }
+}

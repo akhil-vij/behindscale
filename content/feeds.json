@@ -42,6 +42,13 @@
     "feed": "https://medium.com/feed/netflix-techblog"
   },
   {
+    "name": "Notion Blog",
+    "slug": "notion-blog",
+    "company": "Notion",
+    "url": "https://www.notion.com/blog",
+    "feed": "https://www.notion.com/blog/rss"
+  },
+  {
     "name": "Shopify Engineering",
     "slug": "shopify-engineering",
     "company": "Shopify",

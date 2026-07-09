@@ -1,0 +1,16 @@
+{
+  "slug": "shard-key-colocation",
+  "name": "Shard-Key Colocation",
+  "category": "consistency",
+  "definition": "When sharding, place every row that must be read or committed together on the same shard, by two coordinated choices: shard the full set of tables that reference each other (not just the big one), and partition them all by the same key — the entity whose boundary matches the application's transaction and query patterns. Transactionality guarantees stop at a single host; colocation is how a sharded system keeps the transactions it actually needs without distributed coordination.\n\nThe failure case the pattern prevents is quiet corruption at the seams: a parent row on one shard, its children on another, and a delete that succeeds on one side while the update on the other fails. The design work is choosing the colocation entity — the workspace, the guild, the user — such that real queries stay inside it and load spreads acceptably across instances of it.",
+  "whenItApplies": [
+    "Horizontally sharding a relational schema where foreign-key-related tables participate in shared transactions",
+    "Choosing a partition key for a multi-tenant product, where the tenant boundary usually is the transaction boundary",
+    "Any sharded system where cross-shard joins or two-phase commits would otherwise become the common path"
+  ],
+  "tradeoffs": [
+    "The shards inherit the colocation entity's skew: uniform buckets by count are not uniform by weight when one tenant outweighs thousands",
+    "The partition key becomes architectural commitment — a product pivot away from the chosen entity turns colocation into impedance",
+    "Everything transitively related must shard together, dragging small tables into the scheme to protect the transactions of large ones"
+  ]
+}
