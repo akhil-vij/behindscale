@@ -98,6 +98,42 @@ Update this file after every meaningful implementation change.
   the new article. The reassessment window from 2026-06-04
   still applies.
 
+- **Rounds 4 + 5 LANDED (2026-07-09, two commits): articles
+  #13 Notion and #14 Meta FOQS.** Both authored in chat with
+  Fable then shipped by the Claude Code agent as
+  `feat: publish notion-sharding-postgres` (`b73c5dc`) and
+  `feat: publish meta-foqs-priority-queue` (`fc8be10`). Each
+  bundle: article JSON + 1 new pattern JSON + artifact JSX +
+  feeds.json entry + one relatedArticles backlink update on
+  the neighbor article. Library state after landing:
+  **14 articles across 14 companies; 22 pattern definitions
+  (two new: `shard-key-colocation`, `checkpoint-bounded-
+  scans`); 14 artifacts.** cruxTag taxonomy: 10 tags with 4
+  two-company (Stripe↔Shopify `ambiguous-failure-under-retry`,
+  Uber↔Netflix `priority-blind-load-shedding`,
+  Skipper↔Cadence `partial-completion-under-crashes`, and now
+  Figma↔Notion `single-table-scaling-ceiling`).
+  Pattern recurrences created this round:
+  application-layer-sharding → 3-company (Discord + Figma +
+  Notion; third company rejecting Citus/Vitess for control);
+  shard-key-colocation → 2-company day one (Figma + Notion —
+  the second-source hold from the Proposed Pattern Queue
+  paid off; Figma's patterns[] backfilled in Notion's own
+  commit); queue-with-guaranteed-delivery → 2-company
+  (Discord + Meta); circuit-breaker → 2-company (Shopify +
+  Meta). New cruxTag `buffer-degrades-under-backlog` (Meta
+  only) deliberately not a delivery/loss tag — delay-not-loss
+  is FOQS's mission; the crux is a buffer's own MySQL
+  substrate slowing exactly as it fills. Two new relatedArticles
+  bidirectional threads: Figma↔Notion, Discord↔Meta FOQS
+  (both were one-way in the article JSONs and paired with
+  the backlink edit on the neighbor). Both commits: build
+  clean, tests 80/80, validator 0 errors + 7 warnings (three
+  new fuzzy misses stacked onto the existing residual four —
+  Notion `~3 days` / `5 minutes` and Meta `~1 trillion` —
+  same class, still cosmetic-not-blocking). Not yet pushed;
+  awaiting owner call.
+
 - **Editorial batch LANDED (2026-07-06 → 07, nine commits,
   the largest content batch in the project's history).**
   Authored in chat sessions with Fable across three review
@@ -150,18 +186,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Current Goal
 
-- Post-batch verification and consolidation. The 9-commit
-  batch (articles #7–12; crux schema; standalone-visitor
-  artifact contract; six-artifact enhancement queue) is
-  shipped. Immediate items: owner post-deploy verification
-  of THE CRUX callout on all 12 article routes and phone-
-  viewport QA of the 12 artifacts; a follow-up chore to
-  fix the four residual value-in-prose fuzzy-miss warnings
-  (word-vs-digit / unit-suffix mismatches on GitHub 950,000,
-  Skipper 10,000, Slack 5-minutes, AWS "3"); a small
-  `docs:` commit adding a Deferred-Work entry for the
-  `/bottlenecks` cruxTag surface once the taxonomy has
-  enough two-company recurrence to warrant browsing.
+- Push rounds 4 + 5 (Notion + Meta FOQS + this docs commit)
+  to origin/main and verify prod. Then the same
+  consolidation loop the 2026-07-06 → 07 batch established:
+  owner post-deploy verification (THE CRUX callout on the
+  two new article routes; phone-viewport QA of both new
+  artifacts + standalone-visitor contract on their
+  compiled bundles); pattern-detail spot-checks that
+  `/patterns/application-layer-sharding` shows Discord +
+  Figma + Notion, `/patterns/queue-with-guaranteed-delivery`
+  shows Discord + Meta, `/patterns/circuit-breaker` shows
+  Shopify + Meta, and the new `/patterns/shard-key-
+  colocation` and `/patterns/checkpoint-bounded-scans`
+  render at all. The residual cosmetic warnings chore
+  (now seven fuzzy misses across GitHub, Skipper, Slack,
+  AWS, Notion×2, Meta) remains queued; the taxonomy is
+  now at 10 tags with 4 two-company, still one shy of the
+  soft threshold (~5-6) for building the `/bottlenecks`
+  browsable surface.
 
 ## Completed
 
@@ -1608,18 +1650,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     Kept as an item until owner confirms the fresh deploy
     is what /articles/stripe-idempotency and /patterns
     actually serve.
-- **Four residual value-in-prose warnings — cosmetic, land
+- **Seven residual value-in-prose warnings — cosmetic, land
   as a chore commit.** Fuzzy misses where the stat value
   and the prose phrase the same figure differently:
   GitHub `950,000 queries/s` (prose: `950,000 queries
   per second`), Skipper `10,000 per second` (prose:
   `10,000 workflows per second` — carried forward from
   the earlier sprint), Slack `5 minutes` (prose: `five
-  minutes`), AWS `3` (prose: `three tools`). None fail
-  the validator — the warning-not-error semantics were
-  designed for exactly this — and the fixes are one-
-  line each: harmonize the stat string to the prose form
-  in each affected article JSON. Lands anytime.
+  minutes`), AWS `3` (prose: `three tools`), Notion
+  `~3 days` (prose: `roughly three days`) + Notion
+  `5 minutes` (prose: `five minutes`), Meta `~1 trillion`
+  (prose: `close to a trillion`). None fail the validator
+  — the warning-not-error semantics were designed for
+  exactly this — and the fixes are one-line each:
+  harmonize the stat string to the prose form in each
+  affected article JSON. Lands anytime.
 - Previously: Units 9 + 10 closed and prod-verified; Unit 11
   quality sprint complete across 2026-06-12 and 2026-06-13
   (pts 1 stripe, 2 uber, 3 airbnb, 4 skipper, 5 discord);
@@ -1656,8 +1701,9 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     three-callers warrant to a graph-with-most-nodes-
     reachable warrant.
   - **`/bottlenecks` cruxTag browsable surface** (new,
-    2026-07-06). Now that the taxonomy is 9 tags with 3
-    already two-company, a browsable page grouping
+    2026-07-06; still deferred as of 2026-07-09). Taxonomy
+    is now 10 tags with 4 already two-company, a browsable
+    page grouping
     articles by cruxTag would let a reader arrive
     problem-first (as opposed to pattern-first via
     `/patterns` or source-first via the source filter on
@@ -1716,14 +1762,14 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
    the errata is resolved on Discord's side —
    `updatedAt: 2026-07-05`). Airbnb and Skipper remain.
 4. **Next publication.** Owner's article choice from the
-   remaining candidate list (Cloudflare Prometheus, Meta
-   FOQS, DoorDash internal tools, LinkedIn Brooklin), or
-   any newly-surfaced piece. The recurrence-driven
-   selection criterion applies (weigh the cross-cruxTag
-   or cross-pattern recurrence a candidate would unlock).
-   Same commit shape: `feat: publish <article-slug>`
-   bundling article + patterns + artifact + feeds entry
-   if new.
+   remaining candidate list (Cloudflare Prometheus,
+   DoorDash internal tools, LinkedIn Brooklin — Meta FOQS
+   is now consumed as article #14), or any newly-surfaced
+   piece. The recurrence-driven selection criterion
+   applies (weigh the cross-cruxTag or cross-pattern
+   recurrence a candidate would unlock). Same commit
+   shape: `feat: publish <article-slug>` bundling article
+   + patterns + artifact + feeds entry if new.
 
 ## Deferred Work
 
