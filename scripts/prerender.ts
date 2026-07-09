@@ -185,6 +185,10 @@ function cruxTagTermId(slug: string): string {
   return `${SITE_URL}/catalog#term-${slug}`
 }
 
+function patternTermId(slug: string): string {
+  return `${SITE_URL}/patterns#term-${slug}`
+}
+
 function catalogMeta(): Meta {
   // Build the taxonomy DefinedTermSet from the registry -- one
   // DefinedTerm per cruxTag entry. The @id is the same in-page anchor
@@ -266,72 +270,200 @@ function catalogMeta(): Meta {
 }
 
 function patternsIndexMeta(): Meta {
+  // Pattern DefinedTermSet: the taxonomy of solutions. Referenced by
+  // article-page TechArticle.mentions via each pattern's @id. The
+  // pattern index page renders each pattern card with
+  // id="term-<slug>" so the @id target resolves to a real anchor.
+  //
+  // Sorted alphabetically inside the set to match the DOM order and
+  // the cruxTag DefinedTermSet on /catalog.
+  const orderedPatterns = patterns
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const patternTerms = orderedPatterns.map((pattern) => ({
+    '@type': 'DefinedTerm',
+    '@id': patternTermId(pattern.slug),
+    name: pattern.name,
+    description: pattern.definition.split(/\n\s*\n/)[0] ?? '',
+    termCode: pattern.slug,
+    url: `${SITE_URL}/patterns/${pattern.slug}`,
+  }))
+
+  const definedTermSet = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTermSet',
+    '@id': `${SITE_URL}/patterns#patterns-taxonomy`,
+    name: 'behindscale pattern library',
+    description:
+      'Reusable system-design patterns identified across engineering blog dissections on behindscale. Each pattern is defined independently of any one company or product.',
+    inLanguage: 'en',
+    hasDefinedTerm: patternTerms,
+  }
+
   return {
     title: `Patterns — ${SITE_NAME}`,
     description:
       'Reusable system-design patterns identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
     ogType: 'website',
-    // Pattern DefinedTermSet JSON-LD lands in Commit 6 alongside the
-    // article-page TechArticle upgrade.
-    jsonLd: null,
+    jsonLd: [definedTermSet],
   }
 }
 
 function articleMeta(article: Article): Meta {
+  const cruxTagEntry = cruxtags[article.cruxTag]
+  const cruxTagLabel = cruxTagEntry?.label ?? article.cruxTag
+  const patternNames = article.patterns
+    .map((p) => {
+      const def = patterns.find((pd) => pd.slug === p.slug)
+      return def?.name ?? p.slug
+    })
+    .filter(Boolean)
+
+  // TechArticle upgrade (was Article). Landed 2026-07-08 for the
+  // navigation/SEO phase. isBasedOn keeps the same shape it had on
+  // the Article node so source attribution stays canonical -- see
+  // architecture.md JSON-LD field map. `about` references the
+  // cruxTag DefinedTerm on /catalog by @id (locked correspondence
+  // with the id="term-<slug>" DOM anchor emitted by
+  // src/pages/Catalog.tsx group headers). `mentions` references
+  // each pattern DefinedTerm on /patterns by @id.
+  const techArticle = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    '@id': `${SITE_URL}/articles/${article.slug}`,
+    headline: article.title,
+    description: article.summary,
+    abstract: article.crux,
+    datePublished: article.addedAt,
+    dateModified: article.updatedAt ?? article.addedAt,
+    author: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    mainEntityOfPage: `${SITE_URL}/articles/${article.slug}`,
+    image: OG_IMAGE,
+    isBasedOn: {
+      '@type': 'Article',
+      url: article.url,
+      datePublished: article.publishedAt,
+      publisher: {
+        '@type': 'Organization',
+        name: article.source.name,
+        url: article.source.url,
+      },
+    },
+    citation: article.url,
+    about: { '@id': cruxTagTermId(article.cruxTag) },
+    mentions: article.patterns.map((p) => ({
+      '@id': patternTermId(p.slug),
+    })),
+    keywords: [cruxTagLabel, ...patternNames].join(', '),
+  }
+
+  // BreadcrumbList: Home → Catalog → [problem-class label] → Article.
+  // The problem-class breadcrumb points at /catalog#term-<slug> so
+  // clicking that crumb (in a rich-results display) lands the reader
+  // on the same DOM anchor everything else does.
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: `${SITE_URL}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Catalog',
+        item: `${SITE_URL}/catalog`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: cruxTagLabel,
+        item: cruxTagTermId(article.cruxTag),
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: article.title,
+        item: `${SITE_URL}/articles/${article.slug}`,
+      },
+    ],
+  }
+
   return {
     title: `${article.title} — ${SITE_NAME}`,
     description: truncateForMeta(article.summary),
     canonical: `${SITE_URL}/articles/${article.slug}`,
     ogType: 'article',
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      headline: article.title,
-      description: article.summary,
-      datePublished: article.addedAt,
-      // `updatedAt` is the date of the last material post-publish
-      // revision. When absent, `dateModified` mirrors `addedAt`
-      // (architecture.md JSON-LD field map).
-      dateModified: article.updatedAt ?? article.addedAt,
-      author: {
-        '@type': 'Organization',
-        name: SITE_NAME,
-        url: SITE_URL,
-      },
-      publisher: {
-        '@type': 'Organization',
-        name: SITE_NAME,
-        url: SITE_URL,
-      },
-      mainEntityOfPage: `${SITE_URL}/articles/${article.slug}`,
-      image: OG_IMAGE,
-      // isBasedOn deliberately omits `name`: our title is editorial
-      // and may diverge from the source post's title (see
-      // architecture.md Rendering section).
-      isBasedOn: {
-        '@type': 'Article',
-        url: article.url,
-        datePublished: article.publishedAt,
-        publisher: {
-          '@type': 'Organization',
-          name: article.source.name,
-          url: article.source.url,
-        },
-      },
-      citation: article.url,
-    },
+    jsonLd: [techArticle, breadcrumbs],
   }
 }
 
 function patternMeta(pattern: PatternDefinition): Meta {
   const firstParagraph = pattern.definition.split(/\n\s*\n/)[0] ?? ''
+
+  // DefinedTerm for the pattern itself, referenced by article
+  // TechArticle.mentions from every article that embodies this
+  // pattern. The @id matches the DOM anchor
+  // src/components/PatternCard.tsx emits on /patterns
+  // (id="term-<slug>") -- clicking `mentions` in structured data
+  // rich results lands the reader on the pattern-index page
+  // scrolled to this card.
+  const definedTerm = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    '@id': patternTermId(pattern.slug),
+    name: pattern.name,
+    description: firstParagraph,
+    termCode: pattern.slug,
+    inDefinedTermSet: { '@id': `${SITE_URL}/patterns#patterns-taxonomy` },
+    url: `${SITE_URL}/patterns/${pattern.slug}`,
+  }
+
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: `${SITE_URL}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Patterns',
+        item: `${SITE_URL}/patterns`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: pattern.name,
+        item: `${SITE_URL}/patterns/${pattern.slug}`,
+      },
+    ],
+  }
+
   return {
     title: `${pattern.name} — patterns — ${SITE_NAME}`,
     description: truncateForMeta(firstParagraph),
     canonical: `${SITE_URL}/patterns/${pattern.slug}`,
     ogType: 'article',
-    jsonLd: null,
+    jsonLd: [definedTerm, breadcrumbs],
   }
 }
 
@@ -403,6 +535,58 @@ const routes: RouteEntry[] = [
   ),
   { path: '/404', outPath: '404.html', meta: notFoundMeta() },
 ]
+
+// --- Cross-page @id contract assertion (Commit 6, plan-level
+//     guardrail) ---
+//
+// Every @id an article's TechArticle references (cruxTag `about`,
+// pattern `mentions`) must resolve to a real DefinedTerm anchor
+// emitted somewhere else in the site. This pass verifies the
+// *rendered anchor emission* rather than the underlying data --
+// the content-level checks in scripts/validate-content.ts already
+// prevent an article JSON from referencing missing cruxTags or
+// missing pattern definitions. What THIS pass catches is a bug in
+// the JSON-LD builder itself: a slug transform mismatch, a URL
+// prefix drift, an off-by-one in the anchor id -- failures that
+// would silently ship dangling structured data.
+//
+// The assertion mirrors the "needle exists AND replacement diffs"
+// defensive discipline of safeReplace(): rather than shipping
+// broken output on first fault, the build refuses to emit at all
+// and prints a diff of expected vs actual.
+{
+  const emittedTermIds = new Set<string>()
+  for (const [slug] of Object.entries(cruxtags)) {
+    emittedTermIds.add(cruxTagTermId(slug))
+  }
+  for (const pattern of patterns) {
+    emittedTermIds.add(patternTermId(pattern.slug))
+  }
+
+  const referencedTermIds = new Set<string>()
+  for (const article of articles) {
+    referencedTermIds.add(cruxTagTermId(article.cruxTag))
+    for (const p of article.patterns) {
+      referencedTermIds.add(patternTermId(p.slug))
+    }
+  }
+
+  const dangling: string[] = []
+  for (const referenced of referencedTermIds) {
+    if (!emittedTermIds.has(referenced)) dangling.push(referenced)
+  }
+
+  if (dangling.length > 0) {
+    throw new Error(
+      `prerender: dangling JSON-LD @id references (${dangling.length}). ` +
+        `Each referenced @id must resolve to a real DefinedTerm anchor ` +
+        `emitted somewhere in the site (id="term-<slug>" DOM anchor + ` +
+        `matching DefinedTerm in the JSON-LD). Referenced but not ` +
+        `emitted:\n  ${dangling.slice(0, 20).join('\n  ')}` +
+        (dangling.length > 20 ? `\n  ... (${dangling.length - 20} more)` : ''),
+    )
+  }
+}
 
 // --- Render + write loop ---
 

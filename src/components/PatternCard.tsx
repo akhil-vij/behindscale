@@ -14,7 +14,9 @@ export default function PatternCard({ pattern }: PatternCardProps) {
 
   return (
     <Link
+      id={`term-${pattern.slug}`}
       to={`/patterns/${pattern.slug}`}
+      style={{ scrollMarginTop: '4.5rem' }}
       className="block rounded-xl border border-border-default bg-bg-surface p-5 transition-colors hover:bg-bg-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
     >
       <h3 className="text-lg font-semibold tracking-tight text-text-primary">
