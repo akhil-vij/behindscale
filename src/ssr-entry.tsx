@@ -14,7 +14,7 @@ import AppRoutes from './AppRoutes'
 // at runtime under tsx/Node. Routing the content through the SSR
 // bundle keeps a single source of truth (Vite resolves the globs
 // once, at SSR build time).
-export { articles, patterns } from './content'
+export { articles, cruxtags, patterns } from './content'
 
 export function render(url: string): string {
   return renderToString(

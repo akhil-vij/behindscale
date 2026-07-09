@@ -19,7 +19,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import type { Article, PatternDefinition } from '../src/types'
+import { catalogGroups } from '../src/lib/catalogGroups'
+import type {
+  Article,
+  CruxTagRegistry,
+  PatternDefinition,
+} from '../src/types'
 
 const __filename = fileURLToPath(import.meta.url)
 const ROOT = join(dirname(__filename), '..')
@@ -41,9 +46,10 @@ if (!existsSync(ssrEntryPath)) {
 const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
   render: (url: string) => string
   articles: Article[]
+  cruxtags: CruxTagRegistry
   patterns: PatternDefinition[]
 }
-const { render, articles, patterns } = ssrModule
+const { render, articles, cruxtags, patterns } = ssrModule
 
 // --- Load the client template emitted by `vite build` ---
 
@@ -136,16 +142,94 @@ function landingMeta(): Meta {
   }
 }
 
+// URL helpers for the cross-page JSON-LD @id contract. Every article's
+// TechArticle.about references a cruxTag DefinedTerm by its
+// `/catalog#term-<slug>` anchor (emitted by src/pages/Catalog.tsx's
+// group header wrappers); article-page TechArticle.mentions references
+// a pattern DefinedTerm by its `/patterns/<slug>#term` anchor (Commit
+// 6). Assertion pass in Commit 6 will verify every referenced @id
+// resolves to a real emitted DefinedTerm.
+function cruxTagTermId(slug: string): string {
+  return `${SITE_URL}/catalog#term-${slug}`
+}
+
 function catalogMeta(): Meta {
+  // Build the taxonomy DefinedTermSet from the registry -- one
+  // DefinedTerm per cruxTag entry. The @id is the same in-page anchor
+  // (`/catalog#term-<slug>`) that Catalog.tsx emits on each group
+  // header wrapper; the design decision locks this correspondence so
+  // structured-data cross-references from article pages land on a
+  // real DOM target (spec §8.3 refinement / plan-level guardrail).
+  const registryEntries = Object.entries(cruxtags)
+    .slice()
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  const cruxtagTerms = registryEntries.map(([slug, entry]) => ({
+    '@type': 'DefinedTerm',
+    '@id': cruxTagTermId(slug),
+    name: entry.label,
+    description: entry.definition,
+    termCode: slug,
+  }))
+
+  const definedTermSet = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTermSet',
+    '@id': `${SITE_URL}/catalog#taxonomy`,
+    name: 'behindscale bottleneck taxonomy',
+    description:
+      'The classes of system-design bottlenecks (crux tags) used across the behindscale catalog to group articles by the underlying problem they solve.',
+    inLanguage: 'en',
+    hasDefinedTerm: cruxtagTerms,
+  }
+
+  // CollectionPage with an ItemList of problem-class groups. Each
+  // group carries its own nested ItemList of member article URLs, so
+  // an LLM reading the catalog sees "here is a problem class, here
+  // are the systems that solved it" as a first-class structure.
+  const groups = catalogGroups({ articles, registry: cruxtags })
+
+  const groupItems = groups.map((group, groupIdx) => ({
+    '@type': 'ListItem',
+    position: groupIdx + 1,
+    item: {
+      '@type': 'ItemList',
+      '@id': cruxTagTermId(group.slug),
+      name: group.label,
+      description: group.definition,
+      numberOfItems: group.count,
+      itemListElement: group.articles.map((article, articleIdx) => ({
+        '@type': 'ListItem',
+        position: articleIdx + 1,
+        url: `${SITE_URL}/articles/${article.slug}`,
+        name: article.title,
+      })),
+    },
+  }))
+
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${SITE_URL}/catalog`,
+    url: `${SITE_URL}/catalog`,
+    name: `Catalog — ${SITE_NAME}`,
+    description:
+      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: groups.length,
+      itemListElement: groupItems,
+    },
+  }
+
   return {
     title: `Catalog — ${SITE_NAME}`,
     description:
       'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
     canonical: `${SITE_URL}/catalog`,
     ogType: 'website',
-    // Catalog-page JSON-LD (CollectionPage + cruxTag DefinedTermSet)
-    // lands in Commit 4.
-    jsonLd: null,
+    jsonLd: [collectionPage, definedTermSet],
   }
 }
 
