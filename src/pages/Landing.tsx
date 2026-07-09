@@ -30,7 +30,6 @@ import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 // there doesn't reach the boundary) -- for that path we accept the
 // same "muted frame" outcome the article artifact embed uses.
 
-const TOP_PREVIEW_LIMIT = 3
 const HERO_IFRAME_PATH = '/artifacts/_hero/index.html'
 const HERO_IFRAME_HEIGHT_PX = 560
 
@@ -38,17 +37,21 @@ export default function Landing() {
   const articleCount = articles.length
   const companies = canonicalCompanies(articles)
 
-  // Top-3 multi-company problem-classes for the catalog preview.
-  // Reuses the same grouping module the catalog uses -- if the sort
-  // changes there, the preview follows automatically. Filter to
-  // count >= 2 (multi-company classes only; the cross-company payoff
-  // is the point of the preview).
+  // Recurring problem-classes for the catalog preview: every group
+  // whose crux has landed on two or more companies. Reuses the same
+  // grouping module the catalog uses -- if the sort changes there,
+  // the preview follows automatically. Filter to count >= 2
+  // (multi-company classes only; the cross-company payoff is the
+  // point of the preview and the point of the "Bottlenecks that show
+  // up more than once" header, which asserts completeness). If the
+  // list grows past what fits above the fold on a target viewport,
+  // the fix is not to truncate silently -- it's to either land the
+  // recurrence in the catalog directly or cap-and-signal the header
+  // deliberately. Not a problem today at 4 groups; revisit at 6+.
   const preview = catalogGroups({
     articles,
     registry: cruxtags,
-  })
-    .filter((g) => g.count >= 2)
-    .slice(0, TOP_PREVIEW_LIMIT)
+  }).filter((g) => g.count >= 2)
 
   return (
     <main>
@@ -290,7 +293,7 @@ function Footer() {
           <Link to="/patterns" className="text-sm text-text-secondary hover:text-text-primary">
             Patterns
           </Link>
-          <Link to="/catalog" className="text-sm text-text-secondary hover:text-text-primary">
+          <Link to="/sources" className="text-sm text-text-secondary hover:text-text-primary">
             Sources
           </Link>
         </div>

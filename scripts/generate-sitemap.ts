@@ -63,6 +63,11 @@ const entries: SitemapEntry[] = [
   // Landed 2026-07-08 with the landing/navigation phase.
   { url: `${SITE_URL}/catalog` },
   { url: `${SITE_URL}/patterns` },
+  // /sources: same "derived surface, no content-modeled timestamp"
+  // reasoning as /catalog. Landed 2026-07-09 as a trust artifact
+  // (the visible enumeration of invariant 7's official-blogs-only
+  // policy).
+  { url: `${SITE_URL}/sources` },
   ...articles.map((a) => ({
     url: `${SITE_URL}/articles/${a.slug}`,
     lastMod: articleLastMod(a),

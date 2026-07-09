@@ -8,6 +8,7 @@ import CatalogRedirect from './pages/CatalogRedirect'
 import Landing from './pages/Landing'
 import PatternDetail from './pages/PatternDetail'
 import PatternIndex from './pages/PatternIndex'
+import Sources from './pages/Sources'
 
 // Router-agnostic route tree. Wrapped at the two entry points:
 //   src/main.tsx        wraps with BrowserRouter for client hydration
@@ -42,6 +43,7 @@ export default function AppRoutes() {
           <Route path="/articles/:slug" element={<ArticleDetail />} />
           <Route path="/patterns" element={<PatternIndex />} />
           <Route path="/patterns/:slug" element={<PatternDetail />} />
+          <Route path="/sources" element={<Sources />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

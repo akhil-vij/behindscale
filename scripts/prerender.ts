@@ -24,6 +24,7 @@ import type {
   Article,
   CruxTagRegistry,
   PatternDefinition,
+  Source,
 } from '../src/types'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -47,9 +48,10 @@ const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
   render: (url: string) => string
   articles: Article[]
   cruxtags: CruxTagRegistry
+  feeds: readonly Source[]
   patterns: PatternDefinition[]
 }
-const { render, articles, cruxtags, patterns } = ssrModule
+const { render, articles, cruxtags, feeds, patterns } = ssrModule
 
 // --- Load the client template emitted by `vite build` ---
 
@@ -467,6 +469,62 @@ function patternMeta(pattern: PatternDefinition): Meta {
   }
 }
 
+function sourcesMeta(): Meta {
+  // The sources page is the visible enumeration of invariant 7
+  // (official engineering blogs only, no aggregators). Its JSON-LD
+  // is a CollectionPage whose mainEntity is an ItemList of the
+  // allowlisted engineering blogs -- each item points at the
+  // canonical first-party URL. This is the machine-readable
+  // "here are the primary sources this library is built on"
+  // signal that reinforces the AI-citability bet.
+  //
+  const counts = new Map<string, number>()
+  for (const article of articles) {
+    counts.set(article.source.slug, (counts.get(article.source.slug) ?? 0) + 1)
+  }
+  const items = feeds
+    .slice()
+    .sort((a, b) => a.company.localeCompare(b.company))
+    .map((feed, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      item: {
+        '@type': 'Organization',
+        name: feed.name,
+        url: feed.url,
+        // Signal the count as a plain property so an ingesting LLM
+        // sees the coverage per source without needing to compute
+        // it.
+        'numberOfDissections': counts.get(feed.slug) ?? 0,
+      },
+    }))
+
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${SITE_URL}/sources`,
+    url: `${SITE_URL}/sources`,
+    name: `Sources — ${SITE_NAME}`,
+    description:
+      'The official engineering blogs behindscale draws every dissection from — first-party sources only, no aggregators or third-party summaries.',
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: items.length,
+      itemListElement: items,
+    },
+  }
+
+  return {
+    title: `Sources — ${SITE_NAME}`,
+    description:
+      'The official engineering blogs behindscale draws every dissection from — first-party sources only.',
+    canonical: `${SITE_URL}/sources`,
+    ogType: 'website',
+    jsonLd: [collectionPage],
+  }
+}
+
 function notFoundMeta(): Meta {
   return {
     title: `Page not found — ${SITE_NAME}`,
@@ -519,6 +577,7 @@ const routes: RouteEntry[] = [
   { path: '/', outPath: 'index.html', meta: landingMeta() },
   { path: '/catalog', outPath: 'catalog.html', meta: catalogMeta() },
   { path: '/patterns', outPath: 'patterns.html', meta: patternsIndexMeta() },
+  { path: '/sources', outPath: 'sources.html', meta: sourcesMeta() },
   ...articles.map(
     (a): RouteEntry => ({
       path: `/articles/${a.slug}`,
