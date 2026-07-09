@@ -4,6 +4,96 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Landing + navigation + SEO/crawler foundations phase
+  LANDED (2026-07-09, eight-commit sequence).** Fable-
+  authored implementation handoff (spec + updated docs +
+  design + hero artifact + cruxSummary backfill for 14
+  articles + cruxTags registry) shipped by the Claude Code
+  agent as eight commits. The largest single UI change in
+  the project's history: `/` flipped from article feed to
+  conversion landing page (hero + trust band + top-3
+  problem-class preview + one CTA, no filters); the
+  browsable feed moved to `/catalog` organized primarily
+  by problem-class (cruxTag), secondary company filter,
+  client-side search with cruxTag matches surfaced as their
+  own result cluster. `/patterns` untouched.
+  Content-contract additions: required `cruxSummary`
+  field on every Article (one-line ~10-16 word crux
+  compression, backfilled surgically on all 14 live
+  articles preserving round 4+5 landings); new
+  `content/cruxtags.json` registry (10 entries: label +
+  one-sentence class definition per cruxTag). Two new
+  validator checks: `crux-summary-length` (error on
+  missing/empty + warning above ~20 words) and
+  `cruxtag-registry-coverage` (error on any used cruxTag
+  missing a registry entry). Chip category ramp expanded
+  from 4 mapped categories to 5 (adds `performance` →
+  cat-orange) -- decision (1) preserved the live five-
+  category taxonomy against the spec's incomplete
+  three-category assumption.
+  SEO landings: tier-1 robots.txt named `Allow` blocks for
+  11 AI + search crawlers (Googlebot, Bingbot,
+  Google-Extended, GPTBot, ChatGPT-User, OAI-SearchBot,
+  ClaudeBot, Claude-Web, anthropic-ai, PerplexityBot,
+  CCBot); tier-2 crawlable substance -- both new pages
+  serve full semantic HTML on first byte with the top-3
+  preview + catalog groups + article/pattern
+  cross-references in the served DOM; tier-3 machine-
+  readable taxonomy -- article pages upgraded from Article
+  to `TechArticle` with `isBasedOn` + `about`
+  (`/catalog#term-<cruxTag>` @id) + `mentions` (per-
+  pattern `/patterns#term-<slug>` @id) + `keywords` +
+  BreadcrumbList; /catalog emits a `CollectionPage` +
+  cruxTag `DefinedTermSet`; /patterns emits a pattern
+  `DefinedTermSet`. Every group header on /catalog and
+  every pattern card on /patterns carries
+  `id="term-<slug>"` so JSON-LD `@id` references land on
+  real in-page anchors -- decision (4) refinement locked
+  and verified. Cross-page `@id` contract assertion in
+  scripts/prerender.ts refuses to ship structured data
+  with dangling references (32 referenced / 42 emitted /
+  0 dangling in the live library).
+  Site-level artifact class introduced:
+  `content/artifacts/_hero.jsx` compiles to
+  `/artifacts/_hero/index.html` alongside the article
+  artifacts; sandboxed identically; exempt from the
+  standalone-visitor context-block + article-backlink
+  contract per taste-doc §6 named exemption. Landing
+  page's HeroErrorBoundary wraps the iframe subtree so
+  hero failures never break the sibling trust band /
+  preview / CTA subtrees.
+  Old `src/pages/ArticleIndex.tsx` and
+  `src/components/SourceFilterChip.tsx` deleted after the
+  verify-then-delete guardrail confirmed Catalog is a
+  genuine superset (source filter → canonical company
+  filter, `Amazon (AWS)` collapses to one chip). Legacy
+  `/?source=<slug>` URLs handled by a client-side
+  `CatalogRedirect` shim on `/`.
+  Commits, all on `main`:
+  `96f4281` chore: content contract + registry + validators
+  + chip ramp;
+  `9cdcb27` docs: architecture + project-overview +
+  design-spec + taste-doc merges;
+  `8d9411d` feat: /catalog scaffold + / role flip + hero
+  artifact + navbar;
+  `746efd5` feat: catalog page + grouping + JSON-LD
+  CollectionPage + DefinedTermSet;
+  `51b9f92` feat: landing page + hero seam frame + trust
+  band + preview + CTA + JSON-LD;
+  `5c4e741` feat: SEO tier 3 (TechArticle + BreadcrumbList
+  + pattern DefinedTermSet + @id assertion);
+  `5e0c2f6` feat: SEO tier 1 (robots.txt named allows) +
+  article-page cruxTag chip + Also solving this siblings;
+  this docs commit (`docs: refresh progress-tracker after
+  landing + nav + SEO phase`).
+  Verifier state after phase: `npm run validate` 6 checks
+  0 errors 7 warnings (same 7 residual value-in-prose
+  fuzzy-miss warnings that predate the phase); `npm test`
+  100 passed (was 80; +20 across the new content contract
+  + grouping module tests); `npm run build` 40 routes
+  prerendered, 39 URLs in sitemap. Not yet pushed; awaits
+  owner approval + post-deploy verification queue below.
+
 - **Phase 6 resumed: Units 9 + 10 closed; quality sprint
   complete (stripe + uber + airbnb + skipper reworks +
   discord enrichment); article cadence unblocked.** Unit 9 (SSG + SEO foundation) landed and
@@ -186,24 +276,60 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Current Goal
 
-- Push rounds 4 + 5 (Notion + Meta FOQS + this docs commit)
-  to origin/main and verify prod. Then the same
-  consolidation loop the 2026-07-06 → 07 batch established:
-  owner post-deploy verification (THE CRUX callout on the
-  two new article routes; phone-viewport QA of both new
-  artifacts + standalone-visitor contract on their
-  compiled bundles); pattern-detail spot-checks that
-  `/patterns/application-layer-sharding` shows Discord +
-  Figma + Notion, `/patterns/queue-with-guaranteed-delivery`
-  shows Discord + Meta, `/patterns/circuit-breaker` shows
-  Shopify + Meta, and the new `/patterns/shard-key-
-  colocation` and `/patterns/checkpoint-bounded-scans`
-  render at all. The residual cosmetic warnings chore
-  (now seven fuzzy misses across GitHub, Skipper, Slack,
-  AWS, Notion×2, Meta) remains queued; the taxonomy is
-  now at 10 tags with 4 two-company, still one shy of the
-  soft threshold (~5-6) for building the `/bottlenecks`
-  browsable surface.
+- Push the eight-commit landing/navigation + SEO phase
+  (`ac7415d..HEAD` or similar range from origin's last
+  point) to origin/main and verify prod. Owner post-deploy
+  verification queue:
+  * `/` renders the hero artifact live inside the dark-in-
+    light seam frame; the trust band shows 12 canonical
+    company wordmarks (Amazon (AWS) as one); the top-3
+    problem-class preview shows the four two-company
+    groups' top 3 by count-desc + alpha tie-break;
+    `Browse all 14 breakdowns` CTA present with count
+    derived from library size.
+  * `/catalog` renders all 10 problem-class groups in
+    count-desc order (four 2-company classes lead:
+    ambiguous-failure-under-retry, partial-completion-
+    under-crashes, priority-blind-load-shedding, single-
+    table-scaling-ceiling); each group header shows
+    label + N SYSTEMS + definition + `SEEN AT` companies;
+    every group carries `id="term-<slug>"`. Company
+    filter shows 12 canonical chips; `?source=notion-blog`
+    narrows to Notion articles with no hydration shift.
+    Search field with `id="catalog-search"` narrows
+    articles + surfaces cruxTag matches as a top cluster.
+  * Article-page cruxTag chip (below THE CRUX callout)
+    navigates to `/catalog#term-<slug>` and scrolls the
+    catalog to the correct group; "Also solving this"
+    section renders on multi-company articles only
+    (Stripe/Shopify pair, Uber/Netflix pair, Skipper/
+    Cadence pair, Figma/Notion pair, Uber/Airbnb
+    (Cadence+Skipper), and skipped on single-company
+    articles).
+  * Structured-data validation in Google's Rich Results
+    Test on one article URL, /catalog, /patterns, and /:
+    - Article page: TechArticle parses with isBasedOn +
+      about + mentions + keywords + BreadcrumbList (4
+      levels).
+    - /catalog: CollectionPage + cruxTag DefinedTermSet
+      (10 terms).
+    - /patterns: pattern DefinedTermSet (22 terms).
+    - /: WebSite + SearchAction + Organization.
+  * Apex-vs-www robots.txt canonicalization check via
+    `curl -I` on both hosts. If they don't 301 to a
+    single canonical, add a Vercel redirect in a small
+    follow-up commit.
+  * Deliberately break the hero artifact source (or
+    simulate a 404 on `/artifacts/_hero/index.html`) and
+    confirm the landing page still renders. This is the
+    one destructive verification the local safety harness
+    reasonably declined to automate; owner runs it.
+  * The residual cosmetic warnings chore (seven fuzzy
+    misses across GitHub, Skipper, Slack, AWS, Notion×2,
+    Meta) still queued; taxonomy is now at 10 tags with
+    4 two-company, one shy of the ~5-6 soft threshold
+    for `/bottlenecks` deep-dive pages -- deferred as
+    before.
 
 ## Completed
 
@@ -1852,6 +1978,88 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   orchestrator is designed so this choice is just "what calls the command."
 
 ## Architecture Decisions
+
+- **Landing + navigation + SEO/crawler foundations phase
+  locked** (2026-07-09, eight-commit sequence). Five
+  decisions confirmed by the owner before implementation
+  began (see Fable's handoff spec + the plan file at
+  `/Users/akhilvij/.claude/plans/soft-greeting-pascal.md`
+  for the full deliberation transcript):
+  1. **Keep five pattern categories**
+     (`resilience`/`throughput`/`consistency`/`performance`/
+     `observability`). The spec's "exactly three
+     categories" was an artifact of the handoff bundle's
+     partial 7-pattern view of the world; the live library
+     has always used five, and consolidating would erase
+     real taxonomy distinctions (`throughput` is volume,
+     `performance` is latency; `observability` is a real
+     category held by `dead-mans-switch`). Governing
+     principle: taxonomy is canonical, design accommodates
+     it, never the reverse. Chip ramp expanded from 4 to
+     5 mapped categories with `performance` → cat-orange
+     added in Commit 1.
+  2. **Hero artifact contract exemption named.**
+     `content/artifacts/_hero.jsx` compiles like any
+     artifact (bundled by scripts/compile-artifacts) and
+     sandboxes like any artifact, but is deliberately
+     exempt from the standalone-visitor context-block +
+     article-backlink contract because a site-level
+     artifact's context lives in its landing page, not
+     inside its iframe. Signal for "site-level, contract-
+     exempt": the `_hero` underscore prefix on the source
+     filename. Named exemption in docs/behindscale-taste.md
+     §6 so a future authoring pass doesn't "fix" the hero
+     by adding a context block it shouldn't have.
+  3. **Vercel `/?source=` 301 skipped**; a lightweight
+     client-side redirect (`src/pages/CatalogRedirect.tsx`,
+     mounted above `<Landing />` on `/`) rewrites legacy
+     `/?source=<slug>` arrivals to `/catalog?source=<slug>`
+     via useNavigate + `replace: true`. Rationale: low-
+     traffic personal-project scope; SSR renders the
+     component to an empty string so no flash. The Vercel-
+     config alternative was not worth the extra
+     surface.
+  4. **`DefinedTermSet` placement + `@id` correspondence
+     with real DOM anchors.** cruxTag DefinedTermSet
+     inlined once on /catalog; pattern DefinedTermSet
+     inlined once on /patterns. Article pages reference
+     both by `@id` (TechArticle.about →
+     `/catalog#term-<cruxTag>`; TechArticle.mentions →
+     `/patterns#term-<slug>`). **Binding refinement**:
+     the `@id` URLs must resolve to real in-page
+     anchors, not dangling fragments -- so
+     `src/pages/Catalog.tsx` group header wrappers emit
+     `id="term-<slug>"` and `src/components/PatternCard.tsx`
+     card wrappers emit `id="term-<slug>"`. One DOM
+     anchor serves three jobs: (a) the JSON-LD `@id`
+     target; (b) the article-page cruxTag chip's lateral
+     link (Commit 7); (c) the landing preview's row link
+     (Commit 5). Cross-page `@id` contract assertion pass
+     in scripts/prerender.ts (Commit 6) refuses to ship
+     structured data with dangling references -- verified
+     0 dangling across the current library.
+  5. **Design HTML use.** `design/Catalog.html` (288-line
+     clean DOM) is the direct port target for the catalog
+     page; `design/Landing.html` (1.2MB DesignCoded
+     export with inlined fonts) is pixel reference only,
+     with `docs/design-spec.md` §3/§4/§6 as the
+     implementation source of truth for the landing
+     layout.
+  Additional guardrails baked in during implementation:
+  * **Reconciliation surgery**: article JSONs and canonical
+    docs were merged, not overwritten. Only the
+    `cruxSummary` line was lifted from each handoff article
+    into the live article; `addedAt`, backfilled
+    `patterns[]`, updated `relatedArticles`, whitespace all
+    preserved -- a wholesale copy would have silently
+    reverted the round 4+5 landings.
+  * **Verify-then-delete on the old index**: three-check
+    gate (no importers, catalog is a genuine affordance
+    superset, no residual behavior worth carrying)
+    confirmed before removing `src/pages/ArticleIndex.tsx`
+    and `src/components/SourceFilterChip.tsx`. Catalog's
+    company filter is a strict superset (`Amazon (AWS)`
+    now one chip instead of two source-slug chips).
 
 - **crux + cruxTag taxonomy adopted; standalone-visitor
   artifact contract locked** (2026-07-06 → 07 editorial
