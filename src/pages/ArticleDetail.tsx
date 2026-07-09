@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { ArticleStat } from '../types'
-import { articleBySlug, patternBySlug } from '../content'
+import type { Article, ArticleStat } from '../types'
+import { articleBySlug, articles, cruxtags, patternBySlug } from '../content'
 import ArtifactEmbed from '../components/ArtifactEmbed'
 import ArtifactTeaser from '../components/ArtifactTeaser'
 import CruxCallout from '../components/CruxCallout'
@@ -92,8 +92,15 @@ export default function ArticleDetail() {
         {/* THE CRUX (2026-07-05): the article's named bottleneck,
             placed before Problem so the is-this-my-problem scan
             happens first. Editorial (light) surface. Same crux is
-            compressed inside the artifact's context block. */}
-        <CruxCallout crux={article.crux} />
+            compressed inside the artifact's context block. The
+            2026-07-08 landing/navigation phase added the cruxTag
+            chip at the bottom of the callout as the article-page
+            lateral link into the bottleneck taxonomy. */}
+        <CruxCallout
+          crux={article.crux}
+          cruxTag={article.cruxTag}
+          cruxTagLabel={cruxtags[article.cruxTag]?.label ?? article.cruxTag}
+        />
 
         {/* Artifact teaser (Unit 10): renders only when teaser is
             present. Specificity principle. */}
@@ -164,8 +171,58 @@ export default function ArticleDetail() {
             </ul>
           </Section>
         )}
+
+        {/* "Also solving this" (2026-07-08): sibling articles that
+            share this article's cruxTag. Rendered only when there
+            is at least one sibling -- a single-article cruxTag skips
+            the section rather than surfacing an empty "0 also
+            solving this" list. The click destination on each
+            sibling link goes straight to the article page; the
+            cruxTag chip above already provides the "browse the
+            whole class" affordance. */}
+        <AlsoSolvingThis article={article} />
       </div>
     </article>
+  )
+}
+
+function AlsoSolvingThis({ article }: { article: Article }) {
+  const siblings = articles.filter(
+    (a) => a.cruxTag === article.cruxTag && a.slug !== article.slug,
+  )
+  if (siblings.length === 0) return null
+
+  const cruxTagLabel =
+    cruxtags[article.cruxTag]?.label ?? article.cruxTag
+
+  return (
+    <Section title="Also solving this">
+      <p className="mt-3 text-sm text-text-secondary">
+        Other systems in behindscale's{' '}
+        <Link
+          to={`/catalog#term-${article.cruxTag}`}
+          className="font-medium text-text-primary underline decoration-brand-gold underline-offset-4 hover:decoration-2"
+        >
+          {cruxTagLabel}
+        </Link>{' '}
+        class:
+      </p>
+      <ul className="mt-4 flex list-none flex-col gap-3">
+        {siblings.map((s) => (
+          <li key={s.slug} className="leading-relaxed">
+            <Link
+              to={`/articles/${s.slug}`}
+              className="text-text-primary underline decoration-border-strong underline-offset-4 transition-colors hover:decoration-accent-primary hover:text-accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {s.title}
+            </Link>
+            <span className="ml-2 font-mono text-xs text-text-muted">
+              {s.source.company}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   )
 }
 

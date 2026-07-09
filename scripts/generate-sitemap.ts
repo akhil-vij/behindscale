@@ -88,8 +88,45 @@ ${xmlEntries}
 
 writeFileSync(join(DIST, 'sitemap.xml'), sitemap)
 
-const robots = `User-agent: *
+// robots.txt with explicit named Allow blocks for AI + search
+// crawlers (2026-07-08 landing/navigation phase, spec §8.1
+// tier-1 SEO). The bare `User-agent: * / Allow: /` already
+// permits everything, but some operators honor only explicit
+// directives, and explicit allows are a stronger positive signal
+// than a bare wildcard. Ship both.
+//
+// The named list covers Google search + AI training + AI
+// answer-mode crawlers. The extra Allow blocks are additive --
+// they never contradict the wildcard.
+const NAMED_CRAWLERS: readonly string[] = [
+  // General search crawlers
+  'Googlebot',
+  'Bingbot',
+  // Google's AI-training opt-in (separate from Googlebot)
+  'Google-Extended',
+  // AI crawlers
+  'GPTBot', // OpenAI training
+  'ChatGPT-User', // OpenAI answer-mode
+  'OAI-SearchBot', // OpenAI search index
+  'ClaudeBot', // Anthropic training
+  'Claude-Web', // Anthropic user-triggered fetch (legacy name)
+  'anthropic-ai', // Anthropic (legacy user-agent)
+  'PerplexityBot', // Perplexity
+  'CCBot', // Common Crawl (feeds many downstream models)
+]
+
+const namedBlocks = NAMED_CRAWLERS.map(
+  (agent) => `User-agent: ${agent}\nAllow: /\n`,
+).join('\n')
+
+const robots = `# behindscale robots.txt
+# Wildcard: allow everything.
+User-agent: *
 Allow: /
+
+# Explicit named Allow blocks for search + AI crawlers -- some
+# operators honor only explicit directives (2026-07-08).
+${namedBlocks}
 Sitemap: ${SITE_URL}/sitemap.xml
 `
 
