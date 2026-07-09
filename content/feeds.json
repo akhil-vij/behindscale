@@ -21,6 +21,13 @@
     "feed": "https://discord.com/blog/rss.xml"
   },
   {
+    "name": "Engineering at Meta",
+    "slug": "meta-engineering",
+    "company": "Meta",
+    "url": "https://engineering.fb.com",
+    "feed": "https://engineering.fb.com/feed/"
+  },
+  {
     "name": "Figma Blog",
     "slug": "figma-blog",
     "company": "Figma",

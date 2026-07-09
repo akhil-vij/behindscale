@@ -56,7 +56,8 @@
     }
   ],
   "relatedArticles": [
-    "airbnb-monitoring-reliably-at-scale"
+    "airbnb-monitoring-reliably-at-scale",
+    "meta-foqs-priority-queue"
   ],
   "artifact": {
     "path": "/artifacts/discord-trillions-message-search/index.html",

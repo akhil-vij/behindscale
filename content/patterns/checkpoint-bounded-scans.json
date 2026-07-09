@@ -1,0 +1,16 @@
+{
+  "slug": "checkpoint-bounded-scans",
+  "name": "Checkpoint-Bounded Scans",
+  "category": "performance",
+  "definition": "When background machinery repeatedly scans a table by a monotonic column — 'everything with timestamp ≤ now' — maintain a persistent checkpoint of the last position processed and bound every scan from below as well as above. The unbounded form forces the storage engine to consider every pending row on every pass (in MVCC systems like MySQL, walking a history list that grows with backlog); the bounded form touches only the increment since the last pass, keeping scan cost proportional to progress rather than to backlog depth.\n\nThe pattern is what makes a buffer's performance independent of how full it is — the property any queue, scheduler, or expiry sweeper needs if its whole purpose is absorbing backlogs. The same shape appears as watermarks in stream processors and incremental cursors in reconciliation jobs.",
+  "whenItApplies": [
+    "Queues, schedulers, and TTL/expiry sweepers whose background passes scan by time or sequence over a table that is deep precisely when the system is under stress",
+    "MVCC storage (MySQL/InnoDB, Postgres) where broad range predicates pay for row-version history proportional to pending work",
+    "Any repeated incremental job that can record how far it got and resume from there"
+  ],
+  "tradeoffs": [
+    "The checkpoint is state that must be persisted and advanced correctly — a stalled checkpoint silently unbounds the scan again",
+    "Items that become ready behind the checkpoint (clock skew, late updates to the scanned column) are skipped unless the design accounts for them",
+    "Per-shard or per-partition checkpoints multiply the bookkeeping the pattern was meant to simplify"
+  ]
+}

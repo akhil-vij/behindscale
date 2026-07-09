@@ -1,0 +1,72 @@
+{
+  "slug": "meta-foqs-priority-queue",
+  "title": "Delay, Not Loss: FOQS, Meta's Trillion-Item Priority Queue",
+  "url": "https://engineering.fb.com/2021/02/22/production-engineering/foqs-scaling-a-distributed-priority-queue/",
+  "publishedAt": "2021-02-22",
+  "addedAt": "2026-07-09",
+  "source": {
+    "name": "Engineering at Meta",
+    "slug": "meta-engineering",
+    "company": "Meta",
+    "url": "https://engineering.fb.com",
+    "feed": "https://engineering.fb.com/feed/"
+  },
+  "summary": "Facebook Ordered Queueing Service is the queue underneath Meta's asynchronous world — a fully managed, multitenant, persistent distributed priority queue built on sharded MySQL, processing close to a trillion items a day for hundreds of use cases from notifications to video encoding. Its defining property is what happens when consumers fail: enqueues keep landing, backlogs grow to hundreds of billions of items, and nothing is lost — downstream failure becomes delay. Keeping that promise on MySQL required engineering the queue so backlog doesn't slow it down: checkpointing to bound the timestamp scans that MySQL's history list punishes, per-shard in-memory indexes with a k-way-merged prefetch buffer to keep the priority contract across shards, leases with ack/nack for at-least-once delivery, and circuit breakers that stop feeding unhealthy shards.",
+  "crux": "FOQS exists to be the component that doesn't fail when everything downstream does — backlogs on the order of hundreds of billions of items are the system working as intended, absorbing widespread downstream failures as delay instead of loss. The non-obvious hard part is that its substrate degrades under exactly that condition: MySQL keeps old row versions in a history list, so the timestamp scans that run the queue's own machinery get slower as pending work accumulates — and priority is a global promise ('most important item next') that sharded storage, where each shard knows only its own contents, cannot natively keep. A shock absorber must be engineered so that absorbing the shock doesn't slow it down.",
+  "cruxTag": "buffer-degrades-under-backlog",
+  "problem": "The Facebook ecosystem runs on thousands of distributed systems and microservices, and a large share of their work is better done asynchronously — deferred to off-peak hours for better resource utilization, scheduled for a future date, or passed dependably between services. What all of those cases share is the need for a queue: a place to store work that must happen later, or elsewhere. FOQS — Facebook Ordered Queueing Service — is that place for hundreds of use cases: Async, Facebook's general-purpose asynchronous compute platform, leans on FOQS's ability to hold large backlogs to defer delay-tolerant work to off-peak hours; video uploads are broken into components stored in FOQS for later encoding; language translation splits computationally expensive jobs into parallel work items.\n\nThe scale sets the terms of the problem. FOQS processes close to a trillion items a day, and its backlogs have reached hundreds of billions of items — a number the post cites with pride, because a queue's backlog capacity is precisely its ability to absorb widespread downstream failure. When consumers break, the queue is the component that must not: producers keep enqueueing, items persist, and the failure surfaces as delay rather than loss.\n\nBut a priority queue makes a promise that gets harder as it scales on sharded storage. Items carry a user-specified 32-bit priority and a deliver_after timestamp, and dequeue must return the most important, oldest-ready work first — while the items live as rows scattered across MySQL shards, each shard owned by one host and aware only of its own contents. And MySQL itself pushes back against the queue's mechanics: the background operations that run FOQS — making deferred items deliverable, expiring leases, purging TTL'd items — are timestamp scans, and MySQL retains old row versions in a history list whose length degrades read performance. The deeper the backlog, the longer the history, the slower the very queries that drain it. The queue's core engineering problem is keeping its performance independent of how full it is.",
+  "solution": "An item in FOQS is one row in a MySQL table: namespace, topic, priority (lower is more urgent), an immutable payload up to 10Kb, mutable metadata, a deliver_after timestamp, a lease duration, a TTL, and a FOQS-assigned ID that encodes the shard ID plus a 64-bit primary key — so every item's location is readable from its name. Topics are logical priority queues, dynamic and free: enqueue to a topic and it exists; drain it and it ceases to. Namespaces are the multitenancy unit, each with guaranteed capacity in enqueues per minute, mapped to a tier — an ensemble of FOQS hosts and MySQL shards. Shard Manager assigns each shard to exactly one host.\n\nThe enqueue path is buffered: a request lands on a host, returns a promise, and a per-shard worker drains the buffer into MySQL rows, fulfilling the promise when the insert completes. In front of each shard sits a circuit breaker — the post cites the pattern by name — that marks a shard unhealthy on slow queries or elevated error rates over a rolling window, and stops the worker from feeding it until it recovers: FOQS does not continue to overload already-unhealthy shards with new items. If an enqueue lands on an overloaded host, enqueue forwarding routes it to a host with capacity.\n\nDequeue is where the priority promise is kept. The API takes (topic, count) pairs and returns items ordered by priority, ties broken by older deliver_after. Because a host's items are spread across the shards it owns, it must run a reduce across them to find the globally highest-priority work — so each shard maintains an in-memory index of the primary keys of ready-to-deliver items sorted by priority, and a Prefetch Buffer performs a k-way merge across those indexes in the background, selects the winning rows, marks them delivered to prevent double delivery, and stages them for the dequeue API to read. The buffer replenishes in proportion to observed per-topic demand: topics being drained faster get more items staged. Delivery is leased — dequeue starts a clock, and an item neither acked nor nacked within its lease is redelivered (at-least-once) or deleted (at-most-once), per the topic's policy, so a consumer crashing mid-processing costs a redelivery rather than a loss. Acks delete the row; nacks update deliver_after — with optional client-supplied delay for exponential backoff — and can update metadata, letting a failing consumer store partial results in the item itself. Lost acks are safe by construction: the lease expires and redelivery handles it.\n\nFOQS is pull-based, a decision the post defends with a workload census: end-to-end delay needs spanning milliseconds to days, consumption rates from tens of items a minute to more than ten million, per-topic and per-item priorities, and region affinity for data locality. Push would make the queue responsible for not overrunning every kind of consumer; pull keeps the queue layer simple and moves pacing to consumers, paying a discoverability cost that FOQS answers with the getActiveTopics API and a routing layer.\n\nTwo mechanisms keep the queue fast and durable at depth. Checkpointing bounds the timestamp scans: instead of selecting every row with timestamp ≤ now — which forces MySQL to walk a history list proportional to everything pending — background queries carry a lower bound too, the last checkpoint processed, so the where clause is bounded on both sides and read performance stays flat as backlogs grow. And for disaster readiness, every MySQL shard is replicated asynchronously to two additional regions, with the binlog persisted synchronously to another building in the same region; draining a datacenter means a few milliseconds of read-only while a replica catches up, promotion, and Shard Manager reassigning the shard to a FOQS host in the new primary's region to minimize expensive cross-region traffic. Namespace rate limits are enforced globally rather than per-region — the post is direct that regional guarantees are impossible — with traffic-pattern-driven colocation of capacity as the mitigation.",
+  "tradeoffs": [
+    "Pull buys the queue simplicity by exporting two hard problems to everyone else. The post's own table says it: push 'addresses these problems effectively' — data arrives as soon as it's ready — but requires the queue to solve overload for every consumer type; pull keeps the queue layer simple and makes consumers discover where data lives and pace themselves against their own latency needs. With workloads spanning milliseconds-to-days delay tolerance and 10-to-10-million items a minute, FOQS chose to be simple in the middle and demanding at the edges — then had to build getActiveTopics and a routing layer to soften the discoverability cost it had just chosen.",
+    "At-least-once delivery makes idempotency every consumer's tax. Leases convert consumer crashes into redeliveries, which is the loss-prevention working — but a lease expiring on a merely slow consumer delivers the same item twice, so every at-least-once consumer must tolerate duplicates forever. The queue's durability guarantee is real, and it is exactly one half of a contract whose other half — deduplication, idempotent processing — is signed by every one of the hundreds of use cases downstream.",
+    "The priority promise across shards is paid in standing machinery. Because each shard knows only its own rows, 'most important item next' costs per-shard in-memory indexes, a background k-way merge, delivered-state writes to prevent double delivery, and a prefetch buffer whose replenishment must track per-topic demand — all running continuously, whether or not anyone dequeues. And the promise is scoped, not global: the reduce runs across the shards a host owns, and cross-region, FOQS explicitly routes dequeues toward hosts with the highest-priority items rather than pretending one worldwide ordering exists.",
+    "MySQL as the substrate trades storage-engine fit for operational maturity — and the history list is the price tag. Rows-as-items means FOQS inherits MySQL's replication, tooling, and operability, and also its MVCC mechanics: timestamp scans lock more than they return, old versions accumulate, and reads slow in proportion to pending work — the buffer degrading under the backlog it exists to hold. Checkpointing is an elegant bound, and it is a workaround built inside someone else's storage engine; the queue's flat performance curve is maintained by discipline, not given by design.",
+    "Multitenancy guarantees are global because regional ones are impossible. Namespaces get guaranteed enqueues-per-minute enforced across all regions — the honest scope, since failover-driven promotions cause large capacity imbalances and FOQS 'cannot make assumptions about how much capacity is available where.' Colocating capacity with traffic is best-effort mitigation, not contract. A tenant's guarantee is real in aggregate and soft in any particular place — a subtlety every capacity-planning conversation downstream inherits.",
+    "Disaster readiness is bought in layers with visible seams. Asynchronous cross-region replication keeps steady-state cheap; the synchronous binlog copy to another building bounds the loss window; drains cost a few milliseconds of read-only during promotion. But promotions strand capacity in the wrong regions, forcing the routing improvements the post describes, and the Looking Ahead section concedes the frontier plainly: handling failures of multiple domains — region, datacenter, rack — and guaranteeing no data loss when a region goes down remain the team's near-term challenges. The follow-up disaster-readiness post exists because this story wasn't finished here."
+  ],
+  "tags": [
+    "queues",
+    "asynchronous-computing",
+    "mysql",
+    "multitenancy",
+    "meta"
+  ],
+  "patterns": [
+    {
+      "slug": "queue-with-guaranteed-delivery",
+      "note": "FOQS is the pattern as a product: persistent items, leases that convert consumer crashes into redeliveries, ack/nack with at-least-once semantics, and backlogs of hundreds of billions of items cited as the system absorbing widespread downstream failure. Second company: Discord reached for this property in PubSub after Redis dropped messages under pressure; Meta built the property itself, as a multitenant platform."
+    },
+    {
+      "slug": "circuit-breaker",
+      "note": "Cited by name in the post: each MySQL shard's enqueue worker watches slow-query and error rates over rolling windows, marks the shard down, and stops feeding it new items until it recovers — refusing to deepen an overload already in progress. Second company, one layer down the stack from Shopify's payment-gateway breakers: same reflex, pointed at your own storage."
+    },
+    {
+      "slug": "checkpoint-bounded-scans",
+      "note": "The post's most transferable mechanism: background operations that scan by timestamp carry a persistent lower bound — the last checkpoint processed — so the where clause is bounded on both sides and MySQL's history-list walk stays short no matter how deep the backlog. This is what makes the queue's performance independent of how full it is."
+    }
+  ],
+  "relatedArticles": [
+    "discord-trillions-message-search"
+  ],
+  "stats": [
+    {
+      "value": "~1 trillion",
+      "label": "items processed per day",
+      "placement": "problem"
+    },
+    {
+      "value": "hundreds of billions",
+      "label": "of items in backlogs — downstream failure absorbed as delay, not loss",
+      "placement": "problem"
+    },
+    {
+      "value": "a few milliseconds",
+      "label": "of read-only during a datacenter drain, while a replica catches up and is promoted",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/meta-foqs-priority-queue/index.html",
+    "teaser": "Kill the consumers and watch a hundred-billion-item backlog become delay, not loss — then drain it by priority, crash a consumer mid-lease, trip a shard's circuit breaker, and see what checkpointing does to the queue's own speed."
+  }
+}
