@@ -248,6 +248,18 @@ those were superseded by the ratified set above — do not reintroduce them.
 Same discipline as everything else: the crux is traced to the source, never
 invented to sound deep.
 
+**`cruxSummary` — the browse-surface one-liner (2026-07-08).** Alongside
+the full `crux` (2-4 sentences, reading-arc callout), every article now
+carries a single-line **cruxSummary** — ~10-16 words compressing the crux
+into what a catalog card, a landing-preview row, or a search result
+should show. It is a *compression* of the crux, not an alternate framing:
+same taxonomy, same near-source register, same fidelity discipline. The
+card-vs-callout split is by surface, not by tone. A cruxSummary that
+restates the title, hints at the solution, or drifts into marketing copy
+is a bug; when the crux changes, the cruxSummary changes with it. The
+validator warns at >20 words (the card assumes one line at desktop
+widths); errors on missing/empty.
+
 ---
 
 ## 4. Patterns: the durable layer
@@ -466,6 +478,31 @@ the prose. Every artifact therefore includes two elements:
 Expanded-by-default serves the cold visitor — the regular reader pays one
 glance and a dismiss click — and the sandbox's storage denial means the
 dismissal can't persist anyway, which conveniently forces the honest default.
+
+### Site-level artifact exemption (2026-07-08)
+
+The **hero artifact on the landing page (`content/artifacts/_hero.jsx`) is
+exempt from the standalone-visitor contract above**: no context block, no
+article backlink. This is a deliberate named exemption, not an omission —
+a future authoring pass should not "fix" the hero by adding a context
+block it shouldn't have.
+
+Rationale: a site-level artifact's context lives in its **page**, not its
+iframe. The landing page around the hero already carries the crux concept
+in the H1, the crux compressed in the lede, and a mono caption bar
+(`● LIVE ARTIFACT · PRIORITY-BLIND LOAD SHEDDING` + a one-line hint)
+immediately above the iframe. Duplicating that inside the bundle would be
+noise; and a "back to the article" link has no target — there isn't one.
+The isolation guarantee is unchanged (a broken hero still fails without
+breaking the landing page); only the standalone-visitor UI inside the
+iframe is dropped.
+
+The signal for "site-level, contract-exempt" is the **`_hero` underscore
+prefix** on the source filename (and therefore the output path
+`/artifacts/_hero/`). Any future site-level artifacts (a taxonomy
+overview, a pattern-recurrence chart) would use the same convention.
+Per-article artifacts have no underscore prefix and stay on the
+contract.
 
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,

@@ -39,33 +39,53 @@ portfolio at behindscale.com).
 
 ## Features
 
-behindscale is organized around **two equally first-class navigation axes**:
-articles (what was published) and patterns (what was learned). Each article
-references the patterns it embodies; each pattern lists the articles where it
-appears. You can enter from either side and traverse to the other. The
-article feed is the *daily reading surface*; the pattern library is the
-*durable knowledge surface*.
+behindscale's navigation (reframed in the 2026-07-08 landing/navigation
+phase) has a **primary axis of problem-class**, a **secondary axis of
+company**, and **patterns as the lateral layer** that links articles
+across companies. The landing page seduces; the catalog is the
+workbench; the article and pattern pages are singular and link *out*
+laterally rather than filtering. Each article references the patterns
+it embodies; each pattern lists the articles where it appears —
+patterns name *solutions*, cruxes name *problems*, and the two
+taxonomies are what make the library compound.
 
-### Article Library (the daily reading surface)
+- **Landing page (`/`) — conversion.** A billboard, not a feed: a
+  headline stating the crux concept, an embedded **live artifact** (a
+  bespoke site-level load-shedding demo) as the dominant visual, a
+  company trust band, a compact preview of the top problem-classes,
+  and one CTA into the catalog. Carries no search or filter
+  machinery.
+- **Catalog page (`/catalog`) — the browsable workbench.** Organized
+  primarily by **problem-class** (`cruxTag`), with groups ordered by
+  system count descending so the multi-company classes lead and the
+  cross-company comparison payoff is immediate. Carries the
+  **company filter** (secondary axis) and **client-side search**
+  (over title, company, source, crux, cruxSummary, and pattern
+  names). This is the primary browsing/daily-use surface,
+  superseding the earlier model where `/` was itself the article
+  feed.
 
-- Home page (`/`) is the article feed — newest articles first. This is the
-  primary daily-use entry point.
-- Searchable, filterable index of all studied articles (by company, tag,
-  date, pattern).
+### Article Library
+
+- Searchable, filterable catalog of all studied articles (by
+  problem-class, company, pattern).
 - Per-article page: structured summary (reading view) + embedded
   interactive artifact (exploration view). Every article names its
   **crux** — the bottleneck that made the problem hard — as a
   first-class element, tagged into a cross-article bottleneck
   taxonomy (`cruxTag`) that complements the pattern library:
-  patterns name solutions, cruxes name problems.
+  patterns name solutions, cruxes name problems. The
+  `cruxSummary` one-liner is the card- and browse-surface label
+  the catalog groups render.
 - Each article card and article page surfaces **pattern chips** — the 2–3
   patterns this article embodies. Clicking a chip navigates to the pattern's
   detail page.
-- **Visible source attribution** on every article — index cards, article
-  page header, and pattern library back-links all surface the official
-  engineering blog the article came from (e.g. "Uber Engineering",
-  "Stripe Engineering"), with a link to the original post and to the
-  source blog's homepage. The reader can always see and verify the source.
+- **Visible source attribution** on every article — catalog cards,
+  article page header, and pattern library back-links all surface the
+  official engineering blog the article came from (e.g. "Uber
+  Engineering", "Stripe Engineering"), with a link to the original
+  post and to the source blog's homepage. The reader can always see
+  and verify the source.
 
 ### Pattern Library (the durable knowledge surface)
 
@@ -99,7 +119,8 @@ article feed is the *daily reading surface*; the pattern library is the
 
 - Static website that renders pre-generated summaries and artifacts.
 - A build-time pipeline (run via Claude Code) that discovers, analyzes,
-  generates, and publishes content.
+  generates, and publishes content. *(Deferred as of 2026-07-08 — the
+  current mode is manual owner-driven authoring; see Core User Flow.)*
 - Reading view (light, editorial) + interactive artifacts (dark, technical).
 - Pattern aggregation across articles.
 - Content sourced **exclusively from official company engineering blogs**
@@ -127,8 +148,9 @@ article feed is the *daily reading surface*; the pattern library is the
 ## Success Criteria
 
 1. Running a single pipeline command turns a blog URL into a published
-   summary + artifact visible on the site.
-2. A visitor can browse the article index and open any artifact on both
+   summary + artifact visible on the site. *(Manual-authoring mode
+   since 2026-06-04; pipeline deferred.)*
+2. A visitor can browse the catalog and open any artifact on both
    mobile and desktop.
 3. The pattern library correctly aggregates patterns across all articles
    with accurate frequencies and back-links.

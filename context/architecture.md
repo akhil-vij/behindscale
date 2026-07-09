@@ -53,12 +53,18 @@ script already has in hand — no head-context library, no
 react-helmet-async dependency.
 
 Routes are enumerable at build time from `articleBySlug.keys()`,
-`patternBySlug.keys()`, and the static route table (`/`,
-`/patterns`, `/404`). The same React components run twice: once at
-build time (Node, `renderToString` + `StaticRouter`) to produce
+`patternBySlug.keys()`, and the static route table (`/`, `/catalog`,
+`/patterns`, `/404`). As of the 2026-07-08 navigation phase `/` is the
+**conversion landing page** (hero + embedded live artifact + trust
+band + a compact preview of the top problem-classes + one CTA), and
+the browsable article feed moved to **`/catalog`** — the workbench,
+organized by problem-class (`cruxTag`) with a secondary company filter
+and client-side search. This supersedes the earlier model where `/`
+was itself the article feed. The same React components run twice: once
+at build time (Node, `renderToString` + `StaticRouter`) to produce
 HTML, once at runtime (browser, `hydrateRoot` + `BrowserRouter`) to
-take over interactivity for navigation, the source filter, and the
-artifact iframe HEAD probe.
+take over interactivity for navigation, the catalog filters/search,
+and the artifact iframe HEAD probe.
 
 **Defensive properties of the prerender script (locked):**
 
@@ -78,15 +84,41 @@ artifact iframe HEAD probe.
 3. Attribute-context escape helper covers `&`, `<`, `>`, `"`, `'` —
    not just the three HTML-content characters.
 
-**Hydration model.** SSG renders the unfiltered article index on
-first paint. Filtered arrivals at `/?source=<slug>` apply the
-filter from state set in a `useEffect` immediately after mount, so
-the hydrated DOM matches the server-rendered DOM on first paint and
-the filter resolves on next tick. There is one `dist/index.html` for
-all source-filter arrivals — no per-query-string HTML files. The SEO
-benefit of source-filter URLs being indexable is small (they're
-navigation surfaces, not content surfaces); the hydration-mismatch
-cost of doing it the other way is real.
+**Hydration model.** SSG renders the unfiltered catalog on first
+paint. Filtered arrivals at `/catalog?source=<slug>` apply the filter
+from state set in a `useEffect` immediately after mount, so the
+hydrated DOM matches the server-rendered DOM on first paint and the
+filter resolves on next tick. There is one `dist/catalog.html` for all
+source-filter arrivals — no per-query-string HTML files. Client-side
+search on the catalog is likewise a runtime concern: the prerendered
+HTML contains the full unfiltered grouped catalog, and search narrows
+it after hydration. The SEO benefit of source-filter URLs being
+indexable is small (they're navigation surfaces, not content
+surfaces); the hydration-mismatch cost of doing it the other way is
+real.
+
+**Company canonicalization (navigation phase).** The catalog's company
+filter and every "SEEN AT" row key off a single canonical company
+identity derived from `source.company` — not `source.name`. Sources
+whose blog name differs from the company (e.g. `source.name` "Amazon
+Builders' Library" with `source.company` "Amazon (AWS)") must collapse
+to exactly one chip; the filter derives its chip set from the distinct
+`source.company` values across realized articles, so AWS/Amazon is one
+entry, never two.
+
+**Site-level artifacts (navigation phase).** The landing hero embeds a
+live artifact that is **not** tied to any single article — a bespoke,
+cold-legible load-shedding demo built for the homepage. This is a new
+artifact class: article artifacts live at
+`/artifacts/<article-slug>/` and carry the standalone context block +
+article backlink, whereas the hero artifact lives at a site-level path
+(e.g. `/artifacts/_hero/`), carries no article backlink, and is
+tuned for five-second legibility to a cold visitor rather than for
+teaching depth. The isolation guarantee is unchanged — a broken hero
+artifact must fail without breaking the landing page. The `_hero`
+underscore-prefix is the site-level, standalone-visitor-contract-
+exempt signal — see `docs/behindscale-taste.md` §4 (artifact
+contract) for the editorial rationale.
 
 **JSON-LD field map** (per article page, locked verbatim):
 
@@ -393,11 +425,34 @@ Every per-article summary JSON in `content/articles/` conforms to the
   taxonomy axis: patterns name *solutions*, cruxTags name *problems*.
   Reuse across articles is the point — a tag shared by two companies
   is the taxonomy demonstrating its thesis — so uniqueness is
-  deliberately NOT enforced. There are no cruxTag definition files
-  yet; recurrence is derived by grouping articles on equal tags. A
-  browsable `/bottlenecks` surface is deferred work (see
-  progress-tracker.md). Validator: present + normalized kebab-case
-  is an error-level check; no orphan rule applies.
+  deliberately NOT enforced. As of the 2026-07-08 landing/navigation
+  phase the catalog page (`/catalog`) is organized primarily by
+  `cruxTag` — problem-class groups ordered by system count
+  descending — so this grouping is now **load-bearing navigation
+  UI**, not merely derived metadata: a mis-assigned cruxTag now
+  mis-files an article on the main browse surface, which raises
+  the bar on tag hygiene. Recurrence is derived by grouping
+  articles on equal tags. The cruxTag *registry* at
+  `content/cruxtags.json` (added 2026-07-08) supplies the display
+  label + one-sentence definition per tag; a dedicated
+  `/bottlenecks` deep-dive surface (per-cruxTag pages) remains
+  deferred work (see progress-tracker.md). Validator: present +
+  normalized kebab-case is an error-level check (`checkArticle`);
+  every used tag must have a registry entry (`cruxtag-registry-
+  coverage`); no orphan rule the other direction.
+- `cruxSummary` — required string (added 2026-07-08 for the
+  landing/navigation phase; backfilled across all pre-existing
+  articles in the same change). A single hand-authored line,
+  ~10-16 words, stating the bottleneck crisply from the reader's-
+  eye view. This is the card- and browse-surface label: the full
+  `crux` (2-4 sentences) remains the reading-arc callout, while
+  `cruxSummary` is what a catalog card, a problem-class row on the
+  landing preview, and a search result show. Authored to the same
+  source-faithful bar as `crux` — it compresses the crux, it does
+  not restate the title or the solution. Validator: missing/empty
+  is an **error** (`checkArticle` + `crux-summary-length`);
+  a soft length check warns above ~20 words (the card layout
+  assumes one line).
 - `problem` — required string. What the team was solving — the
   motivating problem the original post describes. Plain
   paragraph-separated text (paragraphs split on blank lines); markdown
@@ -589,7 +644,7 @@ on the same reusable solution is one signal; two companies
 running into the same reusable *bottleneck* is a distinct,
 equally load-bearing signal.
 
-**Two fields, both required on every Article:**
+**Three fields, all required on every Article:**
 
 - `crux` — 2-4 sentences of near-source prose naming the
   article's bottleneck (never the topic, never the solution).
@@ -607,6 +662,16 @@ equally load-bearing signal.
   `summary` and `problem`, in that order — the field order
   mirrors the reading arc's callout position, and predicate
   checks enforce it as required.
+- `cruxSummary` — one-line hand-authored crux compression
+  (~10-16 words) added 2026-07-08 alongside the catalog
+  page. This is the card- and browse-surface label
+  (catalog cards, landing preview crux lines, search
+  results); the full `crux` remains the reading-arc
+  callout. Same source-faithful bar as `crux` — compresses,
+  never restates the title or solution. Position in the
+  JSON: between `cruxTag` and `problem`, immediately after
+  the tag. Validators: `checkArticle` requires non-empty;
+  `crux-summary-length` warns above ~20 words.
 
 **Three design decisions that shape the axis:**
 
@@ -623,22 +688,33 @@ equally load-bearing signal.
    `partial-completion-under-crashes`, the first
    same-crux/opposite-solution pair — same bottleneck, one
    embedded answer and one central-platform answer).
-2. **There are no cruxTag definition files.** Patterns have
-   `content/patterns/{slug}.json` files carrying authored
-   definitions, `whenItApplies`, `tradeoffs`, category;
-   cruxTags do not, and the validator has no orphan-
-   reference rule. Recurrence is derived by grouping
-   articles on equal `cruxTag` strings — the article JSONs
-   are the taxonomy's single source of truth. Rationale:
-   patterns are the *durable* layer where the library
-   compounds cross-article synthesis; the cruxTag layer is
-   the *problem-discovery* layer where the crux prose (on
-   the article) already carries the full editorial payload.
-   A separate definition file would be redundant with the
-   crux, and any generalization of the class beyond the
-   articles that instantiate it would drift from the source
-   material — exactly the failure mode the fidelity
-   discipline is designed to prevent.
+2. **The cruxTag *registry* is minimal browse-surface
+   metadata, not a definition file.** The 2026-07-08 landing/
+   navigation phase added `content/cruxtags.json` — a flat
+   `{ slug: { label, definition } }` map with one entry per
+   distinct cruxTag used across the library. The registry
+   exists because the catalog page groups articles by
+   cruxTag and needs a display label plus a one-sentence
+   class definition per group header; a raw kebab slug like
+   `single-table-scaling-ceiling` won't do, and neither will
+   a per-page derivation from article prose. **The registry
+   is deliberately not a definition file in the pattern
+   sense.** Patterns have
+   `content/patterns/{slug}.json` files carrying multi-
+   paragraph authored definitions, `whenItApplies`,
+   `tradeoffs`, and category. cruxTag entries have exactly
+   two fields — `label` (display casing/hyphenation) and
+   `definition` (one company-neutral sentence naming the
+   bottleneck class). The article-level `crux` prose still
+   carries the full editorial payload; the registry
+   definition is the class-level compression the group
+   header needs. Validator (`cruxtag-registry-coverage`,
+   Commit 1): every distinct cruxTag used by any article
+   must have a registry entry (missing entry is an
+   **error** — an unlabeled group would render a raw slug
+   and break the DefinedTermSet structured data). Unused
+   registry entries are allowed by design — supports future
+   article removals.
 3. **A browsable `/bottlenecks` surface is deferred.** The
    taxonomy renders correctly on the article page today
    (THE CRUX callout) and would benefit from a
@@ -658,15 +734,23 @@ equally load-bearing signal.
   library carries one.
 - Missing `cruxTag` or `cruxTag` failing the kebab-case
   regex is an **error**.
+- Missing / empty `cruxSummary` is an **error**;
+  `cruxSummary` above ~20 words warns
+  (`crux-summary-length`).
+- Every cruxTag used by any article must have a
+  `content/cruxtags.json` entry — missing entry is an
+  **error** (`cruxtag-registry-coverage`). Unused registry
+  entries are allowed by design.
 - There is NO uniqueness check on cruxTag (see decision 1).
-- There is NO orphan-reference check against a definitions
-  folder (see decision 2 — no such folder exists).
 
-Both checks fit the existing `CheckError.severity: 'error'`
-contract — no framework change needed. The value-in-prose
-warning semantics (surface, don't block) stay reserved for
-the stats field, where fuzzy matching is genuinely
-intended.
+All error-level checks fit the existing
+`CheckError.severity: 'error'` contract — no framework
+change needed. The soft-length warning on `cruxSummary`
+and the value-in-prose fuzzy-miss warnings on `stats` are
+the only two check outputs that use `severity: 'warning'`
+— both cases where authorial phrasing is genuinely a
+judgment call, so the validator flags and the human
+decides.
 
 ## Proposed Pattern Queue
 
