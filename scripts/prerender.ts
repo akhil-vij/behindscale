@@ -130,15 +130,47 @@ interface Meta {
 }
 
 function landingMeta(): Meta {
+  const description =
+    'A library of top engineering blog posts dissected into structured summaries and interactive artifacts, grouped by the bottleneck each system was built to solve.'
+
+  const organization = {
+    '@type': 'Organization',
+    '@id': `${SITE_URL}#organization`,
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/og-default.png`,
+  }
+
+  // WebSite with a SearchAction pointing at /catalog?q=... so Google
+  // can offer a sitelinks searchbox that lands the query on the
+  // catalog's search field. `{search_term_string}` is Google's
+  // placeholder token -- the required literal shape for the query
+  // input pattern.
+  const website = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${SITE_URL}#website`,
+    url: SITE_URL,
+    name: SITE_NAME,
+    description,
+    publisher: { '@id': `${SITE_URL}#organization` },
+    inLanguage: 'en',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/catalog?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  }
+
   return {
     title: `${SITE_NAME} — engineering blog dissections by problem class`,
-    description:
-      'A library of top engineering blog posts dissected into structured summaries and interactive artifacts, grouped by the bottleneck each system was built to solve.',
+    description,
     canonical: `${SITE_URL}/`,
     ogType: 'website',
-    // Landing-page JSON-LD (WebSite / SearchAction / Organization)
-    // lands in Commit 5.
-    jsonLd: null,
+    jsonLd: [website, organization],
   }
 }
 
