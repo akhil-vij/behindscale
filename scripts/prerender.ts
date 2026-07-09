@@ -28,8 +28,6 @@ const DIST_SSR = join(ROOT, 'dist-ssr')
 
 const SITE_URL = 'https://www.behindscale.com'
 const SITE_NAME = 'behindscale'
-const SITE_DESCRIPTION =
-  'A library of carefully dissected engineering blog posts, organized by reusable system-design patterns.'
 const OG_IMAGE = `${SITE_URL}/og-default.png`
 
 // --- Load SSR render function from the vite --ssr output ---
@@ -117,15 +115,36 @@ interface Meta {
   description: string
   canonical: string
   ogType: 'website' | 'article'
-  jsonLd: unknown | null
+  // A single JSON-LD object, an array of them (for pages carrying
+  // multiple typed blocks like TechArticle + BreadcrumbList +
+  // DefinedTermSet references, landed in Commit 6), or null. The
+  // headTags() renderer emits one <script type="application/ld+json">
+  // per block, each escaped via jsonLdInline().
+  jsonLd: unknown | readonly unknown[] | null
 }
 
-function homeMeta(): Meta {
+function landingMeta(): Meta {
   return {
-    title: `${SITE_NAME} — engineering blog dissections by pattern`,
-    description: SITE_DESCRIPTION,
+    title: `${SITE_NAME} — engineering blog dissections by problem class`,
+    description:
+      'A library of top engineering blog posts dissected into structured summaries and interactive artifacts, grouped by the bottleneck each system was built to solve.',
     canonical: `${SITE_URL}/`,
     ogType: 'website',
+    // Landing-page JSON-LD (WebSite / SearchAction / Organization)
+    // lands in Commit 5.
+    jsonLd: null,
+  }
+}
+
+function catalogMeta(): Meta {
+  return {
+    title: `Catalog — ${SITE_NAME}`,
+    description:
+      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+    canonical: `${SITE_URL}/catalog`,
+    ogType: 'website',
+    // Catalog-page JSON-LD (CollectionPage + cruxTag DefinedTermSet)
+    // lands in Commit 4.
     jsonLd: null,
   }
 }
@@ -137,6 +156,8 @@ function patternsIndexMeta(): Meta {
       'Reusable system-design patterns identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
     ogType: 'website',
+    // Pattern DefinedTermSet JSON-LD lands in Commit 6 alongside the
+    // article-page TechArticle upgrade.
     jsonLd: null,
   }
 }
@@ -223,9 +244,17 @@ function headTags(m: Meta): string {
     `<meta name="twitter:card" content="summary_large_image" />`,
   ]
   if (m.jsonLd !== null) {
-    lines.push(
-      `<script type="application/ld+json">${jsonLdInline(m.jsonLd)}</script>`,
-    )
+    // A meta can carry either a single JSON-LD object or an array of
+    // them (article pages need TechArticle + BreadcrumbList; the
+    // catalog needs CollectionPage + DefinedTermSet). Emit one
+    // <script> per block. Each block passes through jsonLdInline() so
+    // the </script> escape applies uniformly.
+    const blocks = Array.isArray(m.jsonLd) ? m.jsonLd : [m.jsonLd]
+    for (const block of blocks) {
+      lines.push(
+        `<script type="application/ld+json">${jsonLdInline(block)}</script>`,
+      )
+    }
   }
   return lines.join('\n    ')
 }
@@ -239,7 +268,8 @@ interface RouteEntry {
 }
 
 const routes: RouteEntry[] = [
-  { path: '/', outPath: 'index.html', meta: homeMeta() },
+  { path: '/', outPath: 'index.html', meta: landingMeta() },
+  { path: '/catalog', outPath: 'catalog.html', meta: catalogMeta() },
   { path: '/patterns', outPath: 'patterns.html', meta: patternsIndexMeta() },
   ...articles.map(
     (a): RouteEntry => ({

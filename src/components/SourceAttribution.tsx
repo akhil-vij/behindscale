@@ -27,13 +27,14 @@ export default function SourceAttribution({
   articleUrl,
 }: SourceAttributionProps) {
   if (variant === 'card') {
-    // Compact eyebrow used on article cards (index) and pattern-detail
-    // back-link cards. The source-name link emits the /?source=<slug>
-    // URL that ArticleIndex reads (Unit 6) to apply the source filter.
+    // Compact eyebrow used on catalog cards and pattern-detail back-link
+    // cards. The source-name link emits the /catalog?source=<slug> URL
+    // that Catalog reads (2026-07-08 landing/navigation phase) to apply
+    // the source filter.
     return (
       <div className="font-mono text-xs uppercase tracking-wide text-text-muted">
         <Link
-          to={`/?source=${source.slug}`}
+          to={`/catalog?source=${source.slug}`}
           className="hover:text-text-primary transition-colors"
         >
           {source.name}

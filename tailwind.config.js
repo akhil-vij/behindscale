@@ -35,10 +35,15 @@ export default {
         'cat-cyan': 'rgb(var(--cat-cyan-rgb) / <alpha-value>)',
         'cat-red': 'rgb(var(--cat-red-rgb) / <alpha-value>)',
         'cat-amber': 'rgb(var(--cat-amber-rgb) / <alpha-value>)',
+        // Brand thread (2026-07-08). Routed through -rgb for opacity
+        // modifiers -- the design uses `brand-gold/22` on the artifact
+        // underglow, `brand-gold/18` on the wordmark box-shadow, etc.
+        'brand-gold': 'rgb(var(--brand-gold-rgb) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['var(--font-sans)'],
         mono: ['var(--font-mono)'],
+        serif: ['var(--font-serif)'],
       },
       borderRadius: {
         md: '6px',

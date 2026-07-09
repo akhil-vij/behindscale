@@ -56,6 +56,12 @@ interface SitemapEntry {
 
 const entries: SitemapEntry[] = [
   { url: `${SITE_URL}/` },
+  // /catalog has no content-modeled timestamp -- it's a browse
+  // surface derived from article state, not itself dated. A
+  // fabricated `lastmod` is worse than none (it lies to crawlers
+  // about freshness), so this entry ships without one deliberately.
+  // Landed 2026-07-08 with the landing/navigation phase.
+  { url: `${SITE_URL}/catalog` },
   { url: `${SITE_URL}/patterns` },
   ...articles.map((a) => ({
     url: `${SITE_URL}/articles/${a.slug}`,

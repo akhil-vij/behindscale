@@ -13,6 +13,11 @@ import '@fontsource/inter/600.css'
 import '@fontsource/inter/700.css'
 import '@fontsource/jetbrains-mono/400.css'
 import '@fontsource/jetbrains-mono/500.css'
+// Newsreader serif for editorial display type (design-spec §2). Variable
+// font: opsz + weight in one file; the italic axis loads separately.
+// Added 2026-07-08 for the landing/navigation phase.
+import '@fontsource-variable/newsreader/opsz.css'
+import '@fontsource-variable/newsreader/opsz-italic.css'
 
 // hydrateRoot, not createRoot: the per-route HTML is emitted at build
 // time by scripts/prerender.ts; React's job here is to take over the
