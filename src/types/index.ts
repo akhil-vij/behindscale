@@ -6,3 +6,4 @@ export type {
   PatternLibraryEntry,
   PatternLibraryArticleRef,
 } from './pattern-library'
+export type { CruxTagEntry, CruxTagRegistry } from './cruxtag'

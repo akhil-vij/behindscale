@@ -15,6 +15,8 @@ import { orphanPatternSlugs } from './checks/orphan-pattern-slugs'
 import { minimumPatternCoverage } from './checks/minimum-pattern-coverage'
 import { artifactPathMatchesSlug } from './checks/artifact-path-matches-slug'
 import { statsValueInProse } from './checks/stats-value-in-prose'
+import { cruxSummaryLength } from './checks/crux-summary-length'
+import { cruxTagRegistryCoverage } from './checks/cruxtag-registry-coverage'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -25,6 +27,8 @@ const CHECKS: readonly Check[] = [
   minimumPatternCoverage,
   artifactPathMatchesSlug,
   statsValueInProse,
+  cruxSummaryLength,
+  cruxTagRegistryCoverage,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

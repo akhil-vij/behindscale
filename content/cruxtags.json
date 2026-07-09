@@ -1,0 +1,42 @@
+{
+  "priority-blind-load-shedding": {
+    "label": "Priority-blind load shedding",
+    "definition": "Under overload the system drops work without regard to its importance, so shedding meant to protect the service also sacrifices its most critical traffic."
+  },
+  "partial-completion-under-crashes": {
+    "label": "Partial completion under crashes",
+    "definition": "A multi-step process interrupted between steps leaves its outcome and its side effects undetermined — some work done, some not, and no safe way to resume without either dropping or duplicating it."
+  },
+  "single-table-scaling-ceiling": {
+    "label": "Single-table scaling ceiling",
+    "definition": "A single table's size or write volume outgrows what any one database instance can serve, and because a table is the smallest unit vertical partitioning can move, only splitting the table itself across shards relieves it."
+  },
+  "ambiguous-failure-under-retry": {
+    "label": "Ambiguous failure under retry",
+    "definition": "A request that times out or fails mid-flight leaves the caller unable to tell whether it already took effect, so a retry risks repeating an operation that in fact succeeded."
+  },
+  "single-cluster-scaling-ceiling": {
+    "label": "Single-cluster scaling ceiling",
+    "definition": "A single database cluster becomes both a capacity ceiling and a shared-fate domain: it can only be scaled by ever-larger machines, and any incident on it degrades everything built on top — so relief means moving whole tables or domains onto separate clusters."
+  },
+  "blast-radius-scales-with-cluster-size": {
+    "label": "Blast radius scales with cluster size",
+    "definition": "In one large shared cluster the cost of a single failure grows with node count — a lone slow or dead node degrades a disproportionate share of operations, and coordination overhead worsens with size — so the fix is smaller isolated cells."
+  },
+  "buffer-degrades-under-backlog": {
+    "label": "Buffer degrades under backlog",
+    "definition": "A component whose job is to absorb backlog is served by a substrate that slows down as the backlog grows, so the very condition it exists to handle erodes its ability to handle it."
+  },
+  "gray-failure-defeats-automatic-detection": {
+    "label": "Gray failure defeats automatic detection",
+    "definition": "When a failure is partial and inconsistent, different components hold contradictory views of what is healthy, so automated detection cannot converge on a fault the system can't agree exists — and mitigation must fall to a human acting on ambiguous evidence."
+  },
+  "observer-shares-fate-with-observed": {
+    "label": "Observer shares fate with observed",
+    "definition": "A system depends on the very infrastructure it exists to watch or protect — most commonly monitoring running on the servers it monitors — so a failure in that foundation disables the safeguard exactly when it is needed."
+  },
+  "retry-amplified-overload": {
+    "label": "Retry-amplified overload",
+    "definition": "When failures are caused by overload, clients retrying to improve their own odds spend the struggling dependency's scarce capacity, multiplying load at the worst moment — and naive backoff does not fix it, because clients that failed together retry in sync."
+  }
+}

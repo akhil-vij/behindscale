@@ -26,6 +26,7 @@ import type {
   PatternLibraryEntry,
   PatternLibraryArticleRef,
 } from './pattern-library'
+import type { CruxTagEntry, CruxTagRegistry } from './cruxtag'
 
 export type Result = { ok: true } | { ok: false; reason: string }
 
@@ -89,6 +90,8 @@ export function checkArticle(value: unknown): Result {
   if (!KEBAB_CASE.test(value.cruxTag)) {
     return fail(`\`cruxTag\` expected lowercase-kebab-case (got "${value.cruxTag}"; pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
   }
+  if (typeof value.cruxSummary !== 'string') return fail('`cruxSummary` expected string (one-line crux compression, ~10-16 words; the card- and browse-surface label)')
+  if (value.cruxSummary.trim().length === 0) return fail('`cruxSummary` expected non-empty string')
   if (typeof value.problem !== 'string') return fail('`problem` expected string')
   if (typeof value.solution !== 'string') return fail('`solution` expected string')
   if (!isStringArray(value.tradeoffs)) return fail('`tradeoffs` expected string[]')
@@ -188,6 +191,27 @@ export function checkPatternLibrary(value: unknown): Result {
   return ok
 }
 
+export function checkCruxTagEntry(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (typeof value.label !== 'string') return fail('`label` expected string')
+  if (value.label.trim().length === 0) return fail('`label` expected non-empty string')
+  if (typeof value.definition !== 'string') return fail('`definition` expected string')
+  if (value.definition.trim().length === 0) return fail('`definition` expected non-empty string')
+  return ok
+}
+
+export function checkCruxTagRegistry(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object (map of cruxTag slug -> entry)')
+  for (const [slug, entry] of Object.entries(value)) {
+    if (!KEBAB_CASE.test(slug)) {
+      return fail(`registry key \`${slug}\` expected lowercase-kebab-case (pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
+    }
+    const entryResult = checkCruxTagEntry(entry)
+    if (!entryResult.ok) return fail(`entry \`${slug}\`: ` + entryResult.reason)
+  }
+  return ok
+}
+
 // Boolean wrappers -- the surface vitest tests have always used. Kept so
 // the test files don't need to know about the Result shape.
 export const isSource = (v: unknown): v is Source => checkSource(v).ok
@@ -202,3 +226,5 @@ export const isPatternLibraryArticleRef = (v: unknown): v is PatternLibraryArtic
 export const isPatternLibraryEntry = (v: unknown): v is PatternLibraryEntry =>
   checkPatternLibraryEntry(v).ok
 export const isPatternLibrary = (v: unknown): v is PatternLibrary => checkPatternLibrary(v).ok
+export const isCruxTagEntry = (v: unknown): v is CruxTagEntry => checkCruxTagEntry(v).ok
+export const isCruxTagRegistry = (v: unknown): v is CruxTagRegistry => checkCruxTagRegistry(v).ok

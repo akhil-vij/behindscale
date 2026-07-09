@@ -4,10 +4,17 @@ import { Link } from 'react-router-dom'
 // string so Tailwind's content scanner picks up every class even though
 // the selection happens at runtime. Add new categories here as the
 // pattern library grows.
+//
+// `performance` joined the ramp in the 2026-07-08 landing/navigation
+// phase (docs/design-spec.md §2). `throughput` (volume/work-per-time)
+// and `performance` (latency/response-time) are genuinely distinct
+// pattern categories, so they get distinct colors -- consolidating
+// them would erase a real distinction in the taxonomy.
 const CATEGORY_CLASSES: Record<string, string> = {
   resilience: 'text-cat-blue border-cat-blue/30 bg-cat-blue/10',
   consistency: 'text-cat-purple border-cat-purple/30 bg-cat-purple/10',
   throughput: 'text-cat-green border-cat-green/30 bg-cat-green/10',
+  performance: 'text-cat-orange border-cat-orange/30 bg-cat-orange/10',
   observability: 'text-cat-cyan border-cat-cyan/30 bg-cat-cyan/10',
 }
 

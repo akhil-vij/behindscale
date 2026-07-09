@@ -19,6 +19,7 @@ const validArticle = {
   summary: 'How Stripe makes payment APIs safe to retry by combining idempotency keys with atomic phase boundaries.',
   crux: 'Two of the three network-call failure modes leave the client unable to tell whether the operation happened, and for a payments API both guesses are catastrophic.',
   cruxTag: 'ambiguous-failure-under-retry',
+  cruxSummary: 'A timed-out request leaves the client unable to tell whether it already happened.',
   problem: 'Network failures during payment requests leave the client uncertain whether the charge succeeded.',
   solution: 'Idempotency keys persisted alongside each phase let retries resume safely from the last committed boundary.',
   tradeoffs: [
@@ -97,6 +98,16 @@ describe('Article', () => {
     const shopify = { ...validArticle, slug: 'b', cruxTag: 'ambiguous-failure-under-retry' }
     expect(isArticle(stripe)).toBe(true)
     expect(isArticle(shopify)).toBe(true)
+  })
+
+  it('rejects when cruxSummary is missing', () => {
+    const malformed: Record<string, unknown> = { ...validArticle }
+    delete malformed.cruxSummary
+    expect(isArticle(malformed)).toBe(false)
+  })
+
+  it('rejects when cruxSummary is an empty string', () => {
+    expect(isArticle({ ...validArticle, cruxSummary: '   ' })).toBe(false)
   })
 
   it('accepts a summary-only article (artifact = null)', () => {

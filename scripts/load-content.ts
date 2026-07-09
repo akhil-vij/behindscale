@@ -10,14 +10,23 @@
 // (and from subsequent checks for that file). All schema errors are
 // reported in one pass -- the loader doesn't stop at the first.
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { checkArticle, checkPatternDefinition } from '../src/types/predicates'
-import type { Article, PatternDefinition } from '../src/types'
+import {
+  checkArticle,
+  checkCruxTagRegistry,
+  checkPatternDefinition,
+} from '../src/types/predicates'
+import type {
+  Article,
+  CruxTagRegistry,
+  PatternDefinition,
+} from '../src/types'
 import type { CheckError, ContentSet } from './types'
 
 const ARTICLES_DIR = 'content/articles'
 const PATTERNS_DIR = 'content/patterns'
+const CRUXTAGS_PATH = 'content/cruxtags.json'
 
 // The [schema] section label is owned here so a future renamer can
 // grep this constant for the producer + every consumer in one shot.
@@ -47,6 +56,7 @@ export function loadContent(): LoadResult {
   let skippedFileCount = 0
   const articles: Article[] = []
   const patterns: PatternDefinition[] = []
+  let cruxTagRegistry: CruxTagRegistry = {}
   const articlePaths = new Map<string, string>()
   const patternPaths = new Map<string, string>()
 
@@ -107,8 +117,47 @@ export function loadContent(): LoadResult {
     patternPaths.set(pattern.slug, path)
   }
 
+  // cruxTag registry -- a single file. Missing is treated as an empty
+  // registry (the loader logs a schema error, and the
+  // cruxtag-registry-coverage check will then flag every article's
+  // cruxTag as uncovered, which is the correct signal). A file that
+  // exists but fails schema is a schema error and downstream checks
+  // see the same empty registry.
+  if (existsSync(CRUXTAGS_PATH)) {
+    const parsed = readJson(CRUXTAGS_PATH, schemaErrors)
+    if (parsed !== undefined) {
+      const result = checkCruxTagRegistry(parsed)
+      if (!result.ok) {
+        schemaErrors.push({
+          file: CRUXTAGS_PATH,
+          message: result.reason,
+          fix: ['shape file as CruxTagRegistry (see src/types/cruxtag.ts)'],
+        })
+        skippedFileCount += 1
+      } else {
+        cruxTagRegistry = parsed as CruxTagRegistry
+      }
+    } else {
+      skippedFileCount += 1
+    }
+  } else {
+    schemaErrors.push({
+      file: CRUXTAGS_PATH,
+      message: 'cruxTag registry file does not exist',
+      fix: [
+        'create content/cruxtags.json (map of cruxTag slug -> { label, definition })',
+      ],
+    })
+  }
+
   return {
-    content: { articles, patterns, articlePaths, patternPaths },
+    content: {
+      articles,
+      patterns,
+      cruxTagRegistry,
+      articlePaths,
+      patternPaths,
+    },
     schemaErrors,
     skippedFileCount,
   }

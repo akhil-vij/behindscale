@@ -3,11 +3,16 @@
 // under scripts/checks/ that exports a Check, plus one line in
 // scripts/validate-content.ts's CHECKS array.
 
-import type { Article, PatternDefinition } from '../src/types'
+import type { Article, CruxTagRegistry, PatternDefinition } from '../src/types'
 
 export interface ContentSet {
   readonly articles: readonly Article[]
   readonly patterns: readonly PatternDefinition[]
+  // The cruxTag registry (`content/cruxtags.json`). Empty object when
+  // the file is missing or fails to parse -- the schema loader logs
+  // that failure separately, so downstream checks see the same empty
+  // set they would see if no entries were authored yet.
+  readonly cruxTagRegistry: CruxTagRegistry
   // slug -> on-disk path. Lets checks emit exact file locations in
   // their error output without each check arg carrying path strings;
   // the runner resolves slug -> path when rendering.

@@ -2,7 +2,11 @@
 // (takes a ContentSet, returns errors), so tests construct the
 // ContentSet directly without touching the filesystem.
 
-import type { Article, PatternDefinition } from '../../../src/types'
+import type {
+  Article,
+  CruxTagRegistry,
+  PatternDefinition,
+} from '../../../src/types'
 import type { ContentSet } from '../../types'
 
 export function article(slug: string, patternSlugs: readonly string[]): Article {
@@ -22,6 +26,7 @@ export function article(slug: string, patternSlugs: readonly string[]): Article 
     summary: '',
     crux: 'placeholder crux for test fixture -- not editorial output.',
     cruxTag: 'test-fixture-crux',
+    cruxSummary: 'A one-line crux summary for the test fixture.',
     problem: '',
     solution: '',
     tradeoffs: [],
@@ -41,13 +46,26 @@ export function pattern(slug: string): PatternDefinition {
   }
 }
 
+// A default registry that covers the fixture article's placeholder
+// cruxTag, so tests that don't care about registry coverage don't
+// trip cruxtag-registry-coverage by default. Tests that need
+// registry variations pass a `cruxTagRegistry` override.
+const DEFAULT_REGISTRY: CruxTagRegistry = {
+  'test-fixture-crux': {
+    label: 'Test fixture crux',
+    definition: 'Placeholder cruxTag entry for test fixtures.',
+  },
+}
+
 export function makeContent(input: {
   articles: readonly Article[]
   patterns: readonly PatternDefinition[]
+  cruxTagRegistry?: CruxTagRegistry
 }): ContentSet {
   return {
     articles: input.articles,
     patterns: input.patterns,
+    cruxTagRegistry: input.cruxTagRegistry ?? DEFAULT_REGISTRY,
     articlePaths: new Map(
       input.articles.map((a) => [a.slug, `content/articles/${a.slug}.json`]),
     ),

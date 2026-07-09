@@ -38,9 +38,23 @@ export interface Article {
   // axis -- patterns name solutions, cruxTags name problems.
   // **Reuse across articles is the point** so uniqueness is NOT
   // enforced. There are no cruxTag definition files; recurrence is
-  // derived by grouping articles on equal tags. A `/bottlenecks`
-  // surface is deferred work.
+  // derived by grouping articles on equal tags. Since the
+  // 2026-07-08 landing/navigation phase the catalog page groups
+  // articles by `cruxTag` and the cruxTag *registry* at
+  // `content/cruxtags.json` supplies the display label + class
+  // definition (checked by the `cruxtag-registry-coverage`
+  // validator).
   cruxTag: string
+  // The one-line crux compression rendered on catalog cards, in
+  // problem-class group previews on the landing page, and in
+  // search results. Hand-authored, ~10-16 words, in the same
+  // source-faithful register as `crux`. This is the browse-surface
+  // label; the full `crux` (2-4 sentences) remains the reading-arc
+  // callout on the article page. Added 2026-07-08 in the landing/
+  // navigation phase and backfilled across all pre-existing
+  // articles in the same change. Validator: missing/empty is an
+  // error; word-count above ~20 warns (the card assumes one line).
+  cruxSummary: string
   problem: string
   solution: string
   tradeoffs: string[]
