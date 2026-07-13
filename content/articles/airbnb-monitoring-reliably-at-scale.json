@@ -45,6 +45,7 @@
       "note": "The original monitoring architecture had overlapping circular dependencies, each invisible until activated. The redesign maps and severs each one: dedicated clusters break the compute dependency; dedicated network plane breaks the data-flow dependency; external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how circular dependencies hide in plain sight inside 'reasonable' shared-infrastructure choices."
     }
   ],
+  "relatedArticles": ["roblox-return-to-service"],
   "artifact": {
     "path": "/artifacts/airbnb-monitoring-reliably-at-scale/index.html",
     "teaser": "Break each layer — in the old architecture and the new — and see who gets paged."

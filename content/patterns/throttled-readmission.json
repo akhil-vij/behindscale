@@ -1,0 +1,16 @@
+{
+  "slug": "throttled-readmission",
+  "name": "Throttled Readmission",
+  "category": "resilience",
+  "definition": "After an extended outage, reintroduce load in small, controlled increments rather than reopening the gates — admitting a percentage of users or traffic at a time (via DNS steering, load-balancer weights, or feature gates), verifying key health signals at each step, and holding or backing off if they degrade. A system recovering from a full stop is not the system that ran yesterday: caches are cold, autoscaling history is gone, and dependencies are freshly restarted, so the load it handled routinely can now push it straight back into collapse.\n\nThe pattern treats recovery as its own operating regime with its own capacity curve, and converts the question 'is it safe to reopen?' — unanswerable in one step — into a sequence of small questions the system answers with live evidence.",
+  "whenItApplies": [
+    "Returning to service after a full or near-full outage, especially with cold caches or freshly bootstrapped dependencies",
+    "Any system whose steady-state capacity depends on warmed state (caches, JITs, connection pools, autoscaler history) that an outage destroys",
+    "Recovery of systems where a relapse would be costlier than a slower reopening — reputationally or operationally"
+  ],
+  "tradeoffs": [
+    "Extends visible downtime for the users still held out — the safety margin is paid in customer-minutes and communication burden",
+    "Requires an admission mechanism (DNS steering, weighted routing) that itself must work while the system is fragile",
+    "Percentage gates admit randomly, not fairly — determined users may game the mechanism, and priority classes need explicit design"
+  ]
+}

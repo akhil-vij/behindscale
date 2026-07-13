@@ -1,0 +1,73 @@
+{
+  "slug": "roblox-return-to-service",
+  "title": "Dark Dashboards: The 73 Hours When Roblox Couldn't See Itself",
+  "url": "https://about.roblox.com/newsroom/2022/01/roblox-return-to-service-10-28-10-31-2021",
+  "publishedAt": "2022-01-20",
+  "addedAt": "2026-07-13",
+  "source": {
+    "name": "Roblox Blog",
+    "slug": "roblox-blog",
+    "company": "Roblox",
+    "url": "https://about.roblox.com/newsroom",
+    "feed": "https://about.roblox.com/newsroom"
+  },
+  "summary": "Starting October 28, 2021, Roblox — fifty million daily players on 18,000 self-managed servers and 170,000 containers — went fully down for 73 hours. The root cause was two primarily unrelated pathologies buried deep in Consul: a new streaming feature that collapsed into Go-channel contention under simultaneously high read and write load, and a BoltDB freelist defect that turned 16kB Raft appends into 7.8MB writes. But what turned deep bugs into three days was structural: a single Consul cluster underpinned service discovery, health checks, scheduling, and secrets for all of Roblox — and the telemetry that would have exposed the pathologies depended on that same cluster, so responders worked four wrong theories nearly blind. Recovery itself became engineering: a snapshot reset, disabling streaming, blocking slow leaders from election, rebuilding a 1B-request-per-second cache tier from a cold start, and DNS-steered readmission of players in 10% increments.",
+  "crux": "Two deep, primarily unrelated pathologies — Consul's new streaming feature degenerating into contention on a single Go channel under high read-and-write load, and BoltDB writing a 7.8MB freelist to disk for every 16kB Raft append — hid inside the one cluster that all of Roblox depended on for service discovery, health checks, scheduling, and secrets. The bottleneck that made it a 73-hour outage rather than a hard afternoon was circular: the critical monitoring that would have provided visibility into Consul relied on Consul, so the team triaged a system-wide collapse with its instruments dark — the post is explicit that diagnosis challenges were largely responsible for the extended downtime, and that the telemetry dependency severely hampered triage. The observer had gone down with the observed, exactly when it was needed.",
+  "cruxTag": "observer-shares-fate-with-observed",
+  "cruxSummary": "Telemetry depended on the failing Consul cluster — responders diagnosed a 73-hour outage nearly blind.",
+  "problem": "Roblox runs its core infrastructure in its own data centers — over 18,000 servers and 170,000 containers orchestrated by the HashiStack: Nomad schedules work, Vault holds secrets, and Consul provides service discovery, health checks, session locking, and a KV store. Consul's role made it load-bearing for everything: when a Roblox service wants to talk to another, Consul tells it where; Nomad and Vault themselves depend on it. The post's own summary is unsparing — the system failed because Consul was a single point of failure, and Consul was not healthy.\n\nOn the afternoon of October 28, 2021, Vault performance degraded and one Consul server showed high CPU. KV write latency that normally sits under 300ms at the 50th percentile rose to 2 seconds. By 16:35 player counts had halved; then the platform went fully dark, fifty million daily players locked out behind a maintenance page.\n\nWhat followed was four failed diagnoses in sequence, each consuming hours: degraded hardware (nodes replaced — no change); a traffic tipping point (the entire cluster migrated to 128-core NVMe machines — no change, and as the team later learned, the dual-socket NUMA architecture made the real problem worse); corrupted state (a full cluster shutdown and snapshot reset behind iptables — healthy briefly, then the familiar collapse); and sheer usage (services scaled from hundreds of instances to single digits, health checks stretched from 60 seconds to 10 minutes — relief for hours, then unhealthy again with a fraction of the load). Fourteen hours in, the team still didn't know what it was fighting; over fifty hours in, it was still working theories.\n\nThe reason diagnosis ran blind is the crux: critical monitoring systems that would have provided better visibility into the cause relied on affected systems — on Consul itself. The telemetry that should have illuminated the failure was a casualty of it. Only when the team stopped reasoning from the outside (hardware, traffic, load) and went spelunking in debug logs, perf reports, and flame graphs did the evidence surface: kernel spin locks concentrated in the streaming subscription code path.",
+  "solution": "The breakthrough came from Consul internals, not infrastructure. Months earlier Roblox had upgraded to Consul 1.10 for a streaming feature that cuts the CPU and bandwidth of distributing updates across large clusters; it worked well enough that it was incrementally enabled more broadly, and one day before the outage it reached the traffic-routing service — whose node count had simultaneously been increased 50% for end-of-year traffic. HashiCorp's explanation of the pathology: streaming uses fewer concurrency-control elements than long polling, and under simultaneously high read and write load, contention concentrates on a single Go channel, blocking writes — worse still on the new dual-socket NUMA machines. Disabling streaming everywhere dropped KV write p50 from 2 seconds back to 300ms.\n\nStability required one more workaround: some elected leaders still exhibited the old latency, for reasons unknown mid-incident, so the team pragmatically prevented the problematic servers from staying elected and moved on. The full explanation arrived days later: Consul stores its Raft log in BoltDB, whose design never shrinks the file — deleted pages go on a freelist that is written to disk with every append. Roblox's workload had grown that freelist to nearly a million page IDs: a 4.2GB log file holding 489MB of data, paying a 7.8MB freelist write for every 16kB append, backing up into full TCP buffers and zero windows on unhealthy leaders. The fix was a compaction process using existing BoltDB tooling, and, longer-term, replacing BoltDB with its successor bbolt, which bounds freelist growth.\n\nRecovery from a fully-down state was its own engineering problem. The caching tier — 1 billion requests per second across its layers in normal operation — held only transient data, so redeployment was the path; but the deployment tooling was built for incremental adjustment of live systems, not bootstrapping from scratch, and the earlier snapshot reset had left stale scheduling data in Consul's KV, while one unhealthy node that the scheduler saw as wide open soaked up aggressive job placements that all failed. Sixty-one hours in, Consul and the caches were healthy. The final act was deliberately slow: with cold caches, the team used DNS steering to admit randomly selected players in roughly 10% increments, checking database load, cache performance, and stability at each step — dedicated players reverse-engineered the scheme on Twitter to get in early — reaching 100% at hour 73.\n\nThe remediations map one-to-one onto the anatomy of the failure. First, the circular dependency: telemetry systems no longer depend on the systems they are configured to monitor, with new targeted alerts on the specific signatures of this outage. Second, the shared-fate hub: critical services split onto dedicated Consul clusters, KV data migrated to more appropriate stores, obsolete data deleted, and a build-out of a second, geographically distinct data center with multi-AZ efforts accelerated on the roadmap. Third, the recovery gap: cache deployment redesigned for cold starts, Nomad enhancements for turning up large jobs after long unavailability. Streaming itself returns only after HashiCorp's redesign is tested at Roblox's scale — the feature wasn't wrong, its concurrency model was, and the post is careful to keep those separate.",
+  "tradeoffs": [
+    "A single Consul cluster for all workloads is operational simplicity priced in blast radius. One cluster to run, secure, and upgrade underpinned discovery, health, locking, scheduling, and secrets — and the post's summary names the cost plainly: it exacerbated the impact of bugs that, in isolated clusters, would have taken down a slice instead of everything. The remediation (dedicated clusters per critical service) buys isolation with the very operational multiplication the original design avoided.",
+    "Monitoring that shares infrastructure with what it monitors is cheap right up until it's priceless. Running telemetry on the same substrate avoids a parallel stack — and guarantees the instruments go dark in exactly the incidents where minutes of visibility are worth days. Roblox's post-outage rule is the pattern's general form: the observer must not depend on the observed. Airbnb reached the identical conclusion from a smaller blast radius — this is the class's second company, and the lesson survived a 400x difference in outage duration.",
+    "Efficiency features move contention, they don't erase it. Streaming genuinely reduced CPU and bandwidth — by using fewer concurrency-control elements, which under simultaneously high read and write load concentrated contention on a single Go channel. Months of incremental rollout validated the feature under every condition except the one that mattered, and HashiCorp's own benchmarks at similar scale had never combined stream count with churn rate the way Roblox's workload did. The benchmark you didn't run is the regime your rollout finds for you.",
+    "Bigger hardware is a diagnosis with a failure mode of its own. The 128-core migration was rational under the traffic theory — and the dual-socket NUMA architecture amplified the real problem, shared-resource contention. When the bottleneck is coordination rather than capacity, adding capacity adds coordinators. The team's later reversal to 64-core machines is the quiet admission that 'scale up' is a hypothesis to test, not a reflex.",
+    "The snapshot reset traded a known small loss for an unknown debt. Resetting cluster state cost some system-config data (acceptable, restorable by hand) — and seeded the recovery-phase failures: stale scheduling data in the KV misled the cache deployment two days later. Interventions during an outage have downstream halves; the ledger stays open after the incident's acute phase closes.",
+    "Owning the stack made the 73 hours possible and the fix possible. The post's public-cloud note is honest about the bet: on-prem buys cost control, latency, and consistency at the price of owning every layer of a failure like this one — including running your own Consul instead of renting a managed control plane. The same ownership let Roblox flame-graph Consul's internals with HashiCorp side-by-side and ship a BoltDB compaction. Take The Long View cuts both directions, and the post declines to pretend otherwise."
+  ],
+  "tags": [
+    "incidents",
+    "consul",
+    "service-discovery",
+    "observability",
+    "on-prem"
+  ],
+  "patterns": [
+    {
+      "slug": "fault-isolation",
+      "note": "The post's structural admission: a single Consul cluster supporting multiple workloads exacerbated the impact — one shared hub made two deep bugs a total outage. The remediations are fault isolation applied at three grains: critical services split onto dedicated Consul clusters, KV workloads migrated off the shared store, and a second geographically distinct data center with multi-AZ efforts accelerated."
+    },
+    {
+      "slug": "circular-dependency-avoidance",
+      "note": "Second company. The remediation is stated as a general rule: 'telemetry systems no longer depend on the systems that they are configured to monitor.' Airbnb reached the identical conclusion from a smaller blast radius (a monitoring redesign that severed compute, network-plane, and alerting dependencies); Roblox reached it from 73 hours in the dark. Same discipline of mapping the dependency and moving the observer into a different failure domain."
+    },
+    {
+      "slug": "throttled-readmission",
+      "note": "The final twelve hours are the pattern in pure form: with caches cold and confidence partial, DNS steering admitted randomly selected players in ~10% increments, with database load, cache performance, and stability checked at each ratchet — chosen precisely because a full-traffic flood could have pushed the barely-healed system back into instability."
+    }
+  ],
+  "relatedArticles": [
+    "airbnb-monitoring-reliably-at-scale"
+  ],
+  "stats": [
+    {
+      "value": "73 hours",
+      "label": "of full platform outage — diagnosis challenges were largely responsible for the duration",
+      "placement": "problem"
+    },
+    {
+      "value": "7.8 MB",
+      "label": "of BoltDB freelist written to disk for every 16kB Raft append — a 4.2GB log file holding 489MB of data",
+      "placement": "solution"
+    },
+    {
+      "value": "~10%",
+      "label": "player readmission increments via DNS steering against cold caches, checked at every step",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/roblox-return-to-service/index.html",
+    "teaser": "Triage the outage with your dashboards dark — burn hours on the same four wrong theories Roblox did — then flip on independent telemetry and watch the flame graphs point straight at the answer. Finish by readmitting fifty million players without relapsing."
+  }
+}

@@ -56,6 +56,13 @@
     "feed": "https://www.notion.com/blog/rss"
   },
   {
+    "name": "Roblox Blog",
+    "slug": "roblox-blog",
+    "company": "Roblox",
+    "url": "https://about.roblox.com/newsroom",
+    "feed": "https://about.roblox.com/newsroom"
+  },
+  {
     "name": "Shopify Engineering",
     "slug": "shopify-engineering",
     "company": "Shopify",
