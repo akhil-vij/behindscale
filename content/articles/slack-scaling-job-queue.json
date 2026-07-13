@@ -1,0 +1,69 @@
+{
+  "slug": "slack-scaling-job-queue",
+  "title": "The Queue That Couldn't Drain: Kafka in Front of Redis at Slack",
+  "url": "https://slack.engineering/scaling-slacks-job-queue/",
+  "publishedAt": "2017-12-06",
+  "addedAt": "2026-07-13",
+  "source": {
+    "name": "Slack Engineering",
+    "slug": "slack-engineering",
+    "company": "Slack",
+    "url": "https://slack.engineering",
+    "feed": "https://slack.engineering/feed/"
+  },
+  "summary": "Slack's job queue runs everything too slow for a web request — every message post, push notification, unfurl, and billing calculation, 1.4 billion jobs on a busy day at 33,000 per second — and it ran on Redis until a production outage exposed the trap: when database contention slowed job execution, Redis filled to its memory limit, enqueues failed, and because dequeuing itself required free memory, the queue stayed locked even after the underlying problem was fixed. The redesign put Kafka in front of Redis as a durable buffer — a deliberately minimum viable change: a stateless Go gateway (Kafkagate) writes jobs to Kafka at line rate, and a relay (JQRelay) admits them into Redis under Consul-configured rate limits, so backlog lands on disk instead of in the memory the drain depends on. Rolled out by double-writes, per-component job accounting, and per-partition heartbeat canaries.",
+  "crux": "Slack's Redis job queue failed under exactly the condition a queue exists for: backlog. Two feedback loops closed at once — dequeue cost grew with queue length, so the deeper the backlog the harder it was to empty, and dequeuing required a sliver of free memory, so a Redis at its memory limit could not drain at all. When database contention slowed execution and the queue filled, enqueues failed across every dependent Slack operation, and even after the contention resolved the queue stayed locked, needing extensive manual intervention. The buffer didn't just degrade under its backlog; at the limit, it seized.",
+  "cruxTag": "buffer-degrades-under-backlog",
+  "cruxSummary": "A full Redis queue couldn't dequeue — draining required the very memory the backlog consumed.",
+  "problem": "Slack's job queue is the asynchronous half of the product: business logic too time-consuming for a web request — every message post, push notification, URL unfurl, calendar reminder, and billing calculation — flows through it, over 1.4 billion jobs on the busiest days at a peak of 33,000 per second. The original architecture was the classic Redis task queue, essentially unchanged through orders of magnitude of growth: the web app hashes a job identifier to one of the Redis hosts, deduplicates against jobs already in queue, and pools of workers poll for work, moving each job to an in-flight list while executing and to a retry queue on failure.\n\nThe outage that forced the re-evaluation began outside the queue: resource contention in the database layer slowed job execution. Workers dequeued slower than the web app enqueued, and Redis climbed to its configured memory limit. At that point no new jobs could be enqueued — every Slack operation that depends on the queue began failing. The deeper trap was on the drain side: the system required a bit of free Redis memory in order to dequeue a job, because dequeuing moves the job into a processing list. A full Redis therefore could not empty itself. Even when the database contention was resolved, the job queue remained locked, and recovery took extensive manual intervention.\n\nThe post-mortem concluded that scaling the existing system was untenable, and named the constraints plainly. Redis had little operational headroom, particularly memory — sustained enqueue-over-dequeue ends in exactly the deadlock above. Dequeue cost was proportional to queue length, thanks to earlier data-structure choices, so longer queues were harder to empty — an unfortunate feedback loop in the post's own words. Workers couldn't scale independently of Redis: every added worker added polling load, so attempting to increase execution capacity could overwhelm an already overloaded Redis — a second feedback loop. Client connections formed a complete bipartite graph, every enqueuer needing current knowledge of every Redis instance. And the queue's delivery semantics were unclear enough that engineers were reluctant to lean on a system that was already fundamental to the architecture.",
+  "solution": "The team weighed a ground-up rewrite against incremental change and chose the smallest change that removed the existential failure mode: put Kafka in front of Redis, rather than replace Redis outright. Replacing Redis would have meant rewriting the scheduling, execution, and deduplication logic riding on it; adding a durable buffer in front left the application's enqueue and dequeue interfaces intact while ending the era of backlog living in the memory the drain depends on.\n\nTwo stateless Go services bracket the new tier. Kafkagate accepts a simple HTTP POST from the PHP/Hacklang web app and relays it into Kafka — persistent broker connections, leadership-change tracking, deliberately minimal client semantics. Its design is explicit about its bets: it waits only for the Kafka leader's acknowledgment, not replication, trading a small risk of loss on a broker crash for the lowest possible enqueue latency — a bias toward availability over consistency the post judges right for most of Slack's semantics, with stronger guarantees contemplated as an option for critical jobs. Synchronous writes give the web app a positive acknowledgment or an error, tightening semantics engineers had found hard to trust. Requests route preferentially to Kafkagate instances in the same availability zone, cutting latency and transfer cost while retaining cross-AZ failover.\n\nJQRelay drains Kafka into Redis, and it is where the queue's new discipline lives. Each relay instance acquires a Consul lock for one Kafka topic — an EC2 auto-scaling group plus the lock protocol guarantees exactly one relay per topic with self-healing on failure. It advances Kafka's commit offset only after a job is successfully written to Redis, retrying indefinitely through Redis outages; job-specific errors are re-enqueued to Kafka rather than silently dropped, so a poison job can't block a queue and can't vanish either. Crucially, JQRelay writes to Redis under rate limits configured in Consul — the admission valve that keeps Redis inside its memory headroom no matter how fast the world enqueues. The Kafka tier itself: 16 brokers on i3.2xlarge, 50 topics of 32 partitions each, replication factor 3, two-day retention, rack-aware across availability zones.\n\nThe rollout matched the caution of the design. Double-writes sent every job to both systems while JQRelay ran in shadow mode, exercising the full new path on production traffic without executing anything. Correctness was established by counting jobs at every hop — web app to Kafkagate, Kafkagate to Kafka, Kafka to Redis — and by heartbeat canaries enqueued every minute to each of the 1,600 partitions, alerting on end-to-end flow and timing. Failure testing killed brokers singly, in pairs within an AZ, and all three replicas at once to force unclean leader election. Then Slack ran the system on itself for weeks before rolling it out job type by job type. The conclusion rewrites the outage: a queue build-up now lands in durable storage while enqueues keep succeeding, and the response is turning JQRelay's rate limits — not paging humans to unstick a seized Redis.",
+  "tradeoffs": [
+    "The minimum viable change bought safety at the price of a permanently taller stack. Kafka-in-front-of-Redis means two queueing systems, two failure domains, and two operational surfaces where a rewrite would have left one — plus Kafkagate and JQRelay to run besides. The post is candid that this was sequencing, not destination: the scheduler and execution layers still ride on Redis, and the larger goals live in future work. Incrementalism converted an existential risk into carrying cost.",
+    "Kafkagate's leader-only acknowledgment is a chosen loss window, stated plainly: wait for replication and every enqueue pays the latency; acknowledge on the leader and a broker dying at the wrong moment loses jobs. Slack judged the fast path right for most of its semantics and left stronger consistency as a contemplated option — which means delivery is guaranteed by the durable tier and honestly caveated at its front door.",
+    "Rate-limited admission moves the failure, it doesn't abolish it. Redis can no longer seize, but if execution stays slow the backlog now accumulates in Kafka against a two-day retention window, and someone must still decide what the sustainable drain rate is — the rate limits live in Consul precisely because they are an operational judgment, not a solved constant. The deadlock became a dial.",
+    "Cross-runtime encoding is a tax the old single-runtime system never paid. The moment Go sat between PHP producing JSON and PHP consuming it, encoder quirks — Go escaping <, >, & to unicode entities; PHP escaping slashes — made identical structures serialize differently, and the team paid in heartache for a seam that hadn't existed. Every language boundary added to a pipeline is a compatibility contract nobody wrote down.",
+    "Exactly-one-relay-per-topic via Consul locks buys correctness with a serialization point: a topic's throughput into Redis is bounded by its single relay, and failover means lock churn and restart rather than seamless handoff. The auto-scaling group heals failures, but the design accepts brief per-topic stalls as the cost of never double-relaying a partition.",
+    "The rollout's rigor — double-writes, per-hop job accounting, 1,600 heartbeat canaries a minute, deliberately killing brokers — is itself a cost the team chose to pay rather than an overhead it suffered. It is the same lesson Notion's migration taught from the database side: the verification machinery around a live-system change is engineering work of the same rank as the change, and skipping it is how minimum viable changes become maximum blast-radius incidents."
+  ],
+  "tags": [
+    "queues",
+    "kafka",
+    "redis",
+    "asynchronous-computing",
+    "incidents"
+  ],
+  "patterns": [
+    {
+      "slug": "durable-front-buffer",
+      "note": "The post's central move, stated as its first goal: replace the in-memory store's role as shock absorber with durable storage 'to provide a buffer against memory exhaustion and job loss.' Kafka absorbs at line rate; JQRelay admits into Redis under Consul-configured rate limits — ingestion stays available at any backlog depth while the fragile execution tier is fed only at capacity."
+    },
+    {
+      "slug": "queue-with-guaranteed-delivery",
+      "note": "Third company, with an honest edge: JQRelay advances Kafka commit offsets only on successful Redis write and re-enqueues job errors 'instead of silently dropping the job' — loss becomes delay, Discord's and Meta's property. The carve-out is at the front door: Kafkagate acknowledges on the Kafka leader only, accepting a small documented loss window for latency."
+    }
+  ],
+  "relatedArticles": [
+    "meta-foqs-priority-queue"
+  ],
+  "stats": [
+    {
+      "value": "1.4 billion",
+      "label": "jobs on the busiest days, peaking at 33,000 per second",
+      "placement": "problem"
+    },
+    {
+      "value": "O(queue length)",
+      "label": "dequeue cost in the old system — the deeper the backlog, the harder to empty",
+      "placement": "problem"
+    },
+    {
+      "value": "1,600",
+      "label": "Kafka partitions (50 topics × 32), each receiving a heartbeat canary every minute during rollout",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/slack-scaling-job-queue/index.html",
+    "teaser": "Slow the workers and watch the old Redis queue fill, seize, and stay seized until you intervene by hand — then flip to the Kafka-fronted system and watch the same slowdown become a backlog on disk instead of an outage."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "slug": "durable-front-buffer",
+  "name": "Durable Front Buffer",
+  "category": "throughput",
+  "definition": "Put a durable, cheap-to-append log in front of a fragile or capacity-bounded processing tier, and admit work from the log into that tier at a controlled rate. Ingestion then stays available at any backlog depth — producers write to disk-backed storage that absorbs bursts and downstream slowness — while the processing tier is fed only as fast as it can actually drain, protected by an explicit admission valve rather than by hoping supply stays below demand.\n\nThe pattern separates two jobs that a single queue otherwise conflates: accepting work (which must never fail) and executing work (which is allowed to lag). Backlog becomes a number on disk instead of pressure inside the component doing the draining — which is what prevents the shock absorber itself from failing under the shock.",
+  "whenItApplies": [
+    "An in-memory or capacity-bounded queue can be overwhelmed by sustained enqueue-over-dequeue, especially where its own drain mechanics degrade or fail as it fills",
+    "Producers must keep succeeding during downstream slowness — write availability is non-negotiable while execution latency is tolerant",
+    "The existing processing tier and its semantics are worth preserving, making a buffer in front cheaper than a replacement"
+  ],
+  "tradeoffs": [
+    "Two queueing tiers to operate instead of one — the buffer adds its own cluster, failure modes, and end-to-end accounting burden",
+    "The admission rate is an operational judgment that must be set and revisited; the deadlock is replaced by a dial someone owns",
+    "Backlog is bounded by the log's retention window — absorbed work must still drain before it ages out"
+  ]
+}
