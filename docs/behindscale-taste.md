@@ -214,7 +214,7 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-13, fifteen articles, ten tags — check the
+The ratified taxonomy (2026-07-13, sixteen articles, ten tags — check the
 article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
@@ -229,23 +229,28 @@ seizes (dequeuing requires free memory, so a full queue
 cannot drain at all). Distinct from the scaling-ceiling tags —
 those name capacity limits; this names a buffer's speed
 degrading with its fill level) ·
+`single-cluster-scaling-ceiling` (GitHub, Airbnb — deliberately
+parallel to `single-table-scaling-ceiling`, sibling ladder step:
+cluster ceiling → vertical partitioning; table ceiling →
+horizontal sharding. GitHub↔Airbnb are the two ends of the
+same wall — a decade of virtual-before-physical schema
+discipline vs two weeks + 7.5 minutes downtime) ·
 `observer-shares-fate-with-observed` (Airbnb) ·
 `blast-radius-scales-with-cluster-size` (Discord) ·
-`single-cluster-scaling-ceiling` (GitHub — deliberately parallel
-to `single-table-scaling-ceiling`, sibling ladder step: cluster
-ceiling → vertical partitioning; table ceiling → horizontal
-sharding) ·
 `gray-failure-defeats-automatic-detection` (Slack) ·
 `retry-amplified-overload` (AWS — deliberately distinct from
 `ambiguous-failure-under-retry`; this is the other retry pathology,
 amplification and correlation).
-Five tags are two-company as of the 2026-07-13 Slack
-job-queue publication (Slack joining Meta on
-`buffer-degrades-under-backlog`, the first audit-flagged
+Six tags are two-company as of the 2026-07-13 Airbnb
+main-database publication (Airbnb joining GitHub on
+`single-cluster-scaling-ceiling`, the second audit-flagged
 singleton converted to two-company via recurrence-driven
-sourcing); the Skipper↔Cadence pair remains the first
-same-crux/opposite-solution pair in the library
-(embedded-library vs central-platform durable execution).
+sourcing — and the class that flips the multi-company vs
+singleton ratio to 6:4, meeting the audit's stated threshold
+for revisiting held learning tracks); the Skipper↔Cadence
+pair remains the first same-crux/opposite-solution pair in
+the library (embedded-library vs central-platform durable
+execution).
 Earlier drafts of this document used speculative example tags
 (`fan-out-failure-amplification`, `cliff-shedding-and-retry-amplification`);
 those were superseded by the ratified set above — do not reintroduce them.
@@ -449,7 +454,9 @@ the reader feel it.
   `#A259FF`, GitHub blue `#58A6FF`, Cadence teal `#2DD4BF`, Slack gold
   `#ECB22E` for slack-cellular / Slack cyan `#36C5F0` for
   slack-scaling-job-queue, AWS orange `#FF9900`, Notion terracotta
-  `#DE8A5A`, Meta blue `#0866FF`). The accent is for *wayfinding* — tabs,
+  `#DE8A5A`, Meta blue `#0866FF`, Airbnb brand coral `#FF5A5F` for
+  airbnb-partitioning-main-database — flagged as proximate to
+  semantic red `#ef4444` and used only for chrome, never verdict). The accent is for *wayfinding* — tabs,
   active states, key callouts, the one number that matters. **~80% of the
   artifact is neutral grayscale.** Bright decorative color is a smell.
 - Semantic color only where it means something: green = healthy/committed/good
@@ -512,7 +519,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All fifteen article artifacts use nothing but React.
+  hand-roll SVG/divs. All sixteen article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**

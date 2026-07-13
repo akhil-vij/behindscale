@@ -4,6 +4,97 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #16 (Airbnb main-database partition) LANDED
+  (2026-07-13), second recurrence-driven singleton fill.
+  Multi-company classes now OUTNUMBER singletons 6:4 —
+  the audit's stated threshold for revisiting held
+  learning tracks.** Fable-authored dissection of
+  Airbnb's 2015 "How We Partitioned Airbnb's Main
+  Database in Two Weeks" — the RDS Read Replica
+  Promotion move that split the message inbox off the
+  monolith's original database with zero migration
+  code, seven and a half minutes of scoped downtime,
+  and a mid-project discovery that snapshots
+  destabilized the site in proportion to main-DB load.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: fill the `single-cluster-scaling-
+  ceiling` singleton (GitHub only after rounds 4+5) —
+  sixth two-company class, and the moment the
+  multi/single ratio crosses 6:4. Match, not rhyme:
+  GitHub↔Airbnb are the two ends of the same wall —
+  a decade of virtual-before-physical schema discipline
+  vs two weeks + 7.5 minutes downtime.
+  **Precedent flag for owner:** Airbnb becomes the
+  first THREE-article company (skipper, monitoring,
+  this). Prior precedent tops out at two (Uber, Slack).
+  Rationale accepted: selection is recurrence-driven
+  and this was the strongest verifiable first-party
+  source for the single-cluster singleton; company
+  concentration is a consequence, not a goal. If a
+  company cap is desired, log it as a selection
+  constraint going forward.
+  **Owner decision surfaced:** landing preview now
+  derives SIX recurring rows (was five) — crossing the
+  documented "revisit at 6+" threshold in the
+  Landing.tsx doc comment. Kept at six for now (prior
+  feedback: "show all recurring bottlenecks; don't
+  soften the header"). Owner should decide show-six vs
+  cap-and-signal on next design pass — both are named
+  as acceptable actions in the doc comment.
+  **Multi/singleton ratio milestone:** the audit
+  originally held learning tracks (thematic-collection
+  and per-crux deep-dives) "until multi-company
+  outnumber singletons." That condition is now met
+  (6 multi-company vs 4 singleton classes), though
+  depth-per-class (average 2 articles) may still argue
+  for waiting. Owner's call, not urgent.
+  Contents: article JSON with `addedAt: 2026-07-13` and
+  cruxSummary populated at authoring; one new pattern
+  `replica-promotion-split` (category `consistency`);
+  artifact accent `#FF5A5F` Airbnb brand coral
+  (proximate to semantic `#ef4444` red but distinct in
+  hue; used only for chrome, never verdict color;
+  logged in DECISIONS as a swap-to-`#FFB400` fallback
+  if the proximity reads too close in situ). No
+  feeds.json change (Airbnb already a two-article
+  company). No cruxtags.json change
+  (single-cluster-scaling-ceiling entry already seeded
+  2026-07-08). relatedArticles: Airbnb → GitHub
+  forward; GitHub → Airbnb backfilled.
+  Recurrences created:
+  - `single-cluster-scaling-ceiling` → 2-company
+    (GitHub + Airbnb). SIXTH two-company class; the
+    class that crosses multi over single.
+  - `logical-physical-migration-split` → 3-company
+    (Figma + GitHub + Airbnb). Figma rehearsed
+    semantics behind views + flags; GitHub enforced
+    virtual schema domains for years; Airbnb
+    compressed the same principle into a two-week
+    preflight with grant revocation as the
+    enforcement lever.
+  - `replica-promotion-split` (new pattern, first
+    article, category `consistency`). Definition
+    captures the front-loaded-risk shape: promotion is
+    irreversible, so rehearsal + verification stop
+    being diligence and become the design.
+  Library state after landing: **16 articles across 12
+  companies; 24 pattern definitions; 16 article
+  artifacts + 1 site-level hero.** cruxTag taxonomy:
+  10 tags with 6 two-company (Stripe+Shopify,
+  Uber+Netflix, Skipper+Cadence, Figma+Notion,
+  Meta+Slack, GitHub+Airbnb) and 4 one-company.
+  Landing preview auto-updates to 6 rows (verified in
+  dist/index.html).
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  11 warnings (was 8; +3 new fuzzy misses on Airbnb
+  `1/3` vs prose "one third", `7.5 minutes` vs "seven
+  and a half minutes", `-33%` vs "33%" — same cosmetic
+  class as residuals, will fold into the
+  cosmetic-warnings chore); `npm test` 100/100;
+  `npm run build` 45 routes / 44 sitemap URLs;
+  cross-page `@id` assertion passes on new content.
+
 - **Article #15 (Slack job queue) LANDED (2026-07-13),
   first post-nav-phase publication + first
   recurrence-driven fill of an audit-flagged singleton.**
