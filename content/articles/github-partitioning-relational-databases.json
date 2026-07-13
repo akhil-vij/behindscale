@@ -40,7 +40,7 @@
       "note": "GitHub's query linter turns an architectural intention — these tables will live apart — into a failing test at the developer's desk, years before the tables actually move. The transaction linter extends the same enforcement to production under sampling, catching what static analysis of queries can't see. The boundary is real from the day it's declared, not the day it's deployed."
     }
   ],
-  "relatedArticles": ["figma-postgres-sharding"],
+  "relatedArticles": ["figma-postgres-sharding", "airbnb-partitioning-main-database"],
   "stats": [
     { "value": "50%", "label": "average per-host load reduction after partitioning", "placement": "solution" },
     { "value": "130", "label": "busiest tables moved in a single write-cutover", "placement": "solution" },

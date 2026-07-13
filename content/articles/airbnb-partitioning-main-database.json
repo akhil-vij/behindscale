@@ -1,0 +1,69 @@
+{
+  "slug": "airbnb-partitioning-main-database",
+  "title": "Zero Migration Code: Splitting Airbnb's Main Database in Two Weeks",
+  "url": "https://medium.com/airbnb-engineering/how-we-partitioned-airbnb-s-main-database-in-two-weeks-55f7e006ff21",
+  "publishedAt": "2015-10-06",
+  "addedAt": "2026-07-13",
+  "source": {
+    "name": "Airbnb Engineering",
+    "slug": "airbnb-engineering",
+    "company": "Airbnb",
+    "url": "https://medium.com/airbnb-engineering",
+    "feed": "https://medium.com/feed/airbnb-engineering"
+  },
+  "summary": "Heading into a summer where peak traffic grew 3.5x a year, Airbnb's main database — the original monolith's, still holding much of the core application data — was running out of road: the message inbox alone accounted for a third of all writes and grew linearly with traffic, and a mid-project discovery made the deadline sharper, because RDS snapshots destabilized the site in proportion to main-database load. The classic fix — vertical partition by application function — normally costs weeks of migration code, bookkeeping, and consistency testing. Airbnb instead let MySQL replication do the hard part: build a replica chain, eliminate every cross-table join in advance, swap writes to the not-yet-promoted master (intentionally failing them), verify replication had drained, and promote. Two weeks end to end, about seven and a half minutes of message downtime, zero lines of migration code — and a third of the main database's writes gone.",
+  "crux": "Airbnb's main database was the classic single-cluster ceiling: much of the core application data still lived in the monolith's original database, the message inbox alone drove a third of its writes and grew linearly with traffic, and a projected 50% growth in those queries would certainly have overwhelmed it. The shared-fate half of the problem surfaced mid-project as a surprise: under sufficient load, routine RDS snapshots — a core function the team depended on for daily backups — caused latency nonlinear enough to threaten full downtime, meaning the busier the monolith got, the more dangerous its own backups became. The ceiling could only be relieved by moving whole tables out; the question was whether that had to cost weeks of migration engineering.",
+  "cruxTag": "single-cluster-scaling-ceiling",
+  "cruxSummary": "One monolithic database carried a third of all writes — growth would overwhelm it within months.",
+  "problem": "By 2015 Airbnb's infrastructure had a stated philosophy — agreeing with Asana and Percona that horizontal sharding is bitter medicine, the team preferred vertical partitions by application function, with dedicated databases mapping one-to-one to independent services. But philosophy lagged history: much of the core application data still lived in the original database from the days when Airbnb was one monolithic Rails app, and peak traffic was growing 3.5x per year with the summer season approaching.\n\nA client-side query profiler (built in-house, because RDS permits nothing deeper) put a number on the pressure: the message inbox — guests and hosts communicating — accounted for nearly one third of all writes on the main database, a share that grew linearly with traffic. Those queries were projected to grow another 50% within months, which would certainly have overwhelmed the main database. As an independent application function whose cross-table joins and transactions could be eliminated, the inbox was the obvious candidate to move.\n\nTwo realities framed the how. Airbnb hadn't partitioned a database since 2012, so the operation at 2015's scale was new territory; and of roughly 130 engineers, only a small fraction worked infrastructure — the rest spread across search, payments, trust and safety, and mobile. The team was explicitly open to minimizing engineering complexity at the expense of planned downtime. And mid-project, a discovery reframed the urgency: given sufficiently heavy load, the latency during a routine RDS snapshot — even with Multi-AZ, where backups run on the standby — could go nonlinear, backlog queries, and bring the database down. The team had always known snapshots elevated latency; they had not known that rising load converted a daily backup into an outage risk. The monolith wasn't just a capacity ceiling; it was a shared-fate domain whose own safety machinery grew more dangerous as it grew busier.",
+  "solution": "The conventional plan — application-layer changes, data migration code, bookkeeping, and consistency testing — costs weeks. One engineer proposed letting MySQL replication do the hard part: since Airbnb ran on RDS, creating read replicas and promoting one to a standalone master was built-in functionality (AWS lists exactly this as an explicit use case of Read Replica Promotion). By tolerating a brief, deliberately localized downtime during promotion, the team could guarantee data consistency without writing a single line of bookkeeping or migration code. A site-wide outage from an overwhelmed database would cost far more than a controlled message-inbox outage, so the trade was accepted.\n\nThe topology: a new replica (message-master) created from the main master, destined to become the independent master, with a second-tier replica (message-replica) attached to serve as its replica after promotion. The catch that shapes the whole operation: RDS promotion takes several minutes, during which writes to the affected tables must be intentionally failed to preserve consistency.\n\nPhase one was the unglamorous majority of the two weeks — making the logical separation true before the physical one. Because a promotion cannot be reverted, every cross-table join touching inbox tables had to be found and eliminated or replaced with in-app joins; the internal query analyzer surfaced most, and revoking database permission grants flushed out the rest — enforcement, not hope. Data pipelines were repointed to consume message-replica exports so downstream analytics and services would read the right data after divergence. Read traffic moved to the replica ahead of time, leaving only the main Rails app's writes for the operation itself.\n\nThe operation ran as a rehearsed sequence: communicate a sub-10-minute downtime window to customer service (chosen at the weekly traffic trough — the team was acutely aware a stranded guest at check-in is the real cost of downtime); deploy the new database grants and connections, writes still pointed at main; swap all inbox write traffic to the unpromoted message-master via Zookeeper host entries — writes now fail by design, and the downtime clock starts (reads technically succeed, but marking a message read is a write, so messaging is effectively down); kill the message-user connections on the main master directly rather than redeploying, minimizing the time to quiesce; verify replication has fully caught up three ways — newest rows match on both sides, old connections gone, new connections arriving; promote (reads down ~30 seconds, writes down nearly four minutes, ~3.5 of them waiting for the promotion to kick in); enable Multi-AZ on the new master before the next backup window; and only when metrics settle, drop each database's irrelevant tables so no service can quietly consume stale data. The abort path was honest about its cost: reverting the Zookeeper entries would restore messaging almost immediately, but any writes that had landed on the now-independent database would be lost — recoverable in theory, nontrivial and user-confusing in practice — which is why every step was robustly tested in advance.\n\nEnd to end: two weeks, seven and a half minutes of message-inbox downtime, the main database 20% smaller, and its write load down 33% — queries that had been months from overwhelming it. The project bought the time for longer-term scalability work, which is precisely what a vertical partition is for.",
+  "tradeoffs": [
+    "Planned downtime bought engineering time at a rate the team could name: weeks of migration code, bookkeeping, and consistency testing traded for seven and a half minutes of localized messaging downtime. The trade only prices out this way because the blast radius was contained by design — a controlled inbox outage at the weekly traffic trough versus a site-wide collapse from an overwhelmed database. Downtime aversion as an absolute rule would have cost weeks; downtime as a scoped, communicated, rehearsed line item cost minutes.",
+    "Replication-as-migration outsources exactly the hard part — consistency — to machinery already trusted in production, and pays for it in flexibility. There is no dual-write window, no verification scripts, no catch-up code; there is also no gradual cutover, no dark reads, and no way back after promotion. Compare Notion, whose strained monolith couldn't afford the standard tooling and had to build a bespoke audit-log pipeline: Airbnb's move works precisely because they acted while the built-in tool still had headroom to run. The earlier you move, the cheaper the machinery you're allowed to use.",
+    "The promotion is irreversible, so all the risk migrates into preparation. Every cross-table join had to be found before the op — the analyzer found most, and revoking grants converted 'we think we found them all' into enforcement. The abort path existed but leaked: reverting Zookeeper restores service while abandoning any writes accepted by the new master. When the mechanism forecloses rollback, rehearsal and verification stop being diligence and become the design.",
+    "Vertical partitioning by application function spends a nonrenewable resource: independent functions with eliminable joins. The message inbox was ideal — one-third of writes, cleanly separable. Each such split leaves the monolith's remainder more entangled on average, which is why the post frames the win as buying time for longer-term stability investments, not as the destination. GitHub's version of this same ceiling, a decade of schema domains and linters later, shows what the long game costs when the easy separations are gone.",
+    "The two-week figure undercounts by omission what it deliberately includes: the post is candid that identifying and eliminating cross-table joins was 'the most time consuming phase' — a well-communicated cross-team effort across services owned by scattered teams. The operation was an afternoon; the socio-technical work of making the data separable was the project. 'Services should own their own data' appears in the post as an architectural tenet precisely because its absence is what made phase one slow.",
+    "The RDS-snapshot discovery is the tradeoff nobody chose: managed convenience means the platform's safety operations run on the platform's schedule against your load curve. Multi-AZ moves backups to the standby, and latency still spiked nonlinearly under load — a core dependability feature that became a threat in proportion to the database's busyness. The lesson generalizes beyond RDS: shared-fate domains include the vendor machinery attached to them, and load growth can convert routine operations into incidents before capacity itself runs out."
+  ],
+  "tags": [
+    "databases",
+    "mysql",
+    "rds",
+    "partitioning",
+    "migrations"
+  ],
+  "patterns": [
+    {
+      "slug": "replica-promotion-split",
+      "note": "The post's central move, and AWS lists it as an explicit use case of RDS Read Replica Promotion: build a replica chain (message-master with its own second-tier replica), migrate reads and pipelines ahead of time, quiesce writes, verify replication has drained, and promote — battle-tested replication carries data consistency, planned downtime replaces migration code entirely."
+    },
+    {
+      "slug": "logical-physical-migration-split",
+      "note": "Third company. Airbnb's phase one proves the logical separation before any bytes move: every cross-table join eliminated or brought in-app, with permission grants revoked to convert discovery into enforcement, and pipelines repointed — all before the irreversible promotion. Figma rehearsed semantics behind views and flags; GitHub enforced virtual schema domains for years; Airbnb compressed the same principle into a two-week preflight."
+    }
+  ],
+  "relatedArticles": [
+    "github-partitioning-relational-databases"
+  ],
+  "stats": [
+    {
+      "value": "1/3",
+      "label": "of all main-database writes came from the message inbox, growing linearly with traffic",
+      "placement": "problem"
+    },
+    {
+      "value": "7.5 minutes",
+      "label": "of message-inbox downtime for the entire split — with zero migration code written",
+      "placement": "solution"
+    },
+    {
+      "value": "-33%",
+      "label": "write queries on the main master after the promotion; the database shrank 20%",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/airbnb-partitioning-main-database/index.html",
+    "teaser": "Run the promotion yourself: eliminate the joins (or skip it and see what breaks), quiesce the writes, verify replication drained — then promote, watch the downtime clock, and see what the abort button really costs."
+  }
+}

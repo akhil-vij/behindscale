@@ -1,0 +1,16 @@
+{
+  "slug": "replica-promotion-split",
+  "name": "Replica-Promotion Split",
+  "category": "consistency",
+  "definition": "To move a set of tables onto their own database, build a replica of the source, prepare the world around it (reads, pipelines, and join elimination), then quiesce writes to the affected tables, verify replication has fully drained, and promote the replica to an independent master. The database's own replication — already trusted in production — carries the entire data-consistency burden, so the migration requires no dual-write machinery, no backfill jobs, and no custom verification code.\n\nThe price is a planned, bounded write outage for the affected tables during promotion, and irreversibility: once promoted, the databases diverge, and the abort path forfeits any writes accepted by the new master. The pattern therefore front-loads all risk into preparation — the split must be made logically true (no cross-database joins or transactions) and rehearsed before the promotion makes it physically true.",
+  "whenItApplies": [
+    "Vertically partitioning tables by application function onto a new database, where the function's joins and transactions can be fully eliminated in advance",
+    "Teams that can tolerate a brief, scoped, scheduled write outage in exchange for avoiding weeks of migration engineering",
+    "Managed or self-hosted databases where replica creation and promotion are proven operations (RDS read-replica promotion is the canonical managed case)"
+  ],
+  "tradeoffs": [
+    "Promotion is irreversible and the abort path loses post-cutover writes — rehearsal and verification are the design, not diligence",
+    "Requires quiescing writes: the affected feature is down for the promotion window, so the blast radius must be acceptable and schedulable",
+    "No gradual cutover or dark-read validation — confidence comes from replication's own guarantees plus preflight checks, not from observed parallel operation"
+  ]
+}
