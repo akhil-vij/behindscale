@@ -4,6 +4,71 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #15 (Slack job queue) LANDED (2026-07-13),
+  first post-nav-phase publication + first
+  recurrence-driven fill of an audit-flagged singleton.**
+  Fable-authored dissection of Slack's 2017 "Scaling
+  Slack's Job Queue" — the Kafka-in-front-of-Redis
+  redesign after a Redis-memory-limit outage where the
+  full queue could not dequeue because dequeuing itself
+  required free memory (and stayed locked after the
+  underlying database contention was fixed). Shipped by
+  the Claude Code agent as a single `feat: publish`
+  commit (`aad88fd`) plus this docs refresh
+  (`<pending>`) — the standard publish shape.
+  Selection rationale (new): first article chosen
+  explicitly to CONVERT AN AUDIT-FLAGGED SINGLETON
+  cruxTag to two-company. `buffer-degrades-under-backlog`
+  (Meta only after rounds 4+5) becomes the fifth
+  two-company class — the first singleton-fill via
+  recurrence-driven sourcing, exactly the move the
+  post-audit roadmap targets. Match, not rhyme: FOQS's
+  MVCC-history-list scan cost DEGRADES under backlog;
+  Slack's memory-drain SEIZES. Same class, different
+  terminal points.
+  Contents: article JSON with cruxSummary populated at
+  authoring (first article authored under the
+  2026-07-08 content contract — the validator's
+  crux-summary-length + cruxtag-registry-coverage
+  checks both pass on first run); one new pattern
+  `durable-front-buffer` (category throughput,
+  first-use-of-throughput after the ramp expansion);
+  artifact accent `#36C5F0` Slack cyan (distinct from
+  slack-cellular's `#ECB22E` gold + all 14 existing
+  accents). No feeds.json change (Slack now two-article
+  company; precedent: Uber, Airbnb). No cruxtags.json
+  change (buffer-degrades-under-backlog entry already
+  seeded 2026-07-08). Bidirectional relatedArticles
+  thread: Slack↔Meta FOQS.
+  Recurrences created:
+  - `buffer-degrades-under-backlog` → 2-company
+    (Meta + Slack). Fifth two-company class.
+  - `queue-with-guaranteed-delivery` → 3-company
+    (Discord + Meta + Slack). Honest caveat: Kafkagate
+    leader-only ack is a documented small loss window at
+    the front door; the guarantee lives in the durable
+    tier + JQRelay's offset-advance-on-success + error
+    re-enqueue.
+  - `durable-front-buffer` (new pattern, first article,
+    category throughput). Definition captured in
+    `content/patterns/durable-front-buffer.json`.
+  Library state after landing: **15 articles across 12
+  companies; 23 pattern definitions; 15 article
+  artifacts + 1 site-level hero.** cruxTag taxonomy:
+  10 tags with 5 two-company (Stripe+Shopify,
+  Uber+Netflix, Skipper+Cadence, Figma+Notion,
+  Meta+Slack). Landing preview auto-updates to 5 rows
+  (verified in dist/index.html); inside the
+  revisit-at-6+ threshold the Landing.tsx doc comment
+  documented.
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  8 warnings (was 7; +1 new fuzzy miss on Slack
+  `O(queue length)` stat vs prose "proportional to
+  queue length" — same class as the residuals, will
+  fold into the cosmetic-warnings chore); `npm test`
+  100/100; `npm run build` 43 routes / 42 sitemap URLs;
+  cross-page `@id` assertion passes.
+
 - **Landing + navigation + SEO/crawler foundations phase
   LANDED (2026-07-09, eight-commit sequence).** Fable-
   authored implementation handoff (spec + updated docs +
