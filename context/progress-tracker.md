@@ -4,6 +4,118 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #17 (Roblox 73-hour Consul outage) LANDED
+  (2026-07-13), third recurrence-driven singleton fill
+  in a row. Only 3 audit-flagged singletons remain
+  (blast-radius/Discord, gray-failure/Slack,
+  retry-amplified/AWS).** Fable-authored dissection of
+  Roblox's 2022 "Return to Service" post-mortem — a
+  73-hour full-platform outage where two deep,
+  primarily unrelated pathologies inside Consul (Go-
+  channel contention in the new streaming feature under
+  simultaneously high read+write load, and a BoltDB
+  freelist that turned 16kB Raft appends into 7.8MB
+  writes) hid inside the one Consul cluster that all of
+  Roblox depended on for service discovery, health
+  checks, scheduling, and secrets — while the telemetry
+  that would have exposed the pathologies depended on
+  that same cluster. Sixth two-company class fill:
+  `observer-shares-fate-with-observed` (Airbnb only
+  after rounds 4+5) becomes SEVENTH two-company class.
+  Roblox = NEW company, the 13th; Roblox Blog is the
+  13th source.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: third fill-a-singleton in a row
+  (Slack #15, Airbnb #16, Roblox #17). The post's
+  crux was chosen against its own cause ranking:
+  root CAUSE = streaming + BoltDB internals; CRUX =
+  what made it 73 hours (verbatim from post: "diagnosis
+  challenges were largely responsible for the extended
+  downtime"; "critical monitoring systems... relied on
+  affected systems, such as Consul... severely hampered
+  the triage process"). observer-shares-fate matched
+  the registry definition with the monitoring case
+  leading. Considered and rejected
+  `blast-radius-scales-with-cluster-size` (rhyme, not
+  match: that tag is node-count blast radius within a
+  cluster; this is one cluster underpinning
+  everything, covered via `fault-isolation` at the
+  pattern layer).
+  **Owner decision now REQUIRED (was surfaced-only
+  last round):** landing preview now derives SEVEN
+  recurring rows — decisively past the "revisit at 6+"
+  threshold the Landing.tsx doc comment named. Kept at
+  seven for now (still consistent with the "show all
+  recurring bottlenecks" feedback), but the show-all
+  vs cap-and-signal call is no longer deferrable on
+  the next design pass. Both options remain named as
+  acceptable actions in the doc comment.
+  Contents: article JSON with `addedAt: 2026-07-13`
+  and cruxSummary populated at authoring; one new
+  pattern `throttled-readmission` (category
+  `resilience` — recovery-as-its-own-regime, DNS-
+  steered ~10% ratchets against cold caches); artifact
+  accent `#00A2FF` classic Roblox blue (flagged against
+  GitHub `#58A6FF` periwinkle and Slack `#36C5F0`
+  cyan-teal — blues getting crowded, distinguishable
+  but a swap candidate at in-situ review).
+  feeds.json ADDITION: Roblox Blog entered (13th
+  source; first-party corporate blog, Engineering
+  section, authored by Roblox VPE + HashiCorp).
+  No cruxtags.json change
+  (observer-shares-fate-with-observed entry already
+  seeded 2026-07-08).
+  **Pattern check (DECISIONS item 3) resolved:** the
+  Airbnb monitoring article's
+  `circular-dependency-avoidance` pattern is the
+  telemetry-independence pattern — Roblox is the
+  second instance (author flagged as check-required
+  because they couldn't see the live pattern list from
+  the handoff view). Added to Roblox's patterns[] with
+  the pattern's "map and sever" framing spanning both
+  articles.
+  relatedArticles: Roblox → Airbnb monitoring forward
+  link in article JSON; airbnb-monitoring backlink
+  applied in the same commit (the article had no
+  prior relatedArticles field — this is its first).
+  Recurrences created:
+  - `observer-shares-fate-with-observed` → 2-company
+    (Airbnb monitoring + Roblox). SEVENTH two-company
+    class. Same conclusion reached by both companies
+    across a 400x difference in outage duration —
+    Airbnb from a smaller blast radius after their
+    monitoring redesign; Roblox from 73 hours in the
+    dark.
+  - `fault-isolation` → 7-company (Discord, Netflix,
+    Uber, Skipper, Cadence, Slack cellular, Airbnb
+    monitoring, Roblox — the audit's most-recurring
+    known pattern already; this is its seventh
+    company).
+  - `circular-dependency-avoidance` → 2-company
+    (Airbnb monitoring + Roblox). Second instance of
+    a pattern whose first article authored it.
+  - `throttled-readmission` (new pattern, first
+    article, category `resilience`). Recovery as its
+    own operating regime; ratchet admission against
+    cold caches.
+  Library state after landing: **17 articles across 13
+  companies; 25 pattern definitions; 17 article
+  artifacts + 1 site-level hero.** cruxTag taxonomy:
+  10 tags with 7 two-company (Stripe+Shopify,
+  Uber+Netflix, Skipper+Cadence, Figma+Notion,
+  Meta+Slack, GitHub+Airbnb, Airbnb+Roblox) and 3
+  one-company (Discord blast-radius, Slack
+  gray-failure, AWS retry-amplified). Landing preview
+  auto-updates to 7 rows (verified in dist/index.html).
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  11 warnings (unchanged from the Airbnb round — the
+  three Roblox stat values all appear verbatim in
+  prose so no new fuzzy misses added); `npm test`
+  100/100; `npm run build` 47 routes / 46 sitemap
+  URLs; cross-page `@id` assertion passes on new
+  content.
+
 - **Article #16 (Airbnb main-database partition) LANDED
   (2026-07-13), second recurrence-driven singleton fill.
   Multi-company classes now OUTNUMBER singletons 6:4 —

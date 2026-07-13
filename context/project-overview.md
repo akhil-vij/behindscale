@@ -127,9 +127,9 @@ taxonomies are what make the library compound.
   (the current allowlist in `content/feeds.json`: Amazon Builders'
   Library, Airbnb Engineering, Discord Engineering, Engineering at
   Meta, Figma Blog, The GitHub Blog, Netflix Technology Blog, Notion
-  Blog, Shopify Engineering, Slack Engineering, Stripe Engineering,
-  Uber Engineering — sixteen articles across those sources as of
-  2026-07-13). The signal-to-noise ratio of first-party engineering
+  Blog, Roblox Blog, Shopify Engineering, Slack Engineering,
+  Stripe Engineering, Uber Engineering — seventeen articles across
+  those sources as of 2026-07-13). The signal-to-noise ratio of first-party engineering
   writeups is what makes the library valuable; personal blogs,
   third-party summaries, and aggregators dilute it and are excluded.
 

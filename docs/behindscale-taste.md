@@ -214,8 +214,8 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-13, sixteen articles, ten tags — check the
-article JSONs for the current state before minting a new tag):
+The ratified taxonomy (2026-07-13, seventeen articles, ten tags — check
+the article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
 `partial-completion-under-crashes` (Skipper, Cadence) ·
@@ -235,19 +235,24 @@ cluster ceiling → vertical partitioning; table ceiling →
 horizontal sharding. GitHub↔Airbnb are the two ends of the
 same wall — a decade of virtual-before-physical schema
 discipline vs two weeks + 7.5 minutes downtime) ·
-`observer-shares-fate-with-observed` (Airbnb) ·
+`observer-shares-fate-with-observed` (Airbnb, Roblox — same
+conclusion reached across a 400x difference in outage
+duration: Airbnb from a smaller blast radius after their
+monitoring redesign; Roblox from 73 hours of triage with the
+telemetry that would have exposed Consul's pathologies
+depending on the failing Consul cluster itself) ·
 `blast-radius-scales-with-cluster-size` (Discord) ·
 `gray-failure-defeats-automatic-detection` (Slack) ·
 `retry-amplified-overload` (AWS — deliberately distinct from
 `ambiguous-failure-under-retry`; this is the other retry pathology,
 amplification and correlation).
-Six tags are two-company as of the 2026-07-13 Airbnb
-main-database publication (Airbnb joining GitHub on
-`single-cluster-scaling-ceiling`, the second audit-flagged
+Seven tags are two-company as of the 2026-07-13 Roblox
+return-to-service publication (Roblox joining Airbnb on
+`observer-shares-fate-with-observed`, the third audit-flagged
 singleton converted to two-company via recurrence-driven
-sourcing — and the class that flips the multi-company vs
-singleton ratio to 6:4, meeting the audit's stated threshold
-for revisiting held learning tracks); the Skipper↔Cadence
+sourcing — three fills in a row: Slack, Airbnb, Roblox); only
+three audit-flagged singletons remain (Discord blast-radius,
+Slack gray-failure, AWS retry-amplified). The Skipper↔Cadence
 pair remains the first same-crux/opposite-solution pair in
 the library (embedded-library vs central-platform durable
 execution).
@@ -456,7 +461,11 @@ the reader feel it.
   slack-scaling-job-queue, AWS orange `#FF9900`, Notion terracotta
   `#DE8A5A`, Meta blue `#0866FF`, Airbnb brand coral `#FF5A5F` for
   airbnb-partitioning-main-database — flagged as proximate to
-  semantic red `#ef4444` and used only for chrome, never verdict). The accent is for *wayfinding* — tabs,
+  semantic red `#ef4444` and used only for chrome, never verdict —
+  and Roblox blue `#00A2FF` for roblox-return-to-service — flagged
+  against GitHub `#58A6FF` periwinkle and Slack `#36C5F0` cyan-teal
+  as blues getting crowded, distinguishable but a swap candidate
+  at in-situ review). The accent is for *wayfinding* — tabs,
   active states, key callouts, the one number that matters. **~80% of the
   artifact is neutral grayscale.** Bright decorative color is a smell.
 - Semantic color only where it means something: green = healthy/committed/good
@@ -519,7 +528,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All sixteen article artifacts use nothing but React.
+  hand-roll SVG/divs. All seventeen article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**
