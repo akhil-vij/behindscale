@@ -214,7 +214,7 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-13, seventeen articles, ten tags — check
+The ratified taxonomy (2026-07-14, eighteen articles, ten tags — check
 the article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
@@ -241,18 +241,35 @@ duration: Airbnb from a smaller blast radius after their
 monitoring redesign; Roblox from 73 hours of triage with the
 telemetry that would have exposed Consul's pathologies
 depending on the failing Consul cluster itself) ·
-`blast-radius-scales-with-cluster-size` (Discord) ·
+`blast-radius-scales-with-cluster-size` (Discord, AWS —
+same class, two geometries of cell: Discord's blast came
+from bulk operations fanning out across one large cluster,
+answered with many small physical cells because search
+queries must land where the data lives; AWS's shuffle
+sharding designs the blast radius away combinatorially with
+virtual, overlapping cells because any worker can serve any
+request. When state pins work to nodes, the cells must be
+real; when it doesn't, they can be virtual and the
+arithmetic goes 100% → 25% → 1/28th on the same eight
+machines) ·
 `gray-failure-defeats-automatic-detection` (Slack) ·
 `retry-amplified-overload` (AWS — deliberately distinct from
 `ambiguous-failure-under-retry`; this is the other retry pathology,
 amplification and correlation).
-Seven tags are two-company as of the 2026-07-13 Roblox
-return-to-service publication (Roblox joining Airbnb on
-`observer-shares-fate-with-observed`, the third audit-flagged
-singleton converted to two-company via recurrence-driven
-sourcing — three fills in a row: Slack, Airbnb, Roblox); only
-three audit-flagged singletons remain (Discord blast-radius,
-Slack gray-failure, AWS retry-amplified). The Skipper↔Cadence
+Eight tags are two-company as of the 2026-07-14 AWS
+shuffle-sharding publication (AWS joining Discord on
+`blast-radius-scales-with-cluster-size`, the fourth
+audit-flagged singleton converted to two-company via
+recurrence-driven sourcing — four fills in a row: Slack,
+Airbnb, Roblox, AWS); only two audit-flagged singletons
+remain (Slack gray-failure, AWS retry-amplified — and the
+AWS retry-amplified article itself is by the same author,
+Colm MacCárthaigh, giving Amazon Builders' Library the
+distinction of being both a source for the taxonomy's most
+combinatorial answer and the source of the retry-amplified
+crux that shuffle sharding quietly depends on via caller
+retries — a lateral thread the shuffle article's second
+tradeoff draws explicitly). The Skipper↔Cadence
 pair remains the first same-crux/opposite-solution pair in
 the library (embedded-library vs central-platform durable
 execution).
@@ -528,7 +545,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All seventeen article artifacts use nothing but React.
+  hand-roll SVG/divs. All eighteen article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**

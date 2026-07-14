@@ -4,6 +4,100 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #18 (AWS shuffle sharding) LANDED
+  (2026-07-14), fourth recurrence-driven singleton fill
+  in a row. Only 2 audit-flagged singletons remain
+  (gray-failure/Slack, retry-amplified/AWS).**
+  Fable-authored dissection of Colm MacCárthaigh's
+  Builders' Library piece "Workload Isolation Using
+  Shuffle Sharding" (Dec 2019) — the canonical source
+  from the pattern's originators, making blast radius
+  a number you choose via combinatorics: 8 workers, 28
+  combinations of 2, scope of impact 1/28th (7x better
+  than fixed sharding, same machines); Route 53 runs
+  2,048 virtual name servers with four per domain and
+  730 billion possible shuffle shards, guaranteeing no
+  two domains share more than two servers. The pattern
+  quietly exports part of its guarantee to callers
+  (fault-tolerant retries hide the half-of-a-worker
+  degradation), which is where it cross-links three
+  ways to `retry-amplified-overload` (the remaining
+  AWS singleton) and to the Meta/Slack queue idempotency
+  thread. Eighth two-company class fill:
+  `blast-radius-scales-with-cluster-size` (Discord only
+  after rounds 4+5) becomes EIGHTH two-company class.
+  AWS becomes a two-article company (matches Uber/Slack
+  precedent — no new precedent flag). No feeds.json
+  change (Amazon Builders' Library already the source).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: fourth fill-a-singleton in a
+  row (Slack #15 buffer-degrades, Airbnb #16
+  single-cluster, Roblox #17 observer-shares-fate,
+  AWS #18 blast-radius). The instance shows the
+  taxonomy's frontier for this class — cells so cheap
+  they're VIRTUAL and OVERLAPPING, exponential
+  isolation from a fully shared fleet. Match with
+  Discord (fan-out coupling one node to 40% of ops):
+  same class, two geometries of cell — physical when
+  state pins work to nodes (Discord); virtual when any
+  worker can serve any request (Route 53, queues,
+  stateless tiers). Tradeoff #6 draws that boundary
+  honestly and names it staff-level judgment.
+  **Owner decision now more decisive:** landing preview
+  now derives EIGHT recurring rows — the show-all vs
+  cap-and-signal decision was already required at
+  seven; at eight it is more so. Kept at eight for now
+  (still consistent with the "show all recurring
+  bottlenecks" feedback). Both options remain named as
+  acceptable actions in the Landing.tsx doc comment.
+  Contents: article JSON with `addedAt: 2026-07-14`
+  and cruxSummary populated at authoring; one new
+  pattern `shuffle-sharding` (category `resilience`);
+  artifact accent `#FF9900` AWS orange (checked
+  against the resilience-chip orange `#EA580C` which
+  is page chrome not artifact, and semantic amber
+  `#eab308` — distinct in situ).
+  No cruxtags.json change
+  (blast-radius-scales-with-cluster-size entry already
+  seeded 2026-07-08).
+  relatedArticles: AWS → Discord forward link in
+  article JSON; Discord → AWS backlink applied in the
+  same commit.
+  Recurrences created:
+  - `blast-radius-scales-with-cluster-size` →
+    2-company (Discord + AWS). EIGHTH two-company
+    class. Discord's blast came from bulk operations
+    fanning out across one large cluster; AWS's is
+    designed away with a choose function. Same class,
+    two geometries.
+  - `fault-isolation` → 8-company (Discord, Netflix,
+    Uber, Skipper, Cadence, Slack cellular, Airbnb
+    monitoring, Roblox, AWS shuffle — 9 occurrences
+    now, this article stating the arithmetic
+    explicitly: no sharding = 100% blast radius, four
+    fixed shards = 25%, shuffle shards = 1/28th from
+    the same eight workers).
+  - `shuffle-sharding` (new pattern, first article,
+    category `resilience`). Definition captures the
+    combinatorial guarantee AND the assignment-aware
+    routing requirement AND the client-retry
+    dependency.
+  Library state after landing: **18 articles across 13
+  companies (AWS second article); 26 pattern
+  definitions; 18 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 10 tags with 8 two-company
+  and 2 one-company (Slack gray-failure, AWS
+  retry-amplified). Landing preview auto-updates to 8
+  rows (verified in dist/index.html).
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  11 warnings (unchanged from Roblox — all three
+  Shuffle stat values ("1/28th", "730 billion", "100%")
+  appear verbatim in prose so no new fuzzy misses);
+  `npm test` 100/100; `npm run build` 49 routes / 48
+  sitemap URLs; cross-page `@id` assertion passes on
+  new content.
+
 - **Article #17 (Roblox 73-hour Consul outage) LANDED
   (2026-07-13), third recurrence-driven singleton fill
   in a row. Only 3 audit-flagged singletons remain
