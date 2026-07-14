@@ -214,7 +214,7 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-14, eighteen articles, ten tags — check
+The ratified taxonomy (2026-07-14, nineteen articles, ten tags — check
 the article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
@@ -252,24 +252,29 @@ request. When state pins work to nodes, the cells must be
 real; when it doesn't, they can be virtual and the
 arithmetic goes 100% → 25% → 1/28th on the same eight
 machines) ·
-`gray-failure-defeats-automatic-detection` (Slack) ·
+`gray-failure-defeats-automatic-detection` (Slack,
+Cloudflare — same class, different automation-failure
+modes: Slack's automation STALLED (drain button never
+fired autonomously; human drained the AZ); Cloudflare's
+MISFIRED (automatic primary promotion acted on six
+minutes of etcd ambiguity and humans undid it via manual
+load-shed and traffic-steering). Detection under partial
+failure is unreliable by nature; what the automation
+does when it can't disambiguate is the axis) ·
 `retry-amplified-overload` (AWS — deliberately distinct from
 `ambiguous-failure-under-retry`; this is the other retry pathology,
 amplification and correlation).
-Eight tags are two-company as of the 2026-07-14 AWS
-shuffle-sharding publication (AWS joining Discord on
-`blast-radius-scales-with-cluster-size`, the fourth
+Nine tags are two-company as of the 2026-07-14 Cloudflare
+Byzantine-failure publication (Cloudflare joining Slack on
+`gray-failure-defeats-automatic-detection`, the fifth
 audit-flagged singleton converted to two-company via
-recurrence-driven sourcing — four fills in a row: Slack,
-Airbnb, Roblox, AWS); only two audit-flagged singletons
-remain (Slack gray-failure, AWS retry-amplified — and the
-AWS retry-amplified article itself is by the same author,
-Colm MacCárthaigh, giving Amazon Builders' Library the
-distinction of being both a source for the taxonomy's most
-combinatorial answer and the source of the retry-amplified
-crux that shuffle sharding quietly depends on via caller
-retries — a lateral thread the shuffle article's second
-tradeoff draws explicitly). The Skipper↔Cadence
+recurrence-driven sourcing — five fills in a row: Slack,
+Airbnb, Roblox, AWS, Cloudflare); only one audit-flagged
+singleton remains (AWS retry-amplified — same author, Colm
+MacCárthaigh, as the shuffle-sharding article; the shuffle
+article's second tradeoff already draws the lateral to
+retry-amplified-overload since shuffle sharding quietly
+depends on caller retries). The Skipper↔Cadence
 pair remains the first same-crux/opposite-solution pair in
 the library (embedded-library vs central-platform durable
 execution).
@@ -482,7 +487,11 @@ the reader feel it.
   and Roblox blue `#00A2FF` for roblox-return-to-service — flagged
   against GitHub `#58A6FF` periwinkle and Slack `#36C5F0` cyan-teal
   as blues getting crowded, distinguishable but a swap candidate
-  at in-situ review). The accent is for *wayfinding* — tabs,
+  at in-situ review — and Cloudflare orange `#F6821F` for
+  cloudflare-byzantine-failure — flagged against AWS `#FF9900` and
+  the resilience-chip page-chrome `#EA580C` as three oranges now
+  crowded; violet `#9b8cf0` used in-artifact for automation accents
+  is on standby as a swap candidate, owner in-situ call required). The accent is for *wayfinding* — tabs,
   active states, key callouts, the one number that matters. **~80% of the
   artifact is neutral grayscale.** Bright decorative color is a smell.
 - Semantic color only where it means something: green = healthy/committed/good
@@ -545,7 +554,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All eighteen article artifacts use nothing but React.
+  hand-roll SVG/divs. All nineteen article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**

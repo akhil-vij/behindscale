@@ -4,6 +4,140 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #19 (Cloudflare Byzantine failure) LANDED
+  (2026-07-14), fifth recurrence-driven singleton fill
+  in a row. Only 1 audit-flagged singleton remains
+  (retry-amplified/AWS).** Fable-authored dissection of
+  Cloudflare's 2020 "A Byzantine Failure in the Real
+  World" post-mortem — 6h 33m of control-plane
+  degradation (API success dipping to 75%, dashboard
+  up to 80x slower) triggered by six minutes of a
+  switch in a partially operating state, causing three
+  etcd nodes to hold three views of reality, tied RAFT
+  elections blocking writes, and automated database
+  cluster management reading the silence as a failed
+  primary and auto-promoting a replica — where a known
+  defect rebuilt every replica on promotion, leaving
+  a read-heavy auth database on a lone overwhelmed
+  primary for hours. Ninth two-company class fill:
+  `gray-failure-defeats-automatic-detection` (Slack
+  only after rounds 4+5) becomes NINTH two-company
+  class. Cloudflare = NEW company, the 14th. feeds.json
+  ADDITION: The Cloudflare Blog (14th source).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: fifth fill-a-singleton in a row
+  (Slack #15 buffer, Airbnb #16 single-cluster, Roblox
+  #17 observer-shares-fate, AWS #18 blast-radius,
+  Cloudflare #19 gray-failure).
+  **Manifestation caveat recorded** at both the crux
+  and pattern-note layer: Slack's automation STALLED
+  under gray failure (drain button never fired
+  autonomously; human drained the AZ); Cloudflare's
+  MISFIRED (automatic promotion acted on the ambiguity
+  and humans undid it). Same class — detection cannot
+  disambiguate a partial failure — different sides of
+  what the automation does when it can't. The registry
+  definition's "mitigation must fall to a human"
+  clause is generalized in prose rather than the class
+  being split, per DECISIONS item 1.
+  **Rejected tag documented**: considered
+  `observer-shares-fate-with-observed` (rhyme: etcd
+  sat on the network it coordinated) and rejected —
+  causal spine is binary-failure-models-vs-partial-
+  failure, not observer-shares-fate. Roblox holds
+  observer-shares-fate cleanly (monitoring-on-Consul);
+  no near-duplicate reasoning across classes.
+  **Title honesty**: title keeps the source's own
+  "Byzantine" phrase (which the source's own
+  postscript concedes overclaims — the correct class
+  is omission fault); body + tradeoff #1 + artifact
+  footer carry the community's correction. The source
+  said so first.
+  Contents: article JSON with `addedAt: 2026-07-14`
+  and cruxSummary populated at authoring; one new
+  pattern `conservative-auto-remediation` (category
+  `resilience` — verified against live registry
+  categories per DECISIONS agent check); artifact
+  accent `#F6821F` Cloudflare orange. **Accent
+  crowding flag**: this is the third orange — AWS
+  `#FF9900` (round 9) and resilience-chip `#EA580C`
+  (page chrome, not artifact) are the other two.
+  DECISIONS notes violet `#9b8cf0` (used in-artifact
+  for automation accents) as a swap candidate; owner
+  in-situ call required.
+  feeds.json ADDITION: The Cloudflare Blog inserted
+  before Discord Engineering, matching the sort by
+  first-real-word alphabetical.
+  No cruxtags.json change
+  (gray-failure-defeats-automatic-detection entry
+  already seeded 2026-07-08).
+  **Pattern check (DECISIONS agent-check items)
+  resolved before publish**:
+  - `generic-mitigation` live slug confirmed present;
+    definition wording ("actions that reduce impact
+    for a broad class of failures, safe to apply
+    experimentally, cheap to reverse") supports
+    Slack + Cloudflare as second-instance; no
+    modification needed.
+  - `conservative-auto-remediation` category
+    `resilience` confirmed against live registry (12
+    other resilience patterns already present); the
+    new pattern's own definition draws explicit
+    boundaries against `dead-mans-switch` (adds a
+    detection channel; this throttles response
+    regardless of detection) and against
+    `throttled-readmission` (paces readmission of
+    load after recovery; this paces firing of the
+    recovery action itself). No duplicate minted.
+  relatedArticles: Cloudflare → Slack cellular
+  forward link; slack-cellular → Cloudflare backlink
+  applied in the same commit.
+  Recurrences created:
+  - `gray-failure-defeats-automatic-detection` →
+    2-company (Slack + Cloudflare). NINTH two-company
+    class. Same class, different automation-failure
+    modes (stall vs misfire).
+  - `generic-mitigation` → 2-company (Slack cellular
+    + Cloudflare). Slack pre-positioned the drain
+    button as a generic lever; Cloudflare improvised
+    load-shed + traffic-steering mid-incident and
+    committed to pre-positioning them (automated read
+    steering) on the roadmap. The pre-position vs
+    improvise gradient is the pattern's frontier.
+  - `fault-isolation` → 9-company (Discord, Netflix,
+    Uber, Skipper, Cadence, Slack cellular, Airbnb
+    monitoring, Roblox, AWS shuffle, Cloudflare — 10
+    occurrences now). Cloudflare's secondary-DC read
+    replicas survived because they were outside the
+    local failover domain — an accidental isolation
+    boundary that sharpens the lesson (independence
+    from the control plane is itself an isolation
+    boundary; automating across it spends it).
+  - `conservative-auto-remediation` (new pattern,
+    first article, category `resilience`). Definition
+    captures response-side trigger governance and the
+    time-as-evidence framing.
+  Library state after landing: **19 articles across 14
+  companies (Cloudflare is the 14th); 27 pattern
+  definitions; 19 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 10 tags with 9 two-company
+  and 1 one-company (AWS retry-amplified). Landing
+  preview auto-updates to 9 rows (verified in
+  dist/index.html).
+  **Cap-and-signal decision now UNAVOIDABLE**
+  (per DECISIONS item 7): landing preview at 9 rows,
+  three rounds past the doc-comment threshold. Kept at
+  nine for now (prior feedback: "show all recurring
+  bottlenecks"), but the design pass is overdue.
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  12 warnings (was 11; +1 new fuzzy miss on
+  Cloudflare `6 min → 6h 33m` stat vs prose "six
+  hours and 33 minutes" / "Six minutes" — same
+  cosmetic class as residuals); `npm test` 100/100;
+  `npm run build` 51 routes / 50 sitemap URLs;
+  cross-page `@id` assertion passes on new content.
+
 - **Article #18 (AWS shuffle sharding) LANDED
   (2026-07-14), fourth recurrence-driven singleton fill
   in a row. Only 2 audit-flagged singletons remain
