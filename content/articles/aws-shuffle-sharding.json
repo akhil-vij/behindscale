@@ -1,0 +1,69 @@
+{
+  "slug": "aws-shuffle-sharding",
+  "title": "One Twenty-Eighth: Shuffle Sharding and the Arithmetic of Blast Radius",
+  "url": "https://aws.amazon.com/builders-library/workload-isolation-using-shuffle-sharding/",
+  "publishedAt": "2019-12-03",
+  "addedAt": "2026-07-14",
+  "source": {
+    "name": "Amazon Builders' Library",
+    "slug": "amazon-builders-library",
+    "company": "Amazon (AWS)",
+    "url": "https://aws.amazon.com/builders-library",
+    "feed": "https://aws.amazon.com/builders-library"
+  },
+  "summary": "The Builders' Library piece on shuffle sharding, by Colm MacCárthaigh, is a study in making blast radius a number you choose. A horizontally scalable fleet of eight workers where any worker handles any request is maximally efficient and maximally shared-fate: one customer's poisonous request or flood impacts everything. Ordinary sharding — four shards of two workers — caps the damage at a quarter of the service, but every customer on the affected shard is fully down. Shuffle sharding assigns each customer its own random combination of two workers: eight workers yield 28 unique combinations, so a problem's scope drops to 1/28th, and because another customer shares at most one worker with the affected shard, fault-tolerant clients that retry ride through uninterrupted. Route 53 runs the pattern at full scale — 2,048 virtual name servers, four per customer domain, 730 billion possible shuffle shards, no two domains sharing more than two servers — and AWS has gone on to embed it across its systems, including recursively.",
+  "crux": "A shared fleet is one fate domain: when any worker can serve any request, a single customer's poisonous request or request flood can take down every worker in turn, making the scope of impact the entire service — and the bigger the shared pool, the more customers one failure reaches. Ordinary sharding bounds the damage at the shard's fraction of the fleet, but converts it to total loss for everyone assigned there. The bottleneck is that isolation seems to cost capacity: dedicated resources per customer would cap every blast radius at one customer, and no multi-tenant economics survive it. Shuffle sharding dissolves the dilemma with combinatorics — overlapping virtual shards make blast radius shrink exponentially while the fleet stays fully shared.",
+  "cruxTag": "blast-radius-scales-with-cluster-size",
+  "cruxSummary": "A shared fleet makes every failure everyone's failure — one poison request reached the whole service.",
+  "problem": "Picture the standard horizontally scalable service: eight workers — servers, queues, databases, whatever the thing is that makes up your system — behind a load balancer, any worker able to handle any request. The post is fair to this design before dismantling it: it is great for efficiency and redundancy, and if a worker fails, the other seven absorb the work with relatively little slack capacity needed.\n\nThe same property is the vulnerability. Suppose one customer sends a poisonous request — one that triggers a crash or a stall — or simply a flood of them. The load balancer sprays that customer's traffic across the fleet, and the problem visits every worker in turn. The scope of impact is the whole service: every customer is affected by one customer's problem, and adding workers to the pool adds reach to the failure rather than containment. For a service like DNS, where Route 53 sits in front of some of the biggest sites on the internet and DDoS attacks are a fact of daily life, 'one bad actor takes down everyone' is an existential property, not an edge case.\n\nOrdinary sharding is the first correction: divide the eight workers into four shards of two, assign each customer to one shard, and the poisonous customer can now take down only their own shard. A 25 percent impact is much better than 100 percent — but for the customers who share that shard, the outage is total, and the only lever for shrinking the fraction is more shards, which means either more hardware or thinner shards. Isolation appears to be priced in dedicated capacity, and dedicated capacity is exactly what multi-tenant economics exist to avoid.",
+  "solution": "Shuffle sharding keeps the fleet fully shared and changes only the assignment scheme. Instead of fixed shards, each customer gets a virtual shard: their own combination of two workers drawn from the eight. The post's worked example: the rainbow customer is assigned workers one and four; the rose customer also lands on worker one, but its second worker is worker eight. Their shards overlap — and that overlap is the point, not a defect.\n\nIf the rainbow customer's traffic turns poisonous, it degrades workers one and four: rainbow's virtual shard is down, and the service has still lost a quarter of its capacity. But no other customer loses more than one worker, because with combinations, at most one of any other shuffle shard's workers is affected. If the requestors are fault tolerant and can work around a degraded worker — with retries, for example — service continues uninterrupted for the customers on the remaining shards. The client's retry is a load-bearing part of the isolation: shuffle sharding halves the failure, and the retry hides the half.\n\nThe arithmetic is where the pattern earns its name. Eight workers yield 28 unique combinations of two — 28 possible shuffle shards — so with hundreds of customers assigned across them, a problem's scope of impact is 1/28th of the customer base: seven times better than regular sharding, from the same eight machines. And unlike most scaling properties, this one improves with size: more workers and more customers make the combinatorics exponentially better, to the point where, with enough workers, there can be more shuffle shards than customers and every customer is effectively isolated. Blast radius becomes a design parameter you dial with a choose function.\n\nRoute 53 runs the full-scale version. Its capacity is arranged into 2,048 virtual name servers — virtual so they can be moved across physical hosts to manage capacity — and every customer domain is assigned a shuffle shard of four of them. That yields a staggering 730 billion possible shuffle shards: enough to give every domain a unique combination, and further, to guarantee no customer domain ever shares more than two virtual name servers with any other. When a domain is targeted by a DDoS attack, shuffle sharding lets Route 53 identify and isolate the targeted customer onto special dedicated attack capacity — alongside AWS's proprietary Shield traffic scrubbers — while the overall customer experience stays seamless. The pattern has since been embedded across many AWS systems, refined into recursive shuffle sharding — sharding at multiple layers to isolate a customer's customer — and released as the open-source Route 53 Infima library. The post's closing note is the quiet flex: it is a smart way to arrange existing resources, and it usually comes at no additional cost.",
+  "tradeoffs": [
+    "The isolation is statistical, not absolute. A shuffle-sharded customer still loses their own virtual shard entirely when their traffic is the poison, and 1/28th is a probability distribution over customers, not a wall: the customers whose shards overlap the affected workers experience real degradation, survivable only if their clients tolerate it. Shuffle sharding narrows the blast radius; it does not build the bunker that dedicated capacity would.",
+    "The retry is a load-bearing dependency living in someone else's code. The uninterrupted-service claim holds for requestors that are fault tolerant and can work around a lost worker; a client with no retries experiences a partial outage shuffle sharding was supposed to prevent. The pattern quietly exports part of its guarantee to every caller — kin to Meta's and Slack's queues exporting idempotency to consumers — and pairs dangerously with the retry-amplified-overload failure mode if those retries arrive without budgets or backoff.",
+    "Overlap is the price of combinatorics. Fixed shards give clean, auditable fate domains — you can name exactly who shares fate with whom. Shuffle shards trade that legibility for exponential combinations: fate-sharing becomes probabilistic and pairwise-bounded (Route 53 caps it at two shared servers per domain pair), which is stronger in aggregate and blurrier to reason about per-incident. Debugging 'which customers does this slow worker touch' now requires the assignment map, not a diagram.",
+    "Virtual shards demand routing that knows the assignment. The scheme only works if the layer distributing requests can map each customer to their combination deterministically and consistently through worker replacement and capacity moves — Route 53's name servers are virtual precisely so capacity can shift beneath stable assignments. The intelligence that a plain load balancer didn't need becomes a component you own, with its own correctness burden (the shipped answer is the Infima library).",
+    "The economics are the argument, and they cut one way: shuffle sharding is a rearrangement of existing resources at usually no additional cost, which is why frugality can drive the improvement. But the zero-cost framing holds at the resource layer only — the assignment logic, the per-customer routing, the monitoring that must now think in combinations, and the client-retry expectations are real engineering spend. Cheap isolation is cheap in hardware, not in system design.",
+    "Discord's version of this same bottleneck shows the pattern's boundary. Their blast radius came from bulk operations fanning out across one large cluster — coupling every operation to every node — and their answer was many small physical cells with per-tenant data locality, because search queries must land where the data lives. Shuffle sharding suits workloads where any worker can serve any request (DNS, queues, stateless tiers); when state pins work to nodes, the cells must be real, not virtual. Same class of problem, two geometries of cell — and knowing which geometry your state permits is the staff-level judgment."
+  ],
+  "tags": [
+    "multi-tenancy",
+    "fault-isolation",
+    "dns",
+    "aws",
+    "resilience"
+  ],
+  "patterns": [
+    {
+      "slug": "shuffle-sharding",
+      "note": "The canonical source, from the pattern's originators: virtual shards as random combinations of workers (2-of-8 in the worked example, 4-of-2048 in Route 53), scope of impact bounded to 1/(n choose k), at most one shared worker between any two shards so retrying clients ride through, refined into recursive shuffle sharding and released as the Route 53 Infima library."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "The post is the pattern's arithmetic made explicit: no sharding = 100% blast radius, four fixed shards = 25%, shuffle shards = 1/28th from the same eight workers. Route 53's guarantee that no two domains share more than two of their four name servers is fault isolation stated as a combinatorial invariant rather than an infrastructure boundary."
+    }
+  ],
+  "relatedArticles": [
+    "discord-trillions-message-search"
+  ],
+  "stats": [
+    {
+      "value": "1/28th",
+      "label": "scope of impact with shuffle shards of 2 across 8 workers — 7x better than regular sharding, same machines",
+      "placement": "solution"
+    },
+    {
+      "value": "730 billion",
+      "label": "possible shuffle shards in Route 53: 2,048 virtual name servers, four per domain, no two domains sharing more than two",
+      "placement": "solution"
+    },
+    {
+      "value": "100%",
+      "label": "of the service reachable by one customer's poisonous request in the unsharded fleet — the property being designed away",
+      "placement": "problem"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/aws-shuffle-sharding/index.html",
+    "teaser": "Poison one customer against the same eight workers three ways — shared fleet, fixed shards, shuffle shards — and watch the blast radius go 100% → 25% → 1/28th. Then turn off client retries and see which guarantee was living in the caller."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "slug": "shuffle-sharding",
+  "name": "Shuffle Sharding",
+  "category": "resilience",
+  "definition": "Assign each customer (or tenant, or resource) a virtual shard: a random combination of k workers drawn from a fleet of n, instead of a fixed physical shard. A poisonous or flooding customer still takes down their own combination, but because any two combinations overlap in at most a bounded number of workers, other customers lose at most part of their shard — and fault-tolerant clients that retry around a degraded worker ride through unaffected. Scope of impact drops from the shard fraction (1/shards) to roughly 1/(n choose k), which improves exponentially as the fleet grows.\n\nThe pattern converts blast radius from an infrastructure boundary into a combinatorial invariant, at usually no additional resource cost — the fleet stays fully shared; only the assignment scheme changes. It requires an assignment-aware routing layer and clients whose retries can absorb a partially degraded shard.",
+  "whenItApplies": [
+    "Multi-tenant services where any worker can serve any request (DNS, API front ends, queues, stateless tiers) and one tenant's poison or flood must not become everyone's outage",
+    "Fleets where dedicated per-tenant capacity is uneconomical but per-tenant blast radius must approach single-tenant isolation",
+    "Layered systems, recursively — sharding at multiple layers to isolate a customer's customer"
+  ],
+  "tradeoffs": [
+    "The guarantee is statistical and partly lives in the client: without retries, an overlapped customer experiences the partial outage the pattern was meant to hide",
+    "Fate-sharing becomes probabilistic and pairwise-bounded rather than cleanly enumerable — incident reasoning needs the assignment map",
+    "Does not fit state-pinned workloads: when data locality binds work to nodes, cells must be physical (Discord's geometry), not virtual"
+  ]
+}
