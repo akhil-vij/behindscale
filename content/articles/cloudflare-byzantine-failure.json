@@ -1,0 +1,73 @@
+{
+  "slug": "cloudflare-byzantine-failure",
+  "title": "Neither Dead nor Alive: Cloudflare's Real-World Byzantine Failure",
+  "url": "https://blog.cloudflare.com/a-byzantine-failure-in-the-real-world/",
+  "publishedAt": "2020-11-27",
+  "addedAt": "2026-07-14",
+  "source": {
+    "name": "The Cloudflare Blog",
+    "slug": "cloudflare-blog",
+    "company": "Cloudflare",
+    "url": "https://blog.cloudflare.com",
+    "feed": "https://blog.cloudflare.com/rss/"
+  },
+  "summary": "Cloudflare's control plane — the API and dashboard — degraded for six hours and 33 minutes on November 2, 2020, with API success dipping to 75% and the dashboard up to 80 times slower. The trigger lasted six minutes: a switch entered a partially operating state, healthy enough that failover never fired, broken enough that an etcd node lost contact with its leader while every other path stayed up. Three etcd nodes held three views of reality, tied elections made the cluster read-only, database cluster management read the silence as a failed primary and auto-promoted a replica — and a known defect meant promotion forced a rebuild of every replica, leaving a read-heavy authentication database on a lone, overwhelmed primary for hours. Every layer had redundancy; every layer's redundancy assumed a component is either up or down.",
+  "crux": "Every failover mechanism in the stack — LACP link aggregation, RAFT leader election, automated database promotion — was designed against crash-stop failure: a component is up or down, and it tells the truth or says nothing. The switch did neither: its control-plane protocols stayed up while its data plane silently dropped packets, invisible to nodes because LACP load-balancing spread the loss thin. Had it died outright, traffic would have failed over cleanly. Because it half-died, etcd's members held conflicting views — node 1 couldn't reach the leader, node 2 could — and RAFT, with no vocabulary for 'reachable by some,' produced tied elections that blocked all writes. Detection didn't miss the failure; it couldn't agree the failure existed. And here the automation went one step past paralysis: it acted on the ambiguity, promoting a primary that wasn't broken.",
+  "cruxTag": "gray-failure-defeats-automatic-detection",
+  "cruxSummary": "A switch failed partially instead of fully, and every crash-stop failover layer misfired.",
+  "problem": "Cloudflare's control plane runs as microservices redundant across two regions, and the post enumerates its redundancy discipline deliberately: paired active-active switches per rack, either able to carry the load alone; critical services spread across racks; dual power feeds; RAID 10 or three-machine replication for anything critical. Redundancy at each layer is reviewed and required. The post opens with the question that discipline invites: so how could things go wrong?\n\nAt 14:43 UTC the switch answered. It kept LACP and BGP alive while vPC — the protocol that makes a switch pair look like one — went down, and its forwarding plane stopped processing some fraction of packets. This is the failure mode redundancy audits don't model: the audit asks 'what if this device dies?', and the paired switch is the answer. Nothing asks 'what if it keeps claiming to be alive while doing a third of its job?' — because the failover trigger is the device dying. Six minutes later the switch recovered on its own. The impact was just beginning.\n\nThe rack held one member of the etcd cluster Cloudflare's core data centers use for coordination. The degraded switch sat on exactly one path: node 1 to node 3, the leader. Node 1, unable to reach the leader, repeatedly called elections and voted for itself; node 2, which could still see node 3, kept voting for node 3. Ties resolved nothing node 1 could reach, and since RAFT elections block writes, the cluster went read-only for the switch's six-minute half-life. Then the chain fired: with etcd read-only, two database clusters could no longer communicate that they had a healthy primary. The automation drew the crash-stop conclusion — no signal means dead primary — and promoted each cluster's synchronous replica.",
+  "solution": "The promotion itself worked flawlessly, without error or data loss. But a known defect in cluster management required every replica to be rebuilt after a promotion, with rebuild time proportional to database size. One cluster shrugged it off. The other was the authentication database serving API calls and dashboard logins — read-heavy, and dependent on a replica deliberately absorbing reads to spare the primary. Promotion vaporized that topology; the new primary took the entire load alone, hours after the switch was already healthy again.\n\nThe response was manual, and its shape is the lesson: every effective action was a human working around the automation. First, shed load — the team dialed back SSL certificate pushes, emails, and other deferrable work touching the primary, buying headroom for the hours the rebuild would take regardless. Second, spend the redundancy the automation didn't know about: every cluster keeps online replicas in the secondary data center, replicas that are not part of the local failover process and therefore sailed through untouched. Steering reads to them wasn't automated, so the team manually diverted tolerant API traffic across, substantially improving availability — the unautomated redundancy was the redundancy that survived. Third, eat a tradeoff in public: dashboard sessions live in Redis in the primary data center and couldn't cross the ocean, so the actions helping the API were degrading the dashboard; after a period of increasingly frustrated users, the team failed authentication back and nursed the primary through. At 21:20 UTC the first replica finished rebuilding and performance returned instantly.\n\nThe postmortem's observation is the thesis in Cloudflare's own terms: each system had redundancy, and no system fully failed — each entered a degraded state, a combination considerably harder to model. The transferable fix: revisit the aggressiveness of auto-remediation. Fast promotion had been a point of pride, built because manual promotion once took painfully long; the incident inverted the pride — for at least one database, the cure may be worse than the disease — and the trigger was retuned immediately. The post closes defending RAFT over BFT: most cluster management forgoes Byzantine tolerance because a simple protocol with a rare known hole is safer than a complex one that's hard to implement correctly. And in a postscript worth celebrating, Cloudflare appended the community's correction: this was an omission fault, not a true Byzantine fault — and omission faults can be tolerated without full BFT. The title overclaimed; the postscript said so.",
+  "tradeoffs": [
+    "RAFT over BFT is a deliberate simplicity purchase, and Cloudflare re-signs it even after paying. Crash-stop consensus is easier to implement, verify, and debug; the price is a known vulnerability to exactly the conflicting-views scenario that occurred. The post defends the position after the incident — a simple protocol with a rare known hole beats a complex protocol you can't trust yourself to implement — and the postscript strengthens it: the actual fault class (omission) is tolerable without going all the way to BFT.",
+    "Fast auto-remediation trades evidence quality for reaction speed. Automatic primary promotion on a minute's notice was engineered deliberately because slow manual promotion had hurt before. The same hair trigger, pointed at six minutes of ambiguous silence, executed a promotion nothing needed — and the promotion, via the rebuild defect, was the entire outage. Cloudflare's correction wasn't to remove the automation but to slow it: tune the trigger so the evidence has time to disambiguate. Speed of cure is a parameter, and its safe value depends on how expensive the cure is.",
+    "Layered redundancy audits model binary failure, and every layer's answer assumed the question. Paired switches answer 'switch dies'; RAFT answers 'leader dies'; auto-promotion answers 'primary dies.' A component that half-dies falls through all three answers at once — LACP load-balancing even camouflaged it, spreading the packet loss thinly enough that no single node saw a dead link. The post's redundancy inventory reads, in hindsight, as a list of mechanisms the incident walked past.",
+    "The rebuild-on-promotion defect coupled an instant action to an hours-long consequence. Promotion completed in moments; the replica rebuild it mandated took until 21:20, with duration proportional to database size. Capacity planning for the auth database assumed a topology — primary plus read-absorbing replica — that the failover process itself destroyed. A failover that leaves the survivor unable to carry the load isn't a failover; it's a slower outage.",
+    "The redundancy that saved the API was valuable because it was outside the automation. Secondary-DC read replicas weren't in the local failover process — which is why the misfiring automation never touched them, and why using them required manual, unautomated traffic steering under pressure. The same property was the weakness (slow to invoke) and the firewall (impossible to break automatically). Automating that steering, which the post implies is the roadmap, moves it from one side of the ledger to the other.",
+    "Mitigation for one plane degraded the other. API calls could cross the ocean; dashboard sessions couldn't. Improving API availability made the dashboard worse until the team consciously failed auth back and accepted the degraded-primary risk. Under partial failure, mitigations compete — the incident had no move that helped everything at once."
+  ],
+  "tags": [
+    "incidents",
+    "etcd",
+    "raft",
+    "consensus",
+    "networking"
+  ],
+  "patterns": [
+    {
+      "slug": "generic-mitigation",
+      "note": "Load shedding and traffic steering are the two broad levers Cloudflare pulled, chosen precisely because they don't require understanding the failure to work: shed discretionary load to buy headroom, move work to capacity the incident hasn't touched. Second company — Slack pre-positioned the drain button as a generic lever; Cloudflare improvised both levers mid-incident, and its roadmap (automated read steering) is a commitment to pre-position them."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "The secondary data center's read replicas survived because they were isolated from the local failover domain: not registered in the local promotion process, not coordinated through the affected etcd cluster. The isolation was partly accidental — automation hadn't reached them yet — which sharpens the lesson: independence from the control plane is itself a fault-isolation boundary, and automating across that boundary spends it."
+    },
+    {
+      "slug": "conservative-auto-remediation",
+      "note": "When a remediation is expensive or destructive, its trigger should demand evidence proportional to the cost — and time is evidence: a six-minute ambiguity should not fire an hours-long irreversible cure. Cloudflare's fix was not better detection — gray failure defeats detection by definition — but a slower trigger, tuned per-database to the cost of the cure."
+    }
+  ],
+  "relatedArticles": [
+    "slack-cellular-architecture"
+  ],
+  "stats": [
+    {
+      "value": "6 min → 6h 33m",
+      "label": "duration of the switch degradation vs. duration of the impact it caused",
+      "placement": "problem"
+    },
+    {
+      "value": "75%",
+      "label": "API success at the worst dips — dashboard as much as 80× slower",
+      "placement": "problem"
+    },
+    {
+      "value": "21:20 UTC",
+      "label": "the first replica rebuild completes — and performance returns instantly",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/cloudflare-byzantine-failure/index.html",
+    "teaser": "Kill the switch dead and watch failover shrug — then set it half-alive, watch three etcd nodes hold three realities, and decide how fast the promotion trigger fires. Mitigate by hand, or set the trigger past six minutes and meet the outage that didn't happen."
+  }
+}

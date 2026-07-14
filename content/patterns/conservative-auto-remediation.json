@@ -1,0 +1,16 @@
+{
+  "slug": "conservative-auto-remediation",
+  "name": "Conservative Auto-Remediation",
+  "category": "resilience",
+  "definition": "When an automatic recovery action is expensive, destructive, or hard to reverse, gate its trigger on evidence proportional to that cost — and treat elapsed time as evidence: a brief ambiguity should not be allowed to fire an hours-long cure. Detection under partial failure is unreliable by nature, so the governing question moves from 'is the component down?' to 'is the evidence strong enough to justify what this remediation will destroy if it's wrong?' The trigger's delay is tuned per target, to the cost of the cure rather than to a global reaction-time goal.\n\nThe pattern governs the response side of automation, not the detection side: it assumes signals will sometimes be ambiguous or wrong and rate-limits how eagerly any signal may act. Boundary against Dead Man's Switch: that pattern adds a detection channel (absence of heartbeat as signal); this one throttles the response regardless of which detection fired. Boundary against Throttled Readmission: that pattern paces the reintroduction of load after recovery; this one paces the firing of the recovery action itself.",
+  "whenItApplies": [
+    "Automated failovers or promotions whose execution is expensive to complete or to undo (replica rebuilds, cache invalidation, topology changes)",
+    "Systems exposed to gray or partial failures, where detection signals can be contradictory and 'no signal' is not proof of death",
+    "Any remediation whose misfire cost exceeds the cost of waiting out a short ambiguity — the trigger delay is capacity insurance"
+  ],
+  "tradeoffs": [
+    "A genuinely dead component now waits out the full evidence window before its cure fires — the safety margin is paid in real recovery latency",
+    "Per-target tuning replaces one global knob with many local ones, each needing an owner and a rationale",
+    "Damping the trigger treats the symptom of unreliable detection; it does not improve the detection, and can mask signals worth investigating"
+  ]
+}

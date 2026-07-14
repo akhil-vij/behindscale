@@ -14,6 +14,13 @@
     "feed": "https://medium.com/feed/airbnb-engineering"
   },
   {
+    "name": "The Cloudflare Blog",
+    "slug": "cloudflare-blog",
+    "company": "Cloudflare",
+    "url": "https://blog.cloudflare.com",
+    "feed": "https://blog.cloudflare.com/rss/"
+  },
+  {
     "name": "Discord Engineering",
     "slug": "discord-engineering",
     "company": "Discord",
