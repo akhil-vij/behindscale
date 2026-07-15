@@ -129,7 +129,7 @@ taxonomies are what make the library compound.
   Meta, Figma Blog, The GitHub Blog, Netflix Technology Blog, Notion
   Blog, Roblox Blog, Shopify Engineering, Slack Engineering,
   Stripe Engineering, The Cloudflare Blog, Uber Engineering,
-  DoorDash Engineering Blog — twenty-one articles across those
+  DoorDash Engineering Blog — twenty-two articles across those
   sources as of 2026-07-15). The signal-to-noise ratio of first-party engineering
   writeups is what makes the library valuable; personal blogs,
   third-party summaries, and aggregators dilute it and are excluded.

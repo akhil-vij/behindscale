@@ -4,6 +4,124 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #22 (Netflix Conductor) LANDED
+  (2026-07-15), second from the rounds-12-18
+  pipeline. SECOND THREE-COMPANY cruxTag in the
+  library.** Fable-authored dissection of Netflix's
+  2016 "Netflix Conductor: A microservices
+  orchestrator" — the Content Platform Engineering
+  team's Decider-based engine replacing pub/sub
+  choreography for multi-day title-setup workflows.
+  Blueprint (JSON DSL) + instance state + Decider
+  state machine + per-task configuration (retryCount
+  3, timeoutSeconds 1200, TIME_OUT_WF) as
+  configuration replacing the crash-and-stall
+  machinery every choreographed flow had to
+  hand-roll. Production stats after a year: 2.6M
+  workflow instances, 100 definitions, 190 workers,
+  largest workflow 48 tasks, days-long durations.
+  `partial-completion-under-crashes` (Skipper +
+  Cadence) becomes the SECOND THREE-COMPANY cruxTag.
+  Netflix goes to 2 articles (matches
+  Uber/Slack/AWS precedent — no flag).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: recurrence-driven singleton→
+  double→triple, second time in the pipeline.
+  Manifestation caveat (per taste doc v3 §3.5): three
+  faces in the class now — Skipper =
+  crash-correctness, Cadence = duplicated
+  scaffolding, Conductor = illegibility of partial
+  state (the epistemic face, "what remains?" as
+  question with no owner). Rejected: minting a
+  visibility class (would sever Conductor from its
+  readers' path through Skipper/Cadence; enumeration
+  problem is a consequence of partial state having no
+  home, not a sibling). Rejected tag:
+  observer-shares-fate (UI/engine duality is a
+  feature here, no incident evidence).
+  **Registry definition amendment DEFERRED pending
+  owner sign-off** (DECISIONS "OWNER SIGN-OFF
+  REQUIRED"): the handoff proposed appending "— and,
+  at scale, often no way even to enumerate which
+  steps remain." to the
+  `partial-completion-under-crashes` registry
+  definition. Not applied here — the article ships
+  fine against the current registry def (which
+  covers "some work done, some not, no safe way to
+  resume without either dropping or duplicating
+  it"), and the enumeration nuance reads as a
+  manifestation caveat rather than a spine change.
+  Taste doc v3 §3.5 manifestation-caveat doctrine
+  supports "same causal spine, different face → same
+  class plus an explicit caveat naming the face." The
+  crux prose already carries the enumeration point
+  ("the system cannot even enumerate which, let alone
+  resume safely"). Owner can decide whether to
+  formalize the registry-def amendment separately.
+  Contents: article JSON with `addedAt: 2026-07-15`
+  and cruxSummary populated at authoring; one NEW
+  pattern `choreography-vs-orchestration` (category
+  `resilience`, sibling boundary vs
+  `embedded-vs-centralized-orchestration` drawn
+  inside the definition: choreography-vs-orchestration
+  asks whether the process has an OWNER at all;
+  embedded-vs-centralized assumes an engine exists
+  and asks WHERE it lives); artifact accent `#E50914`
+  Netflix brand red — matches the live Netflix accent
+  (netflix-prioritized-load-shedding), per DECISIONS
+  RESOLUTION at bottom of round file.
+  No cruxtags.json change (defer amendment as noted
+  above). No feeds.json change (Netflix Technology
+  Blog already an existing source; Netflix now
+  two-article, matches precedent).
+  Backlinks: Conductor → Skipper + Cadence forward
+  links; skipper-workflow-engine → Conductor
+  backlink applied in the same commit (Skipper had
+  no prior `relatedArticles` field — this is its
+  first, mirroring the airbnb-monitoring pattern
+  from round 8); uber-cadence-workflow-platform →
+  Conductor backlink appended in the same commit.
+  Recurrences created:
+  - `partial-completion-under-crashes` → 3-company
+    (Skipper + Cadence + Conductor). SECOND
+    THREE-COMPANY cruxTag; row renders as `3 systems`
+    on landing.
+  - `durable-workflows` → 3-company (Airbnb, Uber,
+    Netflix). Conductor's contribution: searchability
+    — execution state indexed in Elasticsearch,
+    turning the workflow store into a queryable
+    system of record.
+  - `embedded-vs-centralized-orchestration` →
+    3-company (Skipper embedded, Cadence
+    centralized, Conductor ancestral centralized).
+    The triptych completes: who owns the process
+    state — the service, the platform, or nobody.
+  - `choreography-vs-orchestration` → new pattern;
+    first article (Netflix). Category `resilience`.
+    First mint from Conductor's own "Why not peer to
+    peer choreography?" section.
+  Landing preview auto-updates: `Partial completion
+  under crashes` now shows `3 systems`, `SEEN AT
+  Airbnb · Netflix · Uber` (Skipper counts as
+  Airbnb). Total row count UNCHANGED at 9 (this is
+  a 3-company depth add, not a new 2-company class).
+  CTA `Browse all 22 breakdowns →` auto-derived.
+  Library state after landing: **22 articles across
+  15 companies (Netflix two-article); 29 pattern
+  definitions; 22 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 11 tags with 2
+  three-company, 7 two-company, 2 one-company (AWS
+  retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+  Verifier: `npm run validate` 6 checks / 0 errors
+  / 19 warnings (was 17; +2 fuzzy misses on
+  Conductor `2.6M · 100 · 190` compound value and
+  `retryCount: 3` vs prose — same cosmetic class as
+  residuals); `npm test` 100/100; `npm run build`
+  56 routes / 55 sitemap URLs; cross-page `@id`
+  assertion passes on new content.
+
 - **Article #21 (Airbnb Orpheus idempotent payments)
   LANDED (2026-07-15), first FROM the rounds-12-18
   authoring pipeline. FIRST THREE-COMPANY cruxTag
