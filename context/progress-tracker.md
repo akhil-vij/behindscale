@@ -4,6 +4,149 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #21 (Airbnb Orpheus idempotent payments)
+  LANDED (2026-07-15), first FROM the rounds-12-18
+  authoring pipeline. FIRST THREE-COMPANY cruxTag
+  in the library.** Fable-authored dissection of
+  Airbnb's 2019 "Avoiding Double Payments in a
+  Distributed Payments System" — Orpheus, the
+  general-purpose idempotency library embedded in
+  each payments SOA service, resting on four spare
+  ideas: an idempotency key identifying each logical
+  request, request state tracked on a sharded master
+  database only, every non-network step wrapped in
+  single database transactions with two ground rules
+  (no network calls in Pre/Post-RPC, no database
+  work in RPC), and every error classified retryable
+  or non-retryable. Claimed outcome: five nines of
+  payment consistency while annual payment volume
+  doubled. `ambiguous-failure-under-retry` (Stripe +
+  Shopify) becomes the FIRST THREE-COMPANY cruxTag —
+  the taxonomy's depth milestone.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: recurrence-driven singleton→
+  double→triple. Match verified against source: lost
+  responses, client timeouts, double-click races,
+  at-most-once money movement — the article's own
+  problem statement — the same class Stripe named in
+  the API-contract view and Shopify motivated at the
+  one-in-a-million-at-volume view. Airbnb's
+  manifestation is the deepest server-side treatment:
+  what the guarantee costs INSIDE the service under
+  sharded databases, replica lag, and developers who
+  must not be trusted to hand-roll consistency.
+  **Precedent flag now historical**: Airbnb becomes
+  the first FOUR-article company (Skipper, Monitoring,
+  Partitioning, Orpheus — this is the fourth). Prior
+  three-article precedent (Airbnb hit that with the
+  partitioning round; earlier top was two — Uber,
+  Slack). Suggested watch-rule from DECISIONS: no
+  company above ~3 until the catalog is materially
+  larger; this landing is a deliberate step past
+  that ceiling, owner signed off at pitch.
+  **Rejected tags documented**: retry-amplified-
+  overload (retry correctness under ambiguity, not
+  retry load; backoff/jitter is one client
+  responsibility, not the crux); partial-completion-
+  under-crashes (genuinely adjacent — three phases
+  exist so interruption is recoverable — but the
+  framing anchors on the ambiguous REQUEST, not the
+  interrupted PROCESS; the `atomic-phases` pattern
+  carries the cross-class connection).
+  Contents: article JSON with `addedAt: 2026-07-15`
+  and cruxSummary populated at authoring; one NEW
+  pattern `retryable-error-classification` (category
+  `resilience`, boundary vs `retry-budget` drawn
+  inside the definition); artifact accent `#FF5A5F`
+  Airbnb Rausch (coral) — matches the coral
+  precedent from airbnb-partitioning-main-database,
+  chrome-only constraint honored (verdicts are
+  semantic red/amber/green).
+  No cruxtags.json change
+  (ambiguous-failure-under-retry entry already
+  seeded 2026-07-08). No feeds.json change (Airbnb
+  Engineering already an existing source).
+  **Pattern-check items (DECISIONS agent-check)
+  resolved before publish**:
+  - `atomic-phases` — DECISIONS treated as NEW, but
+    the pattern ALREADY EXISTS in the live library
+    (Skipper's first article, category `resilience`,
+    "long workflow phase-by-phase resumption"
+    scale). Handoff's proposed replacement
+    definition (category `consistency`, intra-request
+    scale, "no network in transactions" invariant)
+    would have overwritten a working pattern with
+    workable notes on Skipper. Resolution: KEEP live
+    definition; author Orpheus's note as second
+    company at a finer scale (workflow-method
+    checkpoint vs intra-request transaction boundary
+    — two altitudes of the same discipline).
+    Corrected the handoff's "First mint from this
+    post's two ground rules" phrasing to reflect
+    second-company reality. `atomic-phases` becomes
+    2-company (Skipper + Orpheus).
+  - `retryable-error-classification` — genuinely
+    new; clean definition; explicit boundary vs
+    `retry-budget` inside definition (classification
+    governs whether a failure MAY be retried;
+    retry-budget governs how much retrying a system
+    can afford). Category `resilience` valid.
+  - `embedded-vs-centralized-orchestration` —
+    DECISIONS asked whether Orpheus-as-library
+    recapitulates Skipper's argument, would make it
+    a third-company instance. Resolution: the live
+    definition is explicitly WORKFLOW-scoped
+    (references Temporal/Cadence, "workflow cluster",
+    "workflow UI") and applying it to Orpheus would
+    either force a definition broadening that
+    strands Skipper/Cadence notes, or misrepresent
+    Orpheus's context. Kept UNTAGGED per DECISIONS
+    default; the library-vs-service reasoning stays
+    in Orpheus's first tradeoff as prose.
+  Backlinks: Orpheus → Stripe + Shopify forward
+  links; stripe-idempotency → Orpheus backlink
+  applied in the same commit;
+  shopify-resilient-payments → Orpheus backlink
+  applied in the same commit.
+  Recurrences created:
+  - `ambiguous-failure-under-retry` → 3-company
+    (Stripe + Shopify + Airbnb). FIRST THREE-COMPANY
+    cruxTag. Row renders as `3 systems` on landing;
+    verified via generic `{count} systems` in
+    Landing.tsx — no code change needed.
+  - `idempotency-keys` → 4-company (Stripe,
+    Shopify, AWS, Airbnb). Airbnb is the deepest
+    server-side treatment; the pattern's first
+    four-company anchor.
+  - `retry-with-backoff-and-jitter` → 3-company
+    (Stripe, AWS, Airbnb).
+  - `atomic-phases` → 2-company (Skipper + Airbnb).
+    Different scales; live pattern definition
+    unchanged.
+  - `retryable-error-classification` → new pattern;
+    first article (Airbnb). Category `resilience`.
+  Landing preview auto-updates: `Ambiguous failure
+  under retry` now shows `3 systems`, `SEEN AT
+  Airbnb · Shopify · Stripe`. Total row count
+  UNCHANGED at 9 (this is a 3-company depth add,
+  not a new 2-company class). CTA `Browse all 21
+  breakdowns →` auto-derived.
+  Library state after landing: **21 articles across
+  15 companies (Airbnb four-article company, the
+  library's first); 28 pattern definitions; 21
+  article artifacts + 1 site-level hero.** cruxTag
+  taxonomy: 11 tags with 1 three-company, 8
+  two-company, 2 one-company (AWS retry-amplified,
+  DoorDash mitigation-scoped-narrower-than-failure).
+  Verifier: `npm run validate` 6 checks / 0 errors
+  / 17 warnings (was 15; +2 fuzzy misses on Orpheus
+  `99.999%` vs prose "five nines" and `3 phases · 2
+  rules` vs prose "three phases" — same cosmetic
+  class as residuals); `npm test` 100/100; `npm run
+  build` 54 routes / 53 sitemap URLs; cross-page
+  `@id` assertion passes on new content.
+
 - **Article #20 CORRECTION (2026-07-15): `byos-platform-
   design` pattern mint RETRACTED as a follow-up commit.**
   Taste doc v3 formalized the pattern's earlier
