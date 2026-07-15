@@ -1,0 +1,78 @@
+{
+  "slug": "airbnb-orpheus-idempotent-payments",
+  "title": "At Most Once: Orpheus and the Idempotent Payments Library at Airbnb",
+  "url": "https://medium.com/airbnb-engineering/avoiding-double-payments-in-a-distributed-payments-system-2981f6b070bb",
+  "publishedAt": "2019-04-16",
+  "addedAt": "2026-07-15",
+  "source": {
+    "name": "Airbnb Engineering",
+    "slug": "airbnb-engineering",
+    "company": "Airbnb",
+    "url": "https://medium.com/airbnb-engineering",
+    "feed": "https://medium.com/feed/airbnb-engineering"
+  },
+  "summary": "Airbnb's migration to service-oriented architecture turned every payment into a distributed transaction: an API call fanning out into downstream calls, each changing state, each able to fail or time out mid-flight. The client that never receives a response cannot know whether money moved — and in payments the naive recovery, retrying, is precisely the action that can charge a guest twice. Airbnb's answer is Orpheus, a general-purpose idempotency library embedded in each payments service, built on four spare ideas: an idempotency key identifying each logical request, request state tracked in tables read and written only on a sharded master database, every non-network step wrapped in single database transactions, and every error classified retryable or non-retryable. The result the post claims: five nines of payment consistency while annual payment volume doubled.",
+  "crux": "A request that fails cleanly is easy; a request that vanishes is the problem. Connections drop, responses get lost after the work is done, users double-click 'Book' — and in each case the client holds no evidence about whether the operation took effect. The post frames recovery as write repair: the client fires the same request again, and the write path repairs the ambiguity — completing the work if it never happened, returning the recorded outcome if it did, never doing the work twice. Idempotency is what makes the retry safe to fire from total ignorance: a money-moving operation invoked any number of times moves money at most once. Same class as Stripe (the API-contract view) and Shopify (the one-in-a-million-at-volume view); Airbnb's manifestation is the deepest infrastructure treatment — what the guarantee costs inside the service, under sharded databases, replica lag, and developers who must not be trusted to hand-roll consistency.",
+  "cruxTag": "ambiguous-failure-under-retry",
+  "cruxSummary": "A payment call that times out may have moved money; retrying must never move it twice.",
+  "problem": "The requirements elevate this beyond a textbook idempotency post. First, generic: not a custom solution per use case, but one configurable framework across all payments SOA services. Second, uncompromising: payment consistency could not degrade while the SOA migration was in flight, because inconsistency lands directly on guests and hosts. Third, ultra-low latency — which produced the post's sharpest judgment: a standalone idempotency service was rejected not just for the extra hop, but because the service would suffer from the same problems it was originally intended to solve. An idempotency service across a network from its callers is itself a remote call that can time out ambiguously — the guard would inherit the disease. Fourth, organizational: with SOA scaling the engineering org, requiring every product developer to be an eventual-consistency specialist would be highly inefficient; the machinery had to live below the product code.\n\nThe post is unusually specific about the failure modes to absorb: a client that fails to consume the response, a response lost in transit, a client-side timeout, and race conditions from a user clicking 'Book' twice. Each is the same epistemic hole — work possibly done, evidence absent — arriving through a different door.",
+  "solution": "Orpheus rests on a decomposition the post treats as near-universal: almost every API request separates into three phases — Pre-RPC, where the payment request's details are recorded in the database; RPC, where the live call goes to the external processor and the response is received; Post-RPC, where the outcome is recorded, including whether a failure is retryable. Two ground rules fence the phases: no network calls in Pre and Post, no database work in RPC. Network and transactions never mix — a rule learned the hard way via connection-pool exhaustion. Each of Pre- and Post-RPC is wrapped in a single enclosing database transaction initiated by the library, so each phase succeeds or fails atomically: the system can be interrupted anywhere and still be in a state it can recover from. Java lambdas make the enclosure ergonomic — application database work passes as functional interfaces into the library's transaction.\n\nRetry safety hangs on exception discipline. Every error is classified retryable or non-retryable: infrastructure failures (5XX-shaped) presumed transient and retryable; validation failures (4XX-shaped — you can't refund a refund) permanent, with the custom exception class defaulting to non-retryable. The post prices both mislabels: retryable-marked-non-retryable fails the request forever; non-retryable-marked-retryable re-opens the door to double payments plus manual cleanup. The client carries real responsibilities: mint a unique key per logical request and reuse it exactly for retries; persist the key before calling; consume success and nullify the key; never mutate the payload; shape auto-retries with exponential backoff and jitter. Key choice is a design axis: request-level idempotency uses a random UUID per logical request; entity-level uses a deterministic domain key — payment-1234-refund — so a $5 refund against payment 1234 can only ever happen once. Concurrency is handled with a lease: each call acquires a database row-level lock on its key, granting one in-flight attempt permission; the lease expires (configured longer than the RPC timeout) so a hung server doesn't wedge the key, and a maximum retryable window caps rogue retries. Responses reaching a deterministic end state are recorded and replayed to retries, at the cost of a table that grows with throughput and resists both pruning and schema change.\n\nThen the post's best section: why the idempotency tables live only on the master database. With MySQL and no strong read consistency, storing idempotency state on a replica re-creates the crux inside the cure: a payment succeeds, the response commits on master, the client's timeout fires a correct idempotent retry — and the retry, reading a lagged replica, finds no recorded response, concludes the payment never happened, and executes it again. A few seconds of replica lag equals a double charge. So Orpheus reads and writes on master only, and scales the hot spot by sharding on the idempotency key itself — high cardinality, even distribution, a natural shard key. The claimed outcome: five nines of consistency while annual payment volume doubled.",
+  "tradeoffs": [
+    "A library beats a service here, and the reasoning generalizes: an idempotency service would add the latency the requirement forbids and would itself be called over an unreliable network — the guard inheriting the ambiguity it guards against. The price of the library: every service carries the machinery, upgrades roll across all adopters, and the separation between product code and consistency code is enforced by convention and API design rather than a network boundary.",
+    "The three-phase decomposition buys recoverability with a developer tax the post itemizes: API calls must be refactored into three chunks, which is arguably restrictive, genuinely hard for complex calls, and demands forethought about what crosses phase boundaries. Their own escape hatch proves the strain — one service models its flow as a finite state machine where every transition is an idempotent step, multiplexing many small three-phase units inside one API call.",
+    "Error classification is load-bearing and human-maintained. The whole retry contract rests on per-exception-path judgments, and both failure directions are expensive: permanent false-failure on one side, double payments and manual intervention on the other. The framework can default (to non-retryable — the conservative direction for money) but cannot remove the judgment.",
+    "Recording responses trades storage growth for retry speed and correctness. The table grows with throughput; pruning old rows risks breaking a late retry; response schemas are frozen against backwards-incompatible change. The replay cache is part of the contract, so it ages like a contract, not like a cache.",
+    "Master-only reads trade scalability for correctness, then buy the scalability back with sharding. Reading idempotency state from replicas is not a performance option that degrades gracefully — it is a correctness hole exactly as wide as replica lag. Sharding by idempotency key recovers throughput, at the cost of the payments system's most critical tables living on a sharded write path.",
+    "Write repair pushes work to the client by design. Clients persist keys before calling, own retry policy, and must never mutate payloads — in exchange they get eventual consistency on demand, firing the same request until the system converges. The dumb-server/smart-client trade is the opposite of the usual instinct, and it is exactly what makes the retry safe from total ignorance."
+  ],
+  "tags": [
+    "payments",
+    "idempotency",
+    "eventual-consistency",
+    "mysql",
+    "distributed-transactions"
+  ],
+  "patterns": [
+    {
+      "slug": "idempotency-keys",
+      "note": "Fourth company, and the deepest server-side treatment on the site. Stripe defines the API contract, Shopify motivates it at volume, AWS pairs it with retry discipline; Airbnb shows the interior: keys as lock rows granting leases, keys as shard keys, and the request-level vs entity-level distinction (random UUID vs deterministic payment-1234-refund) that turns key format into a correctness decision."
+    },
+    {
+      "slug": "retry-with-backoff-and-jitter",
+      "note": "Third company, on the client side of the contract: auto-retries must be shaped with backoff and jitter to avoid thundering herds, and the retry is only safe because the key makes it idempotent. Closure with the AWS article: AWS argues retries spend the server's capacity; Airbnb's framework makes spending it at least harmless to correctness."
+    },
+    {
+      "slug": "atomic-phases",
+      "note": "Second company, at a finer scale. Skipper applies the pattern at the workflow-method level (checkpointed Actions as phase boundaries); Orpheus applies it inside one request via the Pre-RPC / RPC / Post-RPC decomposition and the two ground rules that fence the phases (no network in transactions, no transactions over the network). Same recoverable-interruption property, different granularity — the workflow-scale checkpoint and the intra-request transaction boundary are two altitudes of the same discipline."
+    },
+    {
+      "slug": "retryable-error-classification",
+      "note": "Partition all failures into retryable (presumed transient; safe under the same key) and non-retryable (deterministic; replay the recorded failure), with a conservative default. The classification converts 'a retry is safe' from a global property into a per-error contract."
+    }
+  ],
+  "relatedArticles": [
+    "stripe-idempotency",
+    "shopify-resilient-payments"
+  ],
+  "stats": [
+    {
+      "value": "99.999%",
+      "label": "payment consistency achieved since the framework launched, while annual payment volume doubled",
+      "placement": "solution"
+    },
+    {
+      "value": "3 phases · 2 rules",
+      "label": "Pre-RPC / RPC / Post-RPC; no network in transactions, no transactions over the network",
+      "placement": "solution"
+    },
+    {
+      "value": "a few seconds",
+      "label": "of replica lag is enough to turn a correct idempotent retry into a double charge",
+      "placement": "problem"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/airbnb-orpheus-idempotent-payments/index.html",
+    "teaser": "Charge a guest $100, cut the response after the bank has moved the money, and choose what the retry does — with Orpheus off, on, and on-but-reading-a-replica. The double charge you cause in replica mode is the post's own scenario."
+  }
+}

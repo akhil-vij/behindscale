@@ -1,0 +1,16 @@
+{
+  "slug": "retryable-error-classification",
+  "name": "Retryable Error Classification",
+  "category": "resilience",
+  "definition": "Partition every failure a request can produce into retryable (presumed transient — infrastructure and network faults; a later identical attempt may succeed) and non-retryable (deterministic — validation and state errors; every identical attempt will fail the same way), and make the classification part of the response contract so clients and frameworks know mechanically whether re-attempting under the same idempotency key is permitted. Default conservatively: for operations with irreversible side effects, an unclassified error is non-retryable.\n\nThe classification converts 'retries are safe' from a global assumption into a per-error contract, and both mislabel directions carry a named price: transient-marked-permanent fails the request forever, with every retry parroting the wrong verdict; permanent-marked-transient re-opens the door to duplicated side effects and manual cleanup. Boundary against Retry Budget: the budget governs how much retrying a system can afford; classification governs whether a given failure may be retried at all.",
+  "whenItApplies": [
+    "Idempotent request frameworks where retry decisions must be automatic rather than per-call-site judgment",
+    "APIs whose errors mix infrastructure faults (5XX-shaped) with validation and state errors (4XX-shaped)",
+    "Operations with irreversible side effects, where a wrong 'retryable' verdict costs more than a wrong 'permanent' one"
+  ],
+  "tradeoffs": [
+    "Every exception path needs a deliberate label, maintained as the codebase grows — the contract is only as good as its worst-classified error",
+    "Ambiguous cases (a null from a connectivity blip vs a null from bad input) require context the classification layer may not have",
+    "A conservative default protects side effects by silently converting some transient faults into permanent failures needing human unsticking"
+  ]
+}
