@@ -1,0 +1,16 @@
+{
+  "slug": "byos-platform-design",
+  "name": "BYOS (Bring Your Own Signal) Platform Design",
+  "category": "resilience",
+  "definition": "Replace multiple independent control loops — each watching one overload signal and taking its own action — with a single controller that consumes arbitrary normalized signals and produces one coherent, coordinated decision. Any signal that indicates stress (concurrency, commit lag, write volume, memory pressure, queue depth, latency SLO deviation) plugs into the same decision path, so the controller sees the full picture and its actions cannot fight each other the way independent limiters can: one throttling writes while another admits them.\n\nThe pattern's payoff is coherence, not any single signal's quality — the split-brain between well-intentioned independent mechanisms is the failure mode being designed away. Boundary against Feedback-Controlled Load Management: that pattern is one closed loop from signal to admission; BYOS is the platform shape that lets many signals share one loop. A BYOS platform typically contains a feedback-controlled loop at its core.",
+  "whenItApplies": [
+    "Multiple overload or health signals each currently drive their own limiter, throttle, or scaler — and their actions can conflict",
+    "A platform team wants new stress signals added by service teams without each addition shipping its own enforcement mechanism",
+    "Coordinated mitigation across services or resources is required — actions at one node computed from conditions at another"
+  ],
+  "tradeoffs": [
+    "Every signal must be normalized into units and scales that compose in one loop — a mis-scaled signal can destabilize the whole controller",
+    "The unified controller is a shared dependency whose availability matters most during the incidents it manages",
+    "Centralizing decisions centralizes tuning: the platform team inherits the calibration burden every service team used to carry locally"
+  ]
+}

@@ -38,5 +38,9 @@
   "retry-amplified-overload": {
     "label": "Retry-amplified overload",
     "definition": "When failures are caused by overload, clients retrying to improve their own odds spend the struggling dependency's scarce capacity, multiplying load at the worst moment — and naive backoff does not fix it, because clients that failed together retry in sync."
+  },
+  "mitigation-scoped-narrower-than-failure": {
+    "label": "Mitigation scoped narrower than the failure",
+    "definition": "A failure propagates through interactions across components, but each defense measures and acts only within one component, so every mechanism can behave correctly while the failure spreads between them — and the containing move lies outside any single defense's reach. Boundary against retry-amplified overload: retry amplification is one specific transmission mechanism whose fix (budgets, jitter, backoff) is local to the retrying client; this class is about the scope mismatch between defense and failure, whatever the transmission mechanism."
   }
 }

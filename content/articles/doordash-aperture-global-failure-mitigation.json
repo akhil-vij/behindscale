@@ -1,0 +1,78 @@
+{
+  "slug": "doordash-aperture-global-failure-mitigation",
+  "title": "The Local View: Why DoorDash's Per-Service Defenses Couldn't Stop Cascades",
+  "url": "https://careersatdoordash.com/blog/failure-mitigation-for-microservices-an-intro-to-aperture/",
+  "publishedAt": "2023-03-14",
+  "addedAt": "2026-07-15",
+  "source": {
+    "name": "DoorDash Engineering Blog",
+    "slug": "doordash-engineering",
+    "company": "DoorDash",
+    "url": "https://careersatdoordash.com/blog/",
+    "feed": "https://careersatdoordash.com/blog/"
+  },
+  "summary": "DoorDash catalogs the failure classes that actually take microservice platforms down — cascading failures, retry storms, death spirals, and metastable failures that will not recover on their own — and audits its own defenses against them: adaptive load shedding, gRPC circuit breakers, autoscaling. The verdict is structural, not operational: every mechanism measures local signals, applies general heuristics, and takes local actions, while every failure class propagates through interactions between services. The post's answer is to evaluate Aperture, an open-source reliability controller that watches the whole system and coordinates mitigation across services — and its honesty is that DoorDash has so far validated Aperture only as a very good load shedder in a test environment, while the global coordination that motivates the argument remains untried.",
+  "crux": "A cascading failure is not located anywhere. Database maintenance raises latency, latency crosses RPC boundaries and becomes timeouts, timeouts become retries that multiply load on the sick dependency, error rates trip a misconfigured circuit breaker that severs traffic between services that were never sick. Each service along the chain is locally behaving correctly — including the defenses. The post names the gap three ways: local metrics can't judge conditions involving many components; heuristics like 'latency is high' can't distinguish an overloaded service from a healthy one waiting on a sick dependency; local actions can't cure a problem whose source is elsewhere. The mitigation that would contain the spread — shed at the upstream edge, before requests enter the failing subgraph — is an action no mechanism inside the subgraph can take. Metastable failures are the worst case: a feedback loop sustains the overload after the trigger is gone, no local defense can see the loop it is part of, and engineers must break it by hand.",
+  "cruxTag": "mitigation-scoped-narrower-than-failure",
+  "cruxSummary": "Failures spread through service interactions; every defense could see and act on one service.",
+  "problem": "DoorDash's failure taxonomy is drawn from its own outages, each linked to a first-party postmortem. Cascading failure is the umbrella: the May 12, 2022 outage began as routine database maintenance that raised latency, which bubbled up through timeouts and resource exhaustion until the rising error rate tripped a misconfigured circuit breaker that stopped traffic between many unrelated services — the defense mechanism itself set the blast radius. Retry storms are the umbrella's most common transmission mode: when a downstream is genuinely slow, most requests get retried multiple times and still fail — work amplification taxing an already-degraded service, as in the June 19, 2021 outage where payment latency triggered retry behavior in the Dasher app that made things worse. Death spirals spread horizontally: a load balancer routes around degraded nodes, and the healthy remainder collapses under the load of the fallen. Metastable failures name why the worst outages outlive their triggers — work amplification forms a positive feedback loop that sustains high load by itself, and engineers must intervene to break it.\n\nAgainst these, DoorDash fields three local defenses, graded honestly. Adaptive load shedding (Netflix's concurrency-limit library as a gRPC interceptor, with priority headers) rejects excess at the service entrance — but proper limits require load testing few teams do, and a too-high default has caused overload at startup. Circuit breakers in the internal gRPC client reject outgoing traffic on downstream error rates — but no principled threshold exists, and an open breaker makes the downstream unreachable, which may be worse. Reactive autoscaling the post recommends against outright: new nodes warm up slowly and temporarily reduce capacity, added capacity relocates bottlenecks, and the autoscaler's fingerprints muddy post-mortems — teams are pointed at predictive (KEDA cron) scaling instead. Every defense shares one structure — measure, identify, act — and implements all three stages locally. The failure classes are defined by living between services. The mismatch is not a tuning problem.",
+  "solution": "Aperture lifts all three stages to the system level. Observe: reliability metrics stream from every node into Prometheus, so the picture is global by construction. Analyze: an independently running controller monitors the metrics continuously and tracks deviation from SLOs — one brain watching the whole graph rather than a heuristic per service. Actuate: when a pattern matches, the controller activates a policy that applies actions at each node — load shedding here, distributed rate limiting there — as one coordinated plan.\n\nPolicies are YAML circuits: composable signal-processing components wired together. The post walks a simplified example — a PromQL component samples latency every second, an EMA component smooths it over a 1,500-second window, a decider compares signal to setpoint, an alerter fires on breach — and the same circuit vocabulary drives actuation. The killer configuration is the one no local mechanism can express: when a downstream service is overloaded, shed load at the upstream service, so excess requests fail cheaply at the edge instead of traveling into the sick subgraph and feeding the loop. Integration comes in three depths: an Envoy service mesh with no application changes, SDKs at explicit control points, or a Java agent injecting instrumentation into Netty. The deployment adds real machinery — a controller, an agent per Kubernetes cluster intercepting requests to answer accept/reject, plus Prometheus and etcd underneath.\n\nDoorDash's actual trial is reported with a candor worth naming: Aperture deployed against one primary service in a test environment under artificial load. Raising RPS raised the error rate while goodput held steady; cutting compute capacity lowered goodput while latency rose only slightly — behind both, the controller saw latency climbing and tightened the concurrency limit. Their summary: in this setup Aperture is a load shedder — a more configurable, more user-friendly one than their existing solution, with a sophisticated latency-AIMD blueprint and an all-in-one Grafana dashboard. The features that constitute the article's actual argument — coordinated cross-service mitigation, escalation policies triggering autoscaling — are explicitly not yet tried, and the post closes the loop on its own epistemics: a reliability solution is best tested in production, where real outages happen and are always unpredictable.",
+  "tradeoffs": [
+    "Local defenses are autonomous, and autonomy is both the feature and the ceiling. A load shedder or breaker has no shared dependency, no coordination cost, and keeps working when everything around it burns — but its view is its service, so it cannot tell an overloaded self from a healthy self waiting on a sick dependency, and its best available action may be actively wrong for the system.",
+    "Circuit breakers buy fast failure at the price of chosen unavailability, with no principled way to set the exchange rate. An open breaker makes the downstream effectively unreachable — the correct trade when the downstream is drowning, a self-inflicted outage when the threshold is wrong. DoorDash's May 12 incident is the pattern's dark recurrence: the breaker didn't fail to help, it was the wide blast radius.",
+    "Load shedding maximizes goodput only if the concurrency limit is right, and the limit is expensive to know. Proper configuration demands orchestrated load testing against a production-shaped workload where requests differ in cost and importance; engineers predictably leave defaults in place, and DoorDash's own startup-overload misconfiguration shows the mechanism biting the service it guards.",
+    "Rejecting reactive autoscaling trades surge protection for legibility. Predictive (cron-based) scaling means capacity follows the forecast, not the incident — surprise load gets no automatic capacity response at all. DoorDash accepts that because the reactive alternative reduces capacity exactly when it's needed (warm-up), relocates bottlenecks rather than removing them, and contaminates the post-mortem timeline with the autoscaler's own actions.",
+    "Global control re-centralizes what microservices decentralized. Aperture's coordinated mitigation requires a controller, per-cluster agents on the request path, Prometheus, and etcd — a reliability management plane whose own availability now matters during exactly the incidents it exists to manage. The cure for cross-service failure is a new cross-service dependency.",
+    "The evidence is one rung below the claim, and the post says so. Aperture-as-load-shedder is validated in a test environment; Aperture-as-global-coordinator — the thing the crux demands — is future work, pending the only test that counts: production outages, which are always unpredictable."
+  ],
+  "tags": [
+    "microservices",
+    "load-shedding",
+    "circuit-breaker",
+    "control-theory",
+    "reliability"
+  ],
+  "patterns": [
+    {
+      "slug": "circuit-breaker",
+      "note": "Third company, and the first appearance as antagonist. Shopify aims breakers at payment gateways, Meta at its own MySQL shards; DoorDash builds them into the internal gRPC client and then documents a misconfigured breaker turning a database slowdown into a wide-blast-radius outage. The recurrence adds the missing caveat: a breaker is a local actor whose threshold encodes a guess about the whole system that the whole system never confirms."
+    },
+    {
+      "slug": "priority-aware-load-shedding",
+      "note": "Third company. Uber tiers the drop budget, Netflix shields playback; DoorDash's adaptive concurrency limiter reads request priority from headers and admits high-priority traffic first under overload. Lighter-weight instance than either: priority here is a property of the shedding interceptor, not a platform-wide taxonomy."
+    },
+    {
+      "slug": "feedback-controlled-load-management",
+      "note": "Third company. The adaptive concurrency limit is a feedback loop in miniature (latency rises → limit tightens), and Aperture's latency-AIMD blueprint is the same loop promoted to a policy engine with an EMA-smoothed signal path. The recurrence note writes itself: DoorDash runs the loop at two scales, and the post's argument is precisely that the local scale is insufficient."
+    },
+    {
+      "slug": "byos-platform-design",
+      "note": "Second company, strong match. Uber's Cinnamon made BYOS a named principle — arbitrary overload signals normalized into one unified decision loop, replacing independent per-signal limiters that could split-brain. Aperture is that architecture as an open-source product: Prometheus signals in, YAML circuits to combine them, one controller producing coordinated actuation — and DoorDash states the anti-pattern the class prevents: independent local mechanisms whose uncoordinated actions interact badly during exactly the failures they exist to stop."
+    }
+  ],
+  "relatedArticles": [
+    "aws-timeouts-retries-backoff-jitter",
+    "uber-intelligent-load-management"
+  ],
+  "stats": [
+    {
+      "value": "4 failure classes",
+      "label": "cascades, retry storms, death spirals, metastable failures — all defined by spreading between services",
+      "placement": "problem"
+    },
+    {
+      "value": "3 local stages",
+      "label": "measure, identify, act: every existing defense runs all three inside one service",
+      "placement": "problem"
+    },
+    {
+      "value": "1 controller",
+      "label": "Aperture's bet: one global brain activating coordinated policies across the graph",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/doordash-aperture-global-failure-mitigation/index.html",
+    "teaser": "Run the same database maintenance three ways: with no defenses the retry loop outlives its trigger until you break it by hand; with local defenses the breaker trips correctly and severs a service that was never sick; with the global controller, shedding at the edge holds goodput. Compare the orders-lost counter."
+  }
+}

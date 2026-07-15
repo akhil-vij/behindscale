@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "stripe-idempotency",
-    "shopify-resilient-payments"
+    "shopify-resilient-payments",
+    "doordash-aperture-global-failure-mitigation"
   ],
   "stats": [
     {
