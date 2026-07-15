@@ -7,6 +7,19 @@ that lives in neither the schema nor the architecture. Update it as the taste
 sharpens; treat contradictions between this and an older instruction as this
 winning.*
 
+**Version 3** — updated after the rounds 12–18 authoring run (Airbnb Orpheus,
+Netflix Conductor, Stripe rate limiters, Pinterest sharding, Segment
+Centrifuge, Datadog 2023-03-08, Shopify pods), which took seven cruxTag
+classes to three companies and surfaced a set of corrections now folded in.
+Changes since v2: taxonomy updated with seven third-company fills and the
+manifestation-caveat doctrine (§3.5); pattern discipline gains the
+retired-names check (learned the hard way — a retired name was re-minted and
+retracted), the conditional-mint protocol, the cameo rule, and canonical
+two-company mints (§4); source discipline gains the depth floor, multi-post
+scoping, and date-provenance rules (§2); artifacts gain the verification gate
+as a required step, the stage-machine-vs-interval law, and six named craft
+moves (§6); the accent registry is extended through round 18 with three
+live-registry resolutions and two swap-candidate corrections (§6).
 **Version 2** — updated after six articles, the five-article quality sprint,
 the first recurrence-driven article (Netflix), and the first interview-bridge
 prototype. Changes since v1: added the **crux** as a required content element
@@ -107,6 +120,29 @@ post), a component that didn't exist ("Helix" for Uber — it's Schemaless),
 wrong storage backends ("DynamoDB" as Skipper's state store — it's MySQL/UDS),
 and manufactured counts ("four circular dependencies" — the Airbnb post never
 counts them). Read the source. Then read it again for the numbers.
+
+**Source-bar clarifications (rounds 12–18):**
+- **The depth floor.** A very short post (Shopify pods, a 3-minute
+  read) can carry a dissection IF it is complete — problem, mechanism,
+  operations all stated — and the article pads nowhere. The depth gets
+  an explicit owner-attention flag in the decision log; the owner may
+  veto the round on depth grounds. Developer-education and
+  API-documentation posts fail the bar outright, even from great
+  companies (a Square idempotency explainer was rejected on this
+  rule); book chapters (Google SRE) are a source-TYPE precedent
+  requiring an owner call before pitching.
+- **Multi-post incidents.** Pick ONE primary post for the dissection;
+  scope siblings as secondary first-party for specific fact classes
+  (incident evidence, outcome numbers — never mechanism), with the
+  scoping recorded in the decision log (Datadog's three-post deep
+  dive; DoorDash's May-12 postmortem). Figures with
+  secondary-provenance outside the company's own posts (earnings
+  calls, press) stay out entirely.
+- **Date provenance.** Distrust platform-migration metadata for
+  `publishedAt` (a Medium migration stamped 2017 on a 2015 post);
+  prefer the display date corroborated by a contemporaneous external
+  (the HN thread). Verify that migrated/archived source URLs render
+  for readers at publish time.
 
 ---
 
@@ -296,6 +332,47 @@ execution).
 Earlier drafts of this document used speculative example tags
 (`fan-out-failure-amplification`, `cliff-shedding-and-retry-amplification`);
 those were superseded by the ratified set above — do not reintroduce them.
+
+**Taxonomy update — the third-company run (rounds 12–18, authored
+2026-07-15, pipeline pending deploy).** Seven classes reached three
+companies in one run, each with an explicit manifestation caveat
+recorded in its round's decision log:
+`ambiguous-failure-under-retry` +Airbnb (Orpheus — the deepest
+server-side treatment; Airbnb becomes the first three-article
+company, owner-approved precedent) ·
+`partial-completion-under-crashes` +Netflix (Conductor — the
+ancestral 2016 instance; crux anchors on the epistemic face,
+"what remains?", and a one-clause registry-definition amendment
+awaits owner sign-off) ·
+`priority-blind-load-shedding` +Stripe (2017 rate limiters — the
+chronologically earliest instance; priority via standing 20% fleet
+reservation, a distinctive variant) ·
+`single-table-scaling-ceiling` +Pinterest (2012-designed ancestral
+instance; hypergrowth-rebuild manifestation vs the classmates'
+mature-wall) ·
+`buffer-degrades-under-backlog` +Segment (Centrifuge — substrate vs
+SEMANTICS caveat: push/pop lets a backlog capture the shared buffer;
+88,000-pair cardinality) ·
+`observer-shares-fate-with-observed` +Datadog (2023-03-08 — the
+class's success story: the out-of-band watcher WORKED, three-minute
+detection; caveat axis is designs-it / suffers-its-absence /
+exercises-it) ·
+`blast-radius-scales-with-cluster-size` +Shopify (pods — the class
+completes its answer taxonomy: cap it (Discord), shrink it
+statistically (AWS shuffle), eliminate it structurally (cells)).
+The **manifestation-caveat doctrine**, now standard: same causal
+spine, different face → same class plus an explicit caveat naming the
+face; different spine → reclassify or mint honestly. Ancestral
+instances (a new article predating its classmates) get named as such —
+chronology is part of a class's story. Pitch-target flips are normal
+and logged (Shopify was hunted as `single-cluster` and reruled to
+`blast-radius` on full read — the ceiling was one sentence of
+backstory). Landing-preview and class-count copy may not assert counts
+that depend on unverified tags: state the outcomes in the decision log
+and gate the copy. Remaining after the run: `gray-failure` and
+`single-cluster` at two companies; `retry-amplified-overload` (a
+DoorDash 2021-06-19 postmortem is shelved as a candidate fill) and
+`mitigation-scoped-narrower-than-failure` as singletons.
 Same discipline as everything else: the crux is traced to the source, never
 invented to sound deep.
 
@@ -367,6 +444,42 @@ Practical corollaries:
   unless the new system is exceptional. When two companies solve one problem
   differently, that divergence is itself the teaching material (and the seed
   of the interview bridge's "how two teams diverge" contrast, §7.5).
+
+### Pattern discipline, sharpened (rounds 12–18)
+
+- **Check the retired-names record before any mint.** This section
+  retired `byos-platform-design` as Uber jargon — and a later round
+  re-minted that exact name for DoorDash's Aperture without checking,
+  requiring a retraction (chip removed, JSON deleted, content folded
+  into the `feedback-controlled-load-management` note where it
+  belongs). Retired names so far: `pid-controlled-adaptive-thresholds`,
+  `byos-platform-design`. A mint's pre-flight now includes: the live
+  library, the in-flight round folders, and this retired list.
+- **The cameo rule.** A pattern chip requires the pattern to be a
+  LESSON of the post; a one-line stance (Pinterest's "even today we
+  don't use auto-failover") goes into tradeoffs prose with an explicit
+  cross-reference and an owner-may-promote note — never a chip.
+- **Canonical two-company mints.** When a new post and an existing
+  article both carry the same untagged lesson, mint at two companies
+  and file a back-tag agent task for the classmate
+  (`master-only-reads`: Pinterest + Orpheus's replica-lag double
+  charge). This is the mint-side mirror of recurrence-driven sourcing.
+- **The conditional-mint protocol.** When a pattern's live existence
+  is itself unverifiable from the authoring seat, ship the mint JSON
+  plus a pattern note written to read correctly under both outcomes,
+  plus explicit merge-or-discard instructions in the decision log
+  (`independent-observability`, `cell-architecture`). Never reference
+  a pattern as existing without seeing its chip on a live article or
+  its JSON in a round folder — the phantom-slug guard.
+- **Categories remain locked** (`resilience`, `consistency`,
+  `throughput`, `observability`). The rounds 12–18 mints are assigned
+  within the four (e.g. `independent-observability` → observability;
+  `id-encoded-placement`, `single-writer-ownership` → throughput);
+  where a mint strains the four (`choreography-vs-orchestration`,
+  filed under resilience), that strain is flagged for the owner as a
+  possible use of a reserved slot — never resolved by quietly
+  inventing a fifth category (a first draft did exactly that and was
+  corrected).
 
 ---
 
@@ -519,6 +632,87 @@ the reader feel it.
   spend these on decoration.
 - **Text in artifacts is captions, labels, and callouts — never paragraphs.**
   If you're writing prose inside the artifact, it belongs in the article.
+
+### Accent registry additions (rounds 12–18, 2026-07-15)
+
+Airbnb coral `#FF5A5F` for airbnb-orpheus-idempotent-payments (matches
+the partitioning-main-database coral precedent; same constraint —
+chrome only, never verdict) · Netflix red `#E50914` for
+netflix-conductor-microservices-orchestrator (company match with
+netflix-prioritized-load-shedding CONFIRMED against this registry;
+standing semantic-red caveat applies) · Stripe indigo `#6366F1` for
+stripe-rate-limiters (CORRECTED from brand blurple `#635BFF` to match
+the live stripe-idempotency accent — company consistency outranks
+brand fidelity) · Pinterest red `#E60023` for pinterest-sharding-mysql
+(HIGH-RISK: semantic red AND Netflix red; original teal swap candidate
+WITHDRAWN — Cadence owns teal `#2DD4BF` — new candidate magenta
+`#D946EF`; owner in-situ call required) · Segment green `#52BD94` for
+segment-centrifuge-database-queue (FLAG: nearest neighbor is Skipper
+green `#22C55E`, which is also semantic green; teal swap withdrawn per
+Cadence; owner call) · Datadog purple `#632CA6` for
+datadog-incident-response-observer-fate (purple corridor now
+three-deep with violet `#9b8cf0` and Figma `#A259FF`; darker and more
+saturated than both) · Shopify lime `#84CC16` for
+shopify-pods-architecture (CORRECTED from brand green `#96BF48` to
+match the live Shopify accent). Standing item: an **owner registry
+pass** over the crowded corridors — oranges (AWS/Cloudflare/Uber/
+resilience-chip), greens (Skipper/semantic/Segment/Shopify-lime),
+purples (violet/Figma/Datadog/Discord-indigo/Stripe-indigo), reds
+(semantic/Netflix/Pinterest/coral).
+
+### Craft moves that earned their place (rounds 10–18)
+
+- **Make the class name literal** where possible: blast-radius-scales-
+  with-cluster-size became a draggable fleet slider showing the u^N
+  availability product decay live — the strongest form of "the reader
+  causes the crux."
+- **Pick-your-poison:** when the source enumerates bad options, make
+  each individually choosable with its own cost meter (delay / 429s /
+  terabytes) — and let the solution architecture's teaching beat be
+  that the poison menu never activates (Centrifuge).
+- **Non-interchangeable scenarios:** give the reader two disasters
+  that need different tools, so arming the wrong layer is possible and
+  instructive (Stripe's flood vs slowdown).
+- **Renunciations are playable:** when an architecture forbids an
+  operation, give the reader the button and return a refusal verdict
+  (informational violet), instead of omitting the button (Shopify's
+  with_each_shard under pods).
+- **The reader owns the ambiguity** where the crux is epistemic
+  (Orpheus's scissors, Conductor's WHAT REMAINS, Cloudflare's
+  promotion slider).
+- **Counterfactual branches are labeled IN the artifact** — verdict
+  text and control sublabel, not just the footer (Datadog's
+  fate-shared-only detection branch). The reader must never mistake an
+  illustrative branch for sourced history.
+- **Persistent cross-run scoreboards** (orders lost, charge-capacity
+  lost) make configurations comparable after the fact.
+- **Success-story manifestations:** a class can be joined by an
+  article where the canonical mitigation WORKED; the caveat names
+  which side of the lesson the classmate carries (designs it /
+  suffers its absence / exercises it).
+
+### The stage-machine-vs-interval law and the verification gate (required)
+
+Sequences — incidents, request lifecycles, workflows, migrations — are
+pure stage machines with zero intervals. Dynamics the reader must FEEL
+— metastable loops, flapping, absorb-then-drain — are interval sims
+whose entire state advances through a pure `step()` applied via
+functional `setState`; refs are banned by construction, which retires
+the stale-closure bug class. Write `step()` and its constants so they
+can be extracted into a node harness, because the gate below is
+mandatory before any handoff:
+
+1. esbuild JSX parse; 2. the comma-operator grep (`\},\s*\{\s*\};`);
+3. JSON validation; 4. **headless behavioral verification of every
+teaching beat** — run the sim's scenarios in node and assert the
+verdicts' preconditions. When a beat under-performs (a flap that
+converges instead of oscillating; a detection gated on the wrong
+threshold), **fix the mechanic — never soften the verdict text to
+match a weak sim.** When the artifact contains real arithmetic from
+the source, verify it against the source's own worked example
+(Pinterest's Pin `241294492511762325` → shard 3429 / type 1 / row
+7075733). Verdict strings used by assertions stay verdict-only —
+absent from footer and context block.
 
 ### The standalone-visitor contract (required, 2026-07-05)
 
@@ -708,7 +902,16 @@ The established division of labor, which a new author should slot into:
 6. **Self-audit before handoff:** source-fidelity pass (every number/component
    traceable), tradeoff specificity pass (none generic), artifact-earns-keep
    pass (would the prose lose nothing without it?), teaser-truth pass.
-7. **Hand the editorial assets to implementation** (the Claude Code agent
+7. **Run the verification gate** (§6): esbuild parse, comma-operator
+   grep, JSON validation, headless beat verification, worked-example
+   arithmetic checks. Package the round as the standard handoff folder
+   — `DECISIONS.md` + `content/articles/<slug>.json` +
+   `content/patterns/<slug>.json` (mints only; registry additions as
+   `content/cruxtags.addition.json`) + `artifacts/<slug>/artifact.jsx`
+   — with every unresolved check written as an explicit AGENT CHECK
+   and every unverifiable slug marked as a placeholder, never guessed
+   silently.
+8. **Hand the editorial assets to implementation** (the Claude Code agent
    handles validation, build, commit, prod-verify). Editorial decides and
    reviews; implementation builds and verifies; the human owner reads source,
    reviews drafts, makes product calls.
@@ -762,6 +965,8 @@ reflect it.
 > compressed — no new claims) and ends with a backlink to its article, because
 > artifact URLs travel without their articles. Production numbers live
 > in body prose, not just the summary. Quality over cadence, always: two
-> excellent beats three with drift. The test for everything: would the engineer
+> excellent beats three with drift. Every artifact's teaching beats are
+> headless-verified before handoff — fix the mechanic, never soften the
+> verdict. The test for everything: would the engineer
 > who built this nod, and would the staff engineer reading it learn something
 > real?
