@@ -40,10 +40,6 @@
     {
       "slug": "feedback-controlled-load-management",
       "note": "Cinnamon is the worked instance: a PID loop over queue and latency signals smoothly adjusts admission instead of snapping a static threshold, and the BYOS design extends the same loop to any normalized overload signal — commit lag, write bytes, memory pressure — unifying what were previously competing per-signal limiters into one coherent decision path."
-    },
-    {
-      "slug": "byos-platform-design",
-      "note": "Cinnamon named the principle: arbitrary overload signals (concurrency, commit lag, write bytes, memory pressure) normalize into one unified decision loop, replacing independent per-signal limiters that would otherwise split-brain. Aperture is the same architecture as an open-source product — Prometheus signals in, YAML circuits combining them, one controller producing coordinated actuation — which is why this article and the DoorDash Aperture piece are the pattern's two anchors."
     }
   ],
   "relatedArticles": [

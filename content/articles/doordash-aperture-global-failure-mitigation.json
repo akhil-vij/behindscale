@@ -43,11 +43,7 @@
     },
     {
       "slug": "feedback-controlled-load-management",
-      "note": "Third company. The adaptive concurrency limit is a feedback loop in miniature (latency rises → limit tightens), and Aperture's latency-AIMD blueprint is the same loop promoted to a policy engine with an EMA-smoothed signal path. The recurrence note writes itself: DoorDash runs the loop at two scales, and the post's argument is precisely that the local scale is insufficient."
-    },
-    {
-      "slug": "byos-platform-design",
-      "note": "Second company, strong match. Uber's Cinnamon made BYOS a named principle — arbitrary overload signals normalized into one unified decision loop, replacing independent per-signal limiters that could split-brain. Aperture is that architecture as an open-source product: Prometheus signals in, YAML circuits to combine them, one controller producing coordinated actuation — and DoorDash states the anti-pattern the class prevents: independent local mechanisms whose uncoordinated actions interact badly during exactly the failures they exist to stop."
+      "note": "Third company. The adaptive concurrency limit is a feedback loop in miniature (latency rises → limit tightens), and Aperture promotes the same loop to a platform: arbitrary normalized signals — Prometheus metrics, SLO deviation — feed one controller producing coordinated actuation, the architecture Uber's Cinnamon called BYOS. DoorDash names the anti-pattern this unification prevents: independent local mechanisms whose uncoordinated actions interact badly during exactly the failures they exist to stop. The post's argument is precisely that the local scale of this loop is insufficient."
     }
   ],
   "relatedArticles": [

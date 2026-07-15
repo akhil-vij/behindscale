@@ -4,6 +4,56 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #20 CORRECTION (2026-07-15): `byos-platform-
+  design` pattern mint RETRACTED as a follow-up commit.**
+  Taste doc v3 formalized the pattern's earlier
+  retirement ("BYOS is Uber's jargon"; retired by the
+  generality test and merged into
+  `feedback-controlled-load-management`), and the
+  updated round-11 DECISIONS.md added a CORRECTION
+  block explaining the mint reintroduced a retired
+  name. The retraction, applied as a follow-up commit
+  on top of the already-deployed `feat: publish`:
+  - `content/patterns/byos-platform-design.json`
+    DELETED.
+  - `content/articles/doordash-aperture-global-
+    failure-mitigation.json` — BYOS chip removed, its
+    content folded into the
+    `feedback-controlled-load-management` note (the
+    unified-signal/BYOS-architecture instance detail
+    now lives inside that pattern's note, which is
+    where the retirement puts it).
+  - `content/articles/uber-intelligent-load-
+    management.json` — BYOS back-tag chip removed;
+    article returns to its two-chip shape. Its
+    existing `feedback-controlled-load-management`
+    note already prose-references the BYOS design as
+    "extends the same loop to any normalized overload
+    signal" — kept, since the retirement is of the
+    slug/mint, not of BYOS as prose vocabulary.
+  - `content/articles/uber-intelligent-load-
+    management.json` — Uber → DoorDash
+    `relatedArticles` backlink KEPT. The lateral link
+    goes through `feedback-controlled-load-management`
+    now, still a valid intellectual thread.
+  Route impact: `/patterns/byos-platform-design`
+  disappears (bookmarks from the ~24-hour lifetime
+  will 404). Library pattern count drops 28 → 27;
+  prerender 53 → 52 routes; sitemap 52 → 51 URLs.
+  `mitigation-scoped-narrower-than-failure` cruxTag
+  UNCHANGED — cruxTags are not in the retired list;
+  the owner explicitly signed it off at pitch.
+  Lesson recorded in taste doc v3 §4 (user-owned edit,
+  not touched by this correction): a pattern mint's
+  pre-flight now includes checking the retired-patterns
+  list alongside the live library and in-flight round
+  folders. The lesson was earned by this exact incident.
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  15 warnings (unchanged from the initial round-11
+  landing); `npm test` 100/100; `npm run build` 52
+  routes / 51 sitemap URLs; cross-page `@id`
+  assertion passes.
+
 - **Article #20 (DoorDash Aperture) LANDED (2026-07-15),
   NEW cruxTag minted rather than a singleton fill —
   first authored cruxTag since the 2026-07-08 registry
