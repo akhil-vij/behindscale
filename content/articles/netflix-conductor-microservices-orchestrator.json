@@ -1,0 +1,74 @@
+{
+  "slug": "netflix-conductor-microservices-orchestrator",
+  "title": "What Remains: Netflix Conductor and the Case Against Choreography",
+  "url": "https://netflixtechblog.com/netflix-conductor-a-microservices-orchestrator-2e8d4771bf40",
+  "publishedAt": "2016-12-12",
+  "addedAt": "2026-07-15",
+  "source": {
+    "name": "Netflix Technology Blog",
+    "slug": "netflix-techblog",
+    "company": "Netflix",
+    "url": "https://netflixtechblog.com",
+    "feed": "https://netflixtechblog.com/feed"
+  },
+  "summary": "Netflix's Content Platform Engineering team runs the processes that get a title ready to stream — studio integration, content ingestion, encoding, deployment to CDN — as asynchronous task flows across microservices, some spanning several days. Historically these were choreographed ad hoc: pub/sub messages, direct REST calls, databases holding fragments of state. The post's indictment lands in one sentence: there was almost no way to systematically answer 'what is remaining for a movie's setup to be complete?' Conductor is the answer as architecture — a central engine where a JSON blueprint defines the flow, a Decider state machine computes what comes next from blueprint plus current state, and every workflow can be tracked, paused, resumed, and restarted. Open-sourced after nearly a year in production, it had run 2.6 million process flows, from linear jobs to dynamic workflows over multiple days.",
+  "crux": "A multi-step process that is partially complete has to have its partial state live somewhere. Under peer-to-peer choreography it lives nowhere in particular — which is to say, everywhere: flows are embedded within the code of multiple applications, each service knows only that it consumed an event and emitted another, and the process exists only as an emergent property of queues and handlers. The post names three consequences: flows embedded across codebases, tight coupling and hidden assumptions about inputs and SLAs, and — sharpest — no systematic way to answer what remains for a given title. That question is precisely the partial-completion question: when a days-long flow stalls, some work is done and some is not, and under choreography the system cannot even enumerate which, let alone resume safely. Conductor makes partial completion a first-class, queryable object: the blueprint says what the whole process is, the instance records what completed, and the Decider computes the next state from the two. 'What remains' stops being a forensic investigation and becomes a lookup.",
+  "cruxTag": "partial-completion-under-crashes",
+  "cruxSummary": "Half-done multi-day processes lived inside pub/sub code; nobody could answer what remained.",
+  "problem": "The flows in question are heavyweight by nature: content ingestion from studio partners, IMF-based ingestion, new-title setup, and the encode-and-deploy pipeline are multi-step, multi-service, and long-running — several days is normal. The traditional wiring was a combination of pub/sub for event flow, direct REST calls where synchrony was needed, and databases holding state — each choice locally reasonable, collectively unaccountable. As microservices multiplied and process complexity grew, visibility into these distributed workflows degraded until a central question about any in-flight process had no owner.\n\nThe post's honest genealogy includes what they tried first: an early version on Amazon SWF. The limitations that pushed them off it double as Conductor's requirements — blueprint-based orchestration rather than SWF's programmatic deciders, a UI to visualize flows, more synchronous API behavior where needed, indexed and searchable workflow inputs and outputs, and freedom from maintaining a separate datastore for workflow events. The full requirement set: blueprint-defined execution, tracking and management, pause/resume/restart, a visualization UI, synchronous processing when needed, scale to millions of concurrent flows, a queuing service abstracted from clients, and transport flexibility.",
+  "solution": "The engine's heart is the Decider — a state machine service that, on each workflow event (task completed, task failed), combines the workflow's blueprint with its current state, identifies the next state, and schedules tasks or updates status. It works against a distributed delayed queue (dyno-queues on Dynomite), with Dynomite as storage and Elasticsearch indexing every execution for search; storage APIs are pluggable.\n\nBlueprints are a JSON DSL: a versioned workflow definition lists tasks, each either a worker task implemented by an application or a control task run by the engine — Decision, Fork, Join, Sub-Workflow, plus an SPI for custom system tasks. Versioned definitions mean in-flight instances keep executing against the version they started with while new instances pick up the new one. Task behavior is governed by its task definition — the post's sample carries retryCount 3, timeoutSeconds 1200, retryLogic FIXED, retryDelaySeconds 600, responseTimeoutSeconds 3600 and a TIME_OUT_WF policy — the crash-and-stall machinery every choreographed flow had to hand-roll, declared per task in configuration. Data flows by wiring: a task's inputs draw from workflow input or upstream outputs, so an encode's output becomes the publish task's input without either service knowing the other exists.\n\nWorkers stay deliberately dumb: idempotent, stateless functions that either expose a REST endpoint or — the preferred shape — run a polling loop asking the engine for pending tasks. Polling inverts the pressure: workers pull at the rate they can absorb, backpressure is handled naturally, and queue depth per task type becomes an autoscaling signal the engine exposes. The UI is not an afterthought but the point: search across workflows by inputs and outputs, a visual rendering of the blueprint and the path an instance took, and per-task detail — scheduled, picked up, completed, failure reason, retry count, executing host, inputs and outputs. That panel is the direct answer to 'what is remaining for this movie': the question that had no owner now has a screen.\n\nProduction stats after a year: 2.6 million workflow instances, 100 distinct definitions, 190 unique workers, an average of 6 tasks per definition, a largest workflow of 48 tasks. The forward list — Lambda-style serverless tasks, container-orchestrator integration for worker autoscaling, per-task execution logs, blueprint authoring from the UI, states-language support — reads, from today, like a roadmap the workflow-engine industry then spent years walking.",
+  "tradeoffs": [
+    "Choreography's virtues are real and the post concedes them by scope: pub/sub worked for the simplest of flows. No central dependency, no engine to operate, natural decoupling at the transport level. The price arrives with complexity: the process itself becomes invisible, encoded nowhere, reconstructable only by reading every participant's code and queues.",
+    "Orchestration buys legibility by creating a center — and a center is a dependency. The Decider, its queues, and its storage sit under every business flow; the engine's availability and scalability (millions of concurrent flows as an explicit requirement) become preconditions for everyone's work. The choreography world had no single thing to break; Conductor is a single thing that must not.",
+    "Blueprint-based beats programmatic deciders for Netflix's needs — flows as versioned, inspectable JSON data rather than deployed decider code (their stated reason for leaving SWF) — but a JSON DSL is a programming language wearing a data costume: Decision, Fork, Join, and Sub-Workflow are control flow, and complex logic in declarative dress can be harder to test and reason about than the code it replaced.",
+    "Blueprint versioning solves the migration problem by multiplying live versions: in-flight instances finish on the version they started with, so days-long flows guarantee multiple blueprint versions executing concurrently, and workers must stay compatible with all of them.",
+    "Polling workers trade latency for backpressure. A polling loop adds pickup delay versus push, but it lets workers consume at their own rate and turns queue depth into an honest per-task-type load signal — the right trade for day-scale flows, and the wrong one the moment sub-second dispatch matters.",
+    "Worker idempotency is load-bearing and delegated. Retries, timeouts, and restarts are safe because workers are intended to be idempotent stateless functions — the engine's recovery guarantees quietly rest on a property the engine cannot verify, only assume. The scaffolding is centralized; the discipline is still distributed."
+  ],
+  "tags": [
+    "workflow-orchestration",
+    "microservices",
+    "choreography",
+    "open-source",
+    "content-pipeline"
+  ],
+  "patterns": [
+    {
+      "slug": "durable-workflows",
+      "note": "Third company, a decade early: declarative flow definition, durable per-task state, timeouts and retries as configuration, pause/resume/restart as operations. The Conductor-specific contribution is searchability — execution state indexed in Elasticsearch, making the workflow store a queryable system of record rather than just a recovery log."
+    },
+    {
+      "slug": "embedded-vs-centralized-orchestration",
+      "note": "Third company, and the triptych completes: Skipper argues embedded (engine inside the service), Cadence argues centralized (solve durability once), and Conductor is the ancestral centralized case — aimed not at embedded engines but at having no engine at all. Read together, the axis is who owns the process state: the service, the platform, or nobody."
+    },
+    {
+      "slug": "choreography-vs-orchestration",
+      "note": "Whether a multi-service process is coordinated by events each service interprets locally, or by an engine that owns the process definition and drives participants. Choreography minimizes coupling and central dependencies but leaves the process unrepresented — invisible to query, hard to change. Orchestration makes the process a first-class object at the cost of a central dependency. First mint, from the post's own 'Why not peer to peer choreography?' section."
+    }
+  ],
+  "relatedArticles": [
+    "skipper-workflow-engine",
+    "uber-cadence-workflow-platform"
+  ],
+  "stats": [
+    {
+      "value": "2.6M · 100 · 190",
+      "label": "workflow instances, distinct definitions, unique workers after one year in production — one place to ask what any flow still needs",
+      "placement": "solution"
+    },
+    {
+      "value": "several days",
+      "label": "normal duration for a title-setup workflow — partial completion is the steady state, not the edge case",
+      "placement": "problem"
+    },
+    {
+      "value": "retryCount: 3",
+      "label": "crash recovery as per-task configuration (timeoutSeconds 1200, TIME_OUT_WF) instead of per-service code",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/netflix-conductor-microservices-orchestrator/index.html",
+    "teaser": "Run a title-setup workflow under choreography, press WHAT REMAINS FOR THIS TITLE? and watch the system fail to answer its own question — then kill the encode worker, trace the silent stall by hand, and re-run it under the Decider, where the same kill costs you nothing."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "slug": "choreography-vs-orchestration",
+  "name": "Choreography vs Orchestration",
+  "category": "resilience",
+  "definition": "Two ways to coordinate a multi-service process: choreography, where each service consumes events and emits the next with no component owning the whole, and orchestration, where an engine owns the process definition and drives participants through it. Choreography minimizes coupling and central dependencies — there is nothing shared to operate or to fail — but the process itself is unrepresented: it exists only as an emergent property of queues and handlers, invisible to query, hard to change, and impossible to enumerate when it stalls. Orchestration makes the process a first-class object — definable, queryable, resumable — at the price of a central engine on which every flow now depends.\n\nBoundary against Embedded vs Centralized Orchestration: that pattern assumes an engine exists and asks where it lives (inside the service or as a platform); this one asks whether the process has an owner at all. A system usually crosses this boundary first — from choreography to some orchestrator — before the embedded-vs-centralized question arises.",
+  "whenItApplies": [
+    "Multi-step, multi-service business processes — especially long-running ones where stalls are routine and 'what remains?' must be answerable",
+    "Flows whose logic is currently smeared across pub/sub consumers, making change risky and visibility forensic",
+    "Choosing coordination style for a new domain: simple, short, loosely coupled flows tolerate choreography; complex or long-lived ones repay an engine"
+  ],
+  "tradeoffs": [
+    "Orchestration's engine is a shared operational dependency sized for every flow at once — availability and scale become platform problems",
+    "Choreography's decoupling is real: no engine outage can stop all flows, and teams ship handlers without central coordination",
+    "The blueprint or definition language becomes a program in data's clothing — versioning, testing, and review discipline move to the definition layer"
+  ]
+}

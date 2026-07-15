@@ -36,7 +36,7 @@
       "note": "This article is the pattern's other pole. Skipper instantiates embedded: engine-as-library, no shared dependency, blast radius contained to one service — at the cost of shipping and operating the engine everywhere. Cadence instantiates centralized: one platform, one team, one availability contract shared by a thousand tenants — at the cost of noisy-neighbor discipline, backward-compatibility drag, and a concentrated database bottleneck. Same crux, opposite answers, both correct for their constraints."
     }
   ],
-  "relatedArticles": ["skipper-workflow-engine"],
+  "relatedArticles": ["skipper-workflow-engine", "netflix-conductor-microservices-orchestrator"],
   "stats": [
     { "value": "12 billion", "label": "workflow executions per month at Uber alone", "placement": "solution" },
     { "value": "40%", "label": "less code to implement the same functionality (2021 internal survey)", "placement": "solution" },

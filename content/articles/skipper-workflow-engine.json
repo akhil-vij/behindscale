@@ -52,6 +52,7 @@
       "note": "Skipper's checkpointed Actions are the pattern applied inside a single workflow method: each action commits its result durably, and replay resumes from the last committed boundary rather than redoing or skipping work — resume-from-last-committed-point, with the workflow method as the sequence and the checkpoint as the phase boundary."
     }
   ],
+  "relatedArticles": ["netflix-conductor-microservices-orchestrator"],
   "artifact": {
     "path": "/artifacts/skipper-workflow-engine/index.html",
     "teaser": "Step the workflow, crash it anywhere, and watch replay skip the actions that already committed."
