@@ -214,7 +214,7 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-14, nineteen articles, ten tags — check
+The ratified taxonomy (2026-07-15, twenty articles, eleven tags — check
 the article JSONs for the current state before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
@@ -263,18 +263,33 @@ failure is unreliable by nature; what the automation
 does when it can't disambiguate is the axis) ·
 `retry-amplified-overload` (AWS — deliberately distinct from
 `ambiguous-failure-under-retry`; this is the other retry pathology,
-amplification and correlation).
+amplification and correlation) ·
+`mitigation-scoped-narrower-than-failure` (DoorDash — minted
+2026-07-15 on the taxonomy-authoring insight that retry storms
+are one transmission mode of a broader class: a failure
+propagates through interactions across components while each
+defense measures and acts only within one component. Sibling
+boundary vs `retry-amplified-overload` drawn tightly inside the
+definition: retry amplification is one specific transmission
+mechanism with a client-local fix; this class is about the scope
+mismatch between defense and failure whatever the transmission).
 Nine tags are two-company as of the 2026-07-14 Cloudflare
 Byzantine-failure publication (Cloudflare joining Slack on
 `gray-failure-defeats-automatic-detection`, the fifth
 audit-flagged singleton converted to two-company via
 recurrence-driven sourcing — five fills in a row: Slack,
-Airbnb, Roblox, AWS, Cloudflare); only one audit-flagged
-singleton remains (AWS retry-amplified — same author, Colm
-MacCárthaigh, as the shuffle-sharding article; the shuffle
-article's second tradeoff already draws the lateral to
-retry-amplified-overload since shuffle sharding quietly
-depends on caller retries). The Skipper↔Cadence
+Airbnb, Roblox, AWS, Cloudflare); two audit-flagged
+singletons remain as of the 2026-07-15 DoorDash Aperture
+landing (AWS retry-amplified — same author, Colm MacCárthaigh,
+as the shuffle-sharding article, already lateral-linked via
+shuffle's second tradeoff — and the newly-minted
+`mitigation-scoped-narrower-than-failure`, DoorDash's own
+sole occupant). The DoorDash landing is the first round since
+the 2026-07-08 registry seed to mint a cruxTag rather than
+fill an audit singleton: the full source read reclassified
+retry storms as one transmission mode of a broader class,
+owner signed off at pitch, and the sibling boundary is drawn
+inside the new definition. The Skipper↔Cadence
 pair remains the first same-crux/opposite-solution pair in
 the library (embedded-library vs central-platform durable
 execution).
@@ -491,7 +506,12 @@ the reader feel it.
   cloudflare-byzantine-failure — flagged against AWS `#FF9900` and
   the resilience-chip page-chrome `#EA580C` as three oranges now
   crowded; violet `#9b8cf0` used in-artifact for automation accents
-  is on standby as a swap candidate, owner in-situ call required). The accent is for *wayfinding* — tabs,
+  is on standby as a swap candidate, owner in-situ call required —
+  and Aperture-controller violet `#9b8cf0` for doordash-aperture-
+  global-failure-mitigation, chosen after DoorDash brand red
+  `#FF3008` was REJECTED for colliding with semantic red `#ef4444`;
+  distinct hue family from all existing accents, nearest neighbors
+  are the three blues, no swap candidate needed). The accent is for *wayfinding* — tabs,
   active states, key callouts, the one number that matters. **~80% of the
   artifact is neutral grayscale.** Bright decorative color is a smell.
 - Semantic color only where it means something: green = healthy/committed/good
@@ -554,7 +574,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All nineteen article artifacts use nothing but React.
+  hand-roll SVG/divs. All twenty article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**

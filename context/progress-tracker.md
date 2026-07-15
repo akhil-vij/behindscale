@@ -4,6 +4,135 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #20 (DoorDash Aperture) LANDED (2026-07-15),
+  NEW cruxTag minted rather than a singleton fill —
+  first authored cruxTag since the 2026-07-08 registry
+  seed.** Fable-authored dissection of DoorDash's March
+  2023 "Failure Mitigation for Microservices" post
+  introducing Aperture (Fluxninja's open-source
+  reliability controller). The taxonomy-authoring
+  moment: the full source read reclassified retry
+  storms as one of four failure classes / one
+  transmission mode; the bottleneck is the LOCALITY of
+  mitigation. New cruxTag
+  `mitigation-scoped-narrower-than-failure` minted with
+  the sibling boundary vs retry-amplified drawn inside
+  the definition (registry entry MERGED from
+  `content/cruxtags.addition.json`; owner sign-off
+  recorded at pitch, name/definition ratified in the
+  round DECISIONS). retry-amplified stays the LAST
+  singleton (DoorDash's June 19 2021 postmortem
+  shelved as a future true fill; depth needs
+  assessment). DoorDash = NEW company (15th).
+  feeds.json ADDITION: DoorDash Engineering Blog (15th
+  source).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale + PRECEDENT FLAG: this is the
+  first round to mint a cruxTag rather than fill an
+  audit-flagged singleton — owner signed off at pitch
+  after the full-source reclassification made the
+  case. Sibling boundary vs `retry-amplified-overload`
+  drawn tightly: retry amplification is one
+  transmission mechanism whose fix (budgets, jitter,
+  backoff) is client-local; this class is about the
+  scope mismatch between defense and failure, whatever
+  the transmission mechanism.
+  **Rejected tags documented**: retry-amplified-
+  overload (rhyme — one transmission mode, fix is
+  client-local); gray-failure-defeats-automatic-
+  detection (views are consistent but partial, nothing
+  contradicts); priority-blind-load-shedding (their
+  shedder IS priority-aware; the deficiency is scope).
+  Contents: article JSON with `addedAt: 2026-07-15`
+  and cruxSummary populated at authoring; one new
+  pattern `byos-platform-design` (category
+  `resilience` — verified against live registry
+  categories per DECISIONS agent-check); artifact
+  accent `#9b8cf0` violet (Aperture controller color).
+  DoorDash brand red `#FF3008` REJECTED — collides
+  with semantic red `#ef4444`. Violet's nearest
+  neighbors are the three blues (`#00A2FF/#58A6FF/
+  #36C5F0`) — distinct hue family; no swap candidate
+  needed, logged.
+  **New cruxTag** `mitigation-scoped-narrower-than-
+  failure` added to `content/cruxtags.json` (merged
+  from handoff addition file at commit time; total
+  registry now 11 entries).
+  feeds.json ADDITION: DoorDash Engineering Blog
+  inserted between Discord Engineering and Engineering
+  at Meta (first-real-word alphabetical, Di < Do < En).
+  **Pattern-check items (DECISIONS agent-check)
+  resolved before publish**:
+  - `circuit-breaker` live slug confirmed; third
+    company, first appearance as ANTAGONIST (May 12
+    incident narrative in the article's problem
+    section).
+  - `priority-aware-load-shedding` live definition
+    wording confirmed; DoorDash's adaptive concurrency
+    limiter with priority headers is a lighter-weight
+    instance than Uber's t0-t5 or Netflix's playback
+    shield (priority as a shedder property, not a
+    platform-wide taxonomy).
+  - `feedback-controlled-load-management` live
+    definition wording confirmed; DoorDash runs the
+    loop at two scales, and the article's argument is
+    precisely that the local scale is insufficient.
+  - `byos-platform-design` category `resilience`
+    confirmed against live registry. **CORRECTION from
+    earlier md draft**: the draft referenced BYOS as
+    an existing pattern, but the live Uber Cinnamon
+    article listed only two pattern chips
+    (priority-aware-load-shedding + feedback-
+    controlled-load-management). Pattern minted here
+    at TWO companies (Uber Cinnamon named the
+    principle; Aperture productizes it), and
+    uber-intelligent-load-management back-tagged with
+    byos-platform-design in the same commit.
+  relatedArticles: DoorDash → AWS timeouts (rejected-
+  tag sibling forward link) + Uber intelligent load
+  management (BYOS second-company forward link);
+  aws-timeouts-retries-backoff-jitter → DoorDash
+  backlink applied in the same commit;
+  uber-intelligent-load-management → DoorDash backlink
+  applied in the same commit alongside the BYOS
+  back-tag.
+  Recurrences created:
+  - `mitigation-scoped-narrower-than-failure` →
+    1-company (DoorDash). New cruxTag, first article.
+    Landing preview holds at 9 rows (singleton
+    additions don't lift the count).
+  - `circuit-breaker` → 3-company (Shopify, Meta,
+    DoorDash) with the first-as-antagonist recurrence
+    note.
+  - `priority-aware-load-shedding` → 3-company (Uber,
+    Netflix, DoorDash).
+  - `feedback-controlled-load-management` → 3-company
+    (Uber, Netflix, DoorDash).
+  - `byos-platform-design` → new pattern; first two
+    articles (Uber Cinnamon + DoorDash Aperture),
+    category `resilience`. Uber Cinnamon back-tagged
+    in the same commit — mint arrives at two-company
+    depth from the first landing.
+  Library state after landing: **20 articles across 15
+  companies (DoorDash is the 15th); 28 pattern
+  definitions; 20 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 11 tags (was 10; new mint)
+  with 9 two-company, 2 one-company (AWS
+  retry-amplified + DoorDash mitigation-scoped-
+  narrower-than-failure). Landing preview auto-holds
+  at 9 rows (verified in dist/index.html — the new
+  tag is a singleton, doesn't lift the count).
+  Verifier: `npm run validate` 6 checks / 0 errors /
+  15 warnings (was 12; +3 new fuzzy misses on
+  DoorDash `4 failure classes`, `3 local stages`, `1
+  controller` vs prose spelled-out forms — same
+  cosmetic class as residuals); `npm test` 100/100;
+  `npm run build` 53 routes / 52 sitemap URLs;
+  cross-page `@id` assertion passes on new content
+  and on the newly-minted cruxTag anchor
+  `term-mitigation-scoped-narrower-than-failure`.
+
 - **Article #19 (Cloudflare Byzantine failure) LANDED
   (2026-07-14), fifth recurrence-driven singleton fill
   in a row. Only 1 audit-flagged singleton remains
