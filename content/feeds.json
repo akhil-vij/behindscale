@@ -70,6 +70,13 @@
     "feed": "https://www.notion.com/blog/rss"
   },
   {
+    "name": "Pinterest Engineering Blog",
+    "slug": "pinterest-engineering",
+    "company": "Pinterest",
+    "url": "https://medium.com/pinterest-engineering",
+    "feed": "https://medium.com/feed/pinterest-engineering"
+  },
+  {
     "name": "Roblox Blog",
     "slug": "roblox-blog",
     "company": "Roblox",

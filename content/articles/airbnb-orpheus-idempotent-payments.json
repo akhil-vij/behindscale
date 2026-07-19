@@ -48,6 +48,10 @@
     {
       "slug": "retryable-error-classification",
       "note": "Partition all failures into retryable (presumed transient; safe under the same key) and non-retryable (deterministic; replay the recorded failure), with a conservative default. The classification converts 'a retry is safe' from a global property into a per-error contract."
+    },
+    {
+      "slug": "master-only-reads",
+      "note": "Canonical two-company mint with Pinterest as the classmate. Orpheus derives the rule from the sharpest possible wound: idempotency tables on a lagged replica turn a correct idempotent retry into a double charge — 'a few seconds of replica lag equals a double charge.' The response is the pattern in its most literal form: read and write on master only, and recover throughput by sharding the idempotency key itself. Same conclusion Pinterest reaches from a different direction — replicas are for disaster, not for reads."
     }
   ],
   "relatedArticles": [

@@ -1,0 +1,16 @@
+{
+  "slug": "master-only-reads",
+  "name": "Master-Only Reads",
+  "category": "consistency",
+  "definition": "Serve every production read from the primary; replicas exist for failover, backups, and offline export, never for traffic. The rule buys read-your-writes determinism by construction: replica lag cannot corrupt application logic if no application logic ever observes a replica. Adopters state it as law learned two ways — as a policy against a whole class of intermittent, cache-entangled lag bugs, or as the fix for a specific correctness hole where stale reads of coordination state (idempotency records, locks, leases) re-create the very failure the state exists to prevent.\n\nBoundary against read-replica scaling: that pattern spends consistency to buy read throughput and accepts lag as a managed quantity; this one refuses the trade, and recovers throughput elsewhere — typically by sharding the primary, which is why the two patterns travel together. The strongest applications are correctness-critical reads: state whose staleness changes a decision, not just a display.",
+  "whenItApplies": [
+    "Coordination and correctness state — idempotency keys, leases, dedupe records — where a stale read causes a wrong action, not a stale page",
+    "Sharded fleets where per-primary load is already bounded, making replica read offload unnecessary",
+    "Systems whose lag bugs have proven intermittent and expensive to diagnose, and whose owners prefer paying in hardware"
+  ],
+  "tradeoffs": [
+    "Read capacity equals primary capacity: scaling reads means splitting shards or upgrading machines, not adding replicas",
+    "The replica fleet becomes pure insurance — real hardware serving zero requests on the average day",
+    "Reads that could genuinely tolerate staleness (analytics, feeds) pay full price unless carved out through a separate path"
+  ]
+}

@@ -43,7 +43,8 @@
     }
   ],
   "relatedArticles": [
-    "figma-postgres-sharding"
+    "figma-postgres-sharding",
+    "pinterest-sharding-mysql"
   ],
   "stats": [
     {

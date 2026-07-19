@@ -1,0 +1,74 @@
+{
+  "slug": "pinterest-sharding-mysql",
+  "title": "Shard or Do Not Shard: Pinterest's Hand-Built MySQL Fleet",
+  "url": "https://medium.com/pinterest-engineering/sharding-pinterest-how-we-scaled-our-mysql-fleet-3f341e96ca6f",
+  "publishedAt": "2015-08-17",
+  "addedAt": "2026-07-19",
+  "source": {
+    "name": "Pinterest Engineering Blog",
+    "slug": "pinterest-engineering",
+    "company": "Pinterest",
+    "url": "https://medium.com/pinterest-engineering",
+    "feed": "https://medium.com/feed/pinterest-engineering"
+  },
+  "summary": "By September 2011 Pinterest was growing faster, by some estimates, than any startup before it — and every piece of its infrastructure was over capacity. The NoSQL systems it had bet on for automatic scaling all eventually broke catastrophically, and a boatload of MySQL read slaves bred lag bugs. The rebuild, launched by early 2012 and still the core store when the post was written three and a half years later, is manual sharding at its most legible: 4,096 virtual shards as ordinary MySQL databases spread across master-master pairs, a ZooKeeper config mapping shard ranges to machines, and a 64-bit object ID that carries its own address — 16 bits of shard, 10 of type, 36 of local row. Joins moved up into the application, schemas moved into JSON blobs, production reads never touch a slave, and capacity grows by splitting a machine's shard range onto a new pair. Placement became arithmetic.",
+  "crux": "MySQL is a single-box solution — the post says it plainly — and Pinterest's data had outgrown any single box: 50 billion Pins on a billion boards, with hypergrowth adding more. The two conventional escapes both failed them. Scaling reads with slave fleets produced irritating, lag-shaped bugs, especially against caches. Delegating distribution to auto-scaling clustered stores — MongoDB, Cassandra, Membase — traded a hard problem for an immature one, and each broke catastrophically in production. What remained was the class's honest move: keep the mature single-box engine and do the distribution yourself, above the database. The distinctive twist is where the shard map lives — inside every object's ID. Decompose Pin 241294492511762325 and the top 16 bits name shard 3429; no lookup service, no hash ring, just bit arithmetic that any client can perform. The price is symmetrical and the post owns it: an ID that encodes placement is placement forever — data never moves between shards; shards move between machines.",
+  "cruxTag": "single-table-scaling-ceiling",
+  "cruxSummary": "The pins table outgrew any one machine; every clustered alternative broke first.",
+  "problem": "The dataset is the largest human-curated interest graph in the world: more than 50 billion Pins saved to over a billion boards, plus likes, follows, and the home feed those relations feed. In 2011 the growth curve went vertical, and by that September every piece of infrastructure was over capacity at once. The failure modes came in two flavors. The auto-scaling bets — several NoSQL technologies running simultaneously — eventually broke catastrophically; the post's companion essay distills the era into its most-quoted advice: try really hard to just use MySQL. And the conventional MySQL escape valve, a boatload of read slaves, generated its own class of bugs: slaves lag, and lag plus caching produces wrongness that is intermittent, unreproducible, and everywhere.\n\nThe requirements for the rebuild are notable for what they exclude. Stability, ease of operation, and scale-to-the-moon growth from a small initial footprint. All Pinner-generated content site-accessible at all times. Deterministic ordering — give me N Pins of this board by reverse creation time. And, explicitly, best-effort updates: no cross-shard atomicity, no global consistency, with the post cheerfully deferring eventual consistency to 'additional toys on top.' Once data spans databases, joins, foreign keys, and global indexes are gone; load balancing must move whole virtual nodes, never item by item; production must only ever talk to masters. The team wrote down what a distributed MySQL could actually promise, and designed inside that boundary rather than pretending past it.",
+  "solution": "The fleet started as eight EC2 servers, each carrying a slice of 4,096 virtual shards — each shard an ordinary MySQL database named db00000 through db04095, several databases per instance, every instance master-master replicated to a standby that production never reads. A configuration table maps shard ranges to machines — {range: (0,511), master: MySQL001A, slave: MySQL001B} — lives in ZooKeeper, and changes only when shards move or hosts die. Failover is scripted humans promoting the standby; even at publication, three and a half years in, there was no auto-failover.\n\nEvery object gets a 64-bit ID that is also its address: shard ID in 16 bits, type in 10, local row ID in 36, two reserve bits the author defends from chip-design instinct. Decomposing an ID is locating the data — shard 3429, type Pin, row 7075733 — and creating an object composes one: pick a shard (preferably the board's, for locality), insert, and MySQL's auto-increment hands back the local ID that completes the address. UUIDs come free. The companion decision is that placement is permanent: once data lands in a shard it never leaves; capacity comes from moving shards between machines, not data between shards.\n\nEach shard holds the same tables in two shapes. Object tables (pins, boards, users) are a local ID plus a JSON blob — schema evolution happens by teaching services about new JSON fields with defaults, which is how a company at this scale performed roughly one ALTER in three years. Mapping tables (board_has_pins) are three columns — from-ID, to-ID, sequence — indexed together, living on the from-object's shard, with unix timestamps as a convenient monotonic sequence. Reading a board is an application-layer join: query the mapping on the board's shard for 50 pin IDs, then fetch those objects — and because the join is in the application, each side gets its own cache technology: pin objects in memcache, board-to-pins lists in Redis.\n\nCapacity grows three ways, in escalating effort: upgrade the machines; open dormant ranges (4,096 of the 65,536 possible shards existed at launch — new servers later opened 4,096–8,191); or split a hot machine's range — replicate MySQL001A to a new pair, then flip the config so each carries half the shards. For lookups that arrive by something other than an ID — Facebook IDs, emails, IPs — a parallel 'mod shard' hashes arbitrary keys modulo the shard count, at the cost of the ID system's nicer properties. The system shipped after a brutal migration (script the copy, then repeat it until the drift is zero, because data will be missed), and the closing register is the whole design in one line: no atomicity, isolation, or consistency in all cases — and reliability through simplicity, because the thing just works.",
+  "tradeoffs": [
+    "Boring technology inverts the usual complexity trade. Choosing mature MySQL over auto-scaling stores meant taking on distribution — sharding, placement, rebalancing — as application-level work, in exchange for never again debugging an immature storage engine's catastrophic failure at 3 a.m. Pinterest bought predictable self-inflicted complexity and sold unpredictable inherited complexity; the scars aside suggests they'd price it the same way again.",
+    "Encoding placement in the ID makes location free and permanent in the same stroke. Any client can find any object with bit arithmetic — no lookup tier, no hash ring to consult — and no object can ever change shards, because its address is burned into every reference to it. Hot spots can only be relieved at shard granularity (move or split the whole range); a single viral board stays wherever it was born.",
+    "Application-layer joins trade the database's R for the architecture's freedom. Every relation costs two queries and the application owns referential integrity — the post is frank that the system offers no atomicity, isolation, or consistency in all cases. In exchange, each half of a join gets independent scaling and its own cache: objects in memcache, mappings in Redis, chosen per access pattern rather than dictated by the engine.",
+    "JSON blobs make schema a service-side convention. Roughly one ALTER in three years, new fields shipped as deserialization defaults, no locked tables at 50-billion-row scale — and no database-level validation, typing, or indexing of anything inside the blob. The schema still exists; it just lives in code, enforced by whichever services remember it.",
+    "Master-only reads spend hardware to buy determinism. The standby of every master-master pair serves nothing in production — it exists for failover, backups, and S3 dumps — so read capacity equals master capacity, and scaling reads means splitting shards. The post treats this as settled law: slaves lag, lag breeds strange bugs, and once you're sharded there's no advantage left to justify the risk.",
+    "Declining auto-failover keeps a human between detection and remediation. Master death means scripts promote the standby, but a person runs them — minutes of downtime accepted on every failure, in exchange for never letting an ambiguous signal execute a wrong promotion on its own. It's the conservative end of the auto-remediation dial, chosen at design time rather than learned from an incident."
+  ],
+  "tags": [
+    "sharding",
+    "mysql",
+    "id-generation",
+    "schema-design",
+    "scaling"
+  ],
+  "patterns": [
+    {
+      "slug": "application-layer-sharding",
+      "note": "Fourth company, and the ancestral instance — designed in 2012, years before its classmates hit the same wall. Discord routes messages to Elasticsearch shards in application code (2017); Figma and Notion partitioned an existing monolithic Postgres under duress; Pinterest built the virtual-shards-over-physical-hosts architecture from scratch mid-hypergrowth. The shared skeleton is exact: many small logical shards (4,096 here), a config mapping ranges to machines, capacity by remapping — and the shared renunciations too: no cross-shard joins, foreign keys, or global indexes."
+    },
+    {
+      "slug": "id-encoded-placement",
+      "note": "The post's distinctive contribution: the object ID carries its shard (16 bits), type (10), and row (36), so locating any object is bit arithmetic no service needs to mediate — and UUIDs fall out for free. The mirror-image cost is stated as a design decision: data never moves between shards, because every reference would dangle. The post even includes the contrasting scheme in miniature — the mod shard hashes arbitrary keys and loses the nice properties."
+    },
+    {
+      "slug": "master-only-reads",
+      "note": "Second company, minted here with Airbnb's Orpheus as the classmate. Pinterest states it as operational law — slaves lag, lag breeds strange caching bugs, production never touches a slave; Airbnb derives the same rule from a sharper wound, where a lagged replica read turns a correct idempotent retry into a double charge. Same conclusion from two directions: replicas are for disaster, not for reads."
+    }
+  ],
+  "relatedArticles": [
+    "figma-postgres-sharding",
+    "notion-sharding-postgres"
+  ],
+  "stats": [
+    {
+      "value": "50B Pins · 1B boards",
+      "label": "the interest graph that outgrew a single-box engine during record-setting hypergrowth",
+      "placement": "problem"
+    },
+    {
+      "value": "16 · 10 · 36",
+      "label": "bits of shard, type, and local ID — every object ID is its own address, no lookup service required",
+      "placement": "solution"
+    },
+    {
+      "value": "~1 ALTER in 3 years",
+      "label": "schema evolution via JSON defaults instead of locked 50-billion-row tables",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/pinterest-sharding-mysql/index.html",
+    "teaser": "Ride the 2011 growth curve on one box until it hits the ceiling, bet on auto-scaling clustering and watch it break the way it broke on Pinterest — then shard by hand: compose a real Pin ID bit by bit, run an application-layer join, and split a hot machine's shard range when the load comes back."
+  }
+}

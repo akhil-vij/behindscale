@@ -1,0 +1,16 @@
+{
+  "slug": "id-encoded-placement",
+  "name": "ID-Encoded Placement",
+  "category": "throughput",
+  "definition": "Embed an object's storage location directly in its identifier — shard bits, type bits, local row bits packed into one integer — so that finding any object is arithmetic every client can perform, with no lookup service, directory tier, or hash ring on the read path. Identifier generation collapses into the same stroke: insert into the chosen shard, take the auto-incremented local ID, and the composed integer is a universally unique ID whose top bits are its address.\n\nThe scheme's power and its constraint are the same fact: because every stored reference contains the address, the address can never change — data is pinned to its shard for life, and rebalancing happens by moving whole shards between machines, never objects between shards. Boundary against hash-based placement (consistent hashing, mod-sharding): there the key is hashed to find a location, so placement can be recomputed when topology changes, at the cost of a hash function standing between every lookup and its data; ID-encoded placement removes the function and freezes the answer.",
+  "whenItApplies": [
+    "Sharded stores where read-path simplicity matters more than fine-grained rebalancing — placement resolvable by any client, offline, forever",
+    "Systems that also need distributed unique ID generation: composing the ID and placing the row become one operation",
+    "Datasets whose growth is absorbed by moving or splitting whole shards, so per-object mobility is worth trading away"
+  ],
+  "tradeoffs": [
+    "Placement is permanent: a hot object can never be moved off its shard, only its whole shard relieved by splitting or better hardware",
+    "Shard-count and bit-layout decisions are frozen into every ID ever issued — reserve bits are the only future-proofing available",
+    "Objects addressed by anything other than the ID (emails, external IDs) need a parallel hashed system that loses these properties"
+  ]
+}

@@ -39,7 +39,7 @@
       "note": "Figma's 'colos' are this pattern by another name: related tables grouped so they share the same sharding key and physical sharding layout, and cross-table joins and full transactions are supported inside a colo as long as they restrict to a single value of the sharding key. Most application code already interacted with the database that way, which is exactly what made the abstraction cheap for product developers — the pattern's payoff is the query patterns you were already running staying free."
     }
   ],
-  "relatedArticles": ["discord-trillions-message-search", "notion-sharding-postgres"],
+  "relatedArticles": ["discord-trillions-message-search", "notion-sharding-postgres", "pinterest-sharding-mysql"],
   "stats": [
     {
       "value": "100x",
