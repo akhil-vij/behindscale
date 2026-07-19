@@ -84,6 +84,13 @@
     "feed": "https://about.roblox.com/newsroom"
   },
   {
+    "name": "Segment Blog",
+    "slug": "segment-engineering",
+    "company": "Segment",
+    "url": "https://segment.com/blog/",
+    "feed": "https://segment.com/blog/"
+  },
+  {
     "name": "Shopify Engineering",
     "slug": "shopify-engineering",
     "company": "Shopify",

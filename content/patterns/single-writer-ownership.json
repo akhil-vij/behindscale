@@ -1,0 +1,16 @@
+{
+  "slug": "single-writer-ownership",
+  "name": "Single-Writer Ownership",
+  "category": "throughput",
+  "definition": "Assign each data store exactly one writer process, enforced by a mutual-exclusion lease (a Consul session, a fencing token), so that all caching, locking, and invalidation collapse into that process's local state. With no concurrent writers there is nothing to coordinate: the owner caches everything it has written with perfect confidence, batches and orders writes freely, and touches the store on reads only during crash recovery. The pattern inverts the default web-service shape — a stateless tier sharing databases — and pays off when the workload is write-dominated with a small working set, where coordination overhead would otherwise dominate.\n\nBoundary against leader election for availability: there, replicas elect a leader so the SYSTEM survives node loss; here, exclusivity exists so the WRITER can skip coordination entirely — availability is deliberately traded per-slice, with crash recovery reading state back from the store. The lease is correctness-critical in both, but this pattern's failure mode is quieter: a split-brain second writer corrupts cache assumptions rather than partitioning a cluster.",
+  "whenItApplies": [
+    "Write-heavy stores with short-lived items, where in-process caching by a sole owner eliminates nearly all reads",
+    "Sharded or fleet-of-stores designs where each slice is small enough for one process to own outright",
+    "Systems where cross-writer coordination (distributed locks, cache invalidation) would cost more than per-slice failover time"
+  ],
+  "tradeoffs": [
+    "Each owner is a per-slice single point of failure; a crash stalls its slice until a successor acquires the lease and re-reads state",
+    "The lease mechanism becomes correctness-critical — an expired-but-active writer alongside a new one is silent corruption",
+    "Throughput per slice is capped at one process; scaling means more slices, not more writers per slice"
+  ]
+}

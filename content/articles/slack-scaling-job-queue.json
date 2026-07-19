@@ -43,7 +43,8 @@
     }
   ],
   "relatedArticles": [
-    "meta-foqs-priority-queue"
+    "meta-foqs-priority-queue",
+    "segment-centrifuge-database-queue"
   ],
   "stats": [
     {

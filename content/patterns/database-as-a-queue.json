@@ -1,0 +1,16 @@
+{
+  "slug": "database-as-a-queue",
+  "name": "Database-as-a-Queue",
+  "category": "resilience",
+  "definition": "When a delivery buffer needs richer access than push and pop — per-tenant isolation, reordering around failures, selective retry, priority changes — store jobs as rows in a relational database and make delivery order a query. The scheduling policy then lives in SQL and application code, changeable by deploying a new statement, instead of in the physical position of bytes that must be copied to be reordered. The conventional wisdom that databases make poor queues is dissolved by constraining the workload: immutable append-only rows (state changes append to a transitions log, never update in place), no JOINs (every query is per-job, so databases parallelize freely), and a write-heavy profile with a working set of seconds, served almost entirely from an in-process cache.\n\nBoundary against Durable Workflows: a workflow engine owns multi-step process definitions and computes what happens next; a database-as-a-queue owns single-shot deliveries and decides only ordering, pacing, and retry. Boundary against ordinary queue-backed processing: if push/pop semantics suffice — no per-tenant reordering, no selective recovery — the queue's operational simplicity wins; this pattern exists for the cardinality and reordering demands queues cannot express.",
+  "whenItApplies": [
+    "Multi-tenant delivery where isolation demands more logical queues than any queue system supports at sane cost (tens of thousands and up)",
+    "Backlogs that require reordering or selective retry without copying the stuck data — recovering around failures rather than through them",
+    "Job workloads that fit the enabling constraints: short-lived, immutable, per-item (no cross-job transactions or joins)"
+  ],
+  "tradeoffs": [
+    "The queue's operational simplicity is gone: the database fleet becomes managed, cycled, drained infrastructure with its own control plane",
+    "Ordering, fairness, and delivery guarantees are now application code — every property a queue gave for free must be implemented and tested",
+    "Performance depends on honoring the workload constraints; reads, updates, or joins reintroduce exactly the database costs the design escaped"
+  ]
+}

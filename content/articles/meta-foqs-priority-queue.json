@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "discord-trillions-message-search",
-    "slack-scaling-job-queue"
+    "slack-scaling-job-queue",
+    "segment-centrifuge-database-queue"
   ],
   "stats": [
     {

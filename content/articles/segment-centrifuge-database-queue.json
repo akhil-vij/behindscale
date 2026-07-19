@@ -1,0 +1,78 @@
+{
+  "slug": "segment-centrifuge-database-queue",
+  "title": "When Queues Stop Working: Segment's Database-as-a-Queue",
+  "url": "https://segment.com/blog/introducing-centrifuge/",
+  "publishedAt": "2018-05-23",
+  "addedAt": "2026-07-19",
+  "source": {
+    "name": "Segment Blog",
+    "slug": "segment-engineering",
+    "company": "Segment",
+    "url": "https://segment.com/blog/",
+    "feed": "https://segment.com/blog/"
+  },
+  "summary": "Segment forwards hundreds of thousands of analytics events per second to hundreds of third-party endpoints — Google Analytics, Salesforce, per-customer webhooks — and at any moment dozens of those endpoints are failing: 10x latency spikes, 5xx storms, per-customer rate limits. The post walks its own queueing history to show why the obvious buffer keeps failing at its job. A single shared queue lets one slow endpoint backpressure everything — with 200+ endpoints at 99.9% uptime each, that's an hour-long pipeline outage every day. Queues per destination just relocate the capture: one whale customer's 50,000 contiguous messages block every other tenant behind them. True isolation needs a queue per source-destination pair — 88,000 and growing — a cardinality no queue system supports at acceptable cost. Centrifuge is the replacement primitive: jobs as immutable rows in MySQL, one single-writer Director per database, and delivery order as a SQL query instead of a physical position.",
+  "crux": "A queue is fundamentally limited in how you access data — it supports push and pop, and nothing else. That limitation is precisely what breaks when the backlog arrives. The buffer between Segment and the outside world exists to absorb third-party failure, but the moment one endpoint fails or one tenant floods, that backlog physically occupies the shared structure: behind it, every other tenant's traffic waits (head-of-line blocking), and the only escapes are equally bad — cap the whale and delay innocents 50 seconds, retry into rate limits, or copy terabytes into dead-letter queues. Delivery order is set by the producer at write time, so reordering around a failure means rewriting the data. Segment's move is to reject the abstraction rather than tune it: store every job as an immutable row in a relational database, and delivery order becomes a query — changed by deploying a new SQL statement, not by moving bytes. The buffer keeps absorbing because what's stuck no longer stands in front of what isn't.",
+  "cruxTag": "buffer-degrades-under-backlog",
+  "cruxSummary": "Hundreds of destinations fail daily; a shared queue makes every failure everyone's backlog.",
+  "problem": "The post's problem statement is a tour of its own failed architectures, each one a lesson priced in production. Architecture one: a single queue, workers popping jobs and calling whatever API each needs. One slow endpoint creates backpressure on the entire message flow — and the arithmetic is merciless: 200+ endpoints, each 99.9% available (an hour of downtime a year), means the pipeline eats an hour-long outage once per day. Architecture two: a router publishing into a dedicated queue per destination, so a failing API only strands its own messages. Better — until the multi-tenant power law shows up inside each queue. Customer A sends 50,000 contiguous messages to an endpoint rate-limited at 1,000 calls per second per customer; customers B and C sit behind them. The post lays out the three exits and indicts each: hard-cap A and delay B and C by 50 seconds; keep sending and burn retries into 429s; or detect the limit and copy A's remaining 49,000 messages to a dead-letter queue — terabytes on the move at Segment's scale, since Kafka's delivery order is effectively set by the producer and reordering means rewriting.\n\nThe ideal is obvious and unbuildable: a queue per source-destination pair, with per-pair consumption rates. Segment counts 42,000 active sources sending to an average of 2.1 destinations — 88,000 queues and growing quickly. Across Kafka, RabbitMQ, NSQ, and Kinesis, nothing supports that cardinality with sane scaling; SQS can, at a cost the post calls prohibitive. The requirements crystallize into three: per-customer isolation so one tenant's failing traffic can't slow global delivery; reordering without copying terabytes; and horizontal scaling without perpetual repartitioning. What's needed, the post concludes, is a new primitive.",
+  "solution": "The primitive is the database-as-a-queue. Centrifuge's unit is a job — a payload plus an endpoint, with headers governing retries, encoding, and timeouts — and every job lives as a row in a MySQL (RDS) instance called a JobDB. Three properties make a database viable where intuition says it's too slow. Rows are immutable: state changes append to a separate job_state_transitions table (awaiting-scheduling → executing → succeeded / discarded / awaiting-retry → archiving → archived), so the database never runs updates. There are no JOINs: every query is per-job, so databases parallelize without coordination. And the workload is write-heavy with a tiny working set: jobs live a few hundred milliseconds, so nearly everything is served from an in-memory cache and expired on delivery — production Cloudwatch shows writes utterly dominating reads. The primary key is a KSUID — k-sortable by timestamp and globally unique — so one index serves both point lookups and time ordering. A 400-class response is terminal (discarded: the server will reject it every time); 500s, timeouts, and disconnects are ephemeral and retried with exponential backoff until a four-hour expiry, after which jobs archive to S3 for out-of-band reprocessing.\n\nThe writer architecture is the second inversion. Instead of many stateless workers sharing databases, exactly one Director — a Go process — owns each JobDB, acquiring it through a Consul session that guarantees mutual exclusion. Sole ownership means the Director manages caching, locks, and queries entirely in-process with zero coordination: it logs incoming jobs (accepted via RPC), executes the HTTP deliveries, appends every transition, and only reads from the database when recovering from a failure. Scaling is symmetrical: 80 to 300 Directors run at peak on CPU-based autoscaling, and a JobDB Manager keeps the database fleet matched — holding spares for sudden scale-up, retiring instances off-peak, and cycling every JobDB roughly every 30 minutes so the working set never outgrows RAM. Cycling converts millions of random deletes into a single drop table; a drainer process migrates still-retrying jobs to a fresh database first, since by the 30-minute mark 99.9% of events have already succeeded or failed.\n\nThe production numbers carry the argument: nine months, five engineers, 50,000 lines of Go; 400,000 outbound HTTP requests per second (load-tested to 2 million); 340 billion jobs in the reported month. On average 1.5% of all global data succeeds only on a retry — the post's candid framing: almost meaningless to an early-stage startup, incredibly significant to a large retailer. And the system's first real trial reads like the design brief fulfilled: on March 17th a popular integration taking 16,000 requests per second degraded to 15% success for 105 minutes. Centrifuge absorbed roughly 85 million events, retried on backoff — admittedly peaking at 100,000 requests per second against the struggling partner, a tuning gap the post owns — and delivered the entire backlog within 30 minutes of recovery. Mutual customers saw delays, not loss. No other integration noticed.",
+  "tradeoffs": [
+    "Replacing the queue abstraction with a database trades operational simplicity for semantic freedom. Reordering delivery becomes a SQL statement and a deploy instead of terabytes copied across the network — but the price is running databases as ephemeral infrastructure: a Manager binary, a spares pool, 30-minute cycling, paired drainer processes. Segment now operates a fleet of MySQL instances the way other shops operate stateless containers.",
+    "Single-writer ownership buys zero-coordination speed and spends availability granularity. Because one Director exclusively owns each JobDB, it caches everything in-memory, never invalidates across nodes, and writes without contention — and each Director is a per-slice single point of failure whose crash means re-reading state from the database, while the Consul sessions enforcing exclusivity become correctness-critical: a split-brain double writer would corrupt the very guarantees the design exists to provide.",
+    "Immutability plus cycling makes deletes free and recovery bounded, at the cost of choreography. Appending transitions instead of updating rows means job state is a log to be folded, not a cell to be read; dropping whole tables every 30 minutes means a drainer must first evacuate the still-retrying 0.1% — a background migration that must itself never lose jobs.",
+    "The isolation is virtual, and virtual means shared fate at the edges. 88,000 per-pair queues exist as scheduler policy over rows, not as physical structures — which is exactly what makes the cardinality affordable, and it means a Director and its JobDB still carry many tenants whose isolation holds only as long as the scheduling logic does. The bulkhead is code, not walls.",
+    "An absorber this good can become the second incident. During the March outage Centrifuge's retries peaked at 100,000 requests per second against a partner rated for 16,000 — the post's own admission that the strategy still needs tuning. A buffer that never gives up must decide how hard to knock on a door that isn't answering; exponential backoff smoothed the curve only after the initial burst.",
+    "Building the primitive cost what buying couldn't: nine months, five engineers, 50,000 lines of Go, plus a bespoke QA and load-testing apparatus — because no existing queue offered the cardinality and SQS priced out. The recurring dividend is 1.5% of all data recovered by retry and outages that stay inside one integration; the post is honest that the same 1.5% would be a rounding error for a smaller company. This is a primitive you build at a particular scale, not before."
+  ],
+  "tags": [
+    "queues",
+    "mysql",
+    "multi-tenancy",
+    "webhooks",
+    "data-pipelines"
+  ],
+  "patterns": [
+    {
+      "slug": "database-as-a-queue",
+      "note": "The post's own coinage, minted from its central move: when a buffer needs access patterns richer than push and pop — per-tenant reordering, priority changes, selective retry — store the jobs as immutable rows and make delivery order a query. The conventional warning that databases make poor queues is dissolved by three workload properties: immutable append-only rows, zero JOINs, and a write-heavy few-hundred-millisecond working set served from cache."
+    },
+    {
+      "slug": "single-writer-ownership",
+      "note": "One Director exclusively owns each JobDB through a Consul session, so all caching, locking, and invalidation happen in-process with zero cross-node coordination — the writes stay fast because nobody else can write. The inversion of the stateless-tier-over-shared-databases default is the lesson: when the workload is write-dominated with a small working set, exclusive pairing beats pooled access."
+    },
+    {
+      "slug": "retry-with-backoff-and-jitter",
+      "note": "FOURTH company, and the pattern industrialized: retrying is one of Centrifuge's three stated responsibilities, governed per-job by headers, bounded by a four-hour expiry, and measured — 1.5% of all global data succeeds only on retry, with half of retry successes arriving on attempts three through ten. The March outage adds the cautionary half: the absorber's retries peaked at 100K rps against a 16K-rps partner before backoff smoothed the curve."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "Requirement one is the pattern in multi-tenant form: one customer's failing traffic must not slow anyone else's delivery, and the March outage is the proof — one integration degraded for 105 minutes while no other integration noticed. The distinctive twist is that the bulkheads are virtual: isolation enforced by scheduler policy over database rows, not by physically separate queues."
+    }
+  ],
+  "relatedArticles": [
+    "meta-foqs-priority-queue",
+    "slack-scaling-job-queue"
+  ],
+  "stats": [
+    {
+      "value": "88,000",
+      "label": "source-destination pairs needing isolated queues — a cardinality no queue system supports at acceptable cost",
+      "placement": "problem"
+    },
+    {
+      "value": "1 outage/day",
+      "label": "the math of a shared queue: 200+ endpoints × 99.9% uptime each = an hour-long pipeline outage daily",
+      "placement": "problem"
+    },
+    {
+      "value": "85M events",
+      "label": "absorbed during a 105-minute partner outage and fully delivered within 30 minutes of recovery — no other integration noticed",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/segment-centrifuge-database-queue/index.html",
+    "teaser": "Run the same two disasters — a partner outage and a whale customer's flood — through all three of Segment's real architectures. On the shared queue, everyone waits behind the failure. On per-destination queues, pick your poison: delay the innocent, retry into rate limits, or copy terabytes. Then switch to Centrifuge and watch the stuck jobs step out of everyone else's way."
+  }
+}
