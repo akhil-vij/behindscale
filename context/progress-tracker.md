@@ -4,6 +4,144 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #24 (Pinterest MySQL sharding) LANDED
+  (2026-07-19), fourth from the rounds-12-18
+  pipeline. FOURTH THREE-COMPANY cruxTag in the
+  library.** Fable-authored dissection of Pinterest's
+  2015 "Sharding Pinterest: How we scaled our MySQL
+  fleet" — the ancestral instance of application-
+  layer sharding, designed 2012 during hypergrowth
+  after every NoSQL bet broke catastrophically. 4,096
+  virtual shards as ordinary MySQL databases across
+  master-master pairs, a ZooKeeper config mapping
+  ranges to machines, and a 64-bit object ID that
+  carries its own address (16 bits shard, 10 type,
+  36 local row) — placement becomes arithmetic no
+  service needs to mediate. `single-table-scaling-
+  ceiling` (Figma + Notion) becomes the FOURTH
+  three-company cruxTag. Pinterest = NEW company
+  (16th); Pinterest Engineering Blog = 16th source
+  (feeds.json ADDITION).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: recurrence-driven, and the
+  **ancestral instance** — designed 2012, roughly a
+  decade before its classmates hit the same wall.
+  Same ancestral framing as Netflix Conductor
+  in round 13 (2016 vs Skipper/Cadence 2023-2026).
+  Manifestation caveat recorded: Figma/Notion =
+  mature product hits the wall on an existing
+  monolithic Postgres; Pinterest = hypergrowth
+  rebuild from scratch mid-crisis.
+  **Rejected framings/tags documented**:
+  - "immature-clustering-technology" as crux — the
+    NoSQL catastrophes are the technology-selection
+    subplot (one paragraph); the body is entirely
+    the sharding scheme. Subplot honored in
+    crux/problem, not the tag.
+  - single-cluster-scaling-ceiling — sibling class,
+    but Pinterest's ceiling is the single-box data
+    engine, not a cluster coordination limit. Live
+    single-table-scaling-ceiling definition anchors
+    on the logical table (the pins table); Pinterest
+    fits cleanly.
+  Contents: article JSON with `addedAt: 2026-07-19`
+  and cruxSummary populated at authoring; two NEW
+  patterns: `id-encoded-placement` (category
+  `throughput`, boundary vs hash-based placement
+  drawn inside the definition — the post's own mod
+  shard is the contrast case) and `master-only-reads`
+  (category `consistency`, minted at TWO companies
+  per taste-doc §4 canonical two-company mint
+  discipline: Pinterest + Airbnb Orpheus, back-tag
+  applied in the same commit). Artifact accent
+  `#E60023` Pinterest brand red.
+  **HIGH-RISK accent flagged per DECISIONS + taste
+  doc v3 §6 correction**: `#E60023` collides with
+  BOTH semantic red `#ef4444` and Netflix `#E50914`
+  (round 13). Two brand-reds plus verdict-red in one
+  library. Swap candidate rotation: DECISIONS first
+  proposed teal `#2dd4bf` (WITHDRAWN — Cadence owns
+  teal `#2DD4BF` in the live registry), then magenta
+  `#D946EF` (unclaimed hue family). Landed as author
+  chose (`#E60023`) per prior-round posture; owner
+  in-situ call still required.
+  feeds.json ADDITION: Pinterest Engineering Blog
+  inserted between Notion Blog and Roblox Blog
+  (alphabetical by first-real-word).
+  No cruxtags.json change (single-table-scaling-
+  ceiling entry already seeded 2026-07-08).
+  **Pattern-check items (DECISIONS agent-check)
+  resolved before publish**:
+  - `application-layer-sharding` live slug + def
+    confirmed; DECISIONS said "third company" but
+    live count is FOUR (Discord 2017 + Figma +
+    Notion + Pinterest); corrected the article's note
+    to "Fourth company, and the ancestral instance —
+    designed in 2012, years before its classmates
+    hit the same wall" with Discord added to
+    classmate list. Deepest pattern recurrence tie
+    now (with priority-aware-load-shedding and
+    feedback-controlled-load-management at 4 each).
+  - `id-encoded-placement` category `throughput`
+    valid; matches taste doc v3 §4 example.
+  - `master-only-reads` category `consistency`
+    valid; canonical two-company mint at Pinterest +
+    Airbnb Orpheus per taste doc v3 §4 discipline.
+    Orpheus back-tagged in the same publish commit.
+    Boundary vs read-replica scaling drawn inside
+    the definition.
+  - `conservative-auto-remediation` (round 10)
+    considered as chip and REJECTED per the r13
+    cameo rule (taste doc v3 §4): "even today we
+    don't use auto-failover" is the pattern's
+    strongest form but a one-line cameo. Carried in
+    tradeoff #6 prose with cross-reference explicit;
+    owner may promote if the 2-company recurrence
+    is worth the stretch.
+  - Figma slug corrected: DECISIONS placeholder
+    `figma-postgres-horizontal-sharding` → live slug
+    `figma-postgres-sharding`.
+  Backlinks: Pinterest → Figma + Notion forward
+  links; Figma → Pinterest backlink applied in the
+  same commit; Notion → Pinterest backlink applied
+  in the same commit.
+  Recurrences created:
+  - `single-table-scaling-ceiling` → 3-company
+    (Figma + Notion + Pinterest). FOURTH
+    three-company cruxTag; row renders as `3 systems`
+    on landing (SEEN AT Figma · Notion · Pinterest).
+  - `application-layer-sharding` → 4-company
+    (Discord + Figma + Notion + Pinterest). Deepest
+    tie with priority-aware-load-shedding and
+    feedback-controlled-load-management.
+  - `id-encoded-placement` → new pattern; first
+    article (Pinterest). Category `throughput`.
+  - `master-only-reads` → new pattern; canonical
+    two-company mint (Pinterest + Airbnb Orpheus).
+    Category `consistency`. Orpheus back-tag applied
+    in same commit.
+  Landing preview auto-updates: `Single-table scaling
+  ceiling` now shows `3 systems`, `SEEN AT Figma ·
+  Notion · Pinterest`. FOUR three-company rows on
+  the preview now (ambiguous-failure, partial-
+  completion, priority-blind, single-table). Total
+  row count UNCHANGED at 9. CTA `Browse all 24
+  breakdowns →` auto-derived.
+  Library state after landing: **24 articles across
+  16 companies (Pinterest new = 16th); 32 pattern
+  definitions; 24 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 11 tags with **4
+  three-company**, 5 two-company, 2 one-company
+  (AWS retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+  Verifier: `npm run validate` 6 checks / 0 errors
+  / 23 warnings (was 20; +3 fuzzy misses on
+  Pinterest stats vs prose forms — same cosmetic
+  class as residuals); `npm test` 100/100; `npm run
+  build` 61 routes / 60 sitemap URLs; cross-page
+  `@id` assertion passes on new content.
+
 - **Article #23 (Stripe rate limiters) LANDED
   (2026-07-19), third from the rounds-12-18
   pipeline. THIRD THREE-COMPANY cruxTag in the
