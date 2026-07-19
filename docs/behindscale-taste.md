@@ -7,7 +7,10 @@ that lives in neither the schema nor the architecture. Update it as the taste
 sharpens; treat contradictions between this and an older instruction as this
 winning.*
 
-**Version 4** — updated through the round 27 authoring run. The v3 base
+**Version 5** — v4 plus the readability doctrine appended after the
+2026-07 two-pass audit of the 23 live articles (see the dated section
+following the round-27 entry). Version 4 was: updated through the
+round 27 authoring run. The v3 base
 (rounds 12–18: Airbnb Orpheus, Netflix Conductor, Stripe rate limiters,
 Pinterest sharding, Segment Centrifuge, Datadog 2023-03-08, Shopify pods) took
 seven cruxTag classes to three companies; the appended round sections
@@ -496,9 +499,11 @@ partial-completion); and pre-committed SHELVE-DON'T-FORCE clauses
 belong in the hunt itself — this round's fetch carried a written
 rule that a retry-amplified ruling would shelve the source (AWS
 already holds that class), so the ruling risk was priced before
-authoring began. AWS becomes the FIRST FOUR-ARTICLE company (heavy
-owner flag, veto invited; the class slot had no bar-clearing
-alternative). Sim-honesty additions from the gate: model finite
+authoring began. AWS becomes the SECOND four-article company —
+corrected: Airbnb was first (Orpheus, r12, owner-approved), a fact
+my round-24 ledger got wrong and the owner's concentration-rule
+note exposed; the named recurrence value for the crossing stands
+(the class's fourth company, no bar-clearing alternative). Sim-honesty additions from the gate: model finite
 client populations (retry pools saturate; unbounded feedback loops
 break meters), and when a ladder rung claims a mechanism, the sim
 must give it a measurable differential over the rung below —
@@ -576,6 +581,60 @@ delivery-guarantee price vs bounded-loss price). Interrupted-turn
 hygiene: a stale partial artifact file discovered at write time is
 verified against the intended content and overwritten, with the
 discrepancy noted.
+
+**Readability doctrine (2026-07-19)** — distilled from the two-pass
+audit of the 23 live articles (rubric pass over every article;
+three-persona Chrome pass over an 8-article sample; one calibration
+correction folded in). These rules are the floor from the fix wave
+onward: new articles are born compliant, and the fix wave's edits
+are the reference implementations.
+
+- **The entry surfaces are the contract.** Summary, cruxSummary, the
+  problem's opening, and the artifact context block are where
+  readers decide to stay. They get the strictest application of
+  every rule below; tradeoffs and deep solution prose get latitude.
+- **Stacking, not counting, is the failure.** The audit's one
+  calibration miss taught this: isolated technical terms inside
+  short, well-staged prose barely register (airbnb-monitoring,
+  scored best-in-set with the same terms the rubric flagged), while
+  three or more unglossed terms in a single entry-surface sentence
+  reliably lose the reader (roblox's BoltDB/Raft sentence drew the
+  audit's only genuine quit points). Never stack three unglossed
+  terms in one sentence on an entry surface.
+- **The summary carries its own glosses.** A summary may not use a
+  term the body glosses later — the compression that creates
+  summaries is exactly what strips the glosses out, and the reader
+  meets the bare term first. If the summary needs the term, the
+  summary carries the gloss; if it can't afford the gloss, it can't
+  afford the term.
+- **Assumable tech is a short list.** Kafka, Redis, Postgres, MySQL,
+  Kubernetes may be used bare at staff level across domains.
+  Everything else that feels universal from inside distributed
+  systems — etcd, Consul, Vitess, Envoy, CoDel, BoltDB, Patroni,
+  PGBouncer — is not, and takes a three-to-six-word role gloss at
+  first use ("etcd, the cluster's consensus store").
+- **Company nomenclature is always explained** — codenames, tier
+  systems (T0–T5), internal acronyms — at first use, every article.
+  The audit found this hygiene already uniformly good for codenames;
+  the rule exists so it stays true, and because tier systems and
+  acronyms (BYOS) were the leaks.
+- **Hook first.** The summary's first sentence carries the payoff or
+  the trap — "seized and stayed seized," "delay, not loss" — and a
+  machinery list never precedes it. The skimmer's stay/leave calls
+  turned on this alone.
+- **Long solutions separate lesson from operation.** The committed
+  reader loses the thread when transferable mechanisms and
+  operational detail interleave for paragraphs (the prepper could
+  not restate meta-foqs's dequeue path). Give the two or three
+  transferable mechanisms their own clearly-marked ground.
+- **Context blocks pass the standalone test** — THE PROBLEM and
+  THE MOVE readable with zero article context, no term in them that
+  a cold arrival can't parse ("k-way-merged by a prefetch buffer"
+  was the canonical failure).
+- **Glossing is the fix; deletion is not.** Technical precision and
+  the house's long-sentence voice stay. Every fix in the wave was a
+  gloss, a de-stack, or a reorder — no substance was removed, and
+  none may be in the name of this doctrine.
 
 **Round 26 (Meta silent data corruption): BOARD COMPLETION — no
 2-company classes remain.** `gray-failure` +Meta closes the last
