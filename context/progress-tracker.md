@@ -4,6 +4,167 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #25 (Segment Centrifuge) LANDED
+  (2026-07-19), fifth from the rounds-12-18 pipeline.
+  FIFTH THREE-COMPANY cruxTag in the library.**
+  Fable-authored dissection of Segment's 2018
+  "Introducing Centrifuge" — the database-as-a-queue
+  replacement primitive that runs Segment's outbound
+  webhook fleet. Jobs stored as immutable rows in
+  MySQL JobDB instances, delivery order as a SQL
+  query, one Consul-elected Director per database
+  (single-writer ownership eliminates cross-node
+  coordination), and 30-minute JobDB cycling that
+  makes deletes free. Nine months, five engineers,
+  50,000 lines of Go; 400K rps outbound (load-tested
+  to 2M); 340B jobs/month; 1.5% retry-recovery
+  dividend. `buffer-degrades-under-backlog` (Meta +
+  Slack) becomes the FIFTH three-company cruxTag.
+  Segment = NEW company (17th); Segment Blog = 17th
+  source (feeds.json ADDITION).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: recurrence-driven; DECISIONS
+  authored as a CONDITIONAL landing pending a #15
+  cruxTag agent-check, resolved by the DECISIONS
+  RESOLUTION at the bottom (canonical taxonomy
+  records buffer-degrades = Meta + Slack; Segment is
+  the third). The class's substrate-vs-semantics
+  caveat recorded on the crux ruling: Meta and Slack
+  manifest through SUBSTRATE degradation (storage
+  performance under backlog); Segment manifests
+  through SEMANTICS (push/pop lets the backlog
+  physically capture the shared buffer;
+  head-of-line blocking; TB DLQ moves).
+  Manifestation caveat doctrine (taste doc v3 §3.5)
+  handles this at article level; no registry-def
+  amendment applied.
+  **Deferred registry amendment** — DECISIONS
+  proposed conditionally appending "— whether the
+  buffer's substrate degrades under the backlog, or
+  its access semantics let the backlog capture the
+  buffer." to the buffer-degrades registry
+  definition, "only if needed." Not applied here per
+  taste doc v3 §3.5 (manifestation caveat handles
+  same-spine-different-face at the article layer);
+  the crux prose already carries the semantics
+  framing. Owner can decide whether to formalize
+  the amendment separately, same posture as the
+  partial-completion amendment applied earlier
+  (5f8d0da).
+  **Rejected tags documented**:
+  - retry-amplified-overload (retries are the
+    SOLUTION here, deliberately industrialized; the
+    100K-rps-against-a-16K partner moment is a
+    tradeoff of the cure, carried in tradeoff #5, not
+    the crux).
+  - priority-blind-load-shedding (fairness
+    name-checked in the problem framing, but the
+    design axis is isolation, not drop order).
+  Contents: article JSON with `addedAt: 2026-07-19`
+  and cruxSummary populated at authoring; two NEW
+  patterns:
+  - `database-as-a-queue` (category `resilience`;
+    boundaries drawn inside definition — vs
+    Durable Workflows (workflow engines own multi-
+    step process definitions; this owns single-shot
+    delivery ordering) and vs ordinary queue-backed
+    processing (if push/pop suffices — no per-tenant
+    reordering, no selective recovery — the queue's
+    operational simplicity wins; database-as-a-queue
+    exists for the cardinality and reordering
+    demands queues cannot express)).
+  - `single-writer-ownership` (category `throughput`;
+    matches taste doc v3 §4 example; boundary vs
+    leader-election-for-availability drawn inside
+    definition — there replicas elect a leader so
+    the SYSTEM survives node loss; here exclusivity
+    exists so the WRITER can skip coordination
+    entirely).
+  Artifact accent `#52BD94` Segment green.
+  **HIGH-RISK accent flagged**: same hue family as
+  semantic green `#22c55e` (verdict-green vs
+  accent-green legibility risk), AND Skipper green
+  `#22C55E` in live registry (which equals semantic
+  green). Swap-candidate rotation: teal `#2dd4bf`
+  was proposed but WITHDRAWN — Cadence owns teal.
+  Landed as author chose (`#52BD94`) per prior-round
+  posture on accent-flag rounds; owner in-situ call
+  required. Compound owner note: round 15 and round
+  16 both surfaced accent conflicts that lost their
+  teal swap-candidate to Cadence; both need owner
+  in-situ review, and neither has an active swap
+  candidate.
+  feeds.json ADDITION: Segment Blog inserted between
+  Roblox Blog and Shopify Engineering (first-real-
+  word alphabetical: R < Se < Sh).
+  No cruxtags.json change (defer amendment as noted
+  above).
+  **Pattern-check items resolved before publish**:
+  - `database-as-a-queue` category `resilience`
+    valid against locked four-category list; no
+    collision with live library or the retired-names
+    list (`pid-controlled-adaptive-thresholds`,
+    `byos-platform-design`).
+  - `single-writer-ownership` category `throughput`
+    valid; matches taste doc v3 §4 example
+    explicitly (`id-encoded-placement`,
+    `single-writer-ownership` → throughput).
+  - `retry-with-backoff-and-jitter` live def
+    confirmed; FOURTH company (Stripe, AWS, Airbnb,
+    Segment) — tied with priority-aware-load-
+    shedding, feedback-controlled-load-management,
+    application-layer-sharding as deepest pattern
+    recurrences on the site.
+  - `fault-isolation` live def confirmed; tenth
+    article on this pattern (Discord, Netflix,
+    Uber, Skipper, Cadence, Slack cellular, Airbnb
+    monitoring, Roblox, AWS shuffle, Cloudflare,
+    Segment — 11 occurrences now; most-recurring
+    pattern in the library).
+  Backlinks: Segment → Meta FOQS + Slack job queue
+  forward links; meta-foqs-priority-queue → Segment
+  backlink applied in the same commit; slack-scaling
+  -job-queue → Segment backlink applied in the same
+  commit.
+  Recurrences created:
+  - `buffer-degrades-under-backlog` → 3-company
+    (Meta + Slack + Segment). FIFTH three-company
+    cruxTag; row renders as `3 systems` on landing
+    (SEEN AT Meta · Segment · Slack).
+  - `retry-with-backoff-and-jitter` → 4-company
+    (Stripe, AWS, Airbnb, Segment). Ties three other
+    patterns at deepest recurrence.
+  - `fault-isolation` → 11-company (11 occurrences).
+    Multi-tenant/virtual-bulkhead instance; the
+    "isolation is code, not walls" twist noted in
+    tradeoff #4.
+  - `database-as-a-queue` → new pattern; first
+    article (Segment). Category `resilience`.
+  - `single-writer-ownership` → new pattern; first
+    article (Segment). Category `throughput`.
+  Landing preview auto-updates: `Buffer degrades
+  under backlog` now shows `3 systems`, `SEEN AT
+  Meta · Segment · Slack`. FIVE three-company rows
+  on the preview now (ambiguous-failure, buffer-
+  degrades, partial-completion, priority-blind,
+  single-table). Total row count UNCHANGED at 9.
+  CTA `Browse all 25 breakdowns →` auto-derived.
+  Library state after landing: **25 articles across
+  17 companies (Segment = 17th); 34 pattern
+  definitions; 25 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 11 tags with **5
+  three-company**, 4 two-company, 2 one-company
+  (AWS retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+  Verifier: `npm run validate` 6 checks / 0 errors
+  / 25 warnings (was 23; +2 fuzzy misses on Segment
+  `1 outage/day` compound value and `85M events` vs
+  prose forms — same cosmetic class as residuals);
+  `npm test` 100/100; `npm run build` 64 routes /
+  63 sitemap URLs; cross-page `@id` assertion
+  passes on new content.
+
 - **Article #24 (Pinterest MySQL sharding) LANDED
   (2026-07-19), fourth from the rounds-12-18
   pipeline. FOURTH THREE-COMPANY cruxTag in the
