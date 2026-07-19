@@ -4,6 +4,142 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #23 (Stripe rate limiters) LANDED
+  (2026-07-19), third from the rounds-12-18
+  pipeline. THIRD THREE-COMPANY cruxTag in the
+  library.** Fable-authored dissection of Stripe's
+  2017 "Scaling your API with rate limiters" — the
+  four admission-control layers in production (two
+  preventative per-user rate limiters + two reactive
+  whole-system load shedders), the criticality ladder
+  built into the shedders (critical methods /
+  standing 20% fleet reservation / four-tier drop
+  order: test mode → GETs → POSTs → critical), and
+  the flapping-dialogue tuning scar (shed slow,
+  restore slow, or the loop oscillates). Class
+  purpose in the post's own line: keep the core part
+  of your business working while the rest is on
+  fire. `priority-blind-load-shedding` (Netflix +
+  Uber) becomes the THIRD three-company cruxTag.
+  Stripe → 2 articles (matches
+  Uber/Slack/AWS/Netflix precedent — no flag).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  Selection rationale: recurrence-driven, and
+  chronologically the earliest instance in the class
+  (2017) — designed-against the priority-blind
+  default that Uber's post described as an
+  evolution and Netflix's as a redesign. The
+  distinctive variant recorded in the pattern note:
+  priority enforced by permanent capacity partition
+  (the 20% fleet reservation) rather than just drop
+  order under pressure.
+  **Rejected tags documented**:
+  retry-amplified-overload (retries appear once as
+  motivation for the concurrency limiter, not the
+  bottleneck); mitigation-scoped-narrower-than-
+  failure (the shedders are deliberately
+  whole-system-scoped — "decisions based on the
+  whole state of the system"; the post is a
+  counterexample to that class, not a member).
+  DECISIONS notes a cross-link opportunity for the
+  DoorDash article at some future revision — the
+  Stripe post is what a whole-system shedder looks
+  like when it's actually built.
+  **Accent AGENT CHECK closed by DECISIONS
+  resolution appended to the round file**: live
+  Stripe accent is indigo `#6366F1`
+  (stripe-idempotency); artifact switched from brand
+  blurple `#635BFF` to match. Company consistency
+  rule applied (per taste doc v3 §6 accent registry
+  discipline). The correction was baked into the
+  handoff at arrival — no separate accent-fix
+  commit needed.
+  Contents: article JSON with `addedAt: 2026-07-19`
+  and cruxSummary populated at authoring; one NEW
+  pattern `layered-admission-control` (category
+  `resilience`, boundaries against
+  `priority-aware-load-shedding` and
+  `circuit-breaker` drawn inside the definition —
+  see below); artifact accent `#6366F1` (matches
+  stripe-idempotency, corrected before publish).
+  Artifact esbuild parse: clean, 19.9 KB output.
+  No cruxtags.json change (priority-blind-load-
+  shedding entry already seeded 2026-07-08). No
+  feeds.json change (Stripe Engineering already an
+  existing source; Stripe now two-article).
+  Bonus continuity: the post itself links Stripe's
+  idempotency post (the live stripe-idempotency
+  article); noted in DECISIONS but not surfaced in
+  `relatedArticles` because the two slots there go
+  to the class-mates (Netflix + Uber).
+  Backlinks: Stripe rate limiters → Netflix +
+  Uber forward links;
+  netflix-prioritized-load-shedding → Stripe rate
+  limiters backlink applied in the same commit;
+  uber-intelligent-load-management → Stripe rate
+  limiters backlink appended in the same commit.
+  **Pattern-check items (DECISIONS agent-check)
+  resolved before publish**:
+  - `priority-aware-load-shedding` live definition
+    wording confirmed; FOURTH company recurrence
+    (Uber, Netflix, DoorDash, Stripe) — deepest
+    recurrence on the site.
+  - `feedback-controlled-load-management` live
+    definition wording confirmed; FOURTH company
+    recurrence (Uber PID, Netflix gradient,
+    DoorDash AIMD, Stripe trial-and-error). The
+    post's own dialogue is under-damped control by
+    another name.
+  - `layered-admission-control` NEW pattern,
+    category `resilience` valid against locked
+    four-category list. Boundaries drawn inside the
+    definition: vs `priority-aware-load-shedding`
+    (drop order within a shedding decision vs the
+    stack of decisions — which mechanism gets to
+    reject first, and on what evidence); vs
+    `circuit-breaker` (breaker severs a caller's
+    outbound edge on downstream failure; admission
+    layers gate inbound work at the service's own
+    door). Near-duplicate check confirmed nothing
+    adjacent in rounds 8-13 or the live pattern
+    chips.
+  Recurrences created:
+  - `priority-blind-load-shedding` → 3-company
+    (Netflix + Uber + Stripe). THIRD three-company
+    cruxTag; row renders as `3 systems` on landing
+    (SEEN AT Netflix · Stripe · Uber).
+  - `priority-aware-load-shedding` → 4-company
+    (Uber, Netflix, DoorDash, Stripe). Deepest
+    pattern recurrence on the site.
+  - `feedback-controlled-load-management` →
+    4-company (Uber, Netflix, DoorDash, Stripe).
+    Tied for deepest.
+  - `layered-admission-control` → new pattern;
+    first article (Stripe). Category `resilience`.
+  Landing preview auto-updates: `Priority-blind
+  load shedding` now shows `3 systems`, `SEEN AT
+  Netflix · Stripe · Uber`. Three three-company
+  rows on the preview now. Total row count
+  UNCHANGED at 9 (3-company depth adds don't
+  change row count). CTA `Browse all 23
+  breakdowns →` auto-derived.
+  Library state after landing: **23 articles across
+  15 companies (Stripe two-article; matches
+  Uber/Slack/AWS/Netflix precedent); 30 pattern
+  definitions; 23 article artifacts + 1 site-level
+  hero.** cruxTag taxonomy: 11 tags with **3
+  three-company**, 6 two-company, 2 one-company
+  (AWS retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+  Verifier: `npm run validate` 6 checks / 0 errors
+  / 20 warnings (was 19; +1 fuzzy miss on
+  Stripe `1 user` stat vs prose "One user spikes"
+  — same cosmetic class as residuals); `npm test`
+  100/100; `npm run build` 58 routes / 57 sitemap
+  URLs; cross-page `@id` assertion passes on new
+  content; artifact esbuild parse clean (19.9 KB).
+
 - **Article #22 (Netflix Conductor) LANDED
   (2026-07-15), second from the rounds-12-18
   pipeline. SECOND THREE-COMPANY cruxTag in the
