@@ -5,7 +5,7 @@
   },
   "partial-completion-under-crashes": {
     "label": "Partial completion under crashes",
-    "definition": "A multi-step process interrupted between steps leaves its outcome and its side effects undetermined — some work done, some not, and no safe way to resume without either dropping or duplicating it."
+    "definition": "A multi-step process interrupted between steps leaves its outcome and its side effects undetermined — some work done, some not, no safe way to resume without either dropping or duplicating it — and, at scale, often no way even to enumerate which steps remain."
   },
   "single-table-scaling-ceiling": {
     "label": "Single-table scaling ceiling",
