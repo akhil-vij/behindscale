@@ -11,7 +11,7 @@
     "url": "https://www.uber.com/blog/engineering/",
     "feed": "https://www.uber.com/blog/engineering/rss/"
   },
-  "summary": "Cadence is Uber's answer to a question Airbnb answered the opposite way: where should durable execution live? Airbnb's Skipper embeds the workflow engine as a library inside each service, because a central orchestrator's outage would stop every dependent service at once. Uber built exactly that central orchestrator — and made it a platform serving over a thousand services from T0 to T5, running 12 billion executions and 270 billion actions a month at 99.9% availability, with workflows written as ordinary code in native languages rather than DSLs. The bet: the engine is built once while every workflow is written fresh, so complexity belongs in the platform — and Uber's 2021 internal survey found teams writing 40% less code for the same functionality. The costs are the platform's to carry: a team of 20 running a Tier-0 shared dependency, noisy-neighbor isolation as a permanent discipline, and the database bottleneck under everything.",
+  "summary": "Cadence is Uber's answer to a question Airbnb answered the opposite way: where should durable execution live? Airbnb's Skipper embeds the workflow engine as a library inside each service, because a central orchestrator's outage would stop every dependent service at once. Uber built exactly that central orchestrator — and made it a platform serving over a thousand services across every criticality tier (T0, the most critical, down to T5), running 12 billion executions and 270 billion actions a month at 99.9% availability, with workflows written as ordinary code in native languages rather than DSLs. The bet: the engine is built once while every workflow is written fresh, so complexity belongs in the platform — and Uber's 2021 internal survey found teams writing 40% less code for the same functionality. The costs are the platform's to carry: a team of 20 running a Tier-0 shared dependency, noisy-neighbor isolation as a permanent discipline, and the database bottleneck under everything.",
   "crux": "Every service that does more than answer a single request faces the crux Airbnb's Skipper named: a multi-step process that crashes between steps leaves its outcome to chance, and interruption over hours or days is the expected case, not the edge. At a thousand-service company the bottleneck compounds — the machinery that fixes it (state persistence, queues, timers, retries, failover) gets rebuilt slightly differently by every team, so the duplicated nonfunctional scaffolding, not any single workflow's durability, becomes the thing that doesn't scale.",
   "cruxTag": "partial-completion-under-crashes",
   "cruxSummary": "Every service rebuilds the same crash-durable machinery — the duplicated scaffolding is what doesn't scale.",
@@ -25,7 +25,13 @@
     "The database under the platform is the bottleneck under everything. The post says it plainly: DB load 'seems to be the bottleneck most of the time,' capacity is managed by rate limits, and the efficiency roadmap — evenly distributed load by design, new workflow modes, new capacity management — is a plan to buy back headroom. Centralizing a thousand services' durable state concentrates their write load into one storage estate; the consolidation that removes duplicated machinery also concentrates the scaling problem it must now solve on everyone's behalf.",
     "A 20-engineer platform team is the visible price of 'solve it once.' The 40%-less-code figure is measured across consuming teams; the denominator includes a permanent, growing core team, internal contributors across Cassandra, Elasticsearch, Kafka, and MySQL, and — at partner companies — dedicated Cadence teams of their own. The economics favor the platform at Uber's scale and use-case density, which is the honest boundary of the lesson: the central bet is not that platforms are free, it's that at sufficient scale the duplicated alternative costs more."
   ],
-  "tags": ["workflows", "orchestration", "platforms", "durable-execution", "open-source"],
+  "tags": [
+    "workflows",
+    "orchestration",
+    "platforms",
+    "durable-execution",
+    "open-source"
+  ],
   "patterns": [
     {
       "slug": "durable-workflows",
@@ -36,11 +42,26 @@
       "note": "This article is the pattern's other pole. Skipper instantiates embedded: engine-as-library, no shared dependency, blast radius contained to one service — at the cost of shipping and operating the engine everywhere. Cadence instantiates centralized: one platform, one team, one availability contract shared by a thousand tenants — at the cost of noisy-neighbor discipline, backward-compatibility drag, and a concentrated database bottleneck. Same crux, opposite answers, both correct for their constraints."
     }
   ],
-  "relatedArticles": ["skipper-workflow-engine", "netflix-conductor-microservices-orchestrator"],
+  "relatedArticles": [
+    "skipper-workflow-engine",
+    "netflix-conductor-microservices-orchestrator"
+  ],
   "stats": [
-    { "value": "12 billion", "label": "workflow executions per month at Uber alone", "placement": "solution" },
-    { "value": "40%", "label": "less code to implement the same functionality (2021 internal survey)", "placement": "solution" },
-    { "value": "99.9%", "label": "availability guarantee — the ceiling every tenant inherits", "placement": "tradeoffs" }
+    {
+      "value": "12 billion",
+      "label": "workflow executions per month at Uber alone",
+      "placement": "solution"
+    },
+    {
+      "value": "40%",
+      "label": "less code to implement the same functionality (2021 internal survey)",
+      "placement": "solution"
+    },
+    {
+      "value": "99.9%",
+      "label": "availability guarantee — the ceiling every tenant inherits",
+      "placement": "tradeoffs"
+    }
   ],
   "artifact": {
     "path": "/artifacts/uber-cadence-workflow-platform/index.html",

@@ -12,7 +12,7 @@
     "url": "https://medium.com/airbnb-engineering",
     "feed": "https://medium.com/feed/airbnb-engineering"
   },
-  "summary": "Airbnb redesigned its observability stack to break the circular dependency between monitoring and the infrastructure it monitors. The solution comes in three layers: compute isolation via dedicated-but-managed Kubernetes clusters, network isolation via a custom Envoy L7 layer outside the shared service mesh, and a Dead Man's Switch that detects the absence of expected health signals rather than the presence of bad ones. The throughline: never let your safety mechanism depend on the thing it's protecting.",
+  "summary": "Airbnb redesigned its observability stack to break the circular dependency between monitoring and the infrastructure it monitors. The solution comes in three layers: compute isolation via dedicated-but-managed Kubernetes clusters, network isolation via its own traffic path (a custom Envoy layer) outside the shared service mesh every other service rides, and a Dead Man's Switch that detects the absence of expected health signals rather than the presence of bad ones. The throughline: never let your safety mechanism depend on the thing it's protecting.",
   "crux": "Airbnb's monitoring ran on the same Kubernetes clusters and Istio mesh it existed to observe, so a failure in the foundation silenced the very alerts that should have reported it. Compounding the circularity, telemetry runs orders of magnitude larger than business traffic — sharing one mesh meant each could starve the other, with incompatible priorities the shared data plane couldn't express.",
   "cruxTag": "observer-shares-fate-with-observed",
   "cruxSummary": "The monitoring system shared its fate with the very infrastructure it watched.",
@@ -45,7 +45,9 @@
       "note": "The original monitoring architecture had overlapping circular dependencies, each invisible until activated. The redesign maps and severs each one: dedicated clusters break the compute dependency; dedicated network plane breaks the data-flow dependency; external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how circular dependencies hide in plain sight inside 'reasonable' shared-infrastructure choices."
     }
   ],
-  "relatedArticles": ["roblox-return-to-service"],
+  "relatedArticles": [
+    "roblox-return-to-service"
+  ],
   "artifact": {
     "path": "/artifacts/airbnb-monitoring-reliably-at-scale/index.html",
     "teaser": "Break each layer — in the old architecture and the new — and see who gets paged."

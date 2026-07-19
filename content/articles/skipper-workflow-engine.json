@@ -12,7 +12,7 @@
     "url": "https://medium.com/airbnb-engineering",
     "feed": "https://medium.com/feed/airbnb-engineering"
   },
-  "summary": "Airbnb built Skipper as a workflow engine that ships as a library embedded inside each service, not as a central cluster. Durability comes from replaying the workflow method with checkpointed actions, long waits hibernate to zero compute, compensation undoes partial work in reverse order, and state lives in the service's existing database. The deliberate inversion: pay almost nothing on the happy path, invoke the durability machinery only when something goes wrong. In production over a year across 15+ use cases, peaking at 10,000 workflows/second.",
+  "summary": "Airbnb built Skipper as a workflow engine that ships as a library embedded inside each service, not as a central cluster. Durability comes from replay: when a service restarts, the workflow method simply runs again, skipping every action already checkpointed to the database. Long waits hibernate to zero compute; compensation undoes partial work in reverse order; and state lives in the service's existing database. The deliberate inversion: pay almost nothing on the happy path, invoke the durability machinery only when something goes wrong. In production over a year across 15+ use cases, peaking at 10,000 workflows/second.",
   "crux": "A multi-step process that crashes between steps leaves the outcome to chance — a timed-out caller retries into duplicate processing, or partial state corrupts everything downstream — and for workflows spanning hours to days, interruption is the expected case, not the edge. The industry's answer, a dedicated orchestration cluster, was disqualified for Tier-0 services by its blast radius: one cluster outage stops every dependent service from starting or advancing any workflow.",
   "cruxTag": "partial-completion-under-crashes",
   "cruxSummary": "A multi-step process crashing between steps leaves its outcome, and its side effects, to chance.",
@@ -52,7 +52,9 @@
       "note": "Skipper's checkpointed Actions are the pattern applied inside a single workflow method: each action commits its result durably, and replay resumes from the last committed boundary rather than redoing or skipping work — resume-from-last-committed-point, with the workflow method as the sequence and the checkpoint as the phase boundary."
     }
   ],
-  "relatedArticles": ["netflix-conductor-microservices-orchestrator"],
+  "relatedArticles": [
+    "netflix-conductor-microservices-orchestrator"
+  ],
   "artifact": {
     "path": "/artifacts/skipper-workflow-engine/index.html",
     "teaser": "Step the workflow, crash it anywhere, and watch replay skip the actions that already committed."

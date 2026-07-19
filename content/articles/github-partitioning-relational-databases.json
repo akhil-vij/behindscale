@@ -11,7 +11,7 @@
     "url": "https://github.blog",
     "feed": "https://github.blog/engineering/feed/"
   },
-  "summary": "For over a decade, GitHub.com revolved around one MySQL cluster — mysql1 — holding users, repositories, issues, and pull requests. Between 2019 and 2021, GitHub partitioned it without downtime by doing the work in two strictly ordered stages: first virtually, with schema domains and SQL linters that made cross-domain queries a failing test before any data moved, and only then physically, with Vitess vertical sharding and a custom write-cutover whose read-only window lasted tens of milliseconds. They moved 130 of their busiest tables in one cutover. The result: the same data now answers 1.2M queries/s across several clusters while average per-host load halved.",
+  "summary": "For over a decade, GitHub.com revolved around one MySQL cluster — mysql1 — holding users, repositories, issues, and pull requests. Between 2019 and 2021, GitHub partitioned it without downtime by doing the work in two strictly ordered stages: first virtually, with schema domains and SQL linters that made cross-domain queries a failing test before any data moved, and only then physically, with vertical sharding via Vitess (the MySQL scaling layer born at YouTube) and a custom write-cutover whose read-only window lasted tens of milliseconds. They moved 130 of their busiest tables in one cutover. The result: the same data now answers 1.2M queries/s across several clusters while average per-host load halved.",
   "crux": "GitHub.com spent a decade built around one MySQL cluster, and the ceiling arrived on two axes at once: keeping mysql1 adequately sized meant perpetually moving to newer, bigger machines, and any incident touching it took every core feature down together. The genuinely hard part wasn't choosing a partitioning tool — it was that ten years of application code silently assumed all tables lived in one database, so every cross-domain JOIN and transaction was an invisible thread that would snap the moment tables moved.",
   "cruxTag": "single-cluster-scaling-ceiling",
   "cruxSummary": "A decade of code assumed one shared database — the real ceiling was the cluster.",
@@ -25,7 +25,14 @@
     "The cutover buys certainty with a small, deliberate outage. For tens of milliseconds, the busiest tables at GitHub accept no writes, and the web requests that try get 500s — a handful of real users see real errors, by design, in the lowest-traffic window. The alternative styles (dual-write reconciliation, long read-only windows) spread smaller risks over longer periods; GitHub chose a brief, certain, rehearsed failure whose blast radius is measured before it happens. The GTID poll in step three is the load-bearing detail: the window stays short only if the destination is already caught up, which is why the process demands the thorough preparation and exercising the post mentions.",
     "Vertical partitioning moves whole domains — so a single domain remains the next ceiling. Moving the repositories domain off mysql1 buys headroom, but issues, pull_requests, and repositories still live together and still grow together; nothing in this post's tooling splits one huge table across clusters. GitHub says so directly, deferring horizontal sharding to a future post. This is precisely where Figma's story begins — when the unit that outgrows a machine is no longer the cluster but the table, vertical partitioning has nothing left to move, and the sharding problem starts in earnest."
   ],
-  "tags": ["databases", "mysql", "partitioning", "migrations", "rails", "linters"],
+  "tags": [
+    "databases",
+    "mysql",
+    "partitioning",
+    "migrations",
+    "rails",
+    "linters"
+  ],
   "patterns": [
     {
       "slug": "logical-physical-migration-split",
@@ -40,11 +47,26 @@
       "note": "GitHub's query linter turns an architectural intention — these tables will live apart — into a failing test at the developer's desk, years before the tables actually move. The transaction linter extends the same enforcement to production under sampling, catching what static analysis of queries can't see. The boundary is real from the day it's declared, not the day it's deployed."
     }
   ],
-  "relatedArticles": ["figma-postgres-sharding", "airbnb-partitioning-main-database"],
+  "relatedArticles": [
+    "figma-postgres-sharding",
+    "airbnb-partitioning-main-database"
+  ],
   "stats": [
-    { "value": "50%", "label": "average per-host load reduction after partitioning", "placement": "solution" },
-    { "value": "130", "label": "busiest tables moved in a single write-cutover", "placement": "solution" },
-    { "value": "950,000 queries/s", "label": "answered by mysql1's tables in 2019, before the split", "placement": "problem" }
+    {
+      "value": "50%",
+      "label": "average per-host load reduction after partitioning",
+      "placement": "solution"
+    },
+    {
+      "value": "130",
+      "label": "busiest tables moved in a single write-cutover",
+      "placement": "solution"
+    },
+    {
+      "value": "950,000 queries/s",
+      "label": "answered by mysql1's tables in 2019, before the split",
+      "placement": "problem"
+    }
   ],
   "artifact": {
     "path": "/artifacts/github-partitioning-relational-databases/index.html",

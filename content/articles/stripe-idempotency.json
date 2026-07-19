@@ -12,7 +12,7 @@
     "url": "https://stripe.com/blog/engineering",
     "feed": "https://stripe.com/blog/feed.rss"
   },
-  "summary": "How Stripe makes APIs safe in an unreliable network: idempotent endpoint design where HTTP semantics allow it, client-supplied idempotency keys where operations must happen exactly once, and disciplined retry behavior — exponential backoff with jitter — so that recovering clients never become the next outage.",
+  "summary": "A network call that times out leaves the client unable to tell whether the operation happened — and for a payments API both guesses are catastrophic: retry a charge that succeeded and you double-charge; fail to retry one that failed and the customer never gets what they paid for. How Stripe makes its APIs safe to retry: idempotent endpoint design — requests built so repeating them produces the same result as sending them once — where HTTP semantics allow it, client-supplied idempotency keys where an operation must happen exactly once, and disciplined retry behavior (exponential backoff with jitter) so recovering clients never become the next outage.",
   "crux": "Two of the three ways a network call can fail leave the client unable to tell whether the operation happened — and for a payments API both guesses are catastrophic: retrying a charge that actually succeeded double-charges the customer, while abandoning one that actually failed drops real revenue. The bar for this problem is two computers passing messages; there is no scale threshold below which the ambiguity disappears.",
   "cruxTag": "ambiguous-failure-under-retry",
   "cruxSummary": "A timed-out request leaves the client unable to tell whether it already happened.",
