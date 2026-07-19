@@ -1,0 +1,16 @@
+{
+  "slug": "layered-admission-control",
+  "name": "Layered Admission Control",
+  "category": "resilience",
+  "definition": "Protect a service with a stack of admission mechanisms rather than one: preventative per-client rate limiters in front (pacing fairness on normal days, firing constantly and cheaply), reactive whole-system load shedders behind (deciding under emergency which work deserves the capacity that remains, firing rarely). Each layer has its own scope (one user vs the whole system), its own trigger (client pace vs system state), and its own expected firing frequency — and the layers are ordered so that each one existing means the next one rarely fires. The stack's health is readable from its rejection counts: orders of magnitude between the first layer and the last is the design working.\n\nBoundary against Priority-Aware Load Shedding: that pattern governs the drop order within a shedding decision; this one governs the stack of decisions — which mechanism gets to reject first, and on what evidence. Boundary against Circuit Breaker: a breaker severs a caller's outbound edge on downstream failure; admission layers gate inbound work at the service's own door.",
+  "whenItApplies": [
+    "Public or multi-tenant APIs where one client's behavior — accidental or deliberate — can spend capacity every other client needs",
+    "Services whose incident posture must differ from their daily posture: fairness limiters for normal days, criticality triage for emergencies",
+    "Anywhere a single admission mechanism is being asked to be both the everyday abuse guard and the last-resort emergency triage — two jobs with different scopes and triggers"
+  ],
+  "tradeoffs": [
+    "Each layer is separately configured, separately dark-launched, separately capable of misfiring — the stack multiplies calibration and observability work",
+    "Layers interact: a well-tuned front layer starves the rear layers of activations, so their thresholds go stale precisely because the design is working",
+    "Every layer must fail open independently, so the failure of the limiting infrastructure leaves the service running and entirely unguarded"
+  ]
+}

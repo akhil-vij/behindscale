@@ -1,0 +1,74 @@
+{
+  "slug": "stripe-rate-limiters",
+  "title": "While the Rest Is on Fire: Stripe's Layered Rate Limiters",
+  "url": "https://stripe.com/blog/rate-limiters",
+  "publishedAt": "2017-03-30",
+  "addedAt": "2026-07-19",
+  "source": {
+    "name": "Stripe Engineering",
+    "slug": "stripe-engineering",
+    "company": "Stripe",
+    "url": "https://stripe.com/blog/engineering",
+    "feed": "https://stripe.com/blog/engineering"
+  },
+  "summary": "Stripe runs four admission-control layers in production, and the post is precise about the division of labor: two rate limiters that shape per-user pace day to day (a token-bucket request limiter rejecting millions of requests a month, and a concurrent-requests limiter guarding CPU-heavy endpoints), and two load shedders that fire during incidents and decide from whole-system state which traffic deserves the capacity that remains. The shedders encode a criticality ladder — traffic split into critical methods like creating charges versus non-critical ones like listing them, with a fraction of the fleet permanently reserved for critical requests, and a four-tier drop order (test mode first, then GETs, then POSTs, critical last) that sheds and restores slowly to avoid flapping. The stated purpose is the class in one line: keep the core part of your business working while the rest is on fire.",
+  "crux": "When a system must drop work — a runaway script, an analytics batch, an internal slowdown that shrinks effective capacity — the dangerous default is to drop indiscriminately: every request in the queue competes equally, so a flood of test-mode traffic or high-volume analytics reads can spend exactly the capacity that charge creation needs, and the shedding meant to protect the service sacrifices its most important traffic first-come-first-served. Stripe's architecture is built against that default. A rate limiter looks at one user and asks whether their pace is fair; a load shedder looks at the whole system and asks which work matters — and Stripe's answer is structural: critical methods get a standing reservation of fleet capacity that non-critical traffic can never consume, and when workers back up, shedding walks a criticality ladder from the bottom. Importance is decided before the emergency, not during it.",
+  "cruxTag": "priority-blind-load-shedding",
+  "cruxSummary": "Under overload, undifferentiated dropping would spend charge creation to keep test traffic alive.",
+  "problem": "The scenarios the post opens with are the class's front doors. One user spikes and everyone else must stay up. A misbehaving script — or a deliberate actor — floods the API. A user sends a high volume of lower-priority requests, and the post names the collision directly: users sending high volumes of analytics requests could affect critical transactions for other users. Or something inside Stripe goes wrong, regular capacity can't be served, and low-priority requests must be dropped. In every scenario the same question decides the outcome: when there isn't room for everything, what gets in?\n\nThe post draws its central distinction before offering any machinery. A rate limiter controls the pace of one user's traffic, and is only the right tool when pacing is negotiable — if clients can spread requests without changing outcomes, which Stripe finds true for almost all of its batch-heavy payment traffic. A load shedder is a different instrument: it decides from the whole state of the system rather than from the identity of the requester, it fires infrequently and during emergencies, and its job is explicitly triage. Rate limiters are for fairness among users on a normal day; load shedders are for choosing what survives an abnormal one. A system with only the former still has no answer for the day capacity itself collapses — and a system that sheds without a criticality model answers with whatever happened to be in the queue.",
+  "solution": "The four layers, in the order Stripe recommends building them. The Request Rate Limiter restricts each user to N requests per second via token buckets in Redis — one bucket per user, tokens dripping in, empty bucket means rejection. It is the workhorse: constantly triggered, millions of rejections a month, mostly runaway test-mode scripts. Two refinements carry the operational lessons: rate limiting behaves identically in test and live modes, so scripts don't develop side effects on the way to production, and after analyzing traffic patterns Stripe added brief burst allowances above the cap for real-time spikes like flash sales.\n\nThe Concurrent Requests Limiter changes the unit from rate to inflight count — not 'a thousand a second' but 'twenty in progress at once.' It guards CPU-intensive endpoints where slow responses breed user retries that pile more demand onto the already-contended resource; Stripe reports it fires far less often (12,000 requests a month) and that it entirely solved a recurring resource-contention problem. It also, deliberately, pushes a programming model: fork workers and process a queue, rather than hammer and back off on 429.\n\nThe Fleet Usage Load Shedder is where the criticality ladder becomes structure. Traffic divides into critical methods (creating charges) and non-critical ones (listing charges); a Redis cluster counts in-flight requests of each type; and a fraction of the fleet is reserved for critical traffic at all times — with a 20% reservation, any non-critical request beyond its 80% allocation is rejected with a 503. The post's candor about frequency doubles as the design's justification: it fired for a very small fraction of requests this month, and in other months it has prevented outages.\n\nThe Worker Utilization Load Shedder is the last line of defense, watching workers with available capacity and shedding when a box is too busy to handle its volume. Traffic sits in four categories — critical methods, POSTs, GETs, test-mode traffic — and shedding starts at the bottom: drop test mode; if that restores health, slowly bring it back; if not, escalate up the ladder. The word slowly is load-bearing in both directions, and the post's own dialogue makes the failure mode vivid: shed fast and restore fast and you flap — 'I got rid of testmode traffic! Everything is fine! I brought it back! Everything is awful!' The shed rate was tuned by trial and error to move substantial traffic within a few minutes. Only 100 requests were rejected by this layer in the month reported — and it has repeatedly bought faster recoveries during real incidents. The first three layers are preventative; this one is damage control.\n\nAround all four sits the operational discipline the post insists on: limiters hook into middleware such that any bug or a Redis outage fails open and the API keeps serving; rejections return deliberate, actionable statuses (429 versus 503); every limiter ships behind a kill switch; and each one is dark-launched first — watching what it would have blocked, tuning thresholds against real traffic, sometimes working with specific users to adjust their integration before enforcement begins.",
+  "tradeoffs": [
+    "Rate limiters only work when pacing is negotiable, and the post scopes its own tool honestly: if clients cannot spread their requests without changing outcomes — real-time events — a limiter doesn't apply and the answer is more capacity. The instrument's precondition is a property of the workload, not the implementation; Stripe's batch-heavy payment traffic happens to satisfy it almost always.",
+    "The criticality split is a business judgment wearing an engineering hat. Someone must decide that creating charges is critical and listing them is not, maintain that taxonomy as the API grows, and pick the reservation number — 20% of the fleet that analytics can never touch is 20% of steady-state capacity priced as insurance. A wrong or stale classification quietly converts the protection into misallocation.",
+    "Shedding must move slowly in both directions, and damping is paid in reaction time. Fast shedding plus fast restoration produces the flapping loop the post narrates; the tuned compromise — substantial traffic shed within a few minutes — means the first minutes of an incident are absorbed, not deflected. The stability of the control loop is bought with a deliberately sluggish response.",
+    "The protection layer must fail open, which means it is absent exactly when its own infrastructure fails. Catching exceptions at every level so a Redis outage cannot take down the API is unambiguously right — and it means the limiters offer no protection during the failure of the limiter stack itself. The availability guard is designed to never become the availability risk, at the price of guaranteed unguarded windows.",
+    "The concurrency limiter shapes client architecture, not just client pace. 'Twenty in flight at once' pushes integrators toward fork-workers-and-drain-a-queue instead of hammer-and-back-off — a better citizen model for expensive endpoints, and a real migration cost imposed on users who built the other way. Choosing a limiter type is choosing a programming model for everyone downstream.",
+    "Dark launching treats every limiter as guilty until calibrated. Watching would-be blocks before enforcing them, tuning thresholds against observed traffic, and working with individual users to adjust their integrations costs weeks of patience per layer — and the alternative is discovering the thresholds on customers. The kill switches encode the same humility: the protective machinery is assumed capable of being the outage."
+  ],
+  "tags": [
+    "rate-limiting",
+    "load-shedding",
+    "api-design",
+    "redis",
+    "multi-tenancy"
+  ],
+  "patterns": [
+    {
+      "slug": "priority-aware-load-shedding",
+      "note": "FOURTH company, and chronologically the earliest instance on the site (2017). Uber tiers t0–t5 with a PID controller, Netflix shields playback, DoorDash reads priority headers in a shedding interceptor; Stripe's version is the pattern at its most legible — a standing fleet reservation for critical methods, plus a four-tier ladder (test mode → GETs → POSTs → critical) that sheds from the bottom and restores slowly. The reservation variant is distinctive: priority enforced by permanent capacity partition, not just drop order under pressure."
+    },
+    {
+      "slug": "feedback-controlled-load-management",
+      "note": "FOURTH company. The worker-utilization shedder is a feedback loop with the post's own tuning scar as its lesson: shed amount ramps against observed worker capacity, and both shed and restore must move slowly or the loop flaps — the narrated oscillation ('I brought it back! Everything is awful!') is under-damped control by another name. Uber and DoorDash formalize the loop with PID and AIMD; Stripe tuned the damping by trial and error and published the failure mode."
+    },
+    {
+      "slug": "layered-admission-control",
+      "note": "The post's overall architecture, minted from its own taxonomy: two preventative per-user rate limiters in front of two reactive whole-system load shedders, each layer scoped, triggered, and firing at a different frequency — millions of rejections a month at the first layer, one hundred at the last. Each layer exists so the next one rarely fires."
+    }
+  ],
+  "relatedArticles": [
+    "netflix-prioritized-load-shedding",
+    "uber-intelligent-load-management"
+  ],
+  "stats": [
+    {
+      "value": "1 user",
+      "label": "is all it takes — a runaway script or an analytics batch can spend the capacity critical transactions need",
+      "placement": "problem"
+    },
+    {
+      "value": "20%",
+      "label": "of the fleet permanently reserved for critical methods — non-critical requests past their allocation get a 503",
+      "placement": "solution"
+    },
+    {
+      "value": "millions → 100",
+      "label": "monthly rejections from the first layer to the last: each layer exists so the next one rarely fires",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/stripe-rate-limiters/index.html",
+    "teaser": "Flood the API with a runaway test script and watch charges die first-come-first-served — then arm the layers one at a time: the per-user limiter catches the script, the fleet reservation holds 20% for charges through an internal slowdown, and the worker shedder walks the ladder. Flip FLAP MODE to shed and restore fast, and meet the oscillation Stripe tuned away."
+  }
+}
