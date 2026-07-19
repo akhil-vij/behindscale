@@ -702,6 +702,21 @@ Practical corollaries:
   possible use of a reserved slot — never resolved by quietly
   inventing a fifth category (a first draft did exactly that and was
   corrected).
+- **Company concentration follows recurrence value, not a headcount
+  cap.** The test for "should this article come from a company already
+  at N?" is the recurrence-driven sourcing rule above — does the
+  article make an existing pattern or cruxTag recur, or extend a class
+  to a new depth? — not a cap on N. But when a landing crosses prior
+  precedent for a company (e.g., 4→5 articles), the round's
+  `DECISIONS.md` carries an explicit sentence naming which pattern or
+  cruxTag recurrence this article delivers that a comparable article
+  from a new company would not. Concentration is legible; drift toward
+  "always company X next" would not be without the note. First applied
+  when Airbnb landed as the first four-article company (Orpheus, round
+  12, 2026-07-15) — owner-approved precedent; the recurrence value
+  named at pitch was taking `ambiguous-failure-under-retry` from
+  two-company to three-company as the deepest server-side idempotency
+  treatment on the site.
 
 ---
 
