@@ -59,7 +59,8 @@
   "relatedArticles": [
     "airbnb-monitoring-reliably-at-scale",
     "meta-foqs-priority-queue",
-    "aws-shuffle-sharding"
+    "aws-shuffle-sharding",
+    "shopify-pods-architecture"
   ],
   "artifact": {
     "path": "/artifacts/discord-trillions-message-search/index.html",

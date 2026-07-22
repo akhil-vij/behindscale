@@ -1,0 +1,74 @@
+{
+  "slug": "shopify-pods-architecture",
+  "title": "One Pod Online: Shopify's Cure for Platform-Wide Failure",
+  "url": "https://shopify.engineering/a-pods-architecture-to-allow-shopify-to-scale",
+  "publishedAt": "2018-03-02",
+  "addedAt": "2026-07-22",
+  "source": {
+    "name": "Shopify Engineering",
+    "slug": "shopify-engineering",
+    "company": "Shopify",
+    "url": "https://shopify.engineering",
+    "feed": "https://shopify.engineering/blogs/engineering.atom"
+  },
+  "summary": "In 2015 Shopify ran out of bigger database servers to buy and sharded MySQL — solving capacity and quietly creating a new failure geometry. The codebase filled with a one-line idiom, Sharding.with_each_shard, that fanned platform actions across every shard: if any shard went down, that entire action was unavailable across the platform, and every shard added was a new way to take everything down. The 2016 answer is the cell architecture in its plainest form. A pod is a set of shops on a fully isolated set of datastores; shared compute — job workers, app servers, load balancers — may only ever talk to one pod per action; and every unit of work, web request or delayed job, is assigned to a single pod, so serving a request requires exactly one pod to be online. Sorting Hat classifies requests into pods at the load balancer, each pod pairs an active data center with a recovery site, and Pod Mover evacuates a pod between them in a minute without dropping requests or jobs.",
+  "crux": "Sharding multiplies the machines that can fail without dividing what their failure touches. After 2015, a platform action at Shopify iterated every shard — with_each_shard — which means its availability was the product of every shard's availability: each new shard made the whole platform's math strictly worse, and the post names the trajectory plainly — a major problem as the number of shards continued to increase. This is the blast-radius class in its purest algebraic form: the fleet grows, and any one member's failure keeps reaching everything. Shopify's cure is structural rather than statistical. Where AWS shrinks shared fate combinatorially with shuffle sharding and Discord caps it by running many small clusters, Shopify eliminates the fan-out itself: full datastore isolation kills the shared-resource path, and assigning every unit of work to exactly one pod kills the algorithmic path. When no action touches more than one pod, a pod's failure has nowhere to spiral — the platform stops having platform-wide failures because it stops having platform-wide operations.",
+  "cruxTag": "blast-radius-scales-with-cluster-size",
+  "cruxSummary": "Every new shard was a new way to take the whole platform down.",
+  "problem": "The 2015 ceiling was vertical and absolute: it was no longer possible to continue buying a larger database server, so Shopify sharded MySQL and kept growing. The post is candid about the exchange rate — what we gained in performance and scalability we lost in resilience — and precise about the mechanism. Throughout the codebase lived a fan-out idiom: Sharding.with_each_shard do some_action end. Any platform-scoped action — a sweep, a migration-shaped task, anything that touched all shops — iterated the full shard set, and if any shard was down, that entire action was unavailable across the platform.\n\nThe arithmetic of that idiom is the class's arithmetic. An action spanning N shards is up only when all N are up; its availability is the product of theirs, and it decays with every shard added. Growth therefore degraded resilience by construction: the fleet that solved the capacity problem was simultaneously manufacturing new single points of platform failure, one per shard. Shopify's own operational history had already taught the sibling lesson about shared resources — a single Redis shared across all of Shopify once took the whole platform down, an incident remembered internally as Redismageddon, distilled to the rule: avoid any resource shared across all of Shopify. Between the shared-datastore path and the fan-out path, the platform's failure domains all had the same size — everything. In 2016, the team sat down to reorganize the runtime architecture around a harder requirement than capacity: a shard's failure must not be able to spiral into a platform outage at all.",
+  "solution": "The pod is the unit that requirement produced. A pod is a set of shops living on a fully isolated set of datastores — MySQL, and per the platform's later shape, the caches and queues beside it — so no datastore is shared across pods, and a hot or broken store can consume only its own pod's database time. Compute stays pooled for efficiency: job workers, app servers, and load balancers are shared resources. The discipline that keeps pooling from re-coupling fates is the architecture's first law: a shared resource may only ever communicate with a single pod at a time; no action reaches across pods. Isolation alone, the post notes, buys capacity and containment but doesn't kill the fan-out — that takes the second law: every unit of work, web request or delayed job, is assigned to exactly one pod. The consequence is the post's thesis in one line: serving a request only requires a single pod to be online. Adding a pod adds capacity without adding a new way for pre-existing pods to fail, because nothing ever waits on more than one.\n\nAssignment needs an assigner. Sorting Hat lives in the load balancers and, using a list of rules, matches every incoming request to its pod, attaches a header, and forwards it to the right location — across multiple data centers. Application servers use that header to connect to the one datastore set that should answer, keeping shared compute capacity while querying exactly one pod per request. The router is where the isolation boundary is actually enforced; the pod map is a routing decision made once, at the edge, rather than a query-time negotiation.\n\nThe same atom reorganized disaster recovery. Shopify already ran a recovery data center; podding refined it from a platform-sized failover to a per-pod one. Each pod is assigned a pair of data centers — one active, one recovery — and Pod Mover relocates a pod to its recovery site in about a minute without dropping requests or jobs. That granularity upholds the core promise (a single pod's failure cannot spiral) and turns the scariest operation in infrastructure into a routine one: evacuating an entire data center is nothing more than evacuating its pods one at a time, and Shopify moves pods around daily — because manually moving services and ensuring correctness had quickly become untenable, and stressful. The platform's later shape testifies to where this went: over a hundred pods, and no major outage affecting all of Shopify since the architecture landed — an outage today touches a single pod or region.",
+  "tradeoffs": [
+    "Sharding solves capacity and silently inverts the availability math. One database is one failure domain; N shards under a fan-out idiom are N failure domains multiplied together, with platform availability decaying as the product of shard availabilities. The with_each_shard one-liner made the coupling invisible at the call site — the most dangerous property a failure geometry can have.",
+    "Full isolation renounces exactly the queries a shared database made free. No action may reach across pods, so anything platform-scoped — cross-shop search, aggregate analytics, admin sweeps — must be rebuilt as asynchronous, denormalized paths outside the request lifecycle. The architecture doesn't make those problems easier; it makes them explicit and evicts them from the critical path.",
+    "Pooled compute over isolated state is a bulkhead made of discipline, not hardware. Sharing workers and app servers keeps utilization high, but the one-pod-per-action law is enforced by routing headers and connection management — a single code path that fans out, one connection drawn from the wrong pod, re-couples the fates the datastore isolation paid to separate.",
+    "Single-pod work assignment converts partial degradation into total-but-local failure. A downed pod means its shops are fully down — no degraded shared-service middle state — while every other shop feels nothing. The architecture chooses WHO fails instead of HOW MUCH everyone fails; that's the right trade for a multi-tenant platform, and it is a trade, paid by whoever lives on the unlucky pod.",
+    "Per-pod disaster recovery makes evacuation rehearsable and doubles the geography. Pod-pair data centers plus Pod Mover turn DC failover from a heroic platform event into a one-minute unit operation performed daily — and the price is recovery capacity provisioned per pod and mover tooling that must relocate live state without dropping a job. The post's own words for the manual alternative: untenable, and stressful.",
+    "The router is the one component the architecture cannot podify. Sorting Hat's rules ARE the isolation boundary: a misroute is not a performance bug but a correctness breach (a request touching the wrong pod's data), and the routing tier remains a shared layer whose defects have platform-wide reach. Cell architectures don't eliminate global components; they concentrate globalness into the thinnest possible layer and demand it be boring."
+  ],
+  "tags": [
+    "cell-architecture",
+    "sharding",
+    "mysql",
+    "disaster-recovery",
+    "multi-tenancy"
+  ],
+  "patterns": [
+    {
+      "slug": "cell-architecture",
+      "note": "The plainest statement of the pattern on the site: shops partitioned into pods, each a fully isolated slice of the platform, with every unit of work assigned to exactly one cell so that serving a request needs one cell online. Second company — Slack's cellular architecture drains traffic away from a sick cell; Shopify's pods go further upstream and make cross-cell work structurally impossible. The shared lesson: a cell's failure has nowhere to spiral because nothing spans cells."
+    },
+    {
+      "slug": "generic-mitigation",
+      "note": "Third company, and the pre-positioned form: Pod Mover is one big lever — evacuate the pod to its recovery data center, in a minute, without dropping requests or jobs — that works regardless of what is wrong with the pod's home. The recurrence arc across the class: Cloudflare improvised its levers mid-incident, Slack pre-built the drain button, Shopify rehearses its lever daily, which is what turns a mitigation into a routine."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "Twelfth article on the pattern, carrying its structural extreme: isolation not as blast-radius reduction but as blast-radius elimination — datastores unshared, actions single-pod, DR per-pod. The boundary lesson pairs with Datadog's: Shopify concentrates all remaining globalness into the routing tier, the one layer that cannot be podified and therefore must be kept thin and boring."
+    }
+  ],
+  "relatedArticles": [
+    "discord-trillions-message-search",
+    "aws-shuffle-sharding"
+  ],
+  "stats": [
+    {
+      "value": "2015",
+      "label": "the year vertical scaling ended — no larger database server left to buy",
+      "placement": "problem"
+    },
+    {
+      "value": "1 pod",
+      "label": "online is all a request needs — every unit of work, web request or delayed job, is assigned to exactly one",
+      "placement": "solution"
+    },
+    {
+      "value": "1 minute",
+      "label": "for Pod Mover to evacuate a pod to its recovery data center without dropping requests or jobs",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/shopify-pods-architecture/index.html",
+    "teaser": "Drag the shard count up and watch platform availability decay as a product — then kill one shard and take every fan-out action down with it. Flip to pods, kill the same shard, and see the blast stop at its walls; try the platform-wide action and get refused; evacuate a pod in a minute when its data center dies."
+  }
+}
