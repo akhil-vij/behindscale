@@ -1,0 +1,74 @@
+{
+  "slug": "datadog-incident-response-observer-fate",
+  "title": "Monitor the Monitors: How Datadog Watched Its Own Global Outage",
+  "url": "https://www.datadoghq.com/blog/engineering/2023-03-08-deep-dive-into-incident-response/",
+  "publishedAt": "2023-06-01",
+  "addedAt": "2026-07-22",
+  "source": {
+    "name": "Datadog Engineering Blog",
+    "slug": "datadog-engineering",
+    "company": "Datadog",
+    "url": "https://www.datadoghq.com/blog/engineering/",
+    "feed": "https://www.datadoghq.com/blog/engineering/"
+  },
+  "summary": "On March 8, 2023 at 06:00 UTC, a systemd security patch applied by Ubuntu's default unattended-upgrades restarted systemd-networkd across Datadog's fleet, flushing the network routes Cilium had installed — and tens of thousands of nodes across five regions and three cloud providers dropped off the network within the hour. For a monitoring company, the outage carried a special edge: customers' monitors went silent, and Datadog's own Datadog-based alerting went down with the platform it watches. Detection came anyway, in three minutes, from the escape hatch the post names plainly — basic out-of-band monitoring that runs completely outside their infrastructure, assumes nothing about how the platform is built, and consumes the APIs exactly like a user. This is how we monitor the monitors. What follows is the anatomy of a several-hundred-engineer response to a first-ever global incident: judgment over runbooks, shift rotations against a 13-hour compute recovery, and the lesson that regions with no shared control plane can still be indirectly related.",
+  "crux": "Datadog's telemetry about Datadog runs on Datadog — the agents ride the same fleet, the monitors evaluate on the same platform, the alerts route through the same systems. On any ordinary day that self-hosting is a strength; on March 8 it meant the outage took the company's eyes with it. When the platform became largely unavailable, the in-platform picture didn't turn red — it went quiet, and for a monitoring system silence is indistinguishable from health. The same inversion hit at every level: customers' monitors were unavailable and not alerting, and the Kubernetes control planes responsible for repairing nodes were themselves on the dying nodes. The design that broke the symmetry was bought in advance: a deliberately primitive watcher outside the walls, sharing no infrastructure, no assumptions, and therefore no fate with the thing it watches. It flagged the problem at 06:03, three minutes in; by 06:08 two teams were paged — one of them precisely the team that receives pages when Datadog's own alerting is in trouble.",
+  "cruxTag": "observer-shares-fate-with-observed",
+  "cruxSummary": "When the platform is the observability, an outage takes your eyes with it.",
+  "problem": "The setup took two years to arm. In December 2020, systemd v248 gave systemd-networkd a new startup behavior: flush every IP rule it doesn't recognize; v249 added an opt-out setting, defaulting to managing foreign rules. Ubuntu 22.04 ships v249, and by March 2023 Datadog's fleet was more than 90 percent on 22.04 — a homogeneity that mattered because the flushing behavior is invisible in normal operation: on a fresh boot, systemd-networkd starts before Cilium installs its routes, so there is nothing foreign to flush. Only a restart on a running node exposes it, and no systemd patch had required one since before the migration. On March 7 a CVE patch (249.11-0ubuntu3.7) landed in Ubuntu's repositories. Datadog had never disabled unattended-upgrades — years of Ubuntu without incident — though they don't rely on it either, applying security patches by regularly replacing nodes. The Ubuntu default runs the upgrade daily in the 06:00 UTC hour. Between 06:00 and 07:00 on March 8, every 22.04 node that had downloaded the new systemd restarted networkd, flushed Cilium's routes, and fell off the network — hosts on all providers, pod networking on AWS and Azure — including the nodes running the Kubernetes control planes that would otherwise repair the damage.\n\nThe regions were built for exactly this not to happen globally: autonomous by design, spread across independent cloud providers, no direct connections, no global shared control plane, with per-region failovers and active-active setups. All of it held — and all of it was routed around by a change channel nobody had modeled, arriving everywhere at the same wall-clock hour. The post's sentence is the class's sentence: we failed to imagine how they could remain indirectly related. And for this company the impact had a recursive layer: users couldn't reach the platform, monitors were unavailable and not alerting — the observer was down, for its customers and for itself.",
+  "solution": "Detection is the part money can't buy back after the fact, and Datadog had bought it in advance. Alongside the everything-instrumented, you-build-it-you-own-it internal monitoring — which was largely gone with the platform — runs a basic out-of-band monitoring layer: completely outside their own infrastructure, making no assumptions about how the platform is built, consuming the APIs exactly like users do. The post gives it the class's motto: this is how we monitor the monitors, and ensure we are alerted even in the rare event that the platform becomes largely unavailable — as it was on March 8. At 06:03 UTC, three minutes into the outage, monitoring flagged a problem. At 06:08, two teams were paged: an APM team whose automation saw its pods failing to restart, and the team that receives pages from the out-of-band monitors about the alerting system itself. The first status page update went out at 06:31.\n\nThe response that followed was the largest in company history — several hundred engineers working in shifts across concurrent video calls and workstreams — and the post is explicit about its philosophy: because a constantly changing system makes pre-baked recovery procedures impossible to keep current, engineers are empowered to exercise judgment about the services they know best, rather than follow rigid runbooks. Structure came from incident-command practices layered over that judgment: escalation paths, severity discipline, shift handoffs for what they called the long haul. The sequencing was dictated by the damage: first restore compute capacity itself, because every higher recovery depended on it. Kubernetes control planes auto-recovered as autoscaling groups replaced dead VMs — by 08:00 all clusters but one — while AWS recreated tens of thousands of nodes in two hours; the giant metrics clusters (4,000+ nodes each) fought longer, their autoscalers piling never-Ready nodes up to the 6,000-node cap until humans intervened. EU1 had a working mitigation by 08:30; unattended-upgrades was identified as the trigger at 11:36; restoring the majority of compute across all regions took roughly 13 hours. Web access returned at 09:13, the first major service was declared operational at 16:44, and application-level recovery continued from there.\n\nThe fixes close the loop the crux opened. The legacy update channel is disabled everywhere — with no security cost, because it was redundant with the node-replacement patching that already flows through staged rollout. systemd-networkd is configured to leave the routing table alone on restart, the fleet was audited for other implicit channels, and days later the Cilium team hardened its IP rules against systemd removal upstream. The customer lesson reshaped priorities too: users said clearly that live data and alerts matter far more than historical access — a criticality hierarchy for a data platform, learned the loud way.",
+  "tradeoffs": [
+    "Out-of-band monitoring buys independence with poverty, and the poverty is the point. Because it runs outside the infrastructure, assumes nothing about the architecture, and probes the APIs like a user, it shares no fate with the platform — and for the same reasons it can only say that something is wrong, never what. It bought Datadog a three-minute detection; diagnosis still had to come from engineers reasoning about a system whose rich telemetry was part of the casualty list.",
+    "Judgment-over-runbooks is a bet on people that compounds under novelty. The post argues pre-baked procedures can't stay current with a constantly evolving platform, so responders are empowered to improvise from expertise — which is exactly what a first-ever global incident demands, and exactly what makes response quality depend on who is awake, how handoffs preserve context across shifts, and whether several hundred people can coordinate by judgment rather than script.",
+    "The region isolation was real, and it was aimed at the wrong layer. Independent clouds, no shared control plane, autonomous failure domains — all of it functioned, and all of it was bypassed by a synchronized change channel plus a 90-percent OS monoculture. Isolation audits that inventory runtime dependencies but not change channels and platform homogeneity certify a boundary the next incident will walk around.",
+    "Automatic security patching trades rollout discipline for patch speed, and Datadog's fix rebalances rather than retreats. Unattended-upgrades applied a patch to the whole world in one wall-clock hour — no staging, no bake time, no blast-radius control. Disabling it cost nothing because node-replacement patching already delivers the same updates through a staged path; the general lesson is that a redundant fast channel is pure risk, and an irreplaceable fast channel is a decision about how much simultaneity you can survive.",
+    "Self-healing machinery heals the substrate it stands on, until it doesn't. ASG replacement quietly restored the Kubernetes control planes by 08:00 — automation at its best — while in the biggest clusters the autoscaler, acting correctly on Pending pods, stacked thousands of never-Ready nodes into the capacity cap and had to be overridden. The same reflex was the recovery and the obstruction, differing only in whether the layer beneath it was healthy.",
+    "Recovery has an order, and the order is a dependency graph, not a priority list. Compute first, because everything rides it; platform capabilities next; application recovery last — roughly 13 hours before the first leg was done, with shift rotations designed for that duration. The customer-taught corollary is that the application layer has its own order too: live data and alerts before historical access, a criticality ladder the platform now knows it must encode."
+  ],
+  "tags": [
+    "incidents",
+    "observability",
+    "kubernetes",
+    "incident-response",
+    "change-management"
+  ],
+  "patterns": [
+    {
+      "slug": "independent-observability",
+      "note": "Third company, and the class's success story: Airbnb argues for observers that don't share the observed system's dependencies, Roblox shows the cost of their absence — and Datadog shows the payoff of their presence: a deliberately primitive out-of-band layer, outside the infrastructure and assuming nothing, detected a total platform outage in three minutes while the in-platform alerting died with the platform. The design rule it demonstrates: the independent observer's value is proportional to how little it shares — including assumptions."
+    },
+    {
+      "slug": "fault-isolation",
+      "note": "Recurrence as a boundary lesson: the isolation was genuine — autonomous regions, three independent clouds, no global control plane — and it held at the layer it was built for while a synchronized change channel and a 90-percent OS monoculture connected everything at a layer above it. 'We failed to imagine how they could remain indirectly related' is the audit question every fault-isolation design should inherit."
+    },
+    {
+      "slug": "universal-staged-rollout",
+      "note": "Minted from the fix rather than the failure: after the incident, Datadog disabled the legacy unattended-upgrades channel — at zero security cost, because node-replacement patching already delivers updates through a staged, controlled path — and audited for other channels that bypass rollout discipline. The pattern's claim: every change channel that can touch the fleet, including OS security updates, must flow through staged rollout, because an unstaged channel converts any latent defect into a synchronized global event."
+    }
+  ],
+  "relatedArticles": [
+    "airbnb-monitoring-reliably-at-scale",
+    "roblox-return-to-service"
+  ],
+  "stats": [
+    {
+      "value": "90+%",
+      "label": "of the fleet on Ubuntu 22.04 — the homogeneity that turned one patch into a five-region, three-cloud event",
+      "placement": "problem"
+    },
+    {
+      "value": "06:03",
+      "label": "out-of-band monitors flag the outage — three minutes in, with the in-platform alerting already down",
+      "placement": "solution"
+    },
+    {
+      "value": "~13 hours",
+      "label": "to restore the majority of compute capacity across all regions — the first leg of recovery, not the finish",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/datadog-incident-response-observer-fate/index.html",
+    "teaser": "Run the 06:00 update wave with your alerting on the platform it watches — and learn that a dying monitoring system doesn't turn red, it goes quiet. Then arm the out-of-band watcher, get paged at 06:08, and replay the 13-hour recovery ladder from compute to 16:44."
+  }
+}

@@ -34,6 +34,10 @@
   ],
   "patterns": [
     {
+      "slug": "independent-observability",
+      "note": "The absence-cost instance: telemetry rode Consul, so when Consul went unhealthy the instruments went dark and the team burned four wrong theories over fifty hours before the flame graphs surfaced the real bug. The post's own post-outage rule is the pattern's canonical statement — 'telemetry systems no longer depend on the systems that they are configured to monitor' — and the 73 hours are what its absence costs when the dependency isn't severed in advance."
+    },
+    {
       "slug": "fault-isolation",
       "note": "The post's structural admission: a single Consul cluster supporting multiple workloads exacerbated the impact — one shared hub made two deep bugs a total outage. The remediations are fault isolation applied at three grains: critical services split onto dedicated Consul clusters, KV workloads migrated off the shared store, and a second geographically distinct data center with multi-AZ efforts accelerated."
     },
@@ -47,7 +51,8 @@
     }
   ],
   "relatedArticles": [
-    "airbnb-monitoring-reliably-at-scale"
+    "airbnb-monitoring-reliably-at-scale",
+    "datadog-incident-response-observer-fate"
   ],
   "stats": [
     {

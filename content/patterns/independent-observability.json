@@ -1,0 +1,16 @@
+{
+  "slug": "independent-observability",
+  "name": "Independent Observability",
+  "category": "observability",
+  "definition": "Run a monitoring path that shares as little as possible with the system it watches — separate infrastructure, separate dependencies, and separate assumptions — so that the failure being detected cannot also disable the detection. The strongest form is deliberately primitive: a watcher outside the walls that consumes the system's public interfaces exactly as a user would, knowing nothing about the architecture, because every shared component and every shared assumption is a channel through which the observed system's failure propagates into the observer. Its job is narrow by design: to say THAT the system is failing, within minutes, when everything richer has gone dark.\n\nThe pattern accepts a two-tier structure: rich, deeply integrated in-platform telemetry for diagnosis on ordinary days, plus the poor-but-independent layer whose value appears only on the extraordinary one. Boundary against Dead Man's Switch: that pattern derives signal from an expected heartbeat's absence; this one is an active external prober whose independence — not its mechanism — is the load-bearing property.",
+  "whenItApplies": [
+    "Platforms whose own monitoring, alerting, or paging runs on the platform itself — most acutely, monitoring products monitoring themselves",
+    "Any system whose total failure must still be detected within minutes, when in-band telemetry is part of the casualty list",
+    "Repair and control automation whose health checks run on the substrate being repaired"
+  ],
+  "tradeoffs": [
+    "Independence is bought with poverty: the external watcher can detect, not diagnose — depth still requires the in-band telemetry that shares fate",
+    "The independent path is easy to neglect precisely because it is simple and rarely fires; it needs its own testing, paging, and ownership",
+    "True independence is expensive to maintain as the platform evolves — every convenience integration quietly re-couples observer to observed"
+  ]
+}

@@ -21,6 +21,13 @@
     "feed": "https://blog.cloudflare.com/rss/"
   },
   {
+    "name": "Datadog Engineering Blog",
+    "slug": "datadog-engineering",
+    "company": "Datadog",
+    "url": "https://www.datadoghq.com/blog/engineering/",
+    "feed": "https://www.datadoghq.com/blog/engineering/"
+  },
+  {
     "name": "Discord Engineering",
     "slug": "discord-engineering",
     "company": "Discord",

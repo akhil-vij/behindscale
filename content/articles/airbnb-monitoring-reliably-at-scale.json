@@ -33,6 +33,10 @@
   ],
   "patterns": [
     {
+      "slug": "independent-observability",
+      "note": "The design argument for the pattern: the redesign's throughline is that no layer of the safety mechanism may share dependencies with the thing it's protecting. Compute isolation (dedicated K8s clusters), network isolation (a custom Envoy L7 plane outside the shared Istio mesh), and the Dead Man's Switch (Prometheus heartbeats to AWS SNS, watched by CloudWatch on infrastructure Airbnb doesn't own) together sever every channel through which an outage could disable its own detection — the pattern's canonical statement of independence bought layer by deliberate layer."
+    },
+    {
       "slug": "fault-isolation",
       "note": "Every layer of Airbnb's redesign embodies fault isolation: dedicated compute clusters isolate the metrics pipeline from app workloads, a separate Envoy L7 plane isolates telemetry traffic from business traffic, and the Dead Man's Switch isolates failure detection from the failing system. The same principle applied at three different layers."
     },
@@ -46,7 +50,8 @@
     }
   ],
   "relatedArticles": [
-    "roblox-return-to-service"
+    "roblox-return-to-service",
+    "datadog-incident-response-observer-fate"
   ],
   "artifact": {
     "path": "/artifacts/airbnb-monitoring-reliably-at-scale/index.html",

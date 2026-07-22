@@ -1,0 +1,16 @@
+{
+  "slug": "universal-staged-rollout",
+  "name": "Universal Staged Rollout",
+  "category": "resilience",
+  "definition": "Every channel through which change can reach the fleet — deployments, configuration, infrastructure automation, and OS or security updates — must flow through the same staged-rollout discipline: small first, observed, then expanded. The pattern's threat model is the implicit channel: a default-on update mechanism, a vendor auto-upgrade, a cron that touches everything at the same wall-clock hour. Such a channel converts any latent defect anywhere beneath it into a synchronized, fleet-wide event, and it does so precisely because it was never inventoried as a change channel at all. The discipline therefore includes an audit obligation: enumerate every path by which bits can change on a node, and either route it through staging or close it.\n\nClosing a fast channel is cheapest when it is redundant — Datadog disabled unattended-upgrades at zero security cost because node-replacement patching already delivered the same updates through a controlled path. When the fast channel is NOT redundant, the pattern forces the real decision into the open: how much simultaneity of change the system can survive, traded against how quickly a fix must land everywhere. Boundary against Conservative Auto-Remediation: that pattern throttles how eagerly automation responds to failure signals; this one throttles how synchronously change of any kind reaches the fleet.",
+  "whenItApplies": [
+    "Fleets with OS-level or vendor-managed auto-update mechanisms enabled by default and never audited as change channels",
+    "Homogeneous fleets (one OS version, one base image) where a single defective change has fleet-wide reach by construction",
+    "Post-incident hardening: any outage whose trigger arrived simultaneously everywhere is evidence of an unstaged channel"
+  ],
+  "tradeoffs": [
+    "Staging security patches extends the vulnerable window — the pattern is honest that blast-radius control is bought with patch latency unless a redundant controlled path already exists",
+    "The audit is never finished: every new vendor agent, operator, or automation is a potential new unstaged channel",
+    "Fleet heterogeneity (mixed versions during permanent rollout) complicates debugging and support even as it caps correlated failure"
+  ]
+}
