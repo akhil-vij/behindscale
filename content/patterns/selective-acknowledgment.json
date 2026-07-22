@@ -1,0 +1,16 @@
+{
+  "slug": "selective-acknowledgment",
+  "name": "Selective Acknowledgment",
+  "category": "throughput",
+  "definition": "When a substrate's only durable notion of progress is a contiguous watermark — a commit offset, a sequence number — but work items complete out of order, track per-item acknowledgments in a ledger above the substrate and advance the durable watermark only through contiguous acknowledged ranges. Items are dispatched and completed in any order; stragglers stop blocking everything behind them; the substrate below never learns that order was violated, because it only ever sees the watermark move forward. TCP's SACK option is the pattern's namesake and oldest instance; a Kafka consumer proxy distinguishing per-message 'acknowledge' from offset 'commit' is the same shape applied to a log.\n\nThe pattern's honest residue is the gap between the two ledgers: items acknowledged above but not yet committed below are replayed if the upper ledger is lost (a crash, a rebalance), so the pattern delivers at-least-once and delegates exactly-once to downstream idempotency. And a permanently unacknowledgeable item still jams the watermark beneath it — which is why this pattern travels with a negative-acknowledgment route (a dead letter queue) that lets the watermark pass over declared failures. Boundary against Database-as-a-Queue: that pattern replaces the ordered substrate with one that supports per-item state natively; this one keeps the substrate and layers the per-item state above it — cheaper to adopt, permanently two-ledgered.",
+  "whenItApplies": [
+    "Ordered logs or streams (Kafka, event logs, sequenced replication) used for workloads where item order is meaningless and per-item completion varies widely",
+    "Systems where replacing the substrate is impractical but head-of-line blocking is intolerable",
+    "Windowed protocols of any kind where retransmitting everything past a single loss wastes the pipe — the TCP SACK case generalized"
+  ],
+  "tradeoffs": [
+    "Two ledgers means a reconciliation gap: acknowledged-but-uncommitted items replay on upper-ledger loss, so downstream idempotency becomes a hard dependency, not a nicety",
+    "The tracking window is finite; a permanently stuck item exhausts it and stalls all progress unless a negative-acknowledgment escape exists",
+    "The upper ledger is new stateful infrastructure on the hot path — its size, timeout, and recovery behavior are now tuning surface the plain consumer never had"
+  ]
+}

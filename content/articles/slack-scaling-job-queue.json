@@ -44,7 +44,8 @@
   ],
   "relatedArticles": [
     "meta-foqs-priority-queue",
-    "segment-centrifuge-database-queue"
+    "segment-centrifuge-database-queue",
+    "uber-kafka-consumer-proxy"
   ],
   "stats": [
     {

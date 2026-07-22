@@ -1,0 +1,16 @@
+{
+  "slug": "dead-letter-queue",
+  "name": "Dead Letter Queue",
+  "category": "resilience",
+  "definition": "Give the processing path an explicit route for declared failures: a message that cannot be processed — after retries, or on a non-transient error — is negatively acknowledged and persisted to a separate queue or topic, and the main flow's progress marker passes over it. The pattern converts an indefinite blockage (or an indefinite retry loop) into a deferred, inspectable operator decision: dead-lettered items are stored with enough context to be replayed into the main flow (merge) or discarded (purge) later, deliberately, by a human or a tool acting for one.\n\nWhat the pattern does NOT do is resolve anything: it relocates the cost of a poison pill from every item behind it to an operational backlog with its own ownership question. Two guards keep it honest: the nack must be an explicit signal (a handler that hangs rather than errors needs timeout machinery to convert silence into a decision), and the route must be protected from outages — when the consumer is entirely down, stop delivering rather than dead-lettering healthy traffic, or the DLQ becomes a second copy of the incident. Boundary against Retryable Error Classification: that pattern decides whether an error may be retried; the dead letter queue is where the non-retryable verdicts (and the retry-exhausted) physically go.",
+  "whenItApplies": [
+    "Ordered or windowed consumption where a single unprocessable item blocks or degrades everything behind it",
+    "At-least-once pipelines where dropping a failed message is unacceptable but blocking on it is worse",
+    "Any queue whose failure handling currently consists of infinite retries — the DLQ is where the loop is allowed to end"
+  ],
+  "tradeoffs": [
+    "Deferral is not resolution: the DLQ accumulates an operational backlog that needs owners, tooling, and retention policy or it becomes a write-only graveyard",
+    "Replay (merge) reintroduces old messages into a flow whose state has moved on — ordering and staleness hazards the original delivery never had",
+    "The explicit-nack requirement pushes classification work into every consumer: something must decide, per failure, whether this message is dead or merely unlucky"
+  ]
+}
