@@ -51,12 +51,12 @@ _None._
   count to 10-11. Preview vertical footprint grows linearly.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: three unresolved conflicts
+### 3. Accent registry: four unresolved conflicts
 
-- **Source:** rounds 10, 15, 16. All landed as author-chose per
+- **Source:** rounds 10, 15, 16, 17. All landed as author-chose per
   prior-round posture; all flagged in the accent-registry section
   of taste doc v3 §6.
-- **The three:**
+- **The four:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -65,8 +65,13 @@ _None._
   - **Segment `#52BD94`** (round 16) — same hue family as semantic
     green `#22c55e` AND Skipper green `#22C55E`. Teal swap-candidate
     WITHDRAWN (Cadence). No standby proposed.
+  - **Datadog `#632CA6`** (round 17) — third purple in the corridor
+    (DoorDash violet `#9b8cf0`, Stripe blurple `#6366F1`). Notably
+    darker and more saturated than both; likely distinguishable
+    in-situ but the purple corridor is now as crowded as the
+    orange one. No standby proposed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all three artifacts side-by-side), then either
+  deployed build with all four artifacts side-by-side), then either
   keep or swap. Owner may do a corridor-wide pass and pick new hues
   for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -87,6 +92,22 @@ _None._
   one-clause stance; promoting it would take the pattern from
   1-company to 2-company but with a thin second instance.
 - **Reply:** promote / keep-as-cameo.
+
+### 4b. Counterfactual-branch labeling rule → taste doc §6?
+
+- **Source:** round 17 (Datadog) DECISIONS §5. Introduced a new
+  craft rule: counterfactual branches in artifacts must be labeled
+  inside the artifact (verdict text), not just in the footer.
+  Applied on the Datadog artifact (fate-shared-only branch labeled
+  as counterfactual because Datadog actually had the out-of-band
+  layer; the ~30-min blindness figure is illustrative).
+- **What's needed:** decide whether to formalize into taste doc §6
+  (craft) as a bullet — same class as the "verdict-only assert
+  strings" rule.
+- **Recommended:** promote. The rule is small, unambiguous, and
+  the first case has already shown up; leaving it as a per-round
+  invention risks drift.
+- **Reply:** promote / defer.
 
 ### 5. `retry-amplified-overload` last singleton
 
@@ -118,19 +139,9 @@ _None._
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
-### `buffer-degrades-under-backlog` registry amendment
-- **Resolved:** 2026-07-22, owner replied A.
-- **Effect:** definition rewritten to name the two faces explicitly
-  (substrate degradation OR access semantics letting the backlog
-  capture the buffer), covering all three classmates cleanly
-  (Meta = substrate; Slack = substrate; Segment = semantics).
-  Registry-def no longer under-scopes Segment.
-- **Note:** the change was framed as an append in DECISIONS, but
-  the current text was already too specific ("served by a substrate
-  that slows down") for a clean append — a light rewrite delivered
-  the same content more legibly. Same intent, same superset property
-  (all three classmates fit the new text).
+_None this round._
 
-_(Older resolutions rolled off after their round: partial-completion
-registry amendment 2026-07-19 as `5f8d0da`; company-concentration
-doctrine 2026-07-19 as `c085fd1`.)_
+_(Older resolutions rolled off after their round:
+buffer-degrades-under-backlog registry amendment 2026-07-22 as
+`f2fad03`; partial-completion registry amendment 2026-07-19 as
+`5f8d0da`; company-concentration doctrine 2026-07-19 as `c085fd1`.)_

@@ -4,6 +4,168 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #26 (Datadog Monitor the Monitors) LANDED
+  (2026-07-22), sixth from the rounds-12-18 pipeline.
+  SIXTH THREE-COMPANY cruxTag in the library.**
+  Fable-authored dissection of Datadog's 2023-03-08
+  global outage (published as their incident-response
+  deep dive, 2023-06-01). A systemd security patch
+  auto-applied by Ubuntu's default unattended-upgrades
+  restarted `systemd-networkd` across 90+% of the fleet
+  (Ubuntu 22.04, systemd v249 route-flushing behavior
+  armed since Dec 2020), flushing Cilium's routes;
+  tens of thousands of nodes across five regions and
+  three cloud providers dropped off the network within
+  the 06:00 UTC hour — including the Kubernetes control
+  planes that would otherwise repair them, and the
+  in-platform monitoring that would otherwise page.
+  Detection came anyway, at 06:03, from a deliberately
+  primitive out-of-band monitor that shares no
+  infrastructure with the platform it watches; two
+  teams paged at 06:08 (one of them precisely the
+  monitor-the-monitors team). ~13 hours to restore
+  compute; 16:44 first major service operational; the
+  legacy update channel closed at zero security cost
+  (redundant with staged node-replacement patching).
+  `observer-shares-fate-with-observed` (Airbnb +
+  Roblox) becomes the SIXTH three-company cruxTag —
+  and the first classmate where the pattern's
+  PRESENCE, not absence, is the story (Airbnb designs
+  the separation, Roblox suffers its absence over 73h,
+  Datadog exercises it under total failure).
+  Datadog = NEW company (18th); Datadog Engineering
+  Blog = 18th source (feeds.json ADDITION, inserted
+  between Cloudflare and Discord by alphabetical
+  order).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Independent-observability pattern MINTED at THREE
+  companies (canonical launch)**: the round-8 open
+  AGENT CHECK on whether the pattern existed live
+  resolved to NO, so the round-17 JSON minted the
+  pattern at three-company recurrence out of the gate;
+  Airbnb and Roblox back-tagged in the same commit
+  with pattern chip + note. First observability
+  pattern to launch at 3-company. Boundary against
+  Dead Man's Switch drawn inside definition (that
+  pattern derives signal from absence of a heartbeat;
+  this one is an active external prober whose
+  independence — not its mechanism — is the
+  load-bearing property).
+  **`universal-staged-rollout` pattern MINTED**
+  (category `resilience`; minted from the FIX, not
+  the failure — Datadog disabled the legacy update
+  channel at zero security cost because
+  node-replacement patching already delivers updates
+  through a staged, controlled path). Boundary vs
+  Conservative Auto-Remediation drawn inside
+  definition (that pattern throttles response
+  eagerness to failure signals; this one throttles
+  how synchronously change of any kind reaches the
+  fleet).
+  **Rejected framings documented**:
+  - correlated-failure/unstaged-change class as a
+    new singleton cruxTag around "indirectly related"
+    — real, and honored as the universal-staged-
+    rollout pattern mint + tradeoff #3 instead; a new
+    singleton doesn't serve the 3+ goal and the
+    observer spine is the sharper teaching.
+  - gray-failure — the failure was hard and detected,
+    not ambiguous.
+  Manifestation caveat recorded per taste doc v3
+  §3.5: Airbnb DESIGNS the separation (the pattern's
+  argument-in-the-abstract), Roblox SUFFERS its
+  absence (73h partly blind), Datadog EXERCISES it
+  under total failure (out-of-band detection at 06:03,
+  three minutes in — the pattern's payoff made
+  literal). Same causal spine; three faces of the
+  same pattern.
+  **Accent flagged**: `#632CA6` (Datadog purple) —
+  third purple-family accent in the corridor after
+  DoorDash violet `#9b8cf0` (r11) and Stripe blurple
+  `#635BFF` → `#6366F1` corrected (r14); notably
+  darker and more saturated than both, likely
+  distinguishable in-situ, but the purple corridor is
+  now as crowded as the orange one. Landed as author
+  chose per prior-round posture; owner in-situ review
+  recommended. Compound with the two accent conflicts
+  still open from r15 (Pinterest) and r16 (Segment)
+  — three unresolved corridor conflicts logged in
+  `open-decisions.md`, now four.
+  **New craft rule** (from DECISIONS §5): counterfactual
+  branches in artifacts must be labeled inside the
+  artifact, not just in the footer. Applied here: the
+  fate-shared-only branch (no out-of-band watcher)
+  is labeled as a counterfactual in the verdict text
+  AND in the footer; Datadog had the out-of-band
+  layer, so the ~30-min blindness figure is
+  illustrative and named as such. Owner may want to
+  formalize into taste doc §6 (craft) as a bullet.
+  Contents: article JSON with `addedAt: 2026-07-22`
+  and cruxSummary populated at authoring; two NEW
+  patterns:
+  - `independent-observability` (category
+    `observability`; boundary vs Dead Man's Switch
+    inside definition; three-company canonical
+    launch — Airbnb + Roblox + Datadog).
+  - `universal-staged-rollout` (category
+    `resilience`; boundary vs Conservative Auto-
+    Remediation inside definition; one-company
+    launch anchored by Datadog).
+  Artifact `datadog-incident-response-observer-fate.jsx`
+  with the fate-shared vs out-of-band tri-choice
+  interactive (interval sim, pure step() functional
+  setState); accent `#632CA6`; verdict-only assert
+  strings: "THE SILENCE LOOKED LIKE HEALTH", "PAGED
+  AT 06:08 — BY THE MONITOR OF THE MONITORS",
+  "DETECTED — BY YOUR CUSTOMERS". Back-tags on
+  airbnb-monitoring-reliably-at-scale (added
+  `independent-observability` chip + note as first
+  pattern; Datadog added to relatedArticles) and
+  roblox-return-to-service (added
+  `independent-observability` chip + note as first
+  pattern; Datadog added to relatedArticles).
+  feeds.json ADDITION for Datadog Engineering Blog.
+  Recurrence rebalancing:
+  - `observer-shares-fate-with-observed` → 3-company
+    (Airbnb + Roblox + Datadog). SIXTH three-company
+    cruxTag.
+  - `fault-isolation` → 12th article
+    (adds Datadog to Discord, Netflix, Uber, Skipper,
+    Cadence, Slack cellular, Airbnb monitoring,
+    Roblox, AWS shuffle, Cloudflare, Segment). Still
+    most-recurring pattern.
+  - `independent-observability` → NEW pattern; three
+    articles at launch (Airbnb + Roblox + Datadog).
+    Category `observability`.
+  - `universal-staged-rollout` → NEW pattern; one
+    article at launch (Datadog). Category
+    `resilience`.
+  - relatedArticles: Datadog → Airbnb monitoring +
+    Roblox forward links; both articles' backlinks
+    applied in the same commit.
+  Landing preview + catalog effects: `observer-
+  shares-fate` row now shows 3 systems, SEEN AT
+  Airbnb · Datadog · Roblox. SIX three-company rows
+  on the preview now (ambiguous-failure, buffer-
+  degrades, observer-shares-fate, partial-completion,
+  priority-blind, single-table). Total row count
+  UNCHANGED at 9. CTA "Browse all 26 breakdowns →"
+  auto-derived.
+  Validation: `npm run validate` → 6 checks, 0 errors,
+  25 warnings (unchanged — new article's stats all
+  appear in prose). `npm run build` → end-to-end
+  clean; 67 routes prerendered (25 → 26 articles +
+  34 → 36 patterns + 4 top pages + /404); sitemap
+  updated. `npm test` → 100 passed.
+  Library state after landing: 26 articles across 18
+  companies (Datadog = 18th); 36 pattern definitions
+  (independent-observability + universal-staged-
+  rollout new); 26 artifacts. cruxTag taxonomy: 11
+  tags with 6 three-company, 3 two-company, 2
+  one-company (AWS retry-amplified, DoorDash
+  mitigation-scoped-narrower-than-failure).
+
 - **Article #25 (Segment Centrifuge) LANDED
   (2026-07-19), fifth from the rounds-12-18 pipeline.
   FIFTH THREE-COMPANY cruxTag in the library.**
