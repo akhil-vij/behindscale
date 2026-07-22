@@ -47,8 +47,10 @@ _None._
   (c) split preview into "3-company" and "2-company" bands.
 - **State:** kept at show-all per prior feedback. `Landing.tsx` doc
   comment still says "revisit at 6+".
-- **Cost of waiting:** rounds 17-18 in the pipeline may lift the
-  count to 10-11. Preview vertical footprint grows linearly.
+- **Cost of waiting:** rounds-12-18 batch now complete at 9
+  rows (7 three-company + 2 two-company + 2 one-company). Next
+  landings will lift the count further; preview vertical
+  footprint grows linearly.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
 ### 3. Accent registry: four unresolved conflicts
@@ -108,8 +110,9 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 25 articles, 11 tags, 5
-  three-company.
+  pipeline pending deploy". Live is 27 articles, 11 tags, 7
+  three-company (as of r18 Shopify — rounds-12-18 pipeline
+  batch now complete).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.

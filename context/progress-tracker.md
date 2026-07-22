@@ -4,6 +4,166 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #27 (Shopify pods architecture) LANDED
+  (2026-07-22), seventh from the rounds-12-18 pipeline
+  and the batch's completion. SEVENTH THREE-COMPANY
+  cruxTag in the library — and its answer taxonomy
+  closes.** Fable-authored dissection of Shopify's
+  2018 pods post (Xavier Denis). The 2015 vertical
+  ceiling is backstory; the post's own bottleneck is
+  the fan-out geometry: `Sharding.with_each_shard`
+  meant every platform action had availability equal
+  to the *product* of every shard's availability —
+  each new shard strictly worse for the whole
+  platform. Shopify's cure is structural: pods = sets
+  of shops on fully isolated datastores; shared
+  compute (workers, app servers, LBs) may talk to
+  only one pod per action; every unit of work (web
+  request, delayed job) assigned to exactly one pod,
+  so serving a request requires only one pod online.
+  Sorting Hat routes at the LB (rules → header →
+  forward, multi-DC). Each pod paired with an
+  active/recovery DC; Pod Mover evacuates a pod in
+  about a minute without dropping requests or jobs,
+  daily.
+  `blast-radius-scales-with-cluster-size` (Discord +
+  AWS shuffle) becomes the SEVENTH three-company
+  cruxTag — and the class's answer taxonomy
+  completes: Discord CAPS shared fate (many small
+  clusters), AWS SHRINKS it statistically (shuffle
+  combinatorics), Shopify ELIMINATES it structurally
+  (cells + single-pod work assignment). Three faces
+  of one bottleneck, one design choice each.
+  Shopify = 2nd article for the company (matches
+  Airbnb / AWS / Netflix / Stripe / Uber precedent);
+  no feeds.json change.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **cell-architecture pattern CONDITIONAL RESOLVED
+  → RECUR**: live library already carries the pattern
+  (Discord + Slack). Round's own JSON DROPPED per
+  conditional; Shopify's chip uses the live slug/
+  definition; second-company back-tag on Slack NOT
+  needed because Slack already tags the pattern.
+  Recurrence goes from 2 → 3 articles on the pattern
+  (Discord + Slack + Shopify).
+  **generic-mitigation RECUR → THIRD company**. Arc
+  completes: improvised (Cloudflare) → pre-positioned
+  (Slack drain button) → rehearsed daily (Shopify's
+  Pod Mover). Third occurrence of the pattern.
+  **fault-isolation RECUR → 12 articles** (was 11,
+  now includes Shopify). Structural extreme + the
+  globalness-concentrates-in-the-router boundary
+  lesson pairs with r17's isolation-defeated-a-
+  layer-above.
+  **Source-depth flag (owner attention)**: THINNEST
+  primary source dissected to date — a 3-minute post
+  (Xavier Denis, 2018-03-02). Judged sufficient by
+  Fable because it is complete (geometry → both
+  laws → routing → DR) and every mechanism is
+  stated. Secondary first-party (r11/r17 precedent):
+  Shopify's own "E-Commerce at Scale" piece supplies
+  Redismageddon and the outcomes (100+ pods; no
+  major all-of-Shopify outage since). Both uses
+  attributed in body/footer. Flagged for owner
+  awareness — didn't warrant blocking the round.
+  **Rejected framings**:
+  - single-cluster-scaling-ceiling as the crux
+    (backstory — already solved by 2015 sharding
+    before the post's problem begins; honored in
+    problem prose only).
+  - gray-failure (n/a — failure was structural, not
+    ambiguous).
+  **Accent RESOLVED (before landing)**: DECISIONS
+  §6 flagged Shopify brand green `#96BF48` and
+  called an AGENT CHECK against
+  `shopify-resilient-payments`'s accent. Live is
+  lime `#84CC16`; artifact was authored with
+  `#84CC16` for company consistency. Lime does sit
+  near Skipper green `#22C55E` and semantic green,
+  but chrome/wayfinding-only; verdicts stay
+  semantic. Corridor pressure logged (no new
+  open-decisions entry — this one closed pre-
+  landing).
+  Contents:
+  - content/articles/shopify-pods-architecture.json
+    — article + crux + cruxTag (blast-radius-
+    scales-with-cluster-size reused, THIRD company)
+    + cruxSummary + 3 pattern refs + 3 stats +
+    relatedArticles → discord-trillions-message-
+    search + aws-shuffle-sharding. addedAt:
+    2026-07-22.
+  - content/artifacts/shopify-pods-architecture.jsx
+    — accent `#84CC16` (matches shopify-resilient-
+    payments). Teaching spine: pure stage machine,
+    zero intervals. Crux made literal: the FLEET
+    SIZE SLIDER is the class name made draggable —
+    fan-out availability rendered as u^N live; the
+    same slider under pods shows additions as pure
+    capacity. Renunciation is playable (RUN
+    PLATFORM ACTION under pods returns REFUSED,
+    violet informational). Pod Mover beat prices
+    DR as a one-minute unit operation. Cells
+    clickable to kill. Verdict-only assert
+    strings: "EVERY SHARD WAS EVERYONE'S PROBLEM",
+    "ONE POD ONLINE IS ENOUGH", "REFUSED: NO
+    ACTION REACHES ACROSS PODS", "EVACUATED IN A
+    MINUTE, DROPPED NOTHING".
+  - Back-tag on content/articles/discord-trillions-
+    message-search.json: Shopify added to
+    relatedArticles.
+  - Back-tag on content/articles/aws-shuffle-
+    sharding.json: Shopify added to relatedArticles.
+  - No content/cruxtags.json change.
+  - No content/feeds.json change (Shopify already
+    live).
+  - No new pattern JSONs (cell-architecture already
+    live; round's JSON discarded per conditional).
+  Recurrences created by this landing:
+  - blast-radius-scales-with-cluster-size →
+    3-company (Discord + AWS shuffle + Shopify).
+    SEVENTH three-company cruxTag; class answer
+    taxonomy complete.
+  - cell-architecture → 3 articles (Discord +
+    Slack + Shopify).
+  - generic-mitigation → 3 articles (Cloudflare +
+    Slack + Shopify).
+  - fault-isolation → 12 articles.
+  - relatedArticles: Shopify → Discord +
+    AWS shuffle forward links; both articles'
+    backlinks applied in the same commit.
+  Landing preview + catalog effects: `blast-radius-
+  scales-with-cluster-size` row now shows 3
+  systems, SEEN AT AWS · Discord · Shopify. SEVEN
+  three-company rows on the preview now (adds
+  blast-radius to the six from r17). Total row
+  count UNCHANGED at 9. CTA "Browse all 27
+  breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 27 warnings (was 25; +2 cosmetic
+  fuzzy-misses on Shopify's "1 pod" and "1 minute"
+  stats value forms — prose says "single pod" /
+  "in about a minute"; same residual class).
+  `npm run build` → end-to-end clean; 68 routes
+  prerendered (26 → 27 articles + 34 patterns + 4
+  top pages + /404 + /artifacts/_hero); sitemap
+  updated (67 URLs). `npm test` → 100 passed.
+  Library state after landing: 27 articles across
+  18 companies (Shopify at 2 articles now); 34
+  pattern definitions (no change); 27 artifacts.
+  cruxTag taxonomy: 11 tags with 7 three-company,
+  2 two-company, 2 one-company (AWS retry-
+  amplified, DoorDash mitigation-scoped-narrower-
+  than-failure). **Rounds-12-18 pipeline batch
+  complete** — 7 landings (r12 Skipper/Orpheus,
+  r13 Cadence, r14 Stripe rate limiters, r15
+  Pinterest, r16 Segment, r17 Datadog, r18
+  Shopify), 2 new cruxTag three-company rows
+  added (buffer-degrades, observer-shares-fate,
+  blast-radius — actually 3, promoted from 2→3),
+  and the class answer-taxonomy completion on
+  blast-radius is the batch's payoff.
+
 - **Article #26 (Datadog Monitor the Monitors) LANDED
   (2026-07-22), sixth from the rounds-12-18 pipeline.
   SIXTH THREE-COMPANY cruxTag in the library.**
