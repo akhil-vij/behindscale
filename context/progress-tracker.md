@@ -4,6 +4,170 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #28 (AWS "Asked Twice, Done Once" idempotent
+  APIs) LANDED (2026-07-22). FIRST FOUR-COMPANY cruxTag
+  in the library.** Fable-authored dissection of Malcolm
+  Featonby's Amazon Builders' Library piece — the
+  idempotent API contract from the platform provider's
+  seat. An EC2 launch decomposes into placement + EBS +
+  ENIs + VM provisioning, so transient faults are cured
+  by retry; SDKs retry by default (network IO, server
+  fault, rate limiting). The dilemma the post is about:
+  a singleton-workload customer whose RunInstances times
+  out cannot tell whether it happened; reconciliation is
+  heavy AND inconclusive; a synthetic parameter hash
+  wrongly dedupes the customer who wants two identical
+  instances (only the caller knows intent). AWS's
+  answer: caller-supplied ClientToken; idempotent
+  session keyed (customer, identifier) committed with
+  mutations as ONE ACID unit; semantically equivalent
+  replay for the token's lifetime (including AFTER
+  termination, by least astonishment); validation error
+  on token-with-changed-parameters (stored parameters
+  required); retention = resource lifetime + reasonable-
+  lateness interval.
+  `ambiguous-failure-under-retry` (Stripe + Shopify +
+  Airbnb) becomes the FIRST FOUR-COMPANY cruxTag —
+  manifestation map: Stripe writes the API contract,
+  Shopify meets it at volume, Airbnb builds the server
+  interior, AWS designs it as a PLATFORM (millions of
+  callers inherit safe retries through SDK-default
+  tokens). Four distinct faces of one class.
+  AWS = THIRD article for the company (second three-
+  article company; Airbnb precedent). Intra-company
+  continuity is a feature: the source explicitly builds
+  on Marc Brooker's timeouts/retries/jitter piece
+  (our live `aws-timeouts-retries-backoff-jitter`), and
+  the article's body prose carries that citation.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **PURE-RECURRENCE ROUND — zero mints, three
+  recurrences**. First round under the new
+  round-folder format to be pure-recurrence, executing
+  the taste doc's preferred posture fully:
+  - `idempotency-keys` → FIFTH article; company count
+    stays at FOUR (AWS already counted via the
+    timeouts article — same-company rule: pattern
+    recurrence counts companies, not articles). Note
+    surfaces the AWS-distinctive contributions:
+    ClientToken labels the created resource and lands
+    in CloudTrail (intent auditable); reused token
+    with changed parameters = validation error.
+  - `retryable-error-classification` → SECOND company
+    (Airbnb + AWS). Airbnb's is an internal framework
+    discipline; AWS's is the public API boundary
+    itself — the validation/non-validation line is
+    what the SDK's default retry policy executes
+    against.
+  - `atomic-phases` → SECOND company (Airbnb + AWS).
+    AWS states the same law from the provider's seat
+    in one sentence: recording the idempotent token
+    and all mutating operations must together be ACID,
+    all or nothing. Supersedes r12's open AGENT CHECK
+    on finding a second company in the live Stripe
+    body — the check may still upgrade the count, but
+    the 2-company launch is now unconditional.
+  **Rejected framing**: retry-amplified-overload —
+  this piece is the COMPANION to that class's article
+  (same Builders' Library, Brooker's piece handles the
+  amplification side; this handles the correctness
+  side). The pairing is the two-retry-pathologies
+  split the registry already draws.
+  **Zero stats** — the source is number-light by design
+  (a contract piece, not a scale piece). Stripe-
+  idempotency precedent: zero is a fine number; a weak
+  stat is worse than none.
+  **Owner call surfaced** (open-decisions.md, new
+  item 7): default two backlinks applied
+  (`stripe-idempotency` + `airbnb-orpheus-idempotent-
+  payments`); DECISIONS §8 flagged whether to add a
+  third (`shopify-resilient-payments`) since Shopify
+  is the fourth manifestation and the class is now
+  4-company. Awaiting owner call — I applied the
+  conservative default.
+  **Accent** #FF9900 (AWS orange) — established
+  company accent, third AWS article, no flag
+  (company-consistency rule).
+  Contents:
+  - content/articles/aws-idempotent-apis.json —
+    article + crux + cruxTag (ambiguous-failure-
+    under-retry reused, FOURTH company) + cruxSummary
+    + 3 pattern refs + ZERO stats + relatedArticles
+    → stripe-idempotency + airbnb-orpheus-idempotent-
+    payments. addedAt: 2026-07-22. `publishedAt`
+    2021-01-15 per the AWS what's-new announcement
+    (PDF itself is undated, © 2020) — provenance
+    noted per the taste-doc date rule.
+  - content/artifacts/aws-idempotent-apis.jsx —
+    accent `#FF9900`. Teaching spine: pure stage
+    machine (checklist item 5). Deliberate rhyme
+    with `stripe-idempotency` acknowledged; four
+    provider-side beats differentiate it: (a) the
+    synthetic-hash trap (CreateTable/RunInstances
+    contrast, playable); (b) atomicity trap (CRASH
+    BETWEEN MUTATION AND TOKEN WRITE duplicates
+    DESPITE tokens — atomic-phases made literal);
+    (c) late retry replaying success about a
+    terminated instance (least astonishment); (d)
+    token retention expiry (the contract's clock).
+    Verdict-only assert strings: "TWO INSTANCES,
+    ONE INTENT", "ASKED TWICE, DONE ONCE",
+    "DEDUPED THE CUSTOMER'S REAL INTENT", "THE
+    TOKEN LIED — WRITTEN APART FROM THE WORK",
+    "EQUIVALENT, EVEN ABOUT THE DEAD", "THE
+    CONTRACT HAS A CLOCK".
+  - Back-tag on content/articles/stripe-idempotency.
+    json: AWS added to relatedArticles (third
+    forward link).
+  - Back-tag on content/articles/airbnb-orpheus-
+    idempotent-payments.json: AWS added to
+    relatedArticles (third forward link).
+  - No content/patterns/*.json changes (pure-
+    recurrence round; three existing patterns'
+    counts advance via pattern-index calculation).
+  - No content/cruxtags.json change.
+  - No content/feeds.json change.
+  Recurrences created by this landing:
+  - ambiguous-failure-under-retry → 4-company
+    (Stripe + Shopify + Airbnb + AWS). FIRST
+    FOUR-COMPANY cruxTag.
+  - idempotency-keys → 5 articles / 4 companies
+    (Stripe + Shopify + Airbnb + AWS; AWS already
+    counted via timeouts article).
+  - retryable-error-classification → 2 articles / 2
+    companies (Airbnb + AWS).
+  - atomic-phases → 2 articles / 2 companies
+    (Airbnb + AWS).
+  - relatedArticles: AWS idempotency → Stripe +
+    Airbnb Orpheus forward links; both articles'
+    backlinks applied in the same commit.
+  Landing preview + catalog effects: `ambiguous-
+  failure-under-retry` row now shows 4 SYSTEMS,
+  SEEN AT Airbnb · AWS · Shopify · Stripe. FIRST
+  four-system row; group ordering (system count
+  descending) puts it at the top of `/catalog`.
+  Row-renderer AGENT CHECK: `N SYSTEMS` template
+  handles 4 (should be dynamic; verify no
+  hard-coded "3 systems" cap in `Landing.tsx` or
+  `Catalog.tsx`). Total preview row count
+  UNCHANGED at 9. CTA "Browse all 28 breakdowns →"
+  auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 27 warnings (UNCHANGED — no new stats,
+  no fuzzy-miss residuals introduced).
+  `npm run build` → end-to-end clean; 69 routes
+  prerendered (27 → 28 articles + 34 patterns +
+  4 top pages + /404 + /artifacts/_hero); sitemap
+  68 URLs. `npm test` → 100 passed.
+  Library state after landing: 28 articles across
+  18 companies (AWS at 3 articles now; second
+  three-article company after Airbnb); 34 pattern
+  definitions (unchanged); 28 artifacts. cruxTag
+  taxonomy: 11 tags with 1 four-company (NEW), 6
+  three-company, 2 two-company, 2 one-company (AWS
+  retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+
 - **Article #27 (Shopify pods architecture) LANDED
   (2026-07-22), seventh from the rounds-12-18 pipeline
   and the batch's completion. SEVENTH THREE-COMPANY

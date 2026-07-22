@@ -130,7 +130,7 @@ taxonomies are what make the library compound.
   Blog, Roblox Blog, Shopify Engineering, Slack Engineering,
   Stripe Engineering, The Cloudflare Blog, Uber Engineering,
   DoorDash Engineering Blog, Pinterest Engineering Blog,
-  Segment Blog, Datadog Engineering Blog — twenty-seven articles
+  Segment Blog, Datadog Engineering Blog — twenty-eight articles
   across those sources as of 2026-07-22). The signal-to-noise ratio of first-party engineering
   writeups is what makes the library valuable; personal blogs,
   third-party summaries, and aggregators dilute it and are excluded.

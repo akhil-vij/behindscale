@@ -110,14 +110,30 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 27 articles, 11 tags, 7
-  three-company (as of r18 Shopify — rounds-12-18 pipeline
-  batch now complete).
+  pipeline pending deploy". Live is 28 articles, 11 tags,
+  1 four-company + 6 three-company (as of r19 AWS
+  idempotency — first four-company cruxTag).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
 - **State:** taste doc is owner-owned; agent does not edit these
   narrative sections unsolicited.
+
+### 7. Third backlink to Shopify from AWS idempotency?
+
+- **Source:** round 19 (AWS idempotent APIs) DECISIONS §8.
+  Default two backlinks applied: `stripe-idempotency` +
+  `airbnb-orpheus-idempotent-payments`. DECISIONS flagged
+  adding `shopify-resilient-payments` as an owner call, since
+  Shopify is the fourth manifestation of the class now that
+  it's a four-company row. The usual rule is two backlinks;
+  this would be three.
+- **Recommended:** add it. The class is 4-company now, and
+  Shopify's manifestation (volume — "meets the problem at
+  volume") is genuine and unique. The relatedArticles
+  contract is "point classmates at each other"; asymmetry
+  makes the graph lopsided.
+- **Reply:** add-third-backlink / keep-at-two.
 
 ---
 
