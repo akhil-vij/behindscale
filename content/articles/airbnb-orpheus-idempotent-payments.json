@@ -56,7 +56,8 @@
   ],
   "relatedArticles": [
     "stripe-idempotency",
-    "shopify-resilient-payments"
+    "shopify-resilient-payments",
+    "aws-idempotent-apis"
   ],
   "stats": [
     {
