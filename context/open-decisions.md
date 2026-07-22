@@ -119,22 +119,6 @@ _None._
 - **State:** taste doc is owner-owned; agent does not edit these
   narrative sections unsolicited.
 
-### 7. Third backlink to Shopify from AWS idempotency?
-
-- **Source:** round 19 (AWS idempotent APIs) DECISIONS §8.
-  Default two backlinks applied: `stripe-idempotency` +
-  `airbnb-orpheus-idempotent-payments`. DECISIONS flagged
-  adding `shopify-resilient-payments` as an owner call, since
-  Shopify is the fourth manifestation of the class now that
-  it's a four-company row. The usual rule is two backlinks;
-  this would be three.
-- **Recommended:** add it. The class is 4-company now, and
-  Shopify's manifestation (volume — "meets the problem at
-  volume") is genuine and unique. The relatedArticles
-  contract is "point classmates at each other"; asymmetry
-  makes the graph lopsided.
-- **Reply:** add-third-backlink / keep-at-two.
-
 ---
 
 ## Recently resolved
@@ -142,7 +126,12 @@ _None._
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
-_None this round._
+### Third backlink to Shopify from AWS idempotency
+- **Resolved:** 2026-07-22, owner said add.
+- **Effect:** `shopify-resilient-payments` added to
+  `aws-idempotent-apis.relatedArticles`; symmetric backlink
+  added to `shopify-resilient-payments.relatedArticles`.
+  Idempotency four-company graph now fully connected.
 
 _(Older resolutions rolled off after their round:
 buffer-degrades-under-backlog registry amendment 2026-07-22 as
