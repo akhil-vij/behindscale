@@ -93,22 +93,6 @@ _None._
   1-company to 2-company but with a thin second instance.
 - **Reply:** promote / keep-as-cameo.
 
-### 4b. Counterfactual-branch labeling rule → taste doc §6?
-
-- **Source:** round 17 (Datadog) DECISIONS §5. Introduced a new
-  craft rule: counterfactual branches in artifacts must be labeled
-  inside the artifact (verdict text), not just in the footer.
-  Applied on the Datadog artifact (fate-shared-only branch labeled
-  as counterfactual because Datadog actually had the out-of-band
-  layer; the ~30-min blindness figure is illustrative).
-- **What's needed:** decide whether to formalize into taste doc §6
-  (craft) as a bullet — same class as the "verdict-only assert
-  strings" rule.
-- **Recommended:** promote. The rule is small, unambiguous, and
-  the first case has already shown up; leaving it as a per-round
-  invention risks drift.
-- **Reply:** promote / defer.
-
 ### 5. `retry-amplified-overload` last singleton
 
 - **Source:** flagged since round 11 (DoorDash Aperture). DoorDash
