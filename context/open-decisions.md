@@ -31,24 +31,7 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-### 1. Registry-def amendment: `buffer-degrades-under-backlog`
-
-- **Source:** round 16 (Segment Centrifuge), 2026-07-19. DECISIONS
-  proposed conditionally appending a semantics clause to the
-  registry definition.
-- **What's needed:** one-line edit to `content/cruxtags.json`.
-  Proposed new text: `A buffer that stops absorbing exactly when the
-  backlog it exists for arrives — whether the buffer's substrate
-  degrades under the backlog, or its access semantics let the
-  backlog capture the buffer.`
-- **Recommended:** A (apply). Same shape as the
-  `partial-completion-under-crashes` amendment you signed off on
-  2026-07-19 as commit `5f8d0da`. The clause is generalizable across
-  all three current classmates (Meta = substrate; Slack = substrate;
-  Segment = semantics), and the manifestation caveat is already
-  carried in article-level prose, so registry text catching up is
-  the symmetric move.
-- **Reply:** A (apply) / B (decline).
+_None._
 
 ---
 
@@ -135,15 +118,19 @@ lives here it needs the owner's input to resolve.
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
-### `partial-completion-under-crashes` registry amendment
-- **Resolved:** 2026-07-19 as commit `5f8d0da`, owner replied A.
-- **Effect:** clause `— and, at scale, often no way even to
-  enumerate which steps remain.` appended. Registry-def now covers
-  the illegibility face Conductor introduced.
+### `buffer-degrades-under-backlog` registry amendment
+- **Resolved:** 2026-07-22, owner replied A.
+- **Effect:** definition rewritten to name the two faces explicitly
+  (substrate degradation OR access semantics letting the backlog
+  capture the buffer), covering all three classmates cleanly
+  (Meta = substrate; Slack = substrate; Segment = semantics).
+  Registry-def no longer under-scopes Segment.
+- **Note:** the change was framed as an append in DECISIONS, but
+  the current text was already too specific ("served by a substrate
+  that slows down") for a clean append — a light rewrite delivered
+  the same content more legibly. Same intent, same superset property
+  (all three classmates fit the new text).
 
-### Company-concentration doctrine (round 12 watch-rule)
-- **Resolved:** 2026-07-19 as commit `c085fd1`. Owner elected the
-  recurrence-value framing over a headcount cap; taste doc v3 §4
-  now records the doctrine.
-- **Effect:** no cap on N; when a landing crosses prior precedent,
-  the round's DECISIONS.md carries the recurrence-value justification.
+_(Older resolutions rolled off after their round: partial-completion
+registry amendment 2026-07-19 as `5f8d0da`; company-concentration
+doctrine 2026-07-19 as `c085fd1`.)_

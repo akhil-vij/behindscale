@@ -25,7 +25,7 @@
   },
   "buffer-degrades-under-backlog": {
     "label": "Buffer degrades under backlog",
-    "definition": "A component whose job is to absorb backlog is served by a substrate that slows down as the backlog grows, so the very condition it exists to handle erodes its ability to handle it."
+    "definition": "A buffer that stops absorbing exactly when the backlog it exists for arrives — whether the buffer's substrate degrades under the backlog, or its access semantics let the backlog capture the buffer."
   },
   "gray-failure-defeats-automatic-detection": {
     "label": "Gray failure defeats automatic detection",
