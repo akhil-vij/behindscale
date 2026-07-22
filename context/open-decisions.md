@@ -110,14 +110,50 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 28 articles, 11 tags,
-  1 four-company + 6 three-company (as of r19 AWS
-  idempotency — first four-company cruxTag).
+  pipeline pending deploy". Live is 29 articles, 11 tags,
+  2 four-company + 5 three-company (as of r20 Uber Kafka
+  Consumer Proxy — second four-company cruxTag).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
 - **State:** taste doc is owner-owned; agent does not edit these
   narrative sections unsolicited.
+
+### 8. Primary-vs-newest source convention
+
+- **Source:** round 20 (Uber Kafka Consumer Proxy) DECISIONS §2.
+  Fable applied the taste doc's "dissect the newest" convention
+  and CONSCIOUSLY overruled it here: the 2021 mechanism post is
+  the primary; the Feb 2026 uForwarder post is a
+  productionization sequel (hardware efficiency, context-aware
+  routing, delay processing) that PRESUMES the 2021 mechanics
+  rather than restating them. Scoped secondary first-party use
+  of the 2026 post (1,000+ services, uForwarder open-source
+  name) is inside the article body/footer.
+- **What's needed:** confirm the ruling class ("dissect the
+  newest UNLESS the newer piece is a sequel that presumes the
+  older's mechanics"). If confirmed, taste doc §2 could carry
+  the refinement as a bullet under the primary-source rule.
+- **Recommended:** confirm and formalize. The distinction
+  (mechanism vs sequel) is clean and will recur — anytime a
+  company writes both a mechanism paper and a productionization
+  follow-up.
+- **Reply:** confirm-ruling / dissect-2026-instead / defer.
+
+### 9. Uber ↔ Meta FOQS backlink symmetry?
+
+- **Source:** round 20 DECISIONS §8. Uber's article carries 2
+  forward links (Segment + Slack) but Fable authored 3
+  backlinks INTO Uber (Segment + Slack + Meta FOQS). This
+  makes the buffer-degrades 4-company graph asymmetric —
+  same class of choice as the r19 Shopify backlink that owner
+  approved on 2026-07-22 for the ambiguous-failure 4-company
+  graph.
+- **Recommended:** apply symmetry — add `meta-foqs-priority-
+  queue` to `uber-kafka-consumer-proxy.relatedArticles` as the
+  third forward link. Matches the r19 sign-off spirit ("4-
+  company classes get symmetric linking").
+- **Reply:** apply-symmetry / keep-at-two-forwards.
 
 ---
 

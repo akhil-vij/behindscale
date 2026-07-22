@@ -4,6 +4,192 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #29 (Uber Kafka Consumer Proxy) LANDED
+  (2026-07-22). SECOND FOUR-COMPANY cruxTag in the
+  library.** Fable-authored dissection of Uber's 2021
+  post "Enabling Seamless Kafka Async Queuing with
+  Consumer Proxy" (Chu/Teo/Zhang). Uber runs
+  trillions of msgs / PB daily across 300+
+  microservices; 1M→12M msgs/s over five years used
+  Kafka as a message queue, not a stream. Kafka's
+  partition couples ORDERING + PARALLELISM +
+  PROGRESS into one unit, so a billing partition
+  charging trip_1 to a slow Visa cannot touch
+  trip_2's Mastercard sitting behind it; poison
+  pills block indefinitely. Kafka's native escapes
+  both fail (autocommit trades blockage for data
+  loss; a 100ms RPC still caps a partition at 10
+  msg/s). Consumer Proxy is the answer built ABOVE
+  the log: fetches from Kafka, dispatches per-message
+  to gRPC endpoints, tracks per-message
+  ack/nack in its own ledger, parks poison pills in
+  a DLQ topic, and commits to Kafka only the
+  contiguous watermark — so partition stops being
+  the unit of parallelism, order, and progress all
+  at once.
+  `buffer-degrades-under-backlog` (Meta + Slack +
+  Segment) becomes the SECOND four-company cruxTag —
+  Uber joins as the second SEMANTICS-face instance
+  alongside Segment. The class divergence is the
+  teaching: Segment REPLACED the queue with a
+  database; Uber KEPT the log and built a per-
+  message ledger above it — the sibling boundary
+  written into both mints' definitions.
+  Uber = THIRD article for the company (third
+  three-article company after Airbnb and AWS).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Registry note**: DECISIONS §1 coupling flagged
+  resubmitting the r16 buffer-degrades definition
+  amendment "with two supporting instances" — but
+  that amendment was ALREADY signed off on
+  2026-07-22 (commit `f2fad03`) and the current
+  cruxtags.json carries the amended form ("...
+  whether the buffer's substrate degrades under
+  the backlog, or its access semantics let the
+  backlog capture the buffer"). Coupling
+  dependency is met retroactively; no registry
+  action needed.
+  **Two NEW patterns**:
+  - `selective-acknowledgment` (throughput) —
+    named for TCP SACK, its oldest instance
+    (generality test passes without Uber in the
+    definition). The pattern's payload: when a
+    substrate's only durable notion of progress is
+    a contiguous watermark, track per-item acks in
+    a ledger above the substrate and advance the
+    watermark only through contiguous ack'd
+    ranges. Sibling boundary vs `database-as-a-
+    queue` drawn in BOTH definitions' terms:
+    keep-the-substrate-and-layer-above vs
+    replace-the-substrate.
+  - `dead-letter-queue` (resilience) — CONDITIONAL
+    mint resolved to MINT (no existing DLQ pattern
+    live). Deferral-not-resolution framing +
+    two guards (explicit nack, circuit breaker
+    against outage-laundering) carried in the
+    definition. Boundary vs `retryable-error-
+    classification` drawn.
+  **fault-isolation RECUR → 13 articles** (was 12
+  after Shopify r18). Organizational-churn
+  boundary instance: decoupling the few consuming
+  nodes from the hundreds of processing instances
+  contains consumer-group rebalance storms.
+  **Rejected as chips (cameo rule)**:
+  circuit-breaker (one flow-control bullet —
+  carried in DLQ definition + tradeoffs) and
+  feedback-controlled-load-management (adaptive
+  flow control is Next Steps — r13 precedent).
+  **Rejected tags**: mitigation-scoped (n/a);
+  priority-blind (n/a); retry-amplified (retries
+  peripheral here).
+  **Source selection — primary-vs-newest ruled**
+  (owner flag): primary is the 2021 mechanism
+  post; the Feb 2026 uForwarder post is a
+  productionization sequel (hardware efficiency,
+  context-aware routing, delay processing) that
+  presumes the 2021 mechanics. Scoped secondary
+  first-party use: 1,000+ consumer services
+  onboarded + the open-source name (uForwarder).
+  Owner may overrule toward dissecting 2026
+  instead — flagging the convention question is
+  the contract. Logged as open-decisions item 8.
+  **Backlink asymmetry noted**: DECISIONS §8
+  authored 2 forward links from Uber
+  (segment-centrifuge, slack-scaling-job-queue)
+  but 3 backlinks into Uber (add meta-foqs, per
+  the class's 4-company shape). Applied as
+  authored; owner's r19 sign-off pattern (add
+  the symmetric third link) would extend this
+  to Uber → Meta as well. Logged as open-
+  decisions item 9 pending owner call.
+  **Accent** #F97316 (Uber orange) — established
+  live company accent, no new flag.
+  Contents:
+  - content/articles/uber-kafka-consumer-proxy.
+    json — article + crux + cruxTag (buffer-
+    degrades reused, FOURTH company) + cruxSummary
+    + 3 pattern refs + 3 stats + relatedArticles
+    → Segment + Slack. addedAt: 2026-07-22.
+  - content/artifacts/uber-kafka-consumer-proxy.
+    jsx — accent `#F97316`. Interval sim, pure
+    step() functional setState. Crux made
+    literal: partition rendered as a lane of
+    alternating Visa/Mastercard charges with TWO
+    LEDGERS visible — per-message ack states
+    above, Kafka committed offset below, watermark
+    climbing exactly as far as the contiguous
+    acked-or-nacked range. Mode ladder teaches
+    one vocabulary word per step: native (HoL) →
+    +parallel (window jams) → +ooo-ack (stragglers
+    unblock, until the pill freezes the window) →
+    +DLQ (nack completes the vocabulary). Two
+    deliberately non-interchangeable disasters
+    (slowdown vs pill). Verdict-only assert
+    strings: "ONE SLOW CHARGE, EVERY CHARGE
+    WAITS", "PARALLEL, BUT THE WINDOW STILL
+    JAMS", "THE LEDGER ABOVE THE LOG", "THE PILL
+    OWNS THE WINDOW", "NACKED, PARKED, MOVING".
+  - content/patterns/selective-acknowledgment.json
+    — NEW pattern, throughput, minted at ONE
+    company (Uber). Boundary vs database-as-a-
+    queue inside definition.
+  - content/patterns/dead-letter-queue.json —
+    NEW pattern, resilience, minted at ONE
+    company (Uber). Boundary vs retryable-error-
+    classification inside definition.
+  - Back-tag on content/articles/segment-
+    centrifuge-database-queue.json: Uber added
+    to relatedArticles.
+  - Back-tag on content/articles/slack-scaling-
+    job-queue.json: Uber added to relatedArticles.
+  - Back-tag on content/articles/meta-foqs-
+    priority-queue.json: Uber added to
+    relatedArticles.
+  - No content/cruxtags.json change (amendment
+    already applied 2026-07-22).
+  - No content/feeds.json change (Uber already
+    live).
+  Recurrences created by this landing:
+  - buffer-degrades-under-backlog → 4-company
+    (Meta + Slack + Segment + Uber). SECOND
+    four-company cruxTag.
+  - fault-isolation → 13 articles.
+  - selective-acknowledgment → NEW pattern; 1
+    article (Uber). Category throughput.
+  - dead-letter-queue → NEW pattern; 1 article
+    (Uber). Category resilience.
+  - relatedArticles: Uber → Segment + Slack
+    forward links; Segment/Slack/Meta FOQS
+    backlinks all applied in the same commit.
+  Landing preview + catalog effects: `buffer-
+  degrades-under-backlog` row now shows "4
+  SYSTEMS", SEEN AT Meta · Segment · Slack ·
+  Uber. SECOND four-system row on the preview
+  (joins ambiguous-failure-under-retry). Total
+  preview row count UNCHANGED at 9. CTA "Browse
+  all 29 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 29 warnings (was 27; +2 cosmetic
+  fuzzy-misses on Uber's "1M → 12M" and "1,000
+  partitions" stat value forms — prose says "1
+  to 12 million" and "1,000-partition topic";
+  same residual class).
+  `npm run build` → end-to-end clean; 72 routes
+  prerendered (28 → 29 articles + 34 → 36
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 71 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 29 articles across
+  18 companies (Uber at 3 articles now; third
+  three-article company); 36 pattern definitions
+  (selective-acknowledgment + dead-letter-queue
+  new); 29 artifacts. cruxTag taxonomy: 11 tags
+  with 2 four-company, 5 three-company, 2 two-
+  company, 2 one-company (AWS retry-amplified,
+  DoorDash mitigation-scoped-narrower-than-
+  failure).
+
 - **Article #28 (AWS "Asked Twice, Done Once" idempotent
   APIs) LANDED (2026-07-22). FIRST FOUR-COMPANY cruxTag
   in the library.** Fable-authored dissection of Malcolm
