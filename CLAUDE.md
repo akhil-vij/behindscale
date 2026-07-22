@@ -21,6 +21,9 @@ architectural decision:
 5. `context/ai-workflow-rules.md` — development workflow, scoping, build order
 6. `context/progress-tracker.md` — current phase, decisions, open questions,
    next steps
+7. `context/open-decisions.md` — running index of owner-facing decisions
+   surfaced across rounds; blocker-first ordering. Update after every round
+   or session that surfaces or resolves an item
 
 ## Working Agreements
 
