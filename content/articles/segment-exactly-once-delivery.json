@@ -1,0 +1,74 @@
+{
+  "slug": "segment-exactly-once-delivery",
+  "title": "Almost Exactly Once: Segment's Billion-Message Dedupe Ledger",
+  "url": "https://segment.com/blog/exactly-once-delivery/",
+  "publishedAt": "2017-06-29",
+  "addedAt": "2026-07-23",
+  "source": {
+    "name": "Segment Blog",
+    "slug": "segment-engineering",
+    "company": "Segment",
+    "url": "https://segment.com/blog/",
+    "feed": "https://segment.com/blog/"
+  },
+  "summary": "The single requirement of a data pipeline is that it cannot lose data, so every layer guarantees at-least-once delivery — retry, retry, retry. But Segment's public API sits at the one boundary where retries can't be made graceful: mobile clients. A phone enters a tunnel mid-upload, the events land, the response dies, and the client re-sends what the server already has — 0.6% of all events in a four-week window, measured, which for an e-commerce customer is the difference between profit and loss. Amir Abu Shareb's post describes the system built in three months to get as close as possible to exactly-once: every message tagged with a client-generated UUIDv4 messageId, Kafka partitioned by that id so the same identity always reaches the same worker, an embedded RocksDB ledger per worker answering has-seen in bloom-filter time, size-bound aging that shrinks the dedup window under load rather than falling over, and — because no atomic step spans RocksDB, the output topic, and the input acknowledgment — the output topic crowned as the source of truth that workers repair against on restart. Three months in: 200 billion messages through, 60 billion keys held, 1.5 TB on disk, 100× the old Memcached system's capacity at a fraction of the cost.",
+  "crux": "A client that never hears back holds no evidence about whether its events landed, and the only correct client behavior on a flaky mobile network is to re-send — at-least-once is the contract because nothing stricter is honest. Same class as Stripe, Shopify, Airbnb, and AWS, and the fifth face completes a spectrum: every previous classmate resolves the ambiguity at a request/response boundary where caller and service negotiate idempotency. Segment can't negotiate — its callers are anonymous SDKs on phones in tunnels, kept deliberately simple (a UUIDv4, not vector clocks or sequence numbers, precisely so that anyone in any language can send) — so the ambiguity isn't resolved at the boundary at all. It flows through, duplicates and all, and is settled downstream by a ledger that remembers every identity seen in the last four weeks. The 0.6% figure is the class's cost measured empirically for the first time in the library: that is the duplicate rate ambiguous failure produces when nobody dedupes, and the system's entire job is to spend 60 billion keys of memory driving it to approximately zero within the window.",
+  "cruxTag": "ambiguous-failure-under-retry",
+  "cruxSummary": "Clients that miss the response re-send events the server already processed.",
+  "problem": "The post opens with the pipeline's prime directive — data can be delayed or re-ordered, never dropped — and its standard consequence: at-least-once delivery everywhere, achieved by never considering a message delivered until firmly acknowledged, and retrying otherwise. Segment's internal systems handle the resulting failure modes gracefully with retries, re-delivery, locking, and two-phase commits. The stated exception is the system's front door: clients that send data directly to the public API.\n\nThe motivating picture is concrete: booking a hotel from a phone on a bus, the app uploading usage events to Segment's servers, the bus entering a tunnel. Some events have been processed; the response never arrives; the client — correctly — retries and re-sends the same events the server technically already received. Nothing is misbehaving. The client cannot distinguish a lost request from a lost response, and on mobile networks that ambiguity is routine, not exceptional. Segment's server metrics put a number on it: approximately 0.6% of events ingested within a four-week window are duplicates of messages already received. The post is direct about why that matters — for an e-commerce app generating billions in revenue, a 0.6% discrepancy can be the difference between profit and a loss of millions.\n\nAnd the post is equally direct about the ceiling: achieving anything close to exactly-once delivery requires a bullet-proof design where each failure case is considered as part of the architecture — it cannot be bolted on afterward — and even then it is pretty much impossible to have messages delivered only ever once. The dedupe problem statement is deceptively simple (has_seen(message.id) → discard; else publish and commit, atomically), with a de-duplication window bounding how long identities are remembered. Everything hard lives in two words: performance — deduplicating billions of events at low latency and acceptable cost — and correctness — durably remembering what's been seen across crashes, while never producing duplicates in the output.",
+  "solution": "Identity comes first: every incoming message is tagged with a unique messageId, generated by the client — a UUIDv4, with the API assigning one only when the client doesn't. The post names the road not taken: no vector clocks, no sequence numbers, because those raise client complexity, and UUIDs let anyone in almost any language send data. The pipeline's exactly-once ambition rests on the humblest possible client obligation.\n\nThe architecture is a two-phase Kafka topology. Incoming API calls are split into individual messages and logged to a Kafka input topic for durability and replayability — partitioned by messageId, so the same identity is always processed by the same consumer. That partitioning is the search-space trick: instead of querying a central database for one key among hundreds of billions, each worker answers membership only for its own slice, orders of magnitude narrower. The dedupe worker is a Go program reading its input partitions, checking each message against a local ledger, and publishing only the new ones to the output topic.\n\nThe ledger is an embedded RocksDB database on each worker's local EBS drive — a deliberate replacement for the previous Memcached fleet with its atomic check-and-set commit point, its all-keys-in-RAM cost, and its choice between tolerating cache failures or doubling spend on hot failover replicas. RocksDB's LSM shape fits the workload's three simultaneous query patterns: existence checks for random keys that mostly don't exist (the textbook bloom-filter case — most messages are new, and the filter's 'definitely not in the set' answers skip the SSTables entirely), high-throughput appends of new keys (write-ahead log plus sorted memtable, flushed as immutable SSTables, merged by out-of-band compaction), and aging out old keys. Reads and writes are batched — MultiGet against RocksDB, batched consumption from Kafka — trading random access for sequential I/O.\n\nAging is where the design shows its operational spine: deletion is size-bound, not time-bound. Rather than a fixed TTL, each worker caps its database size and deletes oldest-first through a secondary index of sequence numbers — so a load spike shrinks the de-duplication window instead of toppling the system, and if the window drops under 24 hours, the on-call engineer is paged. The guarantee bends, measurably and monitored, before the system breaks — the explicit inverse of the old Memcached behavior, where mass TTL evictions spiked CPU and exhausted memory.\n\nCorrectness closes the loop, and the post is honest that no atomic step spans the three acts — writing RocksDB, publishing to the output topic, acknowledging the input. A crash can land between any two. The resolution is to crown one system: the output topic is the source of truth, doing double duty as write-ahead log, with RocksDB checkpointing and verifying against it. Messages aren't committed from the input topic until RocksDB has persisted them; on restart after a crash, the worker consults the output topic and repairs whichever side diverged. EBS snapshots guard the ledger against corruption, and cycling a worker is a pause, detach, and re-attach that preserves the partition ID. Three months in production: 1.5 TB of keys on disk, roughly 60 billion keys held, 200 billion messages through the system, at 100× the old system's tracking capacity.",
+  "tradeoffs": [
+    "At-least-once is the only honest contract with a phone in a tunnel, so all deduplication complexity moves server-side. Segment explicitly rejects vector clocks and sequence numbers to keep the client obligation at 'generate a UUID' — anyone, any language — and accepts remembering sixty billion identities as the price. The class's other members negotiate idempotency with their callers; Segment's callers can't negotiate, so the pipeline absorbs what the boundary can't refuse.",
+    "Partitioning by messageId converts a global membership query into a local one. Routing the same identity to the same worker shrinks the search space by orders of magnitude and is what makes an embedded per-worker ledger possible at all — and it makes identity-routing load-bearing: worker replacement must preserve partition assignment (the pause/detach/re-attach dance), and the locality guarantee is now part of the correctness argument, not just a performance optimization.",
+    "An embedded, coordination-free ledger beats a shared cache fleet on cost and failure economics. RocksDB on local EBS replaced Memcached's RAM-resident keyset and its dilemma — accept occasional failures or double spend on hot replicas — by pushing failover to cold storage and snapshots. The trade: each worker now operates a stateful database (WAL, compaction, snapshots) instead of calling a cache, and 'zero coordination' is true only because Kafka's partition map is doing the coordinating.",
+    "Size-bound aging makes the guarantee elastic instead of the system fragile. A fixed time window fails closed — load spikes fill the store and the system falls over for everyone; a fixed size fails soft — the window shrinks, duplicates older than the shrunken window can slip through, and the on-call pager fires when the window thins past 24 hours. Segment chose to degrade the promise measurably rather than the availability suddenly, and instrumented the exact place the promise thins.",
+    "When no transaction can span three systems, crown one and repair toward it. RocksDB write, output publish, input acknowledgment — a crash between any two leaves disagreement, and instead of distributed atomicity Segment designates the output topic as source of truth and write-ahead log, with RocksDB as a checkpoint that gets reconciled on restart. Recovery logic replaces transactional machinery; the residue is stated in passing — 'aside from Kafka failures' — the truth's own availability is the one failure the design defers rather than solves.",
+    "'Exactly once' is engineering shorthand for at-least-once plus a bounded memory of the seen, and the post never pretends otherwise. The guarantee holds within a window that is itself load-dependent; cross-window duplicates are possible by design; and 0.6% is the honest measure of what the ambiguity costs unmitigated. The system's achievement isn't a proof — it's driving a measured error rate to approximately zero within an explicit, monitored boundary, at a fraction of the previous cost."
+  ],
+  "tags": [
+    "deduplication",
+    "kafka",
+    "rocksdb",
+    "data-pipelines",
+    "exactly-once"
+  ],
+  "patterns": [
+    {
+      "slug": "idempotency-keys",
+      "note": "FIFTH company, and the pattern's furthest point from its origin: no contract, no replay of a stored response, no request/response boundary at all. The messageId — a client-minted UUIDv4, chosen over vector clocks to keep the client obligation as close to zero as possible — serves as partition key, primary key, and identity in a pipeline-wide dedupe ledger that settles ambiguity downstream because the boundary can't. Across five companies the key has now been a contract term (Stripe), a client discipline (Shopify), a server interior (Airbnb), a platform default (AWS), and here: pure infrastructure."
+    },
+    {
+      "slug": "single-writer-ownership",
+      "note": "Second article, same company — Segment applies its own house move twice: as Centrifuge gives each instance exclusive ownership of its jobs database, the dedupe pipeline partitions Kafka by messageId so each worker's embedded RocksDB answers membership for its slice alone, with zero coordination between writers. The ownership boundary is again what converts a global problem (search hundreds of billions of keys) into a local one (search your partition's), and again the partition map is the silent coordinator that makes 'coordination-free' true."
+    },
+    {
+      "slug": "designated-source-of-truth",
+      "note": "Minted here from the post's correctness argument: no atomic step spans the RocksDB write, the output-topic publish, and the input acknowledgment — so rather than build distributed transactions, Segment crowns the output topic as both write-ahead log and end source of truth, demotes RocksDB to a checkpoint, and repairs the checkpoint against the truth on every restart. Recovery-by-reconciliation replaces atomicity; the pattern's cost is that the truth's own availability becomes the one deferred failure mode."
+    }
+  ],
+  "relatedArticles": [
+    "stripe-idempotency",
+    "aws-idempotent-apis"
+  ],
+  "stats": [
+    {
+      "value": "0.6%",
+      "label": "of all events ingested in a four-week window are duplicates — the class's cost, measured for the first time",
+      "placement": "problem"
+    },
+    {
+      "value": "200B",
+      "label": "messages through the dedupe system in its first three months, holding ~60B keys in 1.5 TB of RocksDB",
+      "placement": "solution"
+    },
+    {
+      "value": "100×",
+      "label": "the old Memcached system's tracking capacity, at a fraction of the cost, with failover pushed to cold storage",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/segment-exactly-once-delivery/index.html",
+    "teaser": "Put a phone in a tunnel and watch it re-send events the server already has — then turn the ledger on and watch the bloom-filter fast path eat the duplicates. Spike the load and see the guarantee window shrink instead of the system falling over; crash a worker mid-publish and repair its ledger against the output topic; then sneak an aged-out duplicate past the window and meet the guarantee's honest edge."
+  }
+}

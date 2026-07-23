@@ -1,0 +1,16 @@
+{
+  "slug": "designated-source-of-truth",
+  "name": "Designated Source of Truth",
+  "category": "consistency",
+  "definition": "When an operation must update several systems that share no transaction — a local store, a durable log, an acknowledgment to an upstream — a crash between any two updates leaves them disagreeing, and distributed atomicity is expensive or unavailable. Instead, designate exactly one of the systems as the source of truth, treat every other system's state as a checkpoint or cache derived from it, and make recovery a reconciliation: on restart, consult the truth and repair the derived states to match. The write path is ordered so the truth is written before anything irreversible depends on it, letting the truth double as a write-ahead log.\n\nThe pattern trades transactional machinery on the hot path for repair logic on the recovery path: correctness becomes eventual-on-restart rather than atomic-per-operation, which is a good trade exactly when crashes are rare and the repair is cheap to compute by replay or comparison. Two costs are structural: the designated truth's own availability and durability become the system's deferred failure mode (the one problem the pattern relocates rather than solves), and every derived store must be safely rebuildable — nothing may live only in a checkpoint. Boundary against Atomic Phases: that pattern encloses co-located steps in one real transaction where a shared transactional store exists; this pattern is for when no such store spans the systems involved, and agreement is manufactured by hierarchy instead.",
+  "whenItApplies": [
+    "An operation spans systems with no shared transaction (embedded store + message log + consumer offsets; cache + database + index) and crash-consistency between them is required",
+    "One involved system is already durable, ordered, and replayable — a log or journal that can naturally serve as the authority others rebuild from",
+    "Crashes are rare enough, and reconciliation cheap enough, that repair-on-restart beats paying for distributed transactions on every operation"
+  ],
+  "tradeoffs": [
+    "Correctness is eventual-on-restart: between a crash and the completed repair, derived stores may disagree with the truth, and everything reading them must tolerate or be fenced from that window",
+    "The truth's availability is the deferred failure: when the designated system itself is down or lossy, the pattern has no answer — that residue must be owned explicitly",
+    "Every derived store must remain rebuildable from the truth forever; the moment a derived store accumulates state the truth doesn't carry, the hierarchy silently inverts and recovery corrupts"
+  ]
+}
