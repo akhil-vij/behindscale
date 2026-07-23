@@ -4,6 +4,202 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #31 (Slack Vitess datastores) LANDED
+  (2026-07-23). EIGHTH three-company cruxTag in the
+  library — the single-cluster-scaling-ceiling class
+  answer taxonomy completes.** Fable-authored
+  dissection of Slack's 2020 "Scaling Datastores at
+  Slack with Vitess" post. Slack began as a LAMP
+  stack with three MySQL cluster families:
+  workspace-sharded shards (thousands of workspaces
+  each, holding messages/channels/DMs), a metadata
+  lookup cluster, and a kitchen-sink cluster —
+  each shard a pair of active-active MySQL
+  instances in different DCs, both taking reads and
+  writes, with the webapp monolith owning routing.
+  Model was intuitive, debuggable, and easy to
+  scale by adding shards — until the post's bolded
+  question: "What if a single team and all of their
+  Slack data doesn't fit our largest shard?" By fall
+  2016 the biggest customers' designated shards had
+  reached the largest available hardware, hot spots
+  sat beside a massively underutilized long tail,
+  Enterprise Grid and Slack Connect broke the
+  workspace-equals-shard assumption, and the
+  nonstandard active-active topology blocked safe
+  replica reads. Three-year answer: Vitess adopted
+  over an app-layer sharding prototype, feature by
+  feature with backfill + double-writes + parallel
+  double-read diffing until 99% of query load — 2.3M
+  QPS peak, 2ms median, 11ms p99 — ran on keyspaces
+  sharded by finer keys like channel id, with the
+  application blissfully ignorant of topology.
+  `single-cluster-scaling-ceiling` (GitHub + Airbnb)
+  becomes the EIGHTH three-company cruxTag. Class
+  answer taxonomy now completes: split the shared
+  cluster BY FUNCTION (GitHub), split out THE MAIN
+  DATABASE (Airbnb), RE-SHARD BY A FINER ENTITY KEY
+  BEHIND A PROXY (Slack). Three faces of one
+  bottleneck. Manifestation caveat recorded:
+  the ceiling arrives PER-TENANT under workspace
+  sharding — the whale customer's designated shard
+  IS the single cluster, vertical scaling ends at
+  "the largest available hardware" for one customer
+  while the fleet idles, and the scheme itself
+  forbids splitting below the tenant. Ruled on the
+  post's own bolded sentence ("What if a single
+  team..." — the class question with 'team'
+  substituted for 'platform').
+  Slack = THIRD article for the company (FIFTH
+  three-article company after Airbnb, AWS, Uber,
+  Segment). Shipped by the Claude Code agent as
+  `feat: publish` (`<pending>`) + this docs refresh
+  (`<pending>`). No feeds.json change.
+  **NEW MINT**: `sharding-behind-a-proxy`
+  (throughput) — the post's central decision:
+  placement evicted from the application into a
+  datastore-owned routing tier (query layer +
+  lock-server topology), enabling key changes and
+  live splits the application never sees. The
+  rejected app-layer fork IS the boundary,
+  in-source. Sibling boundary with
+  `id-encoded-placement` written into the
+  definition — the two are the poles of who may
+  know where data lives (Pinterest makes the
+  application's identifiers maximally SMART;
+  Slack makes the application maximally IGNORANT).
+  Generality without Slack: Vitess generally, Citus,
+  mongos, ProxySQL. Retired-names pre-flight: clean.
+  **single-writer-ownership RECUR → SECOND COMPANY**
+  (Segment + Slack) — arrives as a RETIREMENT story:
+  active-active dual-writes (the availability trick
+  of 2014) became the operational ceiling of 2016
+  (nonstandard topology, no safe replica reads);
+  Vitess restores one unambiguous writer per shard
+  with automated failovers and a trustable replica
+  tier. Pattern now 3 articles / 2 companies.
+  **universal-staged-rollout RECUR** — the
+  three-year migration as the pattern at datastore
+  scale: smallest real use case first (RSS),
+  backfill + double-writes + double-read diffing
+  before any cutover, 0→99% with the COVID surge
+  absorbed mid-journey. Pattern now 2 articles / 2
+  companies (Datadog + Slack).
+  **Cameo REJECTIONS**:
+  - fault-isolation — the workload-isolation desire
+    is one motivation bullet delivered by keyspaces
+    but not mechanically developed; carried in
+    tradeoffs prose with owner-may-promote note.
+    Logged as open-decisions item 12.
+  - dark-read-verification as its own mint — the
+    double-read diffing is one sentence, folded
+    into universal-staged-rollout's note and
+    tradeoff 5. Owner may promote later with a
+    second instance. Logged as open-decisions
+    item 13.
+  **Rejected tags**: blast-radius (shard-outage
+  availability bullet real but secondary — one
+  motivation bullet, honored in problem prose);
+  single-table (n/a).
+  **Symmetric-linking rule application**: cluster
+  now 3-company — UNDER the 4+ threshold set by
+  the standing rule. Applied 2 backlinks as
+  authored (Airbnb + GitHub → Slack), no all-pairs
+  extension. If/when this cluster crosses to 4
+  companies, the rule triggers.
+  **Accent** `#E01E5A` (Slack magenta-red) —
+  Slack's THIRD accent after gold `#ECB22E` and
+  cyan `#36C5F0`; per-article accents are Airbnb-
+  precedented. FLAG: reds corridor (semantic red,
+  Netflix `#E50914`, Pinterest `#E60023`) —
+  `#E01E5A` is magenta-shifted but the corridor is
+  crowded. Chrome-only discipline observed
+  (verdicts semantic). Logged as open-decisions
+  item 3 fifth conflict.
+  Contents:
+  - content/articles/slack-vitess-datastores.json
+    — article + crux + cruxTag (single-cluster-
+    scaling-ceiling reused, THIRD company) +
+    cruxSummary + 3 pattern refs + 3 stats +
+    relatedArticles → Airbnb-partitioning +
+    GitHub-partitioning. addedAt: 2026-07-23.
+  - content/artifacts/slack-vitess-datastores.jsx
+    — accent `#E01E5A`. Interval sim, pure step()
+    functional setState. Crux made literal: the
+    TWO DIMENSIONS diverge on screen — tenant-
+    count scaling (idle tail) beside tenant-size
+    ceiling (burning whale shard). Hardware ladder
+    ENDS (tier 3 = the post's "largest available
+    hardware", button dies); split refusal is
+    playable (scheme forbids sub-tenant splits);
+    app-layer fork is an explorable dead end
+    labeled with the post's own long-term verdict;
+    migration ladder enforces order (prototype →
+    double-write+diff → reshard); COVID surge is
+    the payoff beat, absorbable only post-reshard
+    via live keyspace split. Verdict-only assert
+    strings: "ONE CUSTOMER, ONE HOST, ONE
+    CEILING", "THE HARDWARE STORE IS EMPTY", "THE
+    SCHEME SAYS TEAMS DON'T SPLIT", "SAME WALL,
+    ONE LAYER UP", "THE KEY CHANGED, THE WHALE
+    DISSOLVED", "PLUS FIFTY PERCENT, MINUS ZERO
+    DOWNTIME", "THE SURGE FOUND THE CEILING
+    FIRST".
+  - content/patterns/sharding-behind-a-proxy.json
+    — NEW pattern, throughput, minted at ONE
+    company (Slack). Boundary vs id-encoded-
+    placement drawn inside definition (Slack:
+    application maximally ignorant vs Pinterest:
+    application maximally smart). Retired-names
+    pre-flight: clean.
+  - Back-tag on content/articles/airbnb-
+    partitioning-main-database.json: Slack added
+    to relatedArticles.
+  - Back-tag on content/articles/github-
+    partitioning-relational-databases.json: Slack
+    added to relatedArticles.
+  - No content/cruxtags.json change.
+  - No content/feeds.json change (Slack already
+    live).
+  Recurrences created by this landing:
+  - single-cluster-scaling-ceiling → 3-company
+    (GitHub + Airbnb + Slack). EIGHTH three-
+    company cruxTag; class answer taxonomy
+    complete (split-by-function / split-out-main /
+    reshard-behind-proxy).
+  - sharding-behind-a-proxy → NEW pattern; 1
+    article (Slack). Category throughput.
+  - single-writer-ownership → 3 articles /
+    2 companies (Segment + Slack).
+  - universal-staged-rollout → 2 articles /
+    2 companies (Datadog + Slack).
+  - relatedArticles: Slack → Airbnb + GitHub
+    forward links; both classmates' backlinks
+    applied in the same commit.
+  Landing preview + catalog effects: `single-
+  cluster-scaling-ceiling` row now shows "3
+  SYSTEMS", SEEN AT Airbnb · GitHub · Slack.
+  Preview row count still 9 total. `gray-failure-
+  defeats-automatic-detection` is now the ONLY
+  2-company class remaining. CTA "Browse all 31
+  breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 31 warnings (was 30; +1 cosmetic
+  fuzzy-miss expected; same residual class).
+  `npm run build` → end-to-end clean; 76 routes
+  prerendered (30 → 31 articles + 37 → 38 patterns
+  + 4 top pages + /404 + /artifacts/_hero); sitemap
+  75 URLs. `npm test` → 100 passed.
+  Library state after landing: 31 articles across
+  18 companies (Slack at 3 articles now; fifth
+  three-article company); 38 pattern definitions
+  (sharding-behind-a-proxy new); 31 artifacts.
+  cruxTag taxonomy: 11 tags with 1 five-company,
+  1 four-company, 6 three-company, 1 two-company
+  (gray-failure — last 2-company), 2 one-company
+  (AWS retry-amplified, DoorDash mitigation-
+  scoped-narrower-than-failure).
+
 - **Article #30 (Segment "Almost Exactly Once" dedupe
   ledger) LANDED (2026-07-23). FIRST FIVE-COMPANY
   cruxTag in the library.** Fable-authored dissection

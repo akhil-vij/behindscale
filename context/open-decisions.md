@@ -53,12 +53,12 @@ _None._
   footprint grows linearly.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: four unresolved conflicts
+### 3. Accent registry: five unresolved conflicts
 
-- **Source:** rounds 10, 15, 16, 17. All landed as author-chose per
-  prior-round posture; all flagged in the accent-registry section
-  of taste doc v3 §6.
-- **The four:**
+- **Source:** rounds 10, 15, 16, 17, 22. All landed as author-
+  chose per prior-round posture; all flagged in the accent-
+  registry section of taste doc v3 §6.
+- **The five:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -72,10 +72,15 @@ _None._
     darker and more saturated than both; likely distinguishable
     in-situ but the purple corridor is now as crowded as the
     orange one. No standby proposed.
+  - **Slack `#E01E5A`** (round 22) — magenta-shifted red, but the
+    reds corridor is crowded (semantic red `#ef4444`, Netflix
+    `#E50914`, Pinterest `#E60023`). Third Slack accent after
+    gold `#ECB22E` (r6) and cyan `#36C5F0` (r?); per-article
+    accents Airbnb-precedented. No standby proposed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all four artifacts side-by-side), then either
-  keep or swap. Owner may do a corridor-wide pass and pick new hues
-  for one or more.
+  deployed build with all five artifacts side-by-side), then
+  either keep or swap. Owner may do a corridor-wide pass and pick
+  new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
 
 ---
@@ -110,11 +115,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 30 articles, 11 tags,
-  1 five-company + 1 four-company + 5 three-company
-  (as of r21 Segment exactly-once — first five-company
-  cruxTag; idempotency-keys becomes first five-company
-  pattern).
+  pipeline pending deploy". Live is 31 articles, 11 tags,
+  1 five-company + 1 four-company + 6 three-company + 1
+  two-company + 2 one-company (as of r22 Slack Vitess —
+  single-cluster-scaling-ceiling promoted to 3-company;
+  gray-failure is now the only 2-company class).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -141,6 +146,37 @@ _None._
   company writes both a mechanism paper and a productionization
   follow-up.
 - **Reply:** confirm-ruling / dissect-2026-instead / defer.
+
+### 12. `fault-isolation` chip on Slack Vitess?
+
+- **Source:** round 22 DECISIONS §4. The workload-isolation
+  desire (isolate second-tier workloads from message sending;
+  shard outage = full Slack outage for those customers) is
+  named as one motivation bullet in the post, delivered by
+  keyspaces after Vitess, but not mechanically developed as a
+  first-class solution. Currently carried in tradeoffs prose
+  with owner-may-promote note.
+- **Recommended:** promote. `fault-isolation` is our most-
+  recurring pattern (13 articles pre-r22) and the Slack
+  keyspaces case is a real instance — one motivation bullet
+  is enough when the pattern is this well-established. Same
+  bar as the r15 back-tag decision on `master-only-reads`.
+- **Reply:** promote / keep-in-prose.
+
+### 13. `dark-read-verification` mint?
+
+- **Source:** round 22 DECISIONS §4. Slack's parallel double-
+  read diffing (running the query against both old and new
+  path, comparing results) is one sentence in the post,
+  folded into `universal-staged-rollout`'s note and tradeoff
+  #5. The pattern shape is real (dark reads with diffing are
+  a durable migration technique).
+- **Recommended:** wait for a second natural instance to
+  force the mint — same posture as item 10 (bounded-
+  guarantee-degradation). Notion's sharding migration and
+  Figma's rehearsal are candidates; if either surfaces this
+  explicitly, the mint becomes 2-company from the start.
+- **Reply:** mint-now / wait-for-second-company / dismiss.
 
 ### 10. `bounded-guarantee-degradation` promotion?
 
@@ -205,12 +241,9 @@ off after one round passes.
   added to `uber-kafka-consumer-proxy.relatedArticles`
   retroactively.
 
-### Third backlink to Shopify from AWS idempotency
-- **Resolved:** 2026-07-22, owner said add.
-- **Effect:** `shopify-resilient-payments` added to
-  `aws-idempotent-apis.relatedArticles`; symmetric backlink
-  added to `shopify-resilient-payments.relatedArticles`.
-  Idempotency four-company graph now fully connected.
+_(Older resolutions rolled off after their round: Third
+backlink to Shopify from AWS idempotency 2026-07-22 as
+`c59d141`.)_
 
 _(Older resolutions rolled off after their round:
 buffer-degrades-under-backlog registry amendment 2026-07-22 as
