@@ -43,7 +43,8 @@
     }
   ],
   "relatedArticles": [
-    "github-partitioning-relational-databases"
+    "github-partitioning-relational-databases",
+    "slack-vitess-datastores"
   ],
   "stats": [
     {

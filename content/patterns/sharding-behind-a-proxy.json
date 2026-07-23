@@ -1,0 +1,16 @@
+{
+  "slug": "sharding-behind-a-proxy",
+  "name": "Sharding Behind a Proxy",
+  "category": "throughput",
+  "definition": "Move shard placement and routing out of the application and into a datastore-owned tier — a query proxy that speaks the database's own protocol, backed by a topology service that tracks where every slice of data lives. The application connects as if to one database and stays ignorant of shard count, shard keys, and shard moves; the proxy consults topology, routes each query, and scatter-gathers where a query spans shards. Because placement knowledge lives in one tier, the things that are hardest with application-managed sharding become routine: changing the shard key for a table, splitting a hot shard while serving traffic, moving data between shards, and adding replicas the application never has to know how to find.\n\nThe pattern's price is a new always-on-path dependency: the routing tier's latency sits inside every query, its availability bounds the datastore's, and its topology store becomes critical metadata that must itself be replicated and consistent. Operating the proxy tier superbly is not optional — placement knowledge was evicted from the application, not destroyed. Boundary against ID-Encoded Placement: that pattern bakes routing into identifiers so the application can compute placement with zero lookups — maximal application knowledge, zero routing infrastructure; this pattern is the opposite pole — zero application knowledge, dedicated routing infrastructure. Choose by who you can afford to make smart: your identifiers, or your proxy tier.",
+  "whenItApplies": [
+    "The application's coupling to a legacy sharding scheme is itself the obstacle: query sites assume data locality, and untangling them in place would take longer than routing around them",
+    "Shard keys need to change or vary per table (tenant id to entity id), or hot shards must split under live traffic — operations that application-managed sharding makes prohibitively risky",
+    "The team wants to keep the underlying database engine (its semantics, tooling, and operational muscle memory) while gaining horizontal scale the engine doesn't natively provide"
+  ],
+  "tradeoffs": [
+    "A new stateful tier on every query's path: the proxy's latency and availability are now part of the database's, and running it well is a permanent operational obligation",
+    "Topology metadata becomes crown-jewel state — the lock server or catalog that says where data lives must be consistent, replicated, and fast, or every query pays",
+    "Cross-shard queries don't disappear; they move into the proxy as scatter-gather with its own performance cliffs, and schema or key choices still determine whether the proxy can route efficiently"
+  ]
+}

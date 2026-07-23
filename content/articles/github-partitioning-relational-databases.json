@@ -49,7 +49,8 @@
   ],
   "relatedArticles": [
     "figma-postgres-sharding",
-    "airbnb-partitioning-main-database"
+    "airbnb-partitioning-main-database",
+    "slack-vitess-datastores"
   ],
   "stats": [
     {

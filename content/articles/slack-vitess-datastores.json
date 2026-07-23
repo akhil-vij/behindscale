@@ -1,0 +1,74 @@
+{
+  "slug": "slack-vitess-datastores",
+  "title": "The Largest Shard Money Could Buy: Slack's Road to Vitess",
+  "url": "https://slack.engineering/scaling-datastores-at-slack-with-vitess/",
+  "publishedAt": "2020-12-01",
+  "addedAt": "2026-07-23",
+  "source": {
+    "name": "Slack Engineering",
+    "slug": "slack-engineering",
+    "company": "Slack",
+    "url": "https://slack.engineering",
+    "feed": "https://slack.engineering/feed/"
+  },
+  "summary": "Slack began as a LAMP stack with three MySQL cluster families: workspace-sharded shards holding virtually all customer data, a metadata cluster mapping workspace to shard, and a kitchen-sink cluster for everything else — each shard a pair of active-active MySQL instances in different data centers, both taking reads and writes, with the webapp monolith owning all routing. The model was intuitive, debuggable, and easy to scale by provisioning more shards — until the question the post prints in bold: what if a single team and all of their Slack data doesn't fit the largest shard? By fall 2016, the biggest customers' designated shards had reached the largest available hardware, hot spots sat beside a massively underutilized long tail, Enterprise Grid and shared channels were breaking the workspace-equals-shard assumption, and the nonstandard active-active topology blocked safe replica reads. The answer was three years long: Vitess, adopted over app-layer sharding after prototyping both, migrated feature by feature with double-writes and parallel double-read diffing until 99% of query load — 2.3 million QPS at peak, 2ms median, 11ms p99 — ran on keyspaces sharded by finer keys like channel id, with the application blissfully ignorant of topology.",
+  "crux": "Same class as GitHub's partitioned mysql1 and Airbnb's split main database, arriving one level down the hierarchy: after you shard by tenant, each tenant's shard is a single cluster with a single cluster's ceiling, and the largest tenant finds it first. Slack's workspace-sharded scheme scaled beautifully in the tenant-count dimension — more teams, more shards — while the tenant-size dimension quietly aimed at the wall the post bolds: their designated shard reached the largest available hardware, and the scheme itself forbade going finer, because 'all data for a workspace on one shard' was load-bearing in thousands of places in the application. The revealing rejection is app-layer sharding: prototypes showed the routing logic so entangled with product code (message counts assuming team locality; multi-workspace features checking shards explicitly) that rebuilding it in place would inherit the same wall — a hot shard still wouldn't split. The cure was to change which layer owns placement: Vitess makes sharding a property of the datastore, reachable through a topology-ignorant query layer, so the shard key could change from workspace to channel without the application knowing anything moved.",
+  "cruxTag": "single-cluster-scaling-ceiling",
+  "cruxSummary": "Slack's biggest customers outgrew the largest shard a single host could sustain.",
+  "problem": "The original architecture is laid out with unusual completeness. Three MySQL cluster families: shards, holding virtually all customer data — messages, channels, DMs — partitioned by workspace id, thousands of workspaces per shard, all of a workspace's data on one shard so the application connects to exactly one database; a metadata cluster mapping workspace id to shard id, consulted first on every access; and a kitchen-sink cluster for data tied to no workspace, like the app directory. Every shard was at least two MySQL instances in different data centers, active-active with asynchronous replication — both sides taking reads and writes, a hash choosing the preferred side, the other side absorbing retries on failure. The webapp monolith owned all of it: metadata lookup, connection routing, sharding logic.\n\nThe post is fair to this design before it buries it: high availability from the dual-write pair, high product velocity from the everything-in-one-place model, minutes-to-diagnosis debuggability, and easy growth — more teams, more shards. Then the bolded question: what if a single team and all of their Slack data doesn't fit our largest shard?\n\nBy fall 2016 — hundreds of thousands of MySQL QPS, thousands of sharded hosts — the disadvantages had names. Scale limits: the largest customers' designated shards reached the largest available hardware, regularly hitting what a single host could sustain. One data model: Enterprise Grid and what became Slack Connect challenged the paradigm that a team's data lives on one shard, adding complexity and, in cases, a performance penalty. Hot spots beside waste: unable to spread a large customer's load, Slack ran a few burning shards and a massively underutilized long tail, overprovisioned because splitting shards and moving teams was hard and usage unpredictable. Availability coupling: every core feature needed the team's shard up, so a shard outage was a total Slack outage for every customer on it. And operations: the active-active topology was nonstandard MySQL, demanding significant internal tooling, and — with no replicas in the topology and the app routing directly to hosts — replica reads couldn't be used safely at all.",
+  "solution": "The fork in the road was evolve-in-place versus replace. The in-place option — teaching the webapp's existing routing layer new keys like channel id — was prototyped seriously and rejected on the evidence: the application logic and the storage layout were deeply coupled (fetching a channel's message count assumed which team's shard held it; multi-workspace organizations were handled by explicitly checking multiple shards), untangling would be slow, and the approach fixed neither operations nor replica usage — the post's long-term verdict being that a surprisingly hot single-team shard would still not be straightforward to scale. The constraint that shaped everything else: stay on MySQL. Thousands of distinct queries, some using MySQL-specific constructs, plus years of operational practice — deployment, durability, backups, warehouse ETL, compliance — ruled out NoSQL (DynamoDB, Cassandra) and NewSQL (Spanner, CockroachDB) as far more disruptive changes for a deliberately conservative infrastructure culture.\n\nVitess fit the requirements as built: MySQL remains the actual storage and replication engine; sharding lives in the database layer, flexible and growable without application logic; operability comes built in — automated primary failovers, backups, a lock server tracking topology so the application can be blissfully ignorant of where anything lives; and it's open-source Go that Slack could extend, which they did to the point of becoming one of the project's biggest contributors (topology metadata refactored for isolation regions, MySQL compatibility gaps closed, migration and load-testing tools, Prometheus and Orchestrator and xtrabackup integrations).\n\nThe migration was staged with the care of a system that cannot stop running: a first end-to-end production use case deliberately small — RSS feeds into channels — that forced the real work of provisioning, service discovery, backup/restore, topology management, and credentials; then a generic backfill system cloning existing tables under application double-writes, with a parallel double-read diffing system proving the Vitess-backed tables behaved identically to the legacy ones before cutover. Three years later: 99% of all MySQL traffic on Vitess, the rest scheduled within two months, at 2.3 million QPS peak — 2 million reads, 300 thousand writes — with 2ms median and 11ms p99 latency.\n\nThe payoff is the changed key. Keyspaces now scale roughly by users, teams, and channels — message data sharded by channel id rather than workspace, so the largest customer's load spreads across the fleet instead of concentrating on their designated host; the post's own farewell is 'say goodbye to only sharding by team, and to team hot-spots.' The validation arrived unscheduled: in March 2020, COVID moved the world's work into Slack and query rates rose 50% in one week — absorbed by horizontally splitting the busiest keyspace with Vitess's splitting workflows, where the old architecture, by the post's own accounting, would have been unable to scale at all for the largest customers, leading to downtime. The same substrate then carried features the migration never anticipated: Slack Connect's cross-team data, and international data residency running Vitess clusters in six regions.",
+  "tradeoffs": [
+    "Tenant sharding scales the tenant-count axis and silently caps the tenant-size axis. Provisioning a new shard per batch of new teams kept growth easy for years, while the largest single customer marched toward the largest available hardware — a ceiling invisible in aggregate metrics because the fleet average stayed low. The class lesson one level down: any 'everything for X on one host' scheme makes the biggest X the platform's scaling frontier.",
+    "The intuitive data model is borrowed developer velocity, repaid at re-architecture time. 'All of a team's data in one place' made features easy to design and easy to debug — and thousands of query sites quietly took a dependency on that locality, which is exactly what made the in-place evolution slow to untangle and made Enterprise Grid and shared channels expensive before any migration began. Convenience assumptions compound like debt.",
+    "Active-active dual-writes bought availability at the price of the rest of the topology. Either side could serve reads and writes, so host failure was invisible to customers — but the configuration was nonstandard MySQL demanding bespoke tooling, and with no true replicas and direct application-to-host routing, replica reads were structurally unavailable. The availability trick of 2014 became the operational ceiling of 2016.",
+    "App-layer sharding was rejected not because it couldn't work but because it rebuilt the same wall one layer up. Prototypes showed the immediate scaling problem solvable — and the coupling untangling slow, the operational issues untouched, the replicas still unusable, and a future hot shard still hard to split. Slack's judgment call: when the routing layer is the problem, giving the routing layer more responsibilities is not the fix; changing which layer owns placement is.",
+    "Staying on MySQL was the conservative constraint that made a radical migration survivable. Thousands of MySQL-specific queries and years of operational practice would have made NoSQL or NewSQL a rewrite of the company's muscle memory, not just its storage; Vitess let the risky thing (resharding everything) ride on the trusted thing (MySQL semantics underneath). The double-write-plus-double-read-diffing migration harness is the same philosophy applied to correctness: never cut over on faith.",
+    "A topology-ignorant application pays for its ignorance with a new dependency. The webapp no longer knows where data lives — which is the entire point, and which means the Vitess routing tier (query layer, lock server, topology metadata) is now load-bearing infrastructure on every query's path, extended and operated by Slack to the point of becoming a top contributor to the project. Evicting placement knowledge from the application doesn't destroy the knowledge; it concentrates it in a tier that must be run superbly."
+  ],
+  "tags": [
+    "vitess",
+    "mysql",
+    "sharding",
+    "migrations",
+    "multi-tenancy"
+  ],
+  "patterns": [
+    {
+      "slug": "sharding-behind-a-proxy",
+      "note": "Minted from the decision this post narrates end to end: move shard placement out of the application into a datastore-owned routing tier — Vitess's query layer and lock-server topology — so the application is blissfully ignorant of where data lives and the shard key can change (workspace id to channel id) without product code knowing anything moved. The rejected alternative defines the boundary: app-layer sharding was prototyped and declined because coupling ran too deep and a hot shard still wouldn't split. Sibling boundary with ID-Encoded Placement: Pinterest bakes placement into the application's identifiers; Slack evicts placement knowledge from the application entirely — the two poles of who is allowed to know where data lives."
+    },
+    {
+      "slug": "single-writer-ownership",
+      "note": "Second company, arriving as a retirement story: Slack's active-active pairs — both sides taking writes — bought retry-through-failure availability at the cost of a nonstandard topology with no true replicas and no safe replica reads. The Vitess migration replaces dual-writers with conventional single-primary replication per shard, automated failovers restoring the pattern's core dividend: one unambiguous writer per data slice, and a replica tier that can finally be trusted with reads."
+    },
+    {
+      "slug": "universal-staged-rollout",
+      "note": "The three-year migration is the pattern at datastore scale: a deliberately small first production use case (RSS feeds into channels) forcing every operational surface early; then per-table cutover under a generic backfill with application double-writes and a parallel double-read diffing system proving semantic equivalence before any traffic committed; 0% to 99% with the last percent scheduled, and a 50%-in-one-week COVID surge absorbed mid-journey. Nothing cut over on faith, ever."
+    }
+  ],
+  "relatedArticles": [
+    "airbnb-partitioning-main-database",
+    "github-partitioning-relational-databases"
+  ],
+  "stats": [
+    {
+      "value": "thousands",
+      "label": "of sharded MySQL hosts by fall 2016, with a few burning hot spots beside a massively underutilized long tail",
+      "placement": "problem"
+    },
+    {
+      "value": "2.3M QPS",
+      "label": "at peak on Vitess after the three-year, 99%-of-traffic migration — 2ms median, 11ms p99",
+      "placement": "solution"
+    },
+    {
+      "value": "+50%",
+      "label": "query growth in one COVID week, absorbed by splitting the busiest keyspace — where the old scheme 'would have been unable to scale at all'",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/slack-vitess-datastores/index.html",
+    "teaser": "Grow a whale customer on a workspace-sharded fleet and watch their shard burn while the long tail idles. Buy bigger hardware until the store runs out, try splitting a shard the scheme won't split, prototype app-layer sharding and hit the same wall one layer up — then migrate to Vitess stage by stage, reshard by channel id, and watch the whale dissolve across the fleet in time for a 50%-in-one-week surge."
+  }
+}
