@@ -165,46 +165,45 @@ _None._
   taken on cameo-first mints since r13.
 - **Reply:** mint-now / wait-for-second-company / dismiss.
 
-### 11. Idempotency 5-company backlink topology
-
-- **Source:** round 21 DECISIONS §8. The idempotency
-  cluster is now 5 companies (Stripe, Shopify, Airbnb,
-  AWS, Segment). Fable authored two forward links from
-  Segment (Stripe + AWS — the contract-side poles vs
-  Segment's no-contract face) and asked whether to extend.
-  All-pairs = 20 edges; hub-and-spoke = fewer but demands
-  a "hub" choice. Applied as authored + Stripe/AWS
-  backlinks. Not yet linked to Shopify or Airbnb Orpheus.
-- **Recommended:** apply symmetry (add Shopify + Airbnb
-  Orpheus to Segment's forward links, and Segment to their
-  backlinks). Same principle as r19 Shopify + r20 Meta
-  FOQS — 4/5-company clusters get fully-connected graphs
-  so lateral navigation doesn't dead-end. This is the
-  third instance of the same class of ask; if you sign
-  off, treat the rule as standing for future landings.
-- **Reply:** apply-symmetry / hub-and-spoke / keep-at-two.
-
-### 9. Uber ↔ Meta FOQS backlink symmetry?
-
-- **Source:** round 20 DECISIONS §8. Uber's article carries 2
-  forward links (Segment + Slack) but Fable authored 3
-  backlinks INTO Uber (Segment + Slack + Meta FOQS). This
-  makes the buffer-degrades 4-company graph asymmetric —
-  same class of choice as the r19 Shopify backlink that owner
-  approved on 2026-07-22 for the ambiguous-failure 4-company
-  graph.
-- **Recommended:** apply symmetry — add `meta-foqs-priority-
-  queue` to `uber-kafka-consumer-proxy.relatedArticles` as the
-  third forward link. Matches the r19 sign-off spirit ("4-
-  company classes get symmetric linking").
-- **Reply:** apply-symmetry / keep-at-two-forwards.
 
 ---
+
+## Standing rules
+
+Rules the owner has signed off across rounds that now stand
+as agent defaults, so future landings don't re-surface the
+same class of question.
+
+### Symmetric-linking rule (4/5-company clusters)
+
+- **Established:** 2026-07-23, after r19 Shopify (single
+  edge), r20 Uber↔Meta FOQS (bump to 3 forwards), and r21
+  idempotency (all-pairs across 5) all resolved the same
+  way.
+- **Rule:** any cruxTag cluster of 4 or more companies
+  gets a fully-connected `relatedArticles` graph. When a
+  new article joins a 4+ cluster, agent adds all sibling
+  slugs as forward links AND writes the reciprocal
+  backlink on every sibling in the same commit.
+- **Applies to:** cruxTag clusters. Pattern-level
+  clustering is not covered — patterns already surface
+  siblings through the pattern index page.
 
 ## Recently resolved
 
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
+
+### Idempotency 5-company backlink symmetry (item 11)
+- **Resolved:** 2026-07-23, owner said apply.
+- **Effect:** five missing edges added across four files
+  (Stripe→Shopify; Shopify→Segment; Airbnb-Orpheus→Segment;
+  Segment→Shopify+Airbnb-Orpheus). Idempotency 5-company
+  graph now fully connected. Retires items 9 and 11 in one
+  motion, since the r20 Uber↔Meta FOQS asymmetry (item 9)
+  was covered by the same rule; `meta-foqs-priority-queue`
+  added to `uber-kafka-consumer-proxy.relatedArticles`
+  retroactively.
 
 ### Third backlink to Shopify from AWS idempotency
 - **Resolved:** 2026-07-22, owner said add.

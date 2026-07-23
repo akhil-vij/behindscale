@@ -48,7 +48,9 @@
   ],
   "relatedArticles": [
     "stripe-idempotency",
-    "aws-idempotent-apis"
+    "aws-idempotent-apis",
+    "shopify-resilient-payments",
+    "airbnb-orpheus-idempotent-payments"
   ],
   "stats": [
     {

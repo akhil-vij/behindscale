@@ -39,7 +39,7 @@
       "note": "The country-scoped circuit breaker identifiers are failure-domain partitioning at the granularity of a payment gateway's local acquirers — one region's outage is contained instead of propagating through a shared global circuit."
     }
   ],
-  "relatedArticles": ["stripe-idempotency", "airbnb-orpheus-idempotent-payments", "aws-idempotent-apis"],
+  "relatedArticles": ["stripe-idempotency", "airbnb-orpheus-idempotent-payments", "aws-idempotent-apis", "segment-exactly-once-delivery"],
   "stats": [
     {
       "value": "50%",

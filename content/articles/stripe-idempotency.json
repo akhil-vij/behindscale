@@ -45,7 +45,8 @@
     "uber-intelligent-load-management",
     "airbnb-orpheus-idempotent-payments",
     "aws-idempotent-apis",
-    "segment-exactly-once-delivery"
+    "segment-exactly-once-delivery",
+    "shopify-resilient-payments"
   ],
   "generatedAt": "2026-06-12T00:00:00.000Z",
   "artifact": {

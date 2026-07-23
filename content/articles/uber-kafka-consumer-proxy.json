@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "segment-centrifuge-database-queue",
-    "slack-scaling-job-queue"
+    "slack-scaling-job-queue",
+    "meta-foqs-priority-queue"
   ],
   "stats": [
     {
