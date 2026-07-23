@@ -4,6 +4,189 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #30 (Segment "Almost Exactly Once" dedupe
+  ledger) LANDED (2026-07-23). FIRST FIVE-COMPANY
+  cruxTag in the library.** Fable-authored dissection
+  of Amir Abu Shareb's 2017 post — the ambiguous-
+  failure class settled DOWNSTREAM of the request
+  boundary, because Segment's callers are anonymous
+  mobile SDKs that can't negotiate idempotency. A
+  phone enters a tunnel mid-upload, events land,
+  response dies, client re-sends: 0.6% of all events
+  in a four-week window (measured — first empirical
+  measurement of the class's cost in the library).
+  Answer built in three months: every message tagged
+  with client-generated UUIDv4 messageId; Kafka
+  partitioned by that id so the same identity always
+  reaches the same worker; embedded RocksDB ledger
+  per worker answering has-seen in bloom-filter time;
+  SIZE-bound aging that shrinks the dedup window
+  under load rather than falling over; and — because
+  no atomic step spans RocksDB + output topic + input
+  ack — the output topic crowned as the source of
+  truth that workers repair against on restart.
+  Production: 200B messages through, 60B keys held,
+  1.5TB on disk, 100× the old Memcached system at a
+  fraction of the cost.
+  `ambiguous-failure-under-retry` (Stripe + Shopify
+  + Airbnb + AWS) becomes the FIRST FIVE-COMPANY
+  cruxTag. Manifestation map completes a spectrum
+  along "where the ambiguity is settled": Stripe
+  (the contract), Shopify (the client at volume),
+  Airbnb (the server interior), AWS (the platform
+  default), Segment (the pipeline — settled
+  DOWNSTREAM of the boundary because anonymous mobile
+  SDKs can't negotiate).
+  Segment = THIRD article for the company (FOURTH
+  three-article company after Airbnb, AWS, Uber).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Correction on placement**: authored article
+  source block used `Segment Engineering` /
+  `segment.com/blog/engineering/` /
+  `segment.com/blog/rss.xml`. Normalized to match the
+  live `feeds.json` entry (`Segment Blog` /
+  `segment.com/blog/` / `segment.com/blog/`) so the
+  source panel renders identically to the Centrifuge
+  article. Same slug + company; only the display
+  fields diverged.
+  **idempotency-keys → FIFTH COMPANY, first
+  five-company pattern in the library** (Stripe +
+  Shopify + Airbnb + AWS + Segment; 6th article).
+  Note frames the five faces; Segment's contribution
+  is the key as pure INFRASTRUCTURE — the messageId
+  is simultaneously the partition key routing to the
+  ledger and the primary key inside the ledger,
+  because the caller was never asked to negotiate.
+  **single-writer-ownership RECUR** — 2nd article,
+  SAME company (Segment applies its own move twice:
+  Centrifuge's per-instance jobs DB in r16; here
+  per-worker RocksDB over messageId partitions).
+  Company count STAYS 1 per the same-company rule.
+  **NEW MINT**: `designated-source-of-truth`
+  (consistency) — from the no-atomic-step argument:
+  crown one system (the output topic as WAL + final
+  authority), demote others to rebuildable
+  checkpoints, repair on restart. Generality without
+  Segment: Kafka Streams changelogs, binlog-repaired
+  replicas, journal-recovered caches. Boundary vs
+  `atomic-phases` drawn inside definition (real
+  transaction where a shared store exists vs
+  manufactured hierarchy where none does) — the two
+  patterns are the class's solution-space poles from
+  the same company set (Airbnb/AWS have atomic
+  phases; Segment has designated source of truth).
+  Retired-names pre-flight: clean.
+  **Cameo REJECTIONS**:
+  - "bounded-guarantee-degradation" (size-bound
+    window shrink + on-call pager) carried in
+    tradeoff 4 with owner-may-promote note. Logged
+    as open-decisions item 10.
+  - bloom filters (storage mechanics, not a house
+    pattern).
+  - retry-with-backoff (client behavior undetailed
+    in post).
+  **Rejected tags**: buffer-degrades (Kafka is
+  healthy here); partial-completion (no workflow
+  semantics).
+  **Backlink topology owner call** (open-decisions
+  item 11): class now has 5 members. Fable authored 2
+  forward links (stripe-idempotency +
+  aws-idempotent-apis — the contract-side poles vs
+  Segment's no-contract face); DECISIONS §8 flagged
+  the topology question — all-pairs (5×4 = 20 edges)
+  vs hub-and-spoke (fewer, structural). Applied as
+  authored + Stripe/AWS backlinks. Not yet linked to
+  Shopify or Airbnb Orpheus; owner call whether to
+  extend.
+  **Accent** #52BD94 (Segment green) — established
+  r16 company accent; standing corridor flag with
+  Skipper green `#22C55E` restated (chrome-only
+  discipline observed: verdicts semantic).
+  Contents:
+  - content/articles/segment-exactly-once-delivery.
+    json — article + crux + cruxTag (ambiguous-
+    failure reused, FIFTH company) + cruxSummary +
+    3 pattern refs + 3 stats + relatedArticles →
+    Stripe + AWS. addedAt: 2026-07-23. Source block
+    normalized to match live `feeds.json`.
+  - content/artifacts/segment-exactly-once-delivery.
+    jsx — accent `#52BD94`. Interval sim, pure
+    step() functional setState. Crux made literal:
+    reader owns BOTH ends of the ambiguity — the
+    bus/tunnel (manufacture duplicate sends) and
+    the ledger (settle them). Five verified beats:
+    tunnel+no-ledger → duplicates downstream;
+    ledger → discarded; LOAD SPIKE → size-bound
+    window shrink to pager territory (guarantee
+    bending, playable); CRASH between publish and
+    ledger-write → pipeline pauses until RECOVER
+    consults output topic (designated-source-of-
+    truth made literal); RE-SEND AN AGED-OUT ID →
+    duplicate passes the ledger (guarantee's
+    honest edge, playable — artifact ships its own
+    counterexample). Verdict-only assert strings:
+    "THE TUNNEL SENT IT TWICE", "SEEN, DISCARDED —
+    ALMOST EXACTLY ONCE", "THE WINDOW BENT, THE
+    SYSTEM DIDN'T", "CRASHED BETWEEN THE THREE
+    ACTS", "REPAIRED AGAINST THE OUTPUT TOPIC",
+    "PAST THE WINDOW, THROUGH THE DOOR".
+  - content/patterns/designated-source-of-truth.
+    json — NEW pattern, consistency, minted at ONE
+    company (Segment). Boundary vs atomic-phases
+    inside definition. Two structural costs named
+    (designated truth's availability = deferred
+    failure; derived stores must be rebuildable).
+  - Back-tag on content/articles/stripe-idempotency.
+    json: Segment added to relatedArticles (fourth
+    forward link on the 5-company hub).
+  - Back-tag on content/articles/aws-idempotent-
+    apis.json: Segment added to relatedArticles
+    (fourth forward link).
+  - No content/cruxtags.json change.
+  - No content/feeds.json change (Segment already
+    live).
+  Recurrences created by this landing:
+  - ambiguous-failure-under-retry → 5-company
+    (Stripe + Shopify + Airbnb + AWS + Segment).
+    FIRST five-company cruxTag.
+  - idempotency-keys → 6 articles / 5 companies
+    (Stripe + Shopify + Airbnb + AWS + Segment).
+    FIRST five-company pattern.
+  - single-writer-ownership → 2 articles / 1
+    company (Segment; per same-company rule).
+  - designated-source-of-truth → NEW pattern; 1
+    article (Segment). Category consistency.
+  - relatedArticles: Segment → Stripe + AWS
+    forward links; both articles' backlinks
+    applied in the same commit.
+  Landing preview + catalog effects: `ambiguous-
+  failure-under-retry` row now shows "5 SYSTEMS",
+  SEEN AT Airbnb · AWS · Segment · Shopify ·
+  Stripe. FIRST five-system row; group ordering
+  puts it at the top of `/catalog`. Row-renderer
+  AGENT CHECK: `N SYSTEMS` template handles 5
+  (verify on deploy; no hard-coded "4 systems"
+  cap noted in build).
+  Total preview row count UNCHANGED at 9. CTA
+  "Browse all 30 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 30 warnings (was 29; +1 cosmetic fuzzy-
+  miss on Segment's "200B" vs prose "200 billion";
+  same residual class).
+  `npm run build` → end-to-end clean; 74 routes
+  prerendered (29 → 30 articles + 36 → 37 patterns
+  + 4 top pages + /404 + /artifacts/_hero); sitemap
+  73 URLs. `npm test` → 100 passed.
+  Library state after landing: 30 articles across
+  18 companies (Segment at 3 articles now; fourth
+  three-article company); 37 pattern definitions
+  (designated-source-of-truth new); 30 artifacts.
+  cruxTag taxonomy: 11 tags with 1 five-company,
+  1 four-company, 5 three-company, 2 two-company,
+  2 one-company (AWS retry-amplified, DoorDash
+  mitigation-scoped-narrower-than-failure).
+
 - **Article #29 (Uber Kafka Consumer Proxy) LANDED
   (2026-07-22). SECOND FOUR-COMPANY cruxTag in the
   library.** Fable-authored dissection of Uber's 2021

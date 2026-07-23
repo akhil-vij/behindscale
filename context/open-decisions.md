@@ -110,9 +110,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 29 articles, 11 tags,
-  2 four-company + 5 three-company (as of r20 Uber Kafka
-  Consumer Proxy — second four-company cruxTag).
+  pipeline pending deploy". Live is 30 articles, 11 tags,
+  1 five-company + 1 four-company + 5 three-company
+  (as of r21 Segment exactly-once — first five-company
+  cruxTag; idempotency-keys becomes first five-company
+  pattern).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -139,6 +141,48 @@ _None._
   company writes both a mechanism paper and a productionization
   follow-up.
 - **Reply:** confirm-ruling / dissect-2026-instead / defer.
+
+### 10. `bounded-guarantee-degradation` promotion?
+
+- **Source:** round 21 (Segment exactly-once) DECISIONS §4.
+  Segment's size-bound RocksDB window shrinks under load
+  rather than falling over — and the shrink pages on-call
+  when it dips under 24h. That's a pattern shape: a
+  guarantee that has a degradation lever (window narrowing)
+  and a signal that names when the lever has been pulled
+  hard enough. Currently carried in tradeoff #4 of the
+  Segment article with an owner-may-promote note; other
+  library candidates likely (Netflix/Uber shed traffic
+  before dropping order; retry-with-jitter as a bounded
+  quality-of-service dance).
+- **What's needed:** owner call on whether to mint this as
+  a pattern now (1-company launch anchored by Segment,
+  waiting for a second company) or wait for a natural
+  second instance to force the mint.
+- **Recommended:** wait. The pattern shape is real but
+  Fable's own instinct was "carry in tradeoff, promote if
+  another instance shows up." Same posture the library has
+  taken on cameo-first mints since r13.
+- **Reply:** mint-now / wait-for-second-company / dismiss.
+
+### 11. Idempotency 5-company backlink topology
+
+- **Source:** round 21 DECISIONS §8. The idempotency
+  cluster is now 5 companies (Stripe, Shopify, Airbnb,
+  AWS, Segment). Fable authored two forward links from
+  Segment (Stripe + AWS — the contract-side poles vs
+  Segment's no-contract face) and asked whether to extend.
+  All-pairs = 20 edges; hub-and-spoke = fewer but demands
+  a "hub" choice. Applied as authored + Stripe/AWS
+  backlinks. Not yet linked to Shopify or Airbnb Orpheus.
+- **Recommended:** apply symmetry (add Shopify + Airbnb
+  Orpheus to Segment's forward links, and Segment to their
+  backlinks). Same principle as r19 Shopify + r20 Meta
+  FOQS — 4/5-company clusters get fully-connected graphs
+  so lateral navigation doesn't dead-end. This is the
+  third instance of the same class of ask; if you sign
+  off, treat the rule as standing for future landings.
+- **Reply:** apply-symmetry / hub-and-spoke / keep-at-two.
 
 ### 9. Uber ↔ Meta FOQS backlink symmetry?
 
