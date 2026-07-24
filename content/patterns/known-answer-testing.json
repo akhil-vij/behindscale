@@ -1,0 +1,16 @@
+{
+  "slug": "known-answer-testing",
+  "name": "Known-Answer Testing",
+  "category": "observability",
+  "definition": "When a failure mode produces no passive signal — no log line, no error counter, no failed health check — because the failing component doesn't know it's failing, detection must be manufactured: inject inputs whose correct outputs are predetermined, execute them on the component under suspicion, and treat any disagreement between produced and expected answers as the detection event. The component's honesty is tested directly rather than inferred from its self-reported health. Cryptographic module validation named the technique (known-answer tests); fleet-scale silicon screening, storage scrubbing, end-to-end checksum patrols, and canary queries against serving systems are the same move at different layers.\n\nThe pattern's deployment shape is two-tiered, and the tiers are complements rather than alternatives. Shallow-and-constant: sub-second known-answer probes co-located with live workloads, always on, scheduled and sized to be a polite guest — buying fast time-to-detection and coverage of defects that only manifest under production-like conditions, mode transitions, or accumulated iterations. Deep-and-rare: minutes-long intrusive test batteries run when the component is already out of service (maintenance windows, upgrades, repairs) — buying coverage of defects the quick probes structurally cannot reach. Evidence from fleet practice shows each tier detecting faults the other never finds; running only one chooses between slow detection and permanent blind spots. Boundary against health checking: a health check asks 'are you up?'; known-answer testing asks 'are you right?' — a component can pass every liveness probe while failing every known-answer probe. Boundary against Independent Observability: that pattern moves the WATCHER out of the failure domain so passive signals survive; this pattern applies when no passive signal exists to preserve, and evidence must be actively created.",
+  "whenItApplies": [
+    "Failure modes that corrupt outputs without raising errors: silicon defects, bit rot, memory corruption, miscompiled or misdeployed logic returning plausible-but-wrong results",
+    "Components whose self-reported health is structurally uninformative about correctness — the thing being verified is the truthfulness of computation or storage itself",
+    "Fleets large enough that rare per-unit defect rates become certainties, and exposure windows (time between defect onset and detection) carry real data-loss or propagation cost"
+  ],
+  "tradeoffs": [
+    "Almost every test interrogates an innocent component: the steady-state cost is billions of probes against healthy hardware to catch the silent few, and that overhead ledger must be defended continuously",
+    "Coverage is only as good as the question bank: defects triggered by data patterns, modes, or iteration counts the probes never exercise remain invisible — the test-vector library needs the same curation as the fleet",
+    "In-production probes are guests with obligations: co-location footprint, residual-configuration risk, and per-workload politeness controls all become permanent operational surface"
+  ]
+}
