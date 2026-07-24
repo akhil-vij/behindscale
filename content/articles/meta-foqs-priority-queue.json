@@ -50,7 +50,8 @@
     "discord-trillions-message-search",
     "slack-scaling-job-queue",
     "segment-centrifuge-database-queue",
-    "uber-kafka-consumer-proxy"
+    "uber-kafka-consumer-proxy",
+    "doordash-rabbitmq-kafka"
   ],
   "stats": [
     {

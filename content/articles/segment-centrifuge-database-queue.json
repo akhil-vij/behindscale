@@ -53,7 +53,8 @@
   "relatedArticles": [
     "meta-foqs-priority-queue",
     "slack-scaling-job-queue",
-    "uber-kafka-consumer-proxy"
+    "uber-kafka-consumer-proxy",
+    "doordash-rabbitmq-kafka"
   ],
   "stats": [
     {

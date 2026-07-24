@@ -1,0 +1,16 @@
+{
+  "slug": "fetch-execute-decoupling",
+  "name": "Fetch-Execute Decoupling",
+  "category": "throughput",
+  "definition": "Partition-ordered logs (Kafka and its kin) couple two things that have no business being coupled: the order in which messages are fetched and the order in which they finish executing. One consumer per partition per group, delivering in sequence, means a single slow message stalls every message behind it in its partition — head-of-line blocking that turns one degenerate task into a partition-wide delay, catastrophic on high-priority topics. The decoupling inserts a small buffer between the two concerns: a single fetch process consumes from the partition into a bounded local queue, and a pool of executor processes draws work from that queue concurrently. A slow message now occupies one executor while the partition keeps flowing through the others; the fetch process pauses only when the local queue hits its threshold.\n\nThe threshold is the pattern's honest knob: it bounds memory, it applies backpressure to fetching, and it is precisely the number of in-flight messages a process crash can lose — the loss budget, chosen explicitly. Implementations that refuse any loss budget must pair the same shape with offset-tracking that acknowledges out of order and parks failures durably; implementations that accept a bounded window keep the simplicity. Boundary against Selective Acknowledgment: that pattern solves the identical head-of-line problem on the delivery-guarantee side — per-message acks, out-of-order commits, dead-letter parking — at the cost of tracking machinery; fetch-execute decoupling solves it on the concurrency side at the cost of a loss window. Fleets choose by what a dropped message costs. Boundary against simply adding partitions: more partitions dilute the blast radius of a slow message but cannot eliminate it, and partition counts carry their own rebalancing and ordering economics.",
+  "whenItApplies": [
+    "Partition-ordered consumption where individual message processing times vary widely, so one slow task can dam a partition serving many fast ones",
+    "Runtimes or languages where per-message parallelism inside one consumer is awkward (process-based concurrency), making a local queue between fetcher and executors the natural seam",
+    "High-priority topics whose latency SLO cannot be hostage to the slowest message ahead of it in arrival order"
+  ],
+  "tradeoffs": [
+    "The local-queue threshold is a declared loss budget: everything in flight past the fetch offset can vanish in a crash, so the number must be chosen as a business decision, not a performance default",
+    "Ordering within a partition is forfeited at execution time — tasks that genuinely require arrival-order processing cannot ride this pattern without additional sequencing",
+    "The fetcher/executor split adds a process topology to operate: queue-depth metrics, executor health, and the interplay between local backpressure and consumer-group liveness all become monitoring surface"
+  ]
+}

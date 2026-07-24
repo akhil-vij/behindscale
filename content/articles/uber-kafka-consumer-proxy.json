@@ -49,7 +49,8 @@
   "relatedArticles": [
     "segment-centrifuge-database-queue",
     "slack-scaling-job-queue",
-    "meta-foqs-priority-queue"
+    "meta-foqs-priority-queue",
+    "doordash-rabbitmq-kafka"
   ],
   "stats": [
     {
