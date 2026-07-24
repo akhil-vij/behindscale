@@ -154,6 +154,60 @@ _None._
   follow-up.
 - **Reply:** confirm-ruling / dissect-2026-instead / defer.
 
+### 10. `bounded-guarantee-degradation` promotion?
+
+- **Source:** round 21 (Segment exactly-once) DECISIONS §4.
+  Segment's size-bound RocksDB window shrinks under load
+  rather than falling over — and the shrink pages on-call
+  when it dips under 24h. That's a pattern shape: a
+  guarantee that has a degradation lever (window narrowing)
+  and a signal that names when the lever has been pulled
+  hard enough. Currently carried in tradeoff #4 of the
+  Segment article with an owner-may-promote note; other
+  library candidates likely (Netflix/Uber shed traffic
+  before dropping order; retry-with-jitter as a bounded
+  quality-of-service dance).
+- **What's needed:** owner call on whether to mint this as
+  a pattern now (1-company launch anchored by Segment,
+  waiting for a second company) or wait for a natural
+  second instance to force the mint.
+- **Recommended:** wait. The pattern shape is real but
+  Fable's own instinct was "carry in tradeoff, promote if
+  another instance shows up." Same posture the library has
+  taken on cameo-first mints since r13.
+- **Reply:** mint-now / wait-for-second-company / dismiss.
+
+### 12. `fault-isolation` chip on Slack Vitess?
+
+- **Source:** round 22 DECISIONS §4. The workload-isolation
+  desire (isolate second-tier workloads from message sending;
+  shard outage = full Slack outage for those customers) is
+  named as one motivation bullet in the post, delivered by
+  keyspaces after Vitess, but not mechanically developed as a
+  first-class solution. Currently carried in tradeoffs prose
+  with owner-may-promote note.
+- **Recommended:** promote. `fault-isolation` is our most-
+  recurring pattern (13 articles pre-r22) and the Slack
+  keyspaces case is a real instance — one motivation bullet
+  is enough when the pattern is this well-established. Same
+  bar as the r15 back-tag decision on `master-only-reads`.
+- **Reply:** promote / keep-in-prose.
+
+### 13. `dark-read-verification` mint?
+
+- **Source:** round 22 DECISIONS §4. Slack's parallel double-
+  read diffing (running the query against both old and new
+  path, comparing results) is one sentence in the post,
+  folded into `universal-staged-rollout`'s note and tradeoff
+  #5. The pattern shape is real (dark reads with diffing are
+  a durable migration technique).
+- **Recommended:** wait for a second natural instance to
+  force the mint — same posture as item 10 (bounded-
+  guarantee-degradation). Notion's sharding migration and
+  Figma's rehearsal are candidates; if either surfaces this
+  explicitly, the mint becomes 2-company from the start.
+- **Reply:** mint-now / wait-for-second-company / dismiss.
+
 ### 14. Vendor-case-study source bar → taste doc?
 
 - **Source:** round 24 (AWS load shedding) DECISIONS §Selection.
@@ -190,60 +244,6 @@ _None._
   whenever a second article surfaces it.
 - **Reply:** mint-now / wait-for-second-company / dismiss.
 
-### 12. `fault-isolation` chip on Slack Vitess?
-
-- **Source:** round 22 DECISIONS §4. The workload-isolation
-  desire (isolate second-tier workloads from message sending;
-  shard outage = full Slack outage for those customers) is
-  named as one motivation bullet in the post, delivered by
-  keyspaces after Vitess, but not mechanically developed as a
-  first-class solution. Currently carried in tradeoffs prose
-  with owner-may-promote note.
-- **Recommended:** promote. `fault-isolation` is our most-
-  recurring pattern (13 articles pre-r22) and the Slack
-  keyspaces case is a real instance — one motivation bullet
-  is enough when the pattern is this well-established. Same
-  bar as the r15 back-tag decision on `master-only-reads`.
-- **Reply:** promote / keep-in-prose.
-
-### 13. `dark-read-verification` mint?
-
-- **Source:** round 22 DECISIONS §4. Slack's parallel double-
-  read diffing (running the query against both old and new
-  path, comparing results) is one sentence in the post,
-  folded into `universal-staged-rollout`'s note and tradeoff
-  #5. The pattern shape is real (dark reads with diffing are
-  a durable migration technique).
-- **Recommended:** wait for a second natural instance to
-  force the mint — same posture as item 10 (bounded-
-  guarantee-degradation). Notion's sharding migration and
-  Figma's rehearsal are candidates; if either surfaces this
-  explicitly, the mint becomes 2-company from the start.
-- **Reply:** mint-now / wait-for-second-company / dismiss.
-
-### 10. `bounded-guarantee-degradation` promotion?
-
-- **Source:** round 21 (Segment exactly-once) DECISIONS §4.
-  Segment's size-bound RocksDB window shrinks under load
-  rather than falling over — and the shrink pages on-call
-  when it dips under 24h. That's a pattern shape: a
-  guarantee that has a degradation lever (window narrowing)
-  and a signal that names when the lever has been pulled
-  hard enough. Currently carried in tradeoff #4 of the
-  Segment article with an owner-may-promote note; other
-  library candidates likely (Netflix/Uber shed traffic
-  before dropping order; retry-with-jitter as a bounded
-  quality-of-service dance).
-- **What's needed:** owner call on whether to mint this as
-  a pattern now (1-company launch anchored by Segment,
-  waiting for a second company) or wait for a natural
-  second instance to force the mint.
-- **Recommended:** wait. The pattern shape is real but
-  Fable's own instinct was "carry in tradeoff, promote if
-  another instance shows up." Same posture the library has
-  taken on cameo-first mints since r13.
-- **Reply:** mint-now / wait-for-second-company / dismiss.
-
 
 ---
 
@@ -273,22 +273,12 @@ same class of question.
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
-### Idempotency 5-company backlink symmetry (item 11)
-- **Resolved:** 2026-07-23, owner said apply.
-- **Effect:** five missing edges added across four files
-  (Stripe→Shopify; Shopify→Segment; Airbnb-Orpheus→Segment;
-  Segment→Shopify+Airbnb-Orpheus). Idempotency 5-company
-  graph now fully connected. Retires items 9 and 11 in one
-  motion, since the r20 Uber↔Meta FOQS asymmetry (item 9)
-  was covered by the same rule; `meta-foqs-priority-queue`
-  added to `uber-kafka-consumer-proxy.relatedArticles`
-  retroactively.
+_None this round._
 
-_(Older resolutions rolled off after their round: Third
-backlink to Shopify from AWS idempotency 2026-07-22 as
-`c59d141`.)_
-
-_(Older resolutions rolled off after their round:
-buffer-degrades-under-backlog registry amendment 2026-07-22 as
-`f2fad03`; partial-completion registry amendment 2026-07-19 as
-`5f8d0da`; company-concentration doctrine 2026-07-19 as `c085fd1`.)_
+_(Older resolutions rolled off after their round: Idempotency
+5-company backlink symmetry 2026-07-23 as `89a3d98` (retired
+items 9 and 11); Third backlink to Shopify from AWS
+idempotency 2026-07-22 as `c59d141`; buffer-degrades-under-
+backlog registry amendment 2026-07-22 as `f2fad03`; partial-
+completion registry amendment 2026-07-19 as `5f8d0da`;
+company-concentration doctrine 2026-07-19 as `c085fd1`.)_
