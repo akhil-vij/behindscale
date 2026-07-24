@@ -127,10 +127,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 34 articles, 11 tags,
-  1 five-company + 4 four-company + 5 three-company + 1
-  two-company + 2 one-company (as of r25 GitLab decomposition —
-  single-cluster-scaling-ceiling promoted to 4-company).
+  pipeline pending deploy". Live is 35 articles, 11 tags,
+  1 five-company + 4 four-company + 6 three-company + 0
+  two-company + 2 one-company (as of r26 Meta SDC — gray-
+  failure promoted to 3-company; **NO 2-company classes
+  remain**).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -271,6 +272,38 @@ _None._
   pattern shows up we can revisit; a category rename would
   affect the chip ramp.
 - **Reply:** keep-in-consistency / new-category / reject-mint.
+
+### 18. Invariant-8 vs one-chip article intent
+
+- **Source:** round 26 (Meta SDC) DECISIONS §2 + validation
+  result. Fable declared this an intentional ONE-CHIP round
+  (single-lesson piece; candidate second chips rejected as
+  forced) — the first time the round-folder format has done
+  so explicitly. The invariant-8 check (`minimum-pattern-
+  coverage`) rejected the article at first pass. Fable's
+  AGENT OPTION clause anticipated this: "if live classmates
+  share a taggable class pattern, agent may add that recur
+  with a note mirroring the crux caveat." Agent added
+  `fault-isolation` under that clause; the article now
+  ships with 2 chips (known-answer-testing + fault-
+  isolation) and validates. But the deeper question was
+  surfaced.
+- **What's needed:** ruling on whether the invariant should
+  stay hard (Fable always authors ≥2 grounded chips; the
+  one-chip AGENT OPTION becomes the routine fallback) OR
+  whether the library formalizes a "one-chip case study"
+  article type with its own architectural carve-out.
+- **Recommended:** keep the invariant hard. The AGENT
+  OPTION clause is a good escape valve for genuinely single-
+  lesson pieces (Fable's judgment is trustable) and the
+  invariant-8 rationale in architecture.md still holds
+  (single-pattern articles are case studies, not library
+  entries). The Meta SDC case worked cleanly: the
+  classmate-shared pattern was gettable at a real angle
+  (test-blast-radius containment), and the note articulated
+  the class-response inversion honestly.
+- **Reply:** keep-invariant / formalize-case-study-type /
+  loosen-invariant.
 
 ### 17. `universal-staged-rollout` note ordering curation
 

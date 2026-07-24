@@ -4,6 +4,185 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #35 (Meta silent data corruption) LANDED
+  (2026-07-24). NO 2-COMPANY CLASSES REMAIN — every
+  multi-member class in the library now sits at 3+
+  companies (only sub-3 entries are the two declared
+  singletons, retry-amplified and mitigation-scoped).**
+  Fable-authored dissection of Meta's 2022 SDC post
+  (Dixit et al.). Silent data corruptions leave no
+  record or trace in any log; every passive signal
+  answers "is the machine up?" while the question that
+  matters is "is the machine telling the truth?"
+  Detection cannot be observed into existence — it
+  has to be MANUFACTURED. Meta's answer is active
+  interrogation at two depths, treated as equally
+  important:
+  - **Fleetscanner** (opportunistic, deep): piggybacks
+    on maintenance events (reboots, upgrades,
+    reimages) — minutes-long intrusive tests during
+    downtime that already existed. ~180-day average
+    per-machine cadence with fine-grained per-tier
+    controls. 68M+ tests, ~4B machine-seconds.
+  - **Ripple** (constant, shallow): shadow testing
+    beside production workloads with injected bit
+    patterns and expected results; hundreds of
+    milliseconds; unique seeds and manufactured
+    transition events for defects that only manifest
+    across thousands of iterations. ~2.5B unique
+    tests+seeds per month.
+  Coverage table settles the argument for BOTH:
+  ripple ~70% coverage in ~15 days vs opportunistic
+  ~6 months; but 23% of faulty CPUs are unique to
+  the deep tests, and 7% unique to repeated ripple.
+  `gray-failure-defeats-automatic-detection` (Slack
+  cellular + Cloudflare byzantine) becomes the EIGHTH
+  three-company cruxTag. Manifestation caveat is the
+  round's spine: classmates met DISTRIBUTED-SYSTEMS
+  gray (components neither healthy nor dead); Meta
+  meets SILICON gray (correctness itself corrupted
+  with no record or trace). Same class conclusion
+  forced to its logical end: when no passive signal
+  can ever exist, evidence must be manufactured —
+  known-answer interrogation at two depths.
+  **HEADLINE: the board is cleared** — every multi-
+  member class now sits at 3+ companies. Only sub-3
+  entries are the two declared singletons (AWS retry-
+  amplified, DoorDash mitigation-scoped).
+  Meta = SECOND article (meta-foqs sibling; within
+  the established multi-article precedent chain, no
+  new flag). Shipped by the Claude Code agent as
+  `feat: publish` (`<pending>`) + this docs refresh
+  (`<pending>`). No feeds.json change.
+  **Secondary-press discipline note** (owner
+  awareness): quarantine mechanics for identified
+  bad CPUs appear only in press paraphrases of a
+  companion academic paper — OMITTED from article
+  facts; artifact renders "QUARANTINED" as an
+  illustrative consequence, footer-labeled as
+  miniature rendering, not sourced mechanics.
+  Meta's 2021 sibling post ("Mitigating the effects
+  of silent data corruption at scale") disclosed
+  UNREAD in the footer (r25 unread-sibling
+  precedent); owner may commission a future round.
+  **NEW MINT**: `known-answer-testing`
+  (observability) — the name cryptographic
+  validation already uses (KAT). Two-depth
+  deployment shape folded INTO the definition as
+  intrinsic rather than minted separately.
+  Boundaries: vs health checks ("are you up?" vs
+  "are you right?") and vs independent-observability
+  (out-of-band WATCHER preserving passive signals vs
+  active creation of evidence where no passive
+  signal exists). Generality without Meta: crypto
+  KATs, storage scrubbing, checksum patrols, canary
+  queries. Retired-names pre-flight: clean.
+  **Fable declared ONE-CHIP round explicitly (a
+  first)**: post is single-lesson deep (detection
+  epistemology); candidate second chips (independent-
+  observability, conservative-auto-remediation,
+  universal-staged-rollout) examined and rejected as
+  forced. AGENT OPTION clause anticipated the
+  invariant-8 conflict: "if live classmates share a
+  taggable class pattern, agent may add that recur
+  with a note mirroring the crux caveat." Both
+  gray-failure classmates carry `fault-isolation`;
+  agent added it under the AGENT OPTION with a note
+  articulating the class-response inversion: Slack/
+  Cloudflare apply isolation to failure
+  consequences; Meta applies it upstream to
+  detection footprint (per-tier/per-service/per-
+  workload test scheduling controls).
+  **Invariant-8 tension noted**: Fable's one-chip
+  intent conflicts with architecture.md invariant 8
+  (minimum-pattern-coverage check). The AGENT
+  OPTION resolves this specific round, but the
+  broader question is whether the taste doc should
+  formalize a "one-chip case-study" article type,
+  or whether the invariant should stay hard and
+  Fable should always author two grounded chips.
+  Logged as open-decisions item 18.
+  **Standing symmetric-linking rule NOT triggered**
+  — gray-failure cluster is 3-company after this
+  landing, under the 4+ threshold. Applied 2
+  backlinks as authored (Slack + Cloudflare → Meta),
+  no all-pairs extension.
+  **Accent** `#0866FF` (Meta blue) — established
+  company accent (from meta-foqs), no new corridor
+  entry.
+  Contents:
+  - content/articles/meta-silent-data-corruption.
+    json — article + crux + cruxTag (gray-failure-
+    defeats-automatic-detection reused, THIRD
+    company) + cruxSummary + 2 pattern refs (known-
+    answer-testing + fault-isolation) + 3 stats +
+    relatedArticles → Slack-cellular + Cloudflare-
+    byzantine. addedAt: 2026-07-24.
+  - content/artifacts/meta-silent-data-corruption.
+    jsx — accent `#0866FF`. Interval sim, pure
+    step() functional setState (exposure must be
+    FELT as ticking time). Futility beat is the
+    centerpiece: green passive signals beside a
+    climbing corrupted-results counter with NO
+    testing armed. MAINT_EVERY=24 ticks stands in
+    for the ~180-day window (footer-labeled
+    miniature). Beats: passive futility →
+    fleetscanner-only (months-of-exposure catch at
+    the window) → ripple (days) → RARE-MODE defect
+    (ripple structurally blind; fleetscanner's 23%-
+    unique beat) → both-on. Verdict-only assert
+    strings: "GREEN CHECKS, WRONG ANSWERS",
+    "CAUGHT AT MAINTENANCE — MONTHS OF EXPOSURE",
+    "FIFTEEN DAYS, NOT SIX MONTHS", "ONLY THE DEEP
+    TEST SAW IT", "THE SHALLOW PROBES KEEP
+    MISSING", "BOTH HANDS ON THE FLEET".
+  - content/patterns/known-answer-testing.json —
+    NEW pattern, observability, minted at ONE
+    company (Meta). Boundaries vs health checks
+    and vs independent-observability inside
+    definition.
+  - Back-tag on content/articles/slack-cellular-
+    architecture.json: Meta added.
+  - Back-tag on content/articles/cloudflare-
+    byzantine-failure.json: Meta added.
+  - No content/cruxtags.json change.
+  - No content/feeds.json change.
+  Recurrences created by this landing:
+  - gray-failure-defeats-automatic-detection →
+    3-company (Slack + Cloudflare + Meta). EIGHTH
+    three-company cruxTag.
+  - known-answer-testing → NEW pattern; 1 article
+    (Meta). Category observability.
+  - fault-isolation → 14 articles (Meta added via
+    AGENT OPTION back-tag). Still most-recurring
+    pattern.
+  - relatedArticles: Meta → Slack + Cloudflare
+    forward links; both classmates' backlinks
+    applied in the same commit.
+  Landing preview + catalog effects: `gray-failure-
+  defeats-automatic-detection` row now shows "3
+  SYSTEMS", SEEN AT Cloudflare · Meta · Slack.
+  BOARD CLEARED: NO 2-company classes remain. Total
+  preview row count UNCHANGED at 9. CTA "Browse all
+  35 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 34 warnings (was 33; +1 cosmetic fuzzy-
+  miss from Meta stats; same residual class).
+  `npm run build` → end-to-end clean; 86 routes
+  prerendered (34 → 35 articles + 43 → 44
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 85 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 35 articles across
+  20 companies (Meta at 2 articles); 44 pattern
+  definitions (known-answer-testing new); 35
+  artifacts. cruxTag taxonomy: 11 tags with 1
+  five-company, 4 four-company, 6 three-company
+  (NEW: gray-failure joins), 0 two-company (BOARD
+  CLEARED), 2 one-company (AWS retry-amplified,
+  DoorDash mitigation-scoped-narrower-than-
+  failure).
+
 - **Article #34 (GitLab database decomposition) LANDED
   (2026-07-24). FIFTH four-company cruxTag in the
   library; first SAME-MARKET RIVALS pairing inside one
