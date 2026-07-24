@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "airbnb-partitioning-main-database",
-    "github-partitioning-relational-databases"
+    "github-partitioning-relational-databases",
+    "gitlab-database-decomposition"
   ],
   "stats": [
     {

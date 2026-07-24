@@ -44,7 +44,8 @@
   ],
   "relatedArticles": [
     "github-partitioning-relational-databases",
-    "slack-vitess-datastores"
+    "slack-vitess-datastores",
+    "gitlab-database-decomposition"
   ],
   "stats": [
     {

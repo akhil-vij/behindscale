@@ -70,6 +70,13 @@
     "feed": "https://github.blog/engineering/feed/"
   },
   {
+    "name": "GitLab Blog (Engineering)",
+    "slug": "gitlab-engineering",
+    "company": "GitLab",
+    "url": "https://about.gitlab.com/blog/categories/engineering/",
+    "feed": "https://about.gitlab.com/atom.xml"
+  },
+  {
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",

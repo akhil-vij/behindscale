@@ -1,0 +1,16 @@
+{
+  "slug": "loose-foreign-keys",
+  "name": "Loose Foreign Keys",
+  "category": "consistency",
+  "definition": "When a table boundary hardens into a database boundary — decomposition, sharding, service extraction — foreign keys across the line must die, but the semantics they enforced (cascading DELETE, cascading NULLIFY) still need to hold. Replace the constraint with asynchronous convergence: an on-delete trigger on the parent table records each deletion into a queue table inside the parent's own database, and a periodic worker drains the queue, applying the cascade to child records across the boundary in controlled batches. Triggers, unlike application-level delete callbacks, cannot be skipped and fire for bulk deletes, so the capture side keeps database-grade guarantees; only the enforcement becomes eventual.\n\nThe pattern's second face is a cure for a wound synchronous cascades inflict even inside one database: a parent with millions of children no longer detonates a single giant transactional delete — the worker controls batch size and pacing, so cleanup never times out and never overloads the store. The costs are the async ones: a convergence window during which orphaned children exist and queries must tolerate them (or filter by parent existence), a queue table and worker that must be monitored like any pipeline, and the loss of the constraint's read-time guarantee — nothing prevents inserting a child for a deleted parent except application discipline. Boundary against Content-Free Change Events: that pattern signals identity and re-reads truth to synchronize derived stores; this one carries the delete intent itself in-queue and mutates authoritative child tables. Boundary against real foreign keys: choose loose only when the boundary makes real ones impossible — the pattern is a bridge across a line you drew, not an upgrade.",
+  "whenItApplies": [
+    "Database decomposition or service extraction severs existing foreign keys whose cascade semantics the application still depends on",
+    "Bulk and cascading deletes at volumes where synchronous enforcement causes lock contention or statement timeouts",
+    "Any cross-store parent-child relationship where deletes must eventually propagate and brief orphan windows are tolerable"
+  ],
+  "tradeoffs": [
+    "Convergence windows are real: child records outlive their parents until the worker arrives, and every consumer of the child tables must tolerate or filter the orphans",
+    "The capture trigger is only half the guarantee — insert-side integrity (no new children for dead parents) has no enforcement left and falls entirely to application discipline",
+    "The queue and its worker are new operational surface: backlog growth, batch sizing, and pacing now determine how stale referential integrity is allowed to get"
+  ]
+}

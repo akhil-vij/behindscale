@@ -1,0 +1,16 @@
+{
+  "slug": "violation-ratchet",
+  "name": "Violation Ratchet",
+  "category": "consistency",
+  "definition": "When establishing a new architectural invariant across a large, actively evolving codebase — no cross-database joins, no cross-store transactions, no direct use of a deprecated base class — a one-time cleanup loses to the codebase's own velocity: uninvolved engineers introduce new violations faster than a dedicated team removes old ones. The ratchet converts the chase into a monotonic burn-down. First, build detection for the invariant: static analysis, runtime analyzers that raise on violation, and sampled production telemetry that confirms real traffic obeys (and exposes code paths tests never execute). Second, enumerate every existing violation into an explicit allowlist. Third, fail the build on any violation not in the allowlist — new offenses become impossible to merge — while the allowlist itself only ever shrinks as items are fixed and removed.\n\nThe mechanism's virtues are social as much as technical: the allowlist is a visible, finite work queue that teams can own in slices; progress is legible to leadership; and the invariant's enforcement doesn't depend on every engineer knowing the migration exists — the pipeline knows. The costs: detection must be trustworthy at merge time (false positives train people to bypass the gate), production sampling adds telemetry expense (GitLab parsed 1 in 10,000 queries), and the ratchet only defends invariants you can detect mechanically — judgment-shaped rules can't ride it. This is an engineering-process pattern enforced through CI rather than a runtime mechanism; it earns its place in a systems library because large-scale architectural transitions fail without it.",
+  "whenItApplies": [
+    "A multi-quarter architectural transition (decomposition, deprecation, boundary enforcement) proceeds while the codebase evolves under engineers not involved in the transition",
+    "The invariant is mechanically detectable — by static analysis, runtime assertion in test/dev, or query/telemetry inspection",
+    "Progress visibility matters: the transition spans many owning teams who need a finite, attributable list rather than a moving target"
+  ],
+  "tradeoffs": [
+    "Detection quality is load-bearing: false positives at merge time erode trust in the gate and breed workarounds that outlive the migration",
+    "The allowlist can fossilize — without deadlines or ownership per entry, the ratchet holds the line but the burn-down stalls at a permanent plateau",
+    "Only mechanically detectable invariants qualify; rules requiring judgment must be enforced by review culture, which the ratchet can't replace"
+  ]
+}
