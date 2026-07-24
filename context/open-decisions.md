@@ -127,11 +127,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 35 articles, 11 tags,
-  1 five-company + 4 four-company + 6 three-company + 0
-  two-company + 2 one-company (as of r26 Meta SDC — gray-
-  failure promoted to 3-company; **NO 2-company classes
-  remain**).
+  pipeline pending deploy". Live is 36 articles, 11 tags,
+  2 five-company + 3 four-company + 6 three-company + 0
+  two-company + 2 one-company (as of r27 DoorDash RabbitMQ —
+  buffer-degrades promoted to 5-company, joining ambiguous-
+  failure).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -272,6 +272,30 @@ _None._
   pattern shows up we can revisit; a category rename would
   affect the chip ramp.
 - **Reply:** keep-in-consistency / new-category / reject-mint.
+
+### 19. "Chips assert USE; absences are prose" rule → taste doc?
+
+- **Source:** round 27 (DoorDash RabbitMQ→Kafka) DECISIONS
+  §3. Fable drafted a `dead-letter-queue` chip as a
+  "present by conspicuous absence" cross-reference and
+  REMOVED it before packaging on the reasoning that tagging
+  an article with a pattern it deliberately does NOT use
+  would falsely list DoorDash on that pattern's back-link
+  page. The absence-contrast lives in the mint's boundary
+  and tradeoff prose instead.
+- **What's needed:** ruling on whether to formalize the
+  proposed rule as a taste doc §4 (Patterns) bullet:
+  "Chips assert USE; absences are prose. If a pattern's
+  absence is a load-bearing choice, articulate the
+  contrast in the crux/tradeoffs/pattern-mint-boundary,
+  not by chip-tagging."
+- **Recommended:** formalize. The rule is small,
+  self-explanatory, and the reasoning is architectural
+  (pattern back-links must reflect real embodiment or the
+  library's cross-reference contract breaks). Same class
+  as the counterfactual-labeling rule that landed via
+  Fable and item 4b was subsequently retired.
+- **Reply:** formalize / defer.
 
 ### 18. Invariant-8 vs one-chip article intent
 

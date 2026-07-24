@@ -4,6 +4,218 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #36 (DoorDash RabbitMQ → Kafka) LANDED
+  (2026-07-24). SECOND FIVE-COMPANY cruxTag in the
+  library.** Fable-authored dissection of DoorDash's
+  2020 "Eliminating Task Processing Outages with
+  Kafka" post (Khalilnaji, Kachhara). More than 900
+  async tasks (order checkout, merchant order
+  transmission, Dasher location processing) on
+  Celery+RabbitMQ; peak-clustered outages; recovery
+  by broker bounce or manual failover; countdown/ETA
+  tasks parked future work in the broker.
+  Failure anatomy: burst → RabbitMQ degraded
+  (consumption significantly below expectation);
+  Flow Control slowed publishers, publishers
+  experienced it as network latency, latency
+  cascaded upstream; uWSGI harakiri killed timed-out
+  workers, reconnection churn added broker load. HA
+  mode reduced throughput and its failovers took
+  20+ minutes, often stuck, messages lost.
+  Cure: custom Kafka-based task system whose MVP
+  (task names + pickled args on Kafka, wrapper
+  around Celery's @task annotation routing by
+  dynamic feature flags) shipped in 2 weeks, cut
+  RabbitMQ load 80% within a week of launch.
+  Kicker: new buffer has new physics — Kafka HOL
+  blocking solved with a bounded local queue
+  decoupling one consumer process from many task
+  executors; deploy-triggered rebalance stalls
+  still awaiting incremental cooperative
+  rebalancing.
+  `buffer-degrades-under-backlog` (Meta + Slack +
+  Segment + Uber) becomes the SECOND five-company
+  cruxTag. Manifestation caveat: classmates BUILT
+  or REBUILT their buffers; DoorDash's is the
+  class's REPLACEMENT story — the incumbent's
+  degradation modes ruled unfixable from where they
+  stood, so the foundation was swapped for a
+  durable log. The kicker completes the class
+  teaching: you don't escape buffer pathology; you
+  choose which pathologies you can observe, bound,
+  and live with.
+  DoorDash = SECOND article (Aperture r11;
+  established precedent). No feeds.json change
+  (Fable noted the site migration to
+  careersatdoordash.com; live feeds.json already
+  points at it).
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Fable's honest-update note** (in-source): Fable
+  opened the hunt claiming no verified 5th/6th-
+  company candidates existed; this source surfaced
+  from deeper recall mid-turn and was verified
+  before authoring. Opening claim corrected on the
+  record.
+  **Source normalization on placement**: authored
+  source block used `DoorDash Engineering` /
+  `careersatdoordash.com/engineering-blog/` /
+  `careersatdoordash.com/feed/`. Normalized to
+  match the live `feeds.json` entry (`DoorDash
+  Engineering Blog` / `careersatdoordash.com/blog/`
+  / `careersatdoordash.com/blog/`) — same
+  correction class as r21 (Segment) and r19
+  handled in-place.
+  **Stale draft removed on placement**: the zip
+  contained TWO pattern JSONs (`fetch-execute-
+  decoupling.json` and `consumer-execution-
+  decoupling.json`) — alternate slug drafts of the
+  same pattern. DECISIONS §1 and the article
+  reference `fetch-execute-decoupling`; the
+  duplicate `consumer-execution-decoupling.json`
+  was NOT copied to `content/patterns/`.
+  **NEW MINT**: `fetch-execute-decoupling`
+  (throughput) — the HOL fix: fetcher → bounded
+  local queue → executor pool; the threshold is
+  the pattern's honest knob (memory bound +
+  fetch-side backpressure + explicit crash-loss
+  budget, chosen as a business decision). SIBLING
+  BOUNDARY with `selective-acknowledgment` (r20
+  Uber): identical head-of-line problem answered on
+  the delivery-guarantee side (out-of-order acks +
+  DLQ, tracking machinery) vs the concurrency side
+  (bounded loss window, simplicity) — cross-ref on
+  both pattern pages recommended.
+  **universal-staged-rollout RECUR → FIFTH
+  consecutive migration** (Datadog r17, Slack r22,
+  Canva r23, GitLab r25, now DoorDash). Pattern now
+  5 articles / 5 companies. Contributes the cost
+  ledger (double-capacity worker fleet, dedicated
+  K8s cluster — reversibility has a price tag,
+  printed) and the triage rule (rank features by
+  tasks-using-them). r25 agent note about the
+  pattern page becoming the migration-hub now
+  applies with force (open-decisions item 17).
+  **SELF-CORRECTION LOGGED IN-SOURCE**: Fable
+  drafted a dead-letter-queue chip as a "present
+  by conspicuous absence" cross-reference and
+  REMOVED it before packaging — tagging an article
+  with a pattern it deliberately does not use
+  would falsely list DoorDash on that pattern's
+  page. The absence-contrast lives in the mint's
+  boundary and tradeoff 6 instead. Fable's
+  proposed rule for the taste doc: "chips assert
+  USE; absences are prose." Logged as open-
+  decisions item 19.
+  **Cameo REJECTIONS** (prose):
+  - retry-amplified-overload echo (harakiri loop —
+    cross-class note in tradeoff 2)
+  - feature flags (inside staged-rollout note)
+  - 80/20 MVP doctrine (tradeoff 5 + conclusion
+    prose)
+  **Rejected tags**: retry-amplified (harakiri loop
+  is an amplifier INSIDE the buffer-degradation
+  story, not the crux); single-cluster (the
+  vertical ceiling is present but subordinate).
+  **Standing symmetric-linking rule APPLIED**:
+  buffer-degrades cluster crosses 4→5 companies →
+  full-mesh triggered. DECISIONS authored 2 forward
+  links (Uber + Slack); agent added Segment + Meta
+  as the third and fourth forward links, and added
+  DoorDash as backlink to all four classmates.
+  Result: DoorDash ↔ Meta, DoorDash ↔ Slack,
+  DoorDash ↔ Segment, DoorDash ↔ Uber all
+  bidirectional. Existing 4-company mesh (Meta ↔
+  Slack ↔ Segment ↔ Uber) was already complete.
+  **Accent** `#EB1700` (DoorDash red) —
+  established company accent (r11), company-
+  consistency rule, no new corridor entry.
+  Contents:
+  - content/articles/doordash-rabbitmq-kafka.json —
+    article + crux + cruxTag (buffer-degrades-
+    under-backlog reused, FIFTH company) +
+    cruxSummary + 2 pattern refs (fetch-execute-
+    decoupling + universal-staged-rollout) + 3
+    stats + relatedArticles → all four classmates
+    (per standing rule). addedAt: 2026-07-24.
+    Source block normalized to match live
+    feeds.json.
+  - content/artifacts/doordash-rabbitmq-kafka.jsx
+    — accent `#EB1700`. Interval sim, pure step()
+    functional setState (the flow-control cascade
+    and churn loop must be FELT). Beats: peak at
+    single-node RabbitMQ → flow control →
+    publisher latency → harakiri churn feeding
+    inflow → outage at backlog ceiling → bounce;
+    HA mode = LOWER capacity (75 vs 100) so the
+    same peak breaks SOONER (replication-tax
+    beat); Kafka MVP drains the same peak flat;
+    then the new buffer's physics: SLOW MESSAGE
+    dams the partition without the non-blocking
+    worker and stalls one executor with it;
+    DEPLOY triggers a bounded rebalance dip.
+    Verdict-only assert strings: "THE QUEUE
+    PUSHED BACK", "THE KILLS FEED THE LOAD",
+    "ORDERS HALTED — BOUNCE AND PRAY", "HA THAT
+    TAXED THE HEADROOM", "EIGHTY PERCENT LEFT IN
+    A WEEK", "ONE SLOW MESSAGE, ONE STALLED
+    PARTITION", "ONE SLOW MESSAGE, ONE STALLED
+    EXECUTOR", "THE NEW BUFFER HAS NEW PHYSICS".
+  - content/patterns/fetch-execute-decoupling.json
+    — NEW pattern, throughput, minted at ONE
+    company (DoorDash). Boundary vs selective-
+    acknowledgment (delivery-guarantee vs
+    concurrency ledgers) and vs adding partitions
+    (blast-radius dilution not elimination) drawn
+    inside definition.
+  - Back-tag on content/articles/uber-kafka-
+    consumer-proxy.json: DoorDash added.
+  - Back-tag on content/articles/slack-scaling-
+    job-queue.json: DoorDash added.
+  - Back-tag on content/articles/segment-
+    centrifuge-database-queue.json: DoorDash
+    added.
+  - Back-tag on content/articles/meta-foqs-
+    priority-queue.json: DoorDash added.
+  - No content/cruxtags.json change.
+  - No content/feeds.json change.
+  Recurrences created by this landing:
+  - buffer-degrades-under-backlog → 5-company
+    (Meta + Slack + Segment + Uber + DoorDash).
+    SECOND five-company cruxTag.
+  - fetch-execute-decoupling → NEW pattern; 1
+    article (DoorDash). Category throughput.
+  - universal-staged-rollout → 5 articles / 5
+    companies (Datadog + Slack + Canva + GitLab +
+    DoorDash). Fifth consecutive migration.
+  - relatedArticles: DoorDash ↔ all four
+    classmates full-mesh applied in the same
+    commit (standing symmetric-linking rule).
+  Landing preview + catalog effects: `buffer-
+  degrades-under-backlog` row now shows "5
+  SYSTEMS", SEEN AT DoorDash · Meta · Segment ·
+  Slack · Uber. SECOND five-system row on the
+  preview (joins ambiguous-failure-under-retry).
+  Total preview row count UNCHANGED at 9. CTA
+  "Browse all 36 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 35 warnings (was 34; +1 cosmetic fuzzy-
+  miss; same residual class).
+  `npm run build` → end-to-end clean; 88 routes
+  prerendered (35 → 36 articles + 44 → 45
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 87 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 36 articles across
+  20 companies (DoorDash at 2 articles); 45
+  pattern definitions (fetch-execute-decoupling
+  new); 36 artifacts. cruxTag taxonomy: 11 tags
+  with 2 five-company (NEW: buffer-degrades joins
+  ambiguous-failure), 3 four-company, 6 three-
+  company, 0 two-company, 2 one-company (AWS
+  retry-amplified, DoorDash mitigation-scoped-
+  narrower-than-failure).
+
 - **Article #35 (Meta silent data corruption) LANDED
   (2026-07-24). NO 2-COMPANY CLASSES REMAIN — every
   multi-member class in the library now sits at 3+
