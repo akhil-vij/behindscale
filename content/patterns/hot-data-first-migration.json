@@ -1,0 +1,16 @@
+{
+  "slug": "hot-data-first-migration",
+  "name": "Hot-Data-First Migration",
+  "category": "throughput",
+  "definition": "Order a live data migration by access recency and frequency rather than by key range or table order: replicate the hot set — recently created, updated, and read entities — ahead of the archive, so the strained source system sheds its serving load as early as possible and the destination becomes useful long before the migration completes. The mechanism is typically a live change/access feed capturing the hot set in real time, plus a background scan walking the remainder most-recent-first under backpressure, advancing only when the live feed's queue runs empty so the archive never competes with the present.\n\nThe pattern's defining honesty is that capability arrives per access pattern, not per percentage: point lookups on hot entities serve from the destination almost immediately, while any query that must see the full population — listings, aggregates, anything not keyed by ID — structurally waits for the scan to finish. Migration progress dashboards measured in rows misstate this; the real milestones are 'which query shapes are now servable.' Boundary against uniform backfills (key-ordered or table-ordered): those optimize for scan throughput and completeness accounting, and relieve the source only at the end; hot-first optimizes for load relief and early utility, and pays with a longer, throttled tail.",
+  "whenItApplies": [
+    "The source system is actively failing or near its ceiling — shedding its serving load early is worth more than completing the copy early",
+    "Access is heavily recency-skewed, so a small hot set carries most traffic and can be captured live while the long tail scans in the background",
+    "The destination can usefully serve partial data (point reads by ID) while population-complete query shapes wait"
+  ],
+  "tradeoffs": [
+    "Capability arrives per query shape: full-population queries (listings, aggregates) are blocked until the scan completes, however high the row-percentage reads",
+    "Two migration mechanisms must run correctly together — the live feed for the hot set and the backpressured scan for the tail — with the scan throttled to never starve the present",
+    "Recency ordering assumes the access distribution; a workload with a heavy cold-read tail (archives, compliance reads) undercuts the early-relief payoff"
+  ]
+}

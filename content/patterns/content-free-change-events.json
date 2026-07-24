@@ -1,0 +1,16 @@
+{
+  "slug": "content-free-change-events",
+  "name": "Content-Free Change Events",
+  "category": "consistency",
+  "definition": "When replicating or synchronizing data from a source of truth into a derived store, emit events that carry only the identity of what changed — never the changed content. Consumers react by reading the entity's current state from the source of truth and writing the derived store idempotently. Because every apply fetches fresh truth, the event stream needs none of the properties that make change streams hard: events can be arbitrarily reordered, duplicated, retried, delayed, paused, or throttled with zero correctness consequence, and no ordered log, sequence numbering, or binlog parsing has to exist. The queue becomes pure signaling; all authority stays in the source.\n\nThe price is read amplification against the source of truth — each event costs a fresh read of current state, often against the very system being relieved — and freshness that is eventual without ordering guarantees: a derived store converges to truth but transiently skips intermediate states (which is usually the point, not a bug). The pattern composes naturally with priority tiers (change events above access events) to spend the staleness budget where it is cheapest. Boundary against ordered-log replication (CDC/binlog streaming): that approach carries state in-stream and demands ordering, exactly-once-ish delivery, and parser maintenance in exchange for not re-reading the source; choose by whether the source can afford the reads and whether intermediate states matter. Boundary against Designated Source of Truth: that pattern names which system wins and how recovery reconciles; this one is a transport discipline for keeping derived stores following the winner cheaply.",
+  "whenItApplies": [
+    "Live migrations and derived-store synchronization where the source of truth remains queryable and intermediate states don't need to be preserved",
+    "Pipelines that must be pausable, throttleable, and safely retryable mid-flight — operational control matters more than event-stream fidelity",
+    "Teams that want replication without building or operating CDC infrastructure (binlog parsers, ordered logs, exactly-once plumbing)"
+  ],
+  "tradeoffs": [
+    "Read amplification on the source of truth — every event costs a state fetch, often against the strained system the migration exists to relieve",
+    "No intermediate states: the derived store sees only current truth at apply time, so audit trails and event-sourced consumers need a different mechanism",
+    "Convergence depends on an event firing for every change — a missed enqueue is a silent permanent divergence, which is why the pattern pairs with a full background scan as the completeness backstop"
+  ]
+}

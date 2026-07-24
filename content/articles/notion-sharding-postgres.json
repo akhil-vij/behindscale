@@ -44,7 +44,8 @@
   ],
   "relatedArticles": [
     "figma-postgres-sharding",
-    "pinterest-sharding-mysql"
+    "pinterest-sharding-mysql",
+    "canva-media-dynamodb"
   ],
   "stats": [
     {

@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "figma-postgres-sharding",
-    "notion-sharding-postgres"
+    "notion-sharding-postgres",
+    "canva-media-dynamodb"
   ],
   "stats": [
     {

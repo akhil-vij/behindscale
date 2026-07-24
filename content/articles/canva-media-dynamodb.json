@@ -1,0 +1,75 @@
+{
+  "slug": "canva-media-dynamodb",
+  "title": "Every Ceiling at Once: How Canva Left MySQL for DynamoDB",
+  "url": "https://www.canva.dev/blog/engineering/from-zero-to-50-million-uploads-per-day-scaling-media-at-canva/",
+  "publishedAt": "2022-11-29",
+  "addedAt": "2026-07-24",
+  "source": {
+    "name": "Canva Engineering Blog",
+    "slug": "canva-engineering",
+    "company": "Canva",
+    "url": "https://www.canva.dev/blog/engineering/",
+    "feed": "https://www.canva.dev/blog/engineering/feed.xml"
+  },
+  "summary": "Canva's media service — one resource-oriented microservice among many, with isolated persistence and a small owning team — stores the identity, ownership, status, and extensive content metadata for every piece of media on the platform, serving read-heavy traffic where most reads hit recently created media. For years it was a thin layer over MySQL on AWS RDS, scaled vertically and then with eventually consistent replica reads, until the largest media tables hit every ceiling at once: schema changes stretched from days to six weeks even with gh-ost, blocking feature releases; MySQL 5.6's replication rate capped writes; the RDS EBS volume approached its 16TB limit, with each size increase adding I/O tail latency; hot-buffer-pool dependence made restarts downtime; and ext3-snapshot provenance capped table files at 2TB. With media approaching one billion in mid-2017 and growing exponentially, Canva bought runway (JSON-column metadata, denormalization, ID-range sharding) while migrating live to DynamoDB via content-free SQS change events — notify that a media changed, re-read truth from MySQL, write idempotently — hot data first, dual-read compared in production, cut over with a rehearsed run book, zero downtime, and lower cost than the RDS it replaced. Today: 25+ billion media, 50 million more daily.",
+  "crux": "Same class as Figma, Notion, and Pinterest — the biggest tables outgrowing what one database can do — with two distinguishing marks. First, the ceiling is compound: not one wall but a stack of them arriving together, and several belong to the rented substrate rather than to MySQL itself — EBS volume limits, ext3 table-file limits inherited from snapshot provenance, restart-equals-downtime economics. When your database is managed, its host's limits are your schema's limits. Second, the answer is the class's fourth pole: Figma partitioned in place, Notion sharded, Pinterest hand-sharded ahead of the wall — Canva exited the relational model entirely for a managed NoSQL store shaped around its known access patterns. The post is candid that this answer has a timestamp: with a short runway in 2017, a managed-service preference, and prototype evidence, DynamoDB was right — and facing the same problem today they would strongly consider hosted NewSQL instead. The class's lesson grows richer with its fourth member: the single-table ceiling is real and universal; which escape is correct depends on when you hit it and what you can afford to operate.",
+  "cruxTag": "single-table-scaling-ceiling",
+  "cruxSummary": "Canva's media tables hit every MySQL ceiling at once: migrations, filesystem, replication.",
+  "problem": "The media service's shape explains its scale: for each media it stores the ID, owning user, library membership, external source information, status, an extensive set of content metadata — title, artist, keywords, color information — and references to the underlying files. Reads dominate writes, media are rarely modified after creation, and most reads target recently created media, with the stock library as the exception. Like most of Canva's resource-oriented services, it began as a thin layer over MySQL on RDS, scaled first vertically with larger instances, then horizontally with eventually consistent reads served from MySQL replicas.\n\nThe cracks arrived through the schema. Changes on the largest media tables began taking days; MySQL's online DDL degraded performance so severely it couldn't run under user traffic at all. GitHub's gh-ost restored safe online migrations — a cross-company loan the post credits by name — and then the walls arrived in formation: hard limits on MySQL 5.6's replication rate imposed a ceiling on write throughput to the read replicas; even gh-ost migrations eventually stretched to six weeks, blocking feature releases; the RDS EBS volume approached its then-16TB maximum, and each size increase measurably raised I/O latency, feeding straight into user-facing tail latencies; serving production traffic required a hot buffer pool, so instance restarts and version upgrades meant accepting downtime; and because the RDS instances had been created from snapshots carrying an ext3 filesystem, MySQL table files were hard-capped at 2TB — the same limit the post notes took Instapaper down.\n\nBy mid-2017 the count of Canva media approached one billion and was increasing exponentially. The team's constraint on any way out is stated plainly: a strong preference for incremental approaches that would let them keep scaling without betting everything on a single unproven technology choice — which meant the existing MySQL system had to keep growing while its replacement was investigated, prototyped, and proven against the real workload.",
+  "solution": "Runway came first. The most commonly modified part of the schema — media content metadata — moved into a JSON column whose schema the media service managed itself, taking the hottest churn out of DDL's reach. Tables were denormalized to reduce lock contention and joins; repeated content like S3 bucket names was removed or encoded shorter; foreign key constraints were dropped; the media import path was reworked to issue fewer metadata updates. At the end of the MySQL era, a deliberately simple application-sharding scheme split media by ID range across primaries — dodging the 2TB file limit and the replication ceiling — optimized for the dominant access pattern, lookup by ID when loading designs, and paying for it with inefficient scatter-gather on everything else, like listing a user's media. In parallel, alternatives were investigated and prototyped; with a short runway, a preference for managed services, prior experience running simpler DynamoDB workloads, and a working prototype, DynamoDB became the tentative target — pending proof against the actual workload and a migration that would touch no user and cut over with zero downtime.\n\nThe replication design is the post's quiet masterpiece. Rather than dual writes, an ordered log, or AWS DMS, Canva enqueued content-free messages to SQS recording only that a particular media was created, updated, or read — never the update's content. A worker receives the message, reads the media's current state from the MySQL primary, and writes DynamoDB if needed. Because state always comes fresh from the source of truth, messages can be arbitrarily reordered, retried, paused, or slowed with no correctness consequence. Two queues turned the design priority-aware: creates and updates on a high-priority queue, reads on low, workers draining high before touching low — tuning freshness exactly where writes made staleness dangerous. A scanning process walked the remaining backlog most-recent-first, in line with the read pattern, feeding the low-priority queue under backpressure: the scan advanced only while that queue ran approximately empty, shedding load from MySQL as early as the hot data allowed.\n\nProof ran in production. A dual-read comparison checked DynamoDB results against MySQL until the replication bugs it surfaced were fixed; then eventually consistent single-media reads moved to DynamoDB with MySQL fallback for stragglers. Queries that don't name an ID — all media owned by a user — structurally couldn't serve until the scan completed, and got the same dual-read treatment afterward. The write cutover, named the riskiest step, required new service code using transactional and conditional writes to preserve the previous implementation's contracts, and was surrounded accordingly: integration tests run against both migrated and DynamoDB-native media, the full suite run against both implementations, local and end-to-end passes, a run book keyed to a flag system that could return reads to MySQL within seconds, rehearsed through development and staging. Production cutover was seamless — no downtime, no errors, and a visible improvement in median and p95 latency. The lessons are printed as imperatives: be lazy (know your access patterns; migrate the commonly accessed first), do it live, test in production. Five years on, monthly actives have more than tripled, DynamoDB has autoscaled through it at lower cost than the RDS clusters it replaced, and the service holds more than 25 billion media with 50 million arriving daily.",
+  "tradeoffs": [
+    "Managed convenience carries managed ceilings. Several of the walls weren't MySQL's — they were the substrate's: EBS's 16TB volume cap, a 2TB table-file limit inherited from ext3 snapshot provenance, upgrades that cost downtime because the buffer pool couldn't be cold. Renting the database's host means the host's limits silently become the schema's limits, and they arrive with less warning than query performance does.",
+    "Stopgaps are real engineering with an honest expiry date. The JSON metadata column moved the hottest schema churn into the service's own hands; denormalization and dropped foreign keys traded relational hygiene for lock relief; ID-range sharding served the dominant by-ID read and taxed everything else with scatter-gather. Each step bought runway by narrowing the system toward its actual access patterns — a preview, in relational clothing, of the NoSQL shape the service was heading toward.",
+    "Content-free change events buy commutativity with re-reads. Because SQS messages carry identity and not state, workers must fetch truth from the MySQL primary per message — extra read load on the system being rescued — and in exchange, reordering, retries, pauses, and throttling are all correctness-free, and no binlog parser ever gets written. The two-tier queue placement (writes high, reads low) is the design admitting that eventual consistency is a budget to be spent where it's cheapest.",
+    "Migrating by access pattern means capability arrives by access pattern. Hot-first replication shed MySQL load earliest and made recently created media servable soonest — while any query that doesn't name an ID, like listing a user's media, structurally waited for 100% replication. Progress measured in percent hides that a datastore's features come online per query shape, not per row count.",
+    "Cutover confidence was manufactured, not hoped for. Contracts were preserved with transactional and conditional writes; both implementations ran the full test matrix; the run book was rehearsed through lower environments; and the flag system priced rollback at seconds. The result — zero downtime, no errors, latency improved — reads as luck only if you skip the paragraph describing the apparatus.",
+    "The exit's bill is itemized in hindsight, timestamp included. Schema changes and backfills now mean writing and rigorously testing parallel-scan migration code; ad-hoc SQL is gone, rebuilt as CDC into the warehouse; composite GSIs are still hand-concatenated attributes. And the post's final candor: facing the same problem today, they'd strongly consider hosted NewSQL like Spanner or CockroachDB — the fourth pole of the class's answer taxonomy comes with a date on it, right for 2017's constraints rather than right eternally."
+  ],
+  "tags": [
+    "dynamodb",
+    "mysql",
+    "migrations",
+    "nosql",
+    "data-modeling"
+  ],
+  "patterns": [
+    {
+      "slug": "content-free-change-events",
+      "note": "Minted from the migration's quiet masterpiece: SQS messages that record only that a media was created, updated, or read — never the content — with workers re-reading current state from the MySQL primary and writing DynamoDB idempotently. Because state always comes fresh from the source of truth, reordering, retries, pauses, and throttling are all correctness-free, and the ordered-log alternative (with its custom binlog parser) never needs to exist. The in-source boundary is the options list the post rejects: dual writes, ordered log replay, AWS DMS."
+    },
+    {
+      "slug": "hot-data-first-migration",
+      "note": "The post's first printed lesson — be lazy: know your access patterns and migrate commonly accessed data first — made mechanical: recently created, updated, and read media replicated ahead of the archive, a most-recent-first scan feeding the backlog under backpressure, so load shed from the strained MySQL cluster as early as the hot set allowed. The honest cost is capability arriving per access pattern: ID-less queries waited for the scan to finish."
+    },
+    {
+      "slug": "universal-staged-rollout",
+      "note": "The migration end to end: dual-read comparison in production until replication bugs were fixed, eventually consistent reads with fallback for stragglers, both-implementation test matrices for the write cutover, a rehearsed run book, and a flag system pricing rollback at seconds — through development and staging before production. Third recurrence, and the second consecutive datastore migration (after Slack's Vitess journey) where nothing cut over on faith."
+    }
+  ],
+  "relatedArticles": [
+    "pinterest-sharding-mysql",
+    "notion-sharding-postgres",
+    "figma-postgres-sharding"
+  ],
+  "stats": [
+    {
+      "value": "6 weeks",
+      "label": "per schema migration on the largest media tables even with gh-ost — blocking feature releases",
+      "placement": "problem"
+    },
+    {
+      "value": "2TB",
+      "label": "hard cap on MySQL table files, inherited from ext3 snapshot provenance on RDS",
+      "placement": "problem"
+    },
+    {
+      "value": "25B+",
+      "label": "media stored today with 50M uploaded daily — on DynamoDB that autoscaled through a tripling of MAU at lower cost than the RDS it replaced",
+      "placement": "solution"
+    }
+  ],
+  "artifact": {
+    "path": "/artifacts/canva-media-dynamodb/index.html",
+    "teaser": "Grow the media count and watch the ceilings light up in formation — DDL weeks, replication caps, EBS, ext3 — then spend the stopgaps that buy runway without extinguishing the walls. Run the live migration: hot-first replication under backpressure, a list-by-user query that must wait for 100%, a dual-read comparison that catches the bug early, and a rehearsed, flag-guarded cutover that lands in silence."
+  }
+}

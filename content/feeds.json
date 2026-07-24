@@ -14,6 +14,13 @@
     "feed": "https://medium.com/feed/airbnb-engineering"
   },
   {
+    "name": "Canva Engineering Blog",
+    "slug": "canva-engineering",
+    "company": "Canva",
+    "url": "https://www.canva.dev/blog/engineering/",
+    "feed": "https://www.canva.dev/blog/engineering/feed.xml"
+  },
+  {
     "name": "The Cloudflare Blog",
     "slug": "cloudflare-blog",
     "company": "Cloudflare",
