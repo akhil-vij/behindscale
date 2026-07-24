@@ -50,7 +50,8 @@
   "relatedArticles": [
     "uber-intelligent-load-management",
     "stripe-idempotency",
-    "stripe-rate-limiters"
+    "stripe-rate-limiters",
+    "aws-load-shedding"
   ],
   "artifact": {
     "path": "/artifacts/netflix-prioritized-load-shedding/index.html",

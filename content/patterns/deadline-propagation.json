@@ -1,0 +1,16 @@
+{
+  "slug": "deadline-propagation",
+  "name": "Deadline Propagation",
+  "category": "resilience",
+  "definition": "Have clients attach a timeout hint to every request — how long they are willing to wait — and propagate the remaining time transitively across every hop of the call graph, so each downstream service knows whether its answer can still be useful. Servers enforce the deadline where work is admitted: evaluate it at dequeue, and drop requests whose deadline has already passed or cannot plausibly be met, spending capacity only on answers someone is still waiting for. The pattern attacks overload's cruelest arithmetic: a reply after the client's timeout is a success in the server's metrics and an error in the client's reality, and every cycle spent producing it was capacity donated to the feedback loop.\n\nThe plumbing carries real costs the pattern's adopters must own. Absolute-time deadlines require synchronized clocks across the fleet; duration-based deadlines require monotonic timers and an honest answer to when the stopwatch started — which deep TCP buffers can falsify, since a request may age invisibly before the server ever reads it. Latency estimation (dropping requests whose deadline is shorter than the predicted service time) is powerful and backfire-prone: the estimator cannot know a cache hit from a miss or a fast partition from a slow one. Boundary against Queue-Age Bounding: that discipline drops work for being stale by the server's local clock with no client involvement; deadline propagation drops work for being useless by the client's declared budget — the two compose, one guarding each side of the same waste. Boundary against Retryable Error Classification: classification decides whether a failed request may try again; deadlines decide whether an in-flight request is still worth finishing.",
+  "whenItApplies": [
+    "Service-oriented architectures with deep call graphs, where a bottom-layer slowdown silently converts upstream work into waste and retries",
+    "Systems whose overload behavior includes servers diligently completing responses their clients stopped waiting for",
+    "Request paths with queues at multiple layers (executors, sockets, load balancers) where admission-time and service-time can diverge badly under load"
+  ],
+  "tradeoffs": [
+    "Clock discipline is a hard dependency: absolute deadlines need fleet-wide time synchronization, durations need monotonic timers, and both need a truthful start-of-waiting timestamp that buffering can hide",
+    "Transitivity is all-or-nothing in value: one hop that fails to propagate the remaining budget re-blinds every service beneath it",
+    "Deadline-aware dropping interacts with retries: a dropped-at-dequeue request usually returns faster than a timeout, which can accelerate client retry loops unless paired with backoff and rejection signaling"
+  ]
+}

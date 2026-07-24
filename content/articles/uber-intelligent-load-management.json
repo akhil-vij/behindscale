@@ -46,7 +46,8 @@
     "netflix-prioritized-load-shedding",
     "stripe-idempotency",
     "doordash-aperture-global-failure-mitigation",
-    "stripe-rate-limiters"
+    "stripe-rate-limiters",
+    "aws-load-shedding"
   ],
   "artifact": {
     "path": "/artifacts/uber-intelligent-load-management/index.html",
