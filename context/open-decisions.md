@@ -123,11 +123,10 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 32 articles, 11 tags,
-  1 five-company + 2 four-company + 6 three-company + 1
-  two-company + 2 one-company (as of r23 Canva media —
-  single-table-scaling-ceiling promoted to 4-company;
-  gray-failure still the only 2-company class).
+  pipeline pending deploy". Live is 33 articles, 11 tags,
+  1 five-company + 3 four-company + 6 three-company + 1
+  two-company + 2 one-company (as of r24 AWS load shedding —
+  priority-blind-load-shedding promoted to 4-company).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -154,6 +153,42 @@ _None._
   company writes both a mechanism paper and a productionization
   follow-up.
 - **Reply:** confirm-ruling / dissect-2026-instead / defer.
+
+### 14. Vendor-case-study source bar → taste doc?
+
+- **Source:** round 24 (AWS load shedding) DECISIONS §Selection.
+  Fable rejected a Coinbase/Temporal partial-completion 4th-
+  company candidate this round on source bar — the
+  substantive account exists only as a temporal.io VENDOR
+  CASE STUDY, not first-party Coinbase engineering. Fable
+  flagged this as the first explicit rejection on the
+  vendor-case-study line and asked whether to formalize.
+- **Recommended:** confirm and formalize into taste doc §2
+  (source discipline) as a bullet under the first-party
+  rule: "Vendor-hosted customer stories fail the bar
+  regardless of technical content — the substantive account
+  must be published by the company that operates the
+  system, not by a vendor telling the customer's story."
+- **Reply:** formalize / defer.
+
+### 15. `bounded-queue-age` mint?
+
+- **Source:** round 24 (AWS load shedding) DECISIONS §4.
+  The post's queue-age-bounding section is substantive and
+  distinct from `deadline-propagation` (server-local
+  staleness vs client-declared budget — the two compose).
+  Fable minted deadline-propagation and named bounded-
+  queue-age in its boundary, deferring the sibling mint
+  per the one-mint-per-round posture. Second-instance
+  candidates: Netflix's SLO-based enqueue-timeout logic;
+  Stripe's rate-limiter half-open buckets; internal
+  Cadence timeouts.
+- **Recommended:** wait for a second natural instance to
+  force the mint — same posture as items 10 and 13.
+  Boundary is drawn inside deadline-propagation's
+  definition already, so the concept is recoverable
+  whenever a second article surfaces it.
+- **Reply:** mint-now / wait-for-second-company / dismiss.
 
 ### 12. `fault-isolation` chip on Slack Vitess?
 

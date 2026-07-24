@@ -4,6 +4,201 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #33 (AWS load shedding doctrine) LANDED
+  (2026-07-24). FOURTH four-company cruxTag in the
+  library.** Fable-authored dissection of David
+  Yanacek's Amazon Builders' Library piece — the
+  companion-pair third member to the
+  timeouts/retries/jitter and idempotency Builders'
+  Library articles: overload TRIAGE doctrine.
+  Anatomy of overload: USL/Amdahl framing;
+  contention inventory; inflection point; timeout
+  crossing (median = timeout → 50% availability);
+  goodput vs throughput; feedback loop (wasted
+  progress, retries multiply, deep call graphs
+  amplify exponentially). Naive escapes indicted:
+  max-connections trilemma ("too imprecise"); proxy
+  limits; surge queues. The class beat: a shed
+  health check convinces the balancer the server is
+  dead — drop budget spent so wrongly it destroys
+  capacity. Doctrine: ping above all; completion
+  over initiation; page N over page one; within-
+  quota over burst; humans over shiftable crawlers;
+  front-of-stack placement. Deadlines transitively
+  propagated as remaining-time budgets, enforced at
+  dequeue.
+  `priority-blind-load-shedding` (Uber + Netflix +
+  Stripe) becomes the FOURTH four-company cruxTag.
+  Manifestation caveat: the three classmates each
+  BUILT one priority mechanism (Cinnamon tiers,
+  Netflix's criticality-ordered shedding, Stripe's
+  standing fleet reservation); this piece states
+  the DOCTRINE those mechanisms implement — the
+  ranking rules themselves. Companion-pair
+  triangulation: timeouts=retry pathology,
+  idempotency=retry correctness, load-shedding=
+  overload triage.
+  AWS = FOURTH article for the company (SECOND
+  four-article company after Airbnb; owner-
+  approved precedent per the concentration rule).
+  Fable's DECISIONS PRECEDENT FLAG correction was
+  captured in-source and honored here.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Vendor-case-study source bar note** (owner
+  attention): Fable rejected a Coinbase/Temporal
+  partial-completion 4th-company candidate this
+  round on source bar — the substantive account
+  exists only as a temporal.io VENDOR CASE STUDY,
+  not first-party Coinbase engineering. Logged for
+  the taste doc — this is the first explicit
+  rejection on the vendor-case-study line.
+  Open-decisions item 14 tracks whether to
+  formalize into taste doc §2.
+  **prioritized-load-shedding CONDITIONAL RESOLVED
+  → RECUR under live slug** `priority-aware-load-
+  shedding`. The article's authored `slug` field
+  in patterns[] was `prioritized-load-shedding`
+  (guess); corrected to the live slug at
+  placement. Pattern now 4 articles / 4 companies
+  (Netflix + Uber + Stripe + AWS). No back-tags
+  needed on the classmates because they already
+  carry the live pattern.
+  **NEW MINT**: `deadline-propagation` (resilience)
+  — timeout hints propagated transitively as
+  remaining-time budgets, enforced at dequeue;
+  plumbing costs (clock sync / monotonic timers /
+  TCP-buffer stopwatch) and estimator-backfire
+  candor carried in the definition. Boundaries:
+  vs queue-age bounding (server-local staleness
+  vs client-declared budget — compose, don't
+  compete) and vs retryable-error-classification.
+  Generality without AWS: gRPC deadlines, context
+  propagation. Retired-names pre-flight: clean.
+  **layered-admission-control RECUR → SECOND
+  company** (Stripe r14 + AWS) — FIRST recurrence
+  of the r14 mint: WAF/API Gateway/iptables/
+  framework/code as the generalized form of
+  Stripe's four stacked limiters, plus this
+  piece's addition (early rejection's cheapness
+  is bought with visibility; false positives at
+  zero).
+  **Cameo REJECTIONS** (owner-may-promote):
+  - bounded-queue-age as its own mint (full
+    section, but adjacent to deadline-propagation
+    — one mint chosen, sibling named in its
+    boundary). Logged as open-decisions item 15.
+  - bounded-work/pagination doctrine (one
+    section; not chip-tagged).
+  - fault-isolation via serverless coda (coda,
+    not a lesson of the post).
+  **Rejected as the crux itself**: retry-
+  amplified-overload — the feedback-loop anatomy
+  is shared series scaffolding; Fable pre-
+  committed the shelve-don't-force clause and
+  ruled on the mechanism half's weight. AWS
+  already holds retry-amplified via the sibling
+  timeouts piece.
+  **Standing symmetric-linking rule APPLIED**:
+  priority-blind cluster crosses to 4-company →
+  full-mesh triggered. DECISIONS authored 2
+  forward links (netflix + uber); agent added
+  stripe-rate-limiters as the third forward link,
+  and added AWS as backlink to all three
+  classmates. Result: AWS ↔ Netflix, AWS ↔ Uber,
+  AWS ↔ Stripe-rate-limiters all bidirectional.
+  Existing 3-company mesh was already complete.
+  **Accent** `#FF9900` (AWS orange) — established
+  company accent, fourth AWS article, no flag
+  (company-consistency rule).
+  Contents:
+  - content/articles/aws-load-shedding.json —
+    article + crux + cruxTag (priority-blind-
+    load-shedding reused, FOURTH company) +
+    cruxSummary + 3 pattern refs + ZERO stats +
+    relatedArticles → Netflix + Uber + Stripe-
+    rate-limiters (per standing rule). addedAt:
+    2026-07-24. Slug correction:
+    `prioritized-load-shedding` →
+    `priority-aware-load-shedding` (matches live).
+  - content/artifacts/aws-load-shedding.jsx —
+    accent `#FF9900`. Interval sim, pure step()
+    (the metastable retry loop must be FELT).
+    Ladder teaches one failure per rung: no
+    protection → loop closes (goodput collapse +
+    retry amplification live); max_conns →
+    playable at BOTH wrong ends (false positives
+    with idle capacity / brownout); blind
+    shedding → THE CLASS BEAT (pings shed with
+    excess, balancer pulls "dead" servers,
+    capacity falls); +priorities → plateau holds,
+    fleet intact, crawlers shed before humans;
+    +deadlines → retry-storm wasted-work meter
+    flattens (drop-at-dequeue). Footer honesty:
+    fleet-shrink rate is a dramatization of the
+    stated mechanism, labeled as such. Verdict-
+    only assert strings: "GOODPUT COLLAPSES,
+    RETRIES MULTIPLY", "THE KNOB HAS NO RIGHT
+    VALUE", "SHED BLIND, THE FLEET SHRANK", "THE
+    PING COMES FIRST", "GOODPUT HOLDS PAST THE
+    BREAK", "DOOMED WORK, DROPPED AT DEQUEUE".
+  - content/patterns/deadline-propagation.json —
+    NEW pattern, resilience, minted at ONE
+    company (AWS). Boundaries vs queue-age
+    bounding and vs retryable-error-
+    classification inside definition.
+  - Back-tag on content/articles/netflix-
+    prioritized-load-shedding.json: AWS added.
+  - Back-tag on content/articles/uber-
+    intelligent-load-management.json: AWS added.
+  - Back-tag on content/articles/stripe-rate-
+    limiters.json: AWS added.
+  - No content/cruxtags.json change.
+  - No content/feeds.json change.
+  Recurrences created by this landing:
+  - priority-blind-load-shedding → 4-company
+    (Uber + Netflix + Stripe + AWS). FOURTH
+    four-company cruxTag.
+  - priority-aware-load-shedding → 4 articles /
+    4 companies (Netflix + Uber + Stripe + AWS).
+  - deadline-propagation → NEW pattern; 1 article
+    (AWS). Category resilience.
+  - layered-admission-control → 2 articles /
+    2 companies (Stripe + AWS).
+  - relatedArticles: AWS ↔ Netflix/Uber/Stripe-
+    rate-limiters full-mesh applied in the same
+    commit (standing symmetric-linking rule).
+  Landing preview + catalog effects: `priority-
+  blind-load-shedding` row now shows "4 SYSTEMS",
+  SEEN AT AWS · Netflix · Stripe · Uber. FOURTH
+  four-system row on the preview (joins
+  ambiguous-failure at 5, buffer-degrades and
+  single-table at 4). Total preview row count
+  UNCHANGED at 9. CTA "Browse all 33 breakdowns
+  →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 33 warnings (UNCHANGED — no new stats,
+  no fuzzy-miss residuals introduced; doctrine
+  piece by design).
+  `npm run build` → end-to-end clean; 81 routes
+  prerendered (32 → 33 articles + 40 → 41
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 80 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 33 articles across
+  19 companies (AWS at 4 articles now; second
+  four-article company after Airbnb); 41 pattern
+  definitions (deadline-propagation new); 33
+  artifacts. cruxTag taxonomy: 11 tags with 1
+  five-company, 3 four-company (NEW: priority-
+  blind joins ambiguous-failure and single-
+  table), 6 three-company, 1 two-company (gray-
+  failure — still the last), 2 one-company (AWS
+  retry-amplified — separate cruxTag from
+  priority-blind despite the companion-series
+  pairing; DoorDash mitigation-scoped-narrower-
+  than-failure).
+
 - **Article #32 (Canva media → DynamoDB) LANDED
   (2026-07-24). THIRD four-company cruxTag in the
   library; NEW COMPANY (Canva = 19th source).**
