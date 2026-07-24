@@ -4,6 +4,224 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #32 (Canva media → DynamoDB) LANDED
+  (2026-07-24). THIRD four-company cruxTag in the
+  library; NEW COMPANY (Canva = 19th source).**
+  Fable-authored dissection of Canva's 2022 post
+  "From zero to 50 million uploads per day: scaling
+  media at Canva". Canva's media service — one
+  resource-oriented microservice among many, with
+  isolated persistence — stores identity, ownership,
+  status, and extensive content metadata for every
+  piece of media on the platform, serving read-heavy
+  traffic where most reads hit recently created
+  media. For years a thin layer over MySQL on AWS
+  RDS, scaled vertically and then with EC replica
+  reads. By mid-2017 ~1B media and exponential
+  growth had the biggest tables hitting every ceiling
+  at once: schema changes stretched to SIX WEEKS
+  even with gh-ost (GitHub's tool, cross-company
+  cameo credited in prose); MySQL 5.6 replication
+  rate capped writes; RDS EBS 16TB volume approached
+  its limit with I/O tail latency per size increase;
+  hot buffer pool made restarts downtime; and
+  ext3-snapshot provenance capped table files at
+  2TB (Instapaper-citation). Canva bought runway
+  (JSON metadata column, denormalization, ID-range
+  application sharding) while migrating live to
+  DynamoDB via content-free SQS change events —
+  notify that a media changed, re-read truth from
+  MySQL primary, write idempotently to DynamoDB —
+  hot data first, dual-read compared in production,
+  cut over with a rehearsed run book and a
+  seconds-priced rollback flag, zero downtime, and
+  lower cost than the RDS it replaced. Today: 25+
+  billion media, 50 million more daily.
+  `single-table-scaling-ceiling` (Figma + Notion +
+  Pinterest) becomes the THIRD four-company cruxTag.
+  Class answer taxonomy completes:
+  - Figma: PARTITION IN PLACE
+  - Notion: SHARD
+  - Pinterest: HAND-SHARD AHEAD OF THE WALL with
+    placement-encoding ids
+  - Canva: EXIT the relational model for managed
+    NoSQL
+
+  Manifestation caveat (twofold):
+  (a) the ceiling is COMPOUND — six named walls
+      arriving in formation rather than one dominant
+      wall
+  (b) several walls belong to the RENTED SUBSTRATE,
+      not MySQL (RDS EBS 16TB; ext3-from-snapshot
+      2TB; restart-equals-downtime buffer-pool
+      economics) — managed convenience carries
+      managed ceilings
+  Additional class note honored in prose: the post's
+  own timestamped retrospective ("today we'd
+  strongly consider Spanner or CockroachDB") — the
+  fourth answer pole carries a date; also the
+  replica-reads contrast with Pinterest's
+  `master-only-reads` (Canva embraced EC replica
+  reads as a scaling step; Pinterest refused them
+  for correctness) — the class's internal
+  disagreement, cross-referenced in prose, NOT
+  chip-tagged.
+  Canva = NEW COMPANY (19th source; 20th named
+  count in project-overview). feeds.json ADDITION:
+  Canva Engineering Blog inserted between Airbnb
+  and Cloudflare (approximate alphabetical). Feed
+  URL is Fable-authored guess (`feed.xml`); site
+  does no runtime fetching, so cosmetic-only.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Two NEW patterns**:
+  - `content-free-change-events` (consistency) —
+    identity-only events, truth re-read per apply,
+    idempotent writes → reorder/retry/pause all
+    correctness-free; no binlog parser exists. The
+    rejected options list (dual writes / ordered
+    log / DMS) IS the in-source boundary. Boundary
+    vs ordered-log CDC and vs
+    `designated-source-of-truth` (r21 — transport
+    discipline vs authority/recovery rule; the two
+    compose). Generality without Canva: Fowler's
+    event-notification, cache invalidation
+    protocols, notify-then-fetch sync patterns.
+    Retired-names pre-flight: clean.
+  - `hot-data-first-migration` (throughput) — the
+    "be lazy" lesson made mechanical: hot set
+    live-captured; archive scanned most-recent-first
+    under backpressure; load shed from the strained
+    source earliest. Defining honesty: capability
+    arrives per QUERY SHAPE, not per percentage
+    (ID-less queries wait for 100% — playable in
+    the artifact). Boundary vs uniform backfills
+    in the definition. Retired-names: clean.
+  **universal-staged-rollout RECUR (3rd
+  recurrence; 2nd consecutive datastore migration
+  after r22 Slack)** — dual-read comparison,
+  fallback reads, both-implementation matrices,
+  rehearsed run book, seconds-priced rollback
+  flag. Pattern now 3 articles / 3 companies
+  (Datadog + Slack + Canva).
+  **Cameo REJECTIONS**:
+  - `master-only-reads` INVERSE (Canva's EC replica
+    reads) — prose contrast with Pinterest,
+    cross-ref both articles; tagging the inverse
+    as a chip would be dishonest.
+  - priority-queue echo (high/low replication
+    queues) — one mechanism bullet; prose note.
+  - `designated-source-of-truth` as a chip (MySQL-
+    as-truth present but subordinate to
+    `content-free-change-events` here — referenced
+    inside that mint's boundary).
+  **Standing symmetric-linking rule applied**:
+  single-table cluster crosses to 4-company →
+  full-mesh triggered. DECISIONS authored 2
+  forward links (pinterest + notion); agent added
+  figma as the third forward link, and added Canva
+  as backlink to all three classmates. Result:
+  Canva ↔ Figma, Canva ↔ Notion, Canva ↔ Pinterest
+  all bidirectional. Existing 3-company mesh
+  (Figma ↔ Notion ↔ Pinterest) was already
+  complete.
+  **Accent** `#00C4CC` (Canva teal-cyan) — HARD
+  FLAG: the cyan/teal corridor is the registry's
+  most crowded (Slack cyan `#36C5F0`, Roblox
+  `#00A2FF`, Airbnb cyan `#06B6D4`, Cadence teal
+  `#2DD4BF`). Chrome-only discipline observed
+  (verdicts semantic). Fable flagged this as
+  blocking-adjacent for the owner registry pass.
+  Logged as sixth conflict in open-decisions
+  item 3.
+  Contents:
+  - content/articles/canva-media-dynamodb.json —
+    article + crux + cruxTag (single-table-
+    scaling-ceiling reused, FOURTH company) +
+    cruxSummary + 3 pattern refs + 3 stats +
+    relatedArticles → Pinterest + Notion + Figma
+    (per standing rule). addedAt: 2026-07-24.
+  - content/artifacts/canva-media-dynamodb.jsx —
+    accent `#00C4CC`. Pure stage machine, zero
+    intervals (checklist 5) — all transitions
+    through a pure `act(state, action)` reducer,
+    extractable for headless verification. Crux
+    made literal: the WALL PANEL — four ceilings
+    lighting in formation as GROW doubles media;
+    stopgaps raise specific thresholds and doubling
+    finds them again ("runway bought, walls
+    relit"). Migration enforces the post's real
+    order (replicate → dual-read finds a bug →
+    fix → EC reads → 100% → rehearse → cut) with
+    the capability-per-access-pattern constraint
+    playable (LIST-BY-USER refused below 100%)
+    and rollback flag demonstrable post-cutover.
+    Verdict-only assert strings: "EVERY CEILING
+    AT ONCE", "RUNWAY BOUGHT, WALLS DARK — FOR
+    NOW", "LIST-BY-USER MUST WAIT FOR THE SCAN",
+    "COMPARED IN PRODUCTION, BUG CAUGHT EARLY",
+    "CUT OVER IN SILENCE", "SECONDS TO MYSQL AND
+    BACK", "THE EXIT'S BILL, ITEMIZED".
+  - content/patterns/content-free-change-events.
+    json — NEW pattern, consistency, minted at
+    ONE company (Canva). Boundary vs ordered-log
+    CDC + vs designated-source-of-truth (they
+    compose).
+  - content/patterns/hot-data-first-migration.json
+    — NEW pattern, throughput, minted at ONE
+    company (Canva). Boundary vs uniform
+    backfills.
+  - content/feeds.json — Canva Engineering Blog
+    ADDED (19th source).
+  - Back-tag on content/articles/pinterest-
+    sharding-mysql.json: Canva added.
+  - Back-tag on content/articles/notion-sharding-
+    postgres.json: Canva added.
+  - Back-tag on content/articles/figma-postgres-
+    sharding.json: Canva added.
+  - No content/cruxtags.json change.
+  Recurrences created by this landing:
+  - single-table-scaling-ceiling → 4-company
+    (Figma + Notion + Pinterest + Canva). THIRD
+    four-company cruxTag; class answer taxonomy
+    complete (partition-in-place / shard / hand-
+    shard-ahead-of-wall / exit-relational).
+  - content-free-change-events → NEW pattern; 1
+    article (Canva). Category consistency.
+  - hot-data-first-migration → NEW pattern; 1
+    article (Canva). Category throughput.
+  - universal-staged-rollout → 3 articles / 3
+    companies (Datadog + Slack + Canva).
+  - relatedArticles: Canva → Figma + Notion +
+    Pinterest full-mesh; all three classmates'
+    backlinks applied in the same commit
+    (standing symmetric-linking rule).
+  Landing preview + catalog effects: `single-
+  table-scaling-ceiling` row now shows "4
+  SYSTEMS", SEEN AT Canva · Figma · Notion ·
+  Pinterest. THIRD four-system row on the preview
+  (joins ambiguous-failure at 5, buffer-degrades
+  at 4). Total preview row count UNCHANGED at 9.
+  CTA "Browse all 32 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 33 warnings (was 31; +2 cosmetic
+  fuzzy-misses from Canva stats; same residual
+  class).
+  `npm run build` → end-to-end clean; 79 routes
+  prerendered (31 → 32 articles + 38 → 40 patterns
+  + 4 top pages + /404 + /artifacts/_hero);
+  sitemap 78 URLs. `npm test` → 100 passed.
+  Library state after landing: 32 articles across
+  19 companies (Canva = 19th); 40 pattern
+  definitions (content-free-change-events +
+  hot-data-first-migration new); 32 artifacts.
+  cruxTag taxonomy: 11 tags with 1 five-company,
+  2 four-company (NEW: single-table joins
+  ambiguous-failure), 6 three-company, 1 two-
+  company (gray-failure — still the last), 2
+  one-company (AWS retry-amplified, DoorDash
+  mitigation-scoped-narrower-than-failure).
+
 - **Article #31 (Slack Vitess datastores) LANDED
   (2026-07-23). EIGHTH three-company cruxTag in the
   library — the single-cluster-scaling-ceiling class

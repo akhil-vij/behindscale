@@ -53,12 +53,14 @@ _None._
   footprint grows linearly.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: five unresolved conflicts
+### 3. Accent registry: six unresolved conflicts (owner pass blocking-adjacent)
 
-- **Source:** rounds 10, 15, 16, 17, 22. All landed as author-
-  chose per prior-round posture; all flagged in the accent-
-  registry section of taste doc v3 §6.
-- **The five:**
+- **Source:** rounds 10, 15, 16, 17, 22, 23. All landed as
+  author-chose per prior-round posture; all flagged in the
+  accent-registry section of taste doc v3 §6. Fable flagged
+  r23 (Canva teal-cyan) as blocking-adjacent — the corridor
+  pressure is compounding.
+- **The six:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -77,8 +79,14 @@ _None._
     `#E50914`, Pinterest `#E60023`). Third Slack accent after
     gold `#ECB22E` (r6) and cyan `#36C5F0` (r?); per-article
     accents Airbnb-precedented. No standby proposed.
+  - **Canva `#00C4CC`** (round 23) — teal-cyan, MOST CROWDED
+    corridor in the registry: Slack cyan `#36C5F0`, Roblox
+    `#00A2FF`, Airbnb cyan `#06B6D4`, Cadence teal `#2DD4BF`.
+    Fable flagged this as blocking-adjacent. Alternative
+    candidate Canva purple `#8B3DFF` collides with Figma
+    `#A259FF`. No non-colliding standby proposed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all five artifacts side-by-side), then
+  deployed build with all six artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -115,11 +123,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 31 articles, 11 tags,
-  1 five-company + 1 four-company + 6 three-company + 1
-  two-company + 2 one-company (as of r22 Slack Vitess —
-  single-cluster-scaling-ceiling promoted to 3-company;
-  gray-failure is now the only 2-company class).
+  pipeline pending deploy". Live is 32 articles, 11 tags,
+  1 five-company + 2 four-company + 6 three-company + 1
+  two-company + 2 one-company (as of r23 Canva media —
+  single-table-scaling-ceiling promoted to 4-company;
+  gray-failure still the only 2-company class).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
