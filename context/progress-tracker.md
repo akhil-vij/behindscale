@@ -4,6 +4,229 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #34 (GitLab database decomposition) LANDED
+  (2026-07-24). FIFTH four-company cruxTag in the
+  library; first SAME-MARKET RIVALS pairing inside one
+  class; NEW company (GitLab = 21st source).**
+  Fable-authored dissection of Dylan Griffith's 2022
+  three-part series "The path to decomposing GitLab's
+  database" (parts 1 + 2 consumed; part 3 explicitly
+  scoped out and disclosed in artifact footer).
+  GitLab.com's monolithic Postgres held ~22TiB of user
+  data (excluding git) behind a Patroni replica pool
+  and PGBouncer connection pooling. The class's purest
+  WRITE-PATH statement: replicas scale reads
+  arbitrarily; every write converges on one primary;
+  the primary tops out at the largest VM (96 vCPU) —
+  the ceiling arrives while read dashboards look
+  healthy. Namespace sharding was explored FIRST and
+  explicitly deferred (no tenancy boundaries in app's
+  design). Split line chosen by MEASUREMENT (write-
+  traffic table: CI ≈49% writes/s, ≈36% size → "the
+  optimal scaling step"), with instinct (ci_ prefix)
+  confirmed rather than trusted. Getting there:
+  violation ratchet (detect cross-joins + cross-DB
+  transactions, allowlist, fail CI on any new),
+  loose foreign keys (on-delete triggers → queue →
+  Sidekiq DELETE/NULLIFY), two-table mirroring with
+  periodic consistency checking, and a seven-phase
+  rollout whose key insight — run app as if it had
+  two databases while both connections point at one
+  — made the final production change a trivial host
+  reconfiguration. Team declined near-zero-downtime
+  cutover for a two-hour window with clean rollback;
+  seven staging rehearsals; production 93 minutes.
+  Results: vacuum 80–100% → ~15%; ≥5× Sidekiq query
+  duration; 9.2/22TiB Main + 12.5/22TiB CI freeable;
+  CPU headroom restored.
+  `single-cluster-scaling-ceiling` (GitHub + Airbnb +
+  Slack) becomes the FIFTH four-company cruxTag —
+  and the library's FIRST SAME-MARKET RIVALS pairing
+  inside one class: GitHub ↔ GitLab hit the same wall
+  and chose the same answer species (functional
+  decomposition). Manifestation caveats:
+  (a) the class's PUREST WRITE-PATH STATEMENT —
+      replicas scale reads arbitrarily; the ceiling
+      is the write path converging on one primary
+      that tops at the largest VM; the ceiling
+      arrives while read dashboards look healthy
+  (b) SPLIT LINE CHOSEN BY MEASUREMENT — instinct
+      (ci_ prefix) confirmed rather than trusted;
+      "the optimal scaling step" is a phrase from
+      the analysis table, not the executive summary
+  Additional class note honored in prose: the LONG-
+  TERM answer (namespace sharding) was explored
+  FIRST and explicitly DEFERRED, not rejected —
+  no tenancy boundaries in the app's design; "which
+  escape is reachable depends on the coupling
+  you've already built" joins the class's teaching.
+  GitLab = NEW COMPANY (20th; 21st source name in
+  project-overview). feeds.json ADDITION: GitLab
+  Blog (Engineering) inserted between GitHub and
+  Netflix (alphabetical). Feed URL is Fable-
+  authored guess (`atom.xml`); site does no
+  runtime fetching, so cosmetic-only.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  **Two NEW patterns**:
+  - `loose-foreign-keys` (consistency) — GitLab's
+    own coinage kept (descriptive; like
+    selective-acknowledgment kept TCP's SACK):
+    on-delete triggers-not-callbacks capture,
+    queue-drained async cascades, batch-controlled-
+    deletes dividend as pattern's second face.
+    Boundaries: vs real FKs (a bridge across a line
+    you drew, not an upgrade); vs content-free-
+    change-events (intent carried in-queue vs
+    identity-only + re-read). Retired-names pre-
+    flight: clean.
+  - `violation-ratchet` (consistency; CATEGORY-STRAIN
+    FLAGGED) — an engineering-PROCESS pattern
+    enforced via CI, not a runtime mechanism.
+    Flagged in both the chip note and the definition
+    for owner ruling on whether to accept process-
+    patterns into the library's runtime taxonomy or
+    reserve a separate slot. Justification for
+    minting anyway: large-scale architectural
+    transitions fail without it, and the mechanism
+    (detect → allowlist → fail-new → burn down) is
+    fully general (lint baselines, deprecation
+    gates, RuboCop TODO workflows, type-coverage
+    ratchets). Logged as open-decisions item 16.
+  **universal-staged-rollout RECUR → FOURTH
+  consecutive datastore migration** (Slack r22,
+  Canva r23, and now GitLab). Pattern now 4
+  articles / 4 companies (Datadog + Slack + Canva
+  + GitLab). Fable's agent note: at four straight
+  recurrences the pattern page is becoming the
+  migration-craft hub — consider owner curation of
+  its note ordering. Logged as open-decisions item
+  17.
+  **Cameo REJECTIONS** (prose):
+  - mirrored-tables-with-consistency-checking (two
+    tables only — folded into tradeoff 4, cross-
+    refs designated-source-of-truth's family)
+  - sharding-behind-a-proxy contrast (GitLab
+    evolved app-level where Slack bought a proxy
+    tier — the r22 pole-pair extended in prose,
+    not chips)
+  - fault-isolation (a results-implied benefit,
+    not a stated motivation)
+  **Rejected tags**: single-table (the ceiling is
+  the cluster's write path, not one table); blast-
+  radius (n/a).
+  **Standing symmetric-linking rule APPLIED**:
+  single-cluster cluster crosses to 4-company →
+  full-mesh triggered. DECISIONS authored 2 forward
+  links (github + slack); agent added airbnb as the
+  third forward link, and added GitLab as backlink
+  to all three classmates. Result: GitLab ↔ GitHub,
+  GitLab ↔ Airbnb, GitLab ↔ Slack all bidirectional.
+  Existing 3-company mesh (GitHub ↔ Airbnb ↔ Slack)
+  was already complete from r22 landing.
+  **Accent** `#FC6D26` (GitLab orange) — HARD FLAG:
+  the orange corridor takes its FOURTH member
+  (AWS `#FF9900`, Cloudflare `#F6821F`, Uber
+  `#F97316`). Alternative GitLab purple `#6E49CB`
+  lands in the equally crowded purple corridor.
+  Chrome-only discipline observed. Fable restated
+  at maximum volume that the owner registry pass
+  is overdue by ten rounds. Item 3 now at
+  SEVEN unresolved conflicts.
+  Contents:
+  - content/articles/gitlab-database-decomposition.
+    json — article + crux + cruxTag (single-
+    cluster-scaling-ceiling reused, FOURTH
+    company) + cruxSummary + 3 pattern refs + 3
+    stats + relatedArticles → GitHub + Slack +
+    Airbnb (per standing rule). addedAt: 2026-07-24.
+  - content/artifacts/gitlab-database-
+    decomposition.jsx — accent `#FC6D26`. PURE
+    STAGE MACHINE via act() reducer (r23 shape;
+    checklist 5 — a migration lifecycle, zero
+    intervals). Crux made literal: ADD A READ
+    REPLICA is playable futility (reads scale,
+    the write gauge never moves); BUY A BIGGER
+    PRIMARY meets the empty store; the write-
+    composition bar renders the analysis table
+    and lights CI's 49% on RUN THE WRITE ANALYSIS.
+    Ratchet is the teaching centerpiece: SOMEONE
+    MERGES A NEW CROSS-JOIN grows the list before
+    the ratchet and gets pipeline-blocked after
+    it; fixing without the ratchet loses ground
+    (net +30 regrowth per batch — illustrative
+    pacing, footer-labeled). The declined zero-
+    downtime plan is an informed-refusal beat
+    (r18 precedent). Rehearsals gate the window
+    at 7/7. Verdict-only assert strings:
+    "REPLICAS DON'T WRITE", "NO BIGGER MACHINE
+    EXISTS", "THE LONG ROAD, DEFERRED", "HALF THE
+    WRITES MUST GO", "THE RATCHET ONLY TURNS ONE
+    WAY", "THE TARGET IS MOVING", "CASCADE BY
+    QUEUE, NOT BY LOCK", "TWO DATABASES, ONE HOST
+    — ROLLBACK IS FREE", "ROLLBACK BEAT ZERO
+    DOWNTIME", "REHEARSED SEVEN TIMES, RAN IN
+    NINETY-THREE MINUTES", "HALF THE WRITES LEFT
+    HOME".
+  - content/patterns/loose-foreign-keys.json —
+    NEW pattern, consistency, minted at ONE
+    company (GitLab). Boundaries vs real FKs and
+    vs content-free-change-events.
+  - content/patterns/violation-ratchet.json — NEW
+    pattern, consistency (category-strain
+    flagged), minted at ONE company (GitLab).
+    Engineering-process shape.
+  - content/feeds.json — GitLab Blog (Engineering)
+    ADDED (20th source).
+  - Back-tag on content/articles/github-
+    partitioning-relational-databases.json: GitLab
+    added.
+  - Back-tag on content/articles/airbnb-
+    partitioning-main-database.json: GitLab added.
+  - Back-tag on content/articles/slack-vitess-
+    datastores.json: GitLab added.
+  - No content/cruxtags.json change.
+  Recurrences created by this landing:
+  - single-cluster-scaling-ceiling → 4-company
+    (GitHub + Airbnb + Slack + GitLab). FIFTH
+    four-company cruxTag; first same-market
+    rivals in one class.
+  - loose-foreign-keys → NEW pattern; 1 article
+    (GitLab). Category consistency.
+  - violation-ratchet → NEW pattern; 1 article
+    (GitLab). Category consistency (STRAIN-
+    FLAGGED).
+  - universal-staged-rollout → 4 articles / 4
+    companies (Datadog + Slack + Canva + GitLab).
+  - relatedArticles: GitLab ↔ GitHub/Airbnb/Slack
+    full-mesh applied in the same commit.
+  Landing preview + catalog effects: `single-
+  cluster-scaling-ceiling` row now shows "4
+  SYSTEMS", SEEN AT Airbnb · GitHub · GitLab ·
+  Slack. FIFTH four-system row on the preview.
+  Total preview row count UNCHANGED at 9. CTA
+  "Browse all 34 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 33 warnings (UNCHANGED — GitLab's stats
+  cleared the fuzzy match; results/percentages
+  appear verbatim in prose).
+  `npm run build` → end-to-end clean; 84 routes
+  prerendered (33 → 34 articles + 41 → 43
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 83 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 34 articles across
+  20 companies (GitLab = 20th); 43 pattern
+  definitions (loose-foreign-keys + violation-
+  ratchet new); 34 artifacts. cruxTag taxonomy:
+  11 tags with 1 five-company, 4 four-company
+  (NEW: single-cluster joins ambiguous-failure /
+  buffer-degrades / single-table / priority-
+  blind), 5 three-company, 1 two-company (gray-
+  failure), 2 one-company (AWS retry-amplified,
+  DoorDash mitigation-scoped-narrower-than-
+  failure).
+
 - **Article #33 (AWS load shedding doctrine) LANDED
   (2026-07-24). FOURTH four-company cruxTag in the
   library.** Fable-authored dissection of David

@@ -53,14 +53,14 @@ _None._
   footprint grows linearly.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: six unresolved conflicts (owner pass blocking-adjacent)
+### 3. Accent registry: seven unresolved conflicts (owner pass overdue by ten rounds per Fable)
 
-- **Source:** rounds 10, 15, 16, 17, 22, 23. All landed as
-  author-chose per prior-round posture; all flagged in the
-  accent-registry section of taste doc v3 §6. Fable flagged
-  r23 (Canva teal-cyan) as blocking-adjacent — the corridor
-  pressure is compounding.
-- **The six:**
+- **Source:** rounds 10, 15, 16, 17, 22, 23, 25. All landed
+  as author-chose per prior-round posture; all flagged in
+  the accent-registry section of taste doc v3 §6. Fable
+  restated in r25 that the corridor pressure has compounded
+  for ten rounds and the owner registry pass is now overdue.
+- **The seven:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -79,14 +79,18 @@ _None._
     `#E50914`, Pinterest `#E60023`). Third Slack accent after
     gold `#ECB22E` (r6) and cyan `#36C5F0` (r?); per-article
     accents Airbnb-precedented. No standby proposed.
-  - **Canva `#00C4CC`** (round 23) — teal-cyan, MOST CROWDED
-    corridor in the registry: Slack cyan `#36C5F0`, Roblox
-    `#00A2FF`, Airbnb cyan `#06B6D4`, Cadence teal `#2DD4BF`.
-    Fable flagged this as blocking-adjacent. Alternative
-    candidate Canva purple `#8B3DFF` collides with Figma
+  - **Canva `#00C4CC`** (round 23) — teal-cyan, most-crowded
+    corridor at the time (Slack cyan `#36C5F0`, Roblox
+    `#00A2FF`, Airbnb cyan `#06B6D4`, Cadence teal `#2DD4BF`).
+    Alternative Canva purple `#8B3DFF` collides with Figma
     `#A259FF`. No non-colliding standby proposed.
+  - **GitLab `#FC6D26`** (round 25) — fourth orange in a
+    now-oversaturated orange corridor (AWS `#FF9900`,
+    Cloudflare `#F6821F`, Uber `#F97316`). Alternative
+    GitLab purple `#6E49CB` lands in the equally crowded
+    purple corridor. No non-colliding standby proposed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all six artifacts side-by-side), then
+  deployed build with all seven artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -123,10 +127,10 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 33 articles, 11 tags,
-  1 five-company + 3 four-company + 6 three-company + 1
-  two-company + 2 one-company (as of r24 AWS load shedding —
-  priority-blind-load-shedding promoted to 4-company).
+  pipeline pending deploy". Live is 34 articles, 11 tags,
+  1 five-company + 4 four-company + 5 three-company + 1
+  two-company + 2 one-company (as of r25 GitLab decomposition —
+  single-cluster-scaling-ceiling promoted to 4-company).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -243,6 +247,54 @@ _None._
   definition already, so the concept is recoverable
   whenever a second article surfaces it.
 - **Reply:** mint-now / wait-for-second-company / dismiss.
+
+### 16. `violation-ratchet` category-strain ruling
+
+- **Source:** round 25 (GitLab decomposition) DECISIONS §2.
+  Fable minted `violation-ratchet` in the `consistency`
+  category with an explicit category-strain flag: unlike
+  every other pattern in the library, this one is an
+  engineering-PROCESS pattern enforced via CI (detect →
+  allowlist → fail-new → burn down), not a runtime
+  mechanism. Precedent it invokes: choreography-vs-
+  orchestration's reserved-slot handling.
+- **What's needed:** ruling on whether to accept process-
+  patterns into the library's runtime taxonomy (keep in
+  `consistency`), reserve a separate category (`process`
+  or `governance`), or reject the mint and fold the
+  content back into `universal-staged-rollout`'s
+  migration-craft note.
+- **Recommended:** keep in `consistency` for now. The
+  ratchet's actual output is consistency between what the
+  application asserts and what it does; the process
+  machinery is the how, not the what. If a second process-
+  pattern shows up we can revisit; a category rename would
+  affect the chip ramp.
+- **Reply:** keep-in-consistency / new-category / reject-mint.
+
+### 17. `universal-staged-rollout` note ordering curation
+
+- **Source:** round 25 (GitLab decomposition) DECISIONS §3.
+  Fable's agent note: at four straight recurrences (Datadog
+  r17 mint; Slack r22; Canva r23; GitLab r25) the pattern
+  page is becoming the migration-craft hub, and the notes
+  are accumulating in landing-order rather than teaching-
+  order.
+- **What's needed:** owner-authored review of the
+  `universal-staged-rollout` pattern page notes — decide
+  whether to reorder them by teaching progression
+  (introduce the pattern → increasing stakes → the largest
+  case) instead of chronological landing order. Chip note
+  authoring is agent-owned; pattern-page composition and
+  ordering is owner-owned per the taste doc.
+- **Recommended:** worth a curation pass. Suggested order:
+  Datadog (why staged rollouts save security-patch fleets)
+  → Canva (the "hot-data-first" application of the pattern
+  to a datastore migration) → Slack (the three-year
+  version at datastore scale) → GitLab (the seven-phase +
+  seven-rehearsal ceremony as the pattern's fullest
+  articulation).
+- **Reply:** reorder / keep-chronological / defer.
 
 
 ---
