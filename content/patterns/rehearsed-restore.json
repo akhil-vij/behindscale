@@ -1,0 +1,16 @@
+{
+  "slug": "rehearsed-restore",
+  "name": "Rehearsed Restore",
+  "category": "resilience",
+  "definition": "Backups are taken constantly and restores almost never — so the two halves of the capability age at different rates. The backup runs on schedule, exercised daily, kept working by its own automation. The restore is a document: written once, against the environment as it existed then, and silently invalidated by every change since — a new container runtime, new node topology, new tooling, new Kubernetes version. When the day comes, the team discovers mid-incident that the runbook's commands no longer parse, its assumptions no longer hold, and its untested asymmetries — a backup valid from any node, a restore that only works on one — surface as failures with no error message. A backup that has never been restored against the production environment's real shape is a hope, not a capability.\n\nThe pattern: rehearse the restore with the same discipline as any forward-path change, and treat the pair as one artifact. Execute the full restore periodically against an environment that matches production's shape — not only pilot or toy clusters, whose differences are precisely where the traps hide. Re-validate the runbook on every environmental change that could touch it (runtime swaps, version upgrades, topology changes), the same trigger discipline as dependency updates. Keep backup and restore symmetric: every degree of freedom the backup allows (run on any node, any ordering) must be either supported by the restore or explicitly removed from the backup. And time it — an unrehearsed restore's unknown duration is itself an incident cost, because fear of the fallback rationally prolongs fix-forward attempts past their useful life. Boundary against staged rollout and other forward-path safety: those govern changes you choose to make; this governs the path you take when choice has run out — which is exactly why it gets rehearsed least and needs it most.",
+  "whenItApplies": [
+    "Systems with no supported downgrade path, where restore-from-backup is the only rollback (schema-migrating upgrades, Kubernetes control planes, databases past a version boundary)",
+    "Environments that have changed materially since the recovery runbook was written — runtimes, topologies, tooling, or team composition",
+    "Single-point-of-failure clusters or datastores where the restore, when needed, will be needed under maximum pressure with no alternative"
+  ],
+  "tradeoffs": [
+    "Realistic rehearsal is expensive: production-shaped environments cost money, and full restore drills cost engineer time on a path that may never be used — the exact economics that let runbooks rot",
+    "Rehearsal on pilot environments provides false confidence in proportion to how much they differ from production; the pattern's value depends on closing that gap, not just running the drill",
+    "Symmetry constraints on the backup (pinning which node, which ordering) trade operational flexibility on the frequent path for correctness on the rare one"
+  ]
+}

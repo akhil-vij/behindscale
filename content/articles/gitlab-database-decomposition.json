@@ -49,7 +49,8 @@
   "relatedArticles": [
     "github-partitioning-relational-databases",
     "slack-vitess-datastores",
-    "airbnb-partitioning-main-database"
+    "airbnb-partitioning-main-database",
+    "reddit-piday-outage"
   ],
   "stats": [
     {

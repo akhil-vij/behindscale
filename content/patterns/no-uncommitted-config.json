@@ -1,0 +1,16 @@
+{
+  "slug": "no-uncommitted-config",
+  "name": "No Uncommitted Config",
+  "category": "resilience",
+  "definition": "Every system accumulates configuration that lives outside its code: settings applied by hand, state managed through a vendor's CLI that bypasses the normal API, decisions made in a console years ago by people who have since left. Most of it is harmless. Some of it is load-bearing — the system's correctness silently depends on it — and load-bearing state with no record is a specific, severe hazard: no review can see it, no linter can check it, no changelog reader can realize an upcoming change invalidates its assumptions, and no responder can find it during the incident it eventually causes. Its failure mode is delayed and archaeological: it detonates when the environment shifts under an assumption nobody can see, and the people who could have remembered it are gone.\n\nThe pattern is a floor, not an aspiration: no load-bearing state may exist outside version control. Where a mechanism resists codification — configuration that must be fetched via a proprietary CLI, hand-edited, and re-uploaded — there are exactly three acceptable outcomes: build the custom tooling that brings it into the record; replace the mechanism with one that can be recorded; or register it as a named, documented exception with an owner and a review date. The unacceptable fourth state is the default one: unrecorded, unowned, and slowly forgotten. The record serves two purposes the pattern insists on distinguishing: consistent application (the same state can be reapplied, compared, and drifted-checked) and historical memory (breadcrumbs for engineers who arrive after the authors have left — the record is documentation that cannot go stale, because it is the state). Boundary against Violation Ratchet: the ratchet mechanically prevents new violations of an established invariant; this pattern establishes the invariant that all load-bearing state be in the record at all — the ratchet is often the right enforcement tool once the record exists.",
+  "whenItApplies": [
+    "Infrastructure with hand-configured components whose authors may leave: network policies, routing topologies, cluster bootstrap decisions, console-applied settings",
+    "Vendor systems whose configuration is managed only through proprietary CLIs or UIs, actively resisting infrastructure-as-code",
+    "Long-lived platforms where environmental changes (version upgrades, deprecations, renamed labels and APIs) can silently invalidate assumptions embedded in old state"
+  ],
+  "tradeoffs": [
+    "Bringing CLI-only state into the record costs real engineering — custom tooling or mechanism replacement — for components that currently work fine, which is exactly why the gap persists until it detonates",
+    "A complete record creates review and change-management surface for state that changes rarely; the discipline must be cheap enough that operators don't route around it",
+    "Named exceptions require ongoing ownership — an exception list without review dates degrades back into the unrecorded state with extra steps"
+  ]
+}

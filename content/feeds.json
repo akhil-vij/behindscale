@@ -98,6 +98,13 @@
     "feed": "https://medium.com/feed/pinterest-engineering"
   },
   {
+    "name": "r/RedditEng",
+    "slug": "reddit-eng",
+    "company": "Reddit",
+    "url": "https://www.reddit.com/r/RedditEng/",
+    "feed": "https://www.reddit.com/r/RedditEng/.rss"
+  },
+  {
     "name": "Roblox Blog",
     "slug": "roblox-blog",
     "company": "Roblox",

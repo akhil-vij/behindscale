@@ -46,5 +46,9 @@
   "degraded-state-outlives-its-trigger": {
     "label": "Degraded state outlives its trigger",
     "definition": "A failure that persists after its trigger is removed, because the degraded state regenerates itself; exits are external (shed load below the tipping point, or add capacity)."
+  },
+  "unrecorded-config-outlives-its-authors": {
+    "label": "Unrecorded config outlives its authors",
+    "definition": "Load-bearing configuration that outlives its authors and its record, detonated by an environmental change nothing could check it against."
   }
 }
