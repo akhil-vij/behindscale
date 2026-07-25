@@ -142,20 +142,22 @@ _None._
   DoorDash postmortem (or another candidate) as a dedicated
   article. Class remains well-anchored by AWS timeouts.
 
-### 6. Taste doc count sync
+### 6. Taste-doc / board-doc separation follow-up
 
-- **Source:** ongoing since round 12. Doc still reads "twenty
-  articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 38 articles, 13 tags (TWO
-  new classes since r28: degraded-state-outlives-its-trigger,
-  unrecorded-config-outlives-its-authors), 2 five-company +
-  3 four-company + 6 three-company + 0 two-company + 4
-  one-company (as of r29 Reddit Pi-Day).
-- **What's needed:** owner-authored batch refresh of the count line
-  and pipeline-status paragraph. Cosmetic; self-heals when the batch
-  finishes landing.
-- **State:** taste doc is owner-owned; agent does not edit these
-  narrative sections unsolicited.
+- **Source:** ongoing since round 12; reframed 2026-07-25 after
+  the owner split live counts out of the taste doc into
+  `behindscale-board.md`. The audit-fix commit
+  (`<pending>`) cleaned the stale count claims from the taste
+  doc's ratified-taxonomy paragraph, "twenty article
+  artifacts" line, and version-5 changelog, and rebuilt the
+  board doc from actual repo data (13 cruxTag classes, 50
+  patterns, 21 sources, 38 articles LIVE).
+- **What's still owner-owned:** the taste doc header itself
+  (version narrative) — the agent trimmed count claims but
+  left the changelog structure and voice untouched. Owner
+  may want a further pass to reword the v5 changelog once
+  the doc's role is stable.
+- **Reply:** further-refactor / leave-as-is.
 
 ### 8. Primary-vs-newest source convention
 

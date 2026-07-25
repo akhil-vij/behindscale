@@ -8,24 +8,17 @@ sharpens; treat contradictions between this and an older instruction as this
 winning.*
 
 **Version 5** — v4 plus the readability doctrine appended after the
-2026-07 two-pass audit of the 23 live articles (see the dated section
-following the round-27 entry). Version 4 was: updated through the
-round 27 authoring run. The v3 base
-(rounds 12–18: Airbnb Orpheus, Netflix Conductor, Stripe rate limiters,
-Pinterest sharding, Segment Centrifuge, Datadog 2023-03-08, Shopify pods) took
-seven cruxTag classes to three companies; the appended round sections
-(19–27: AWS timeouts doctrine, Uber consumer proxy, Segment exactly-once,
-Slack Vitess, Canva DynamoDB, AWS load shedding, GitLab decomposition, Meta
-silent data corruption, DoorDash RabbitMQ→Kafka) then built the board to two
-FIVE-company classes (ambiguous-failure; buffer-degrades) and five
-FOUR-company classes, eliminated the last 2-company class (every class now
-3+), and added the editorial rules recorded in each round's section below:
-vendor-case-study and shelve-don't-force source bars, coinage and
-process-pattern mint rulings, unread-sibling and secondary-press-fact
-disclosure, informed-refusal beats for declined plans, one-chip-round
-honesty, chips-assert-use, honest-update notes, and the sim-design laws the
-verification gates taught. The header last matched the content at v3; this
-version restores the contract that the label tracks the appends.
+2026-07 two-pass audit of the then-23-live articles. v4 was updated
+through the round 27 authoring run; the v3 base covered rounds 12–18
+(seven cruxTag classes reaching three companies). The rules v4 and v5
+added — recorded in each round's section of the class-history
+appendix in `behindscale-board.md` — are: vendor-case-study and
+shelve-don't-force source bars, coinage and process-pattern mint
+rulings, unread-sibling and secondary-press-fact disclosure,
+informed-refusal beats for declined plans, one-chip-round honesty,
+chips-assert-use, honest-update notes, and the sim-design laws the
+verification gates taught. Current registry counts are the board
+ledger's, never reconstructed from prose here.
 Changes since v2: taxonomy updated with seven third-company fills and the
 manifestation-caveat doctrine (§3.5); pattern discipline gains the
 retired-names check (learned the hard way — a retired name was re-minted and
@@ -265,8 +258,9 @@ the second taxonomy compounds, and it's the move that made the first two
 two-company tags: `ambiguous-failure-under-retry` (Stripe ↔ Shopify) and
 `priority-blind-load-shedding` (Uber ↔ Netflix).
 
-The ratified taxonomy (2026-07-15, twenty articles, eleven tags — check
-the article JSONs for the current state before minting a new tag):
+The ratified taxonomy (current registry state lives in
+`behindscale-board.md`; the sibling-boundary prose below is the LAW
+distinguishing neighbors and must be read before minting a new tag):
 `ambiguous-failure-under-retry` (Stripe, Shopify) ·
 `priority-blind-load-shedding` (Uber, Netflix) ·
 `partial-completion-under-crashes` (Skipper, Cadence) ·
@@ -324,263 +318,91 @@ boundary vs `retry-amplified-overload` drawn tightly inside the
 definition: retry amplification is one specific transmission
 mechanism with a client-local fix; this class is about the scope
 mismatch between defense and failure whatever the transmission).
-Nine tags are two-company as of the 2026-07-14 Cloudflare
-Byzantine-failure publication (Cloudflare joining Slack on
-`gray-failure-defeats-automatic-detection`, the fifth
-audit-flagged singleton converted to two-company via
-recurrence-driven sourcing — five fills in a row: Slack,
-Airbnb, Roblox, AWS, Cloudflare); two audit-flagged
-singletons remain as of the 2026-07-15 DoorDash Aperture
-landing (AWS retry-amplified — same author, Colm MacCárthaigh,
-as the shuffle-sharding article, already lateral-linked via
-shuffle's second tradeoff — and the newly-minted
-`mitigation-scoped-narrower-than-failure`, DoorDash's own
-sole occupant). The DoorDash landing is the first round since
-the 2026-07-08 registry seed to mint a cruxTag rather than
-fill an audit singleton: the full source read reclassified
-retry storms as one transmission mode of a broader class,
-owner signed off at pitch, and the sibling boundary is drawn
-inside the new definition. The Skipper↔Cadence
-pair remains the first same-crux/opposite-solution pair in
-the library (embedded-library vs central-platform durable
-execution).
+Historical membership counts and per-round expansion narrative live
+in `behindscale-board.md`. The Skipper↔Cadence pair remains the first
+same-crux/opposite-solution pair in the library (embedded-library vs
+central-platform durable execution).
 Earlier drafts of this document used speculative example tags
 (`fan-out-failure-amplification`, `cliff-shedding-and-retry-amplification`);
 those were superseded by the ratified set above — do not reintroduce them.
 
-**Taxonomy update — the third-company run (rounds 12–18, authored
-2026-07-15, pipeline pending deploy).** Seven classes reached three
-companies in one run, each with an explicit manifestation caveat
-recorded in its round's decision log:
-`ambiguous-failure-under-retry` +Airbnb (Orpheus — the deepest
-server-side treatment; Airbnb becomes the first three-article
-company, owner-approved precedent) ·
-`partial-completion-under-crashes` +Netflix (Conductor — the
-ancestral 2016 instance; crux anchors on the epistemic face,
-"what remains?", and a one-clause registry-definition amendment
-awaits owner sign-off) ·
-`priority-blind-load-shedding` +Stripe (2017 rate limiters — the
-chronologically earliest instance; priority via standing 20% fleet
-reservation, a distinctive variant) ·
-`single-table-scaling-ceiling` +Pinterest (2012-designed ancestral
-instance; hypergrowth-rebuild manifestation vs the classmates'
-mature-wall) ·
-`buffer-degrades-under-backlog` +Segment (Centrifuge — substrate vs
-SEMANTICS caveat: push/pop lets a backlog capture the shared buffer;
-88,000-pair cardinality) ·
-`observer-shares-fate-with-observed` +Datadog (2023-03-08 — the
-class's success story: the out-of-band watcher WORKED, three-minute
-detection; caveat axis is designs-it / suffers-its-absence /
-exercises-it) ·
-`blast-radius-scales-with-cluster-size` +Shopify (pods — the class
-completes its answer taxonomy: cap it (Discord), shrink it
-statistically (AWS shuffle), eliminate it structurally (cells)).
-The **manifestation-caveat doctrine**, now standard: same causal
-spine, different face → same class plus an explicit caveat naming the
-face; different spine → reclassify or mint honestly. Ancestral
-instances (a new article predating its classmates) get named as such —
-chronology is part of a class's story. Pitch-target flips are normal
-and logged (Shopify was hunted as `single-cluster` and reruled to
-`blast-radius` on full read — the ceiling was one sentence of
-backstory). Landing-preview and class-count copy may not assert counts
-that depend on unverified tags: state the outcomes in the decision log
-and gate the copy. Remaining after the run: `gray-failure` and
-`single-cluster` at two companies; `retry-amplified-overload` (a
-DoorDash 2021-06-19 postmortem is shelved as a candidate fill) and
-`mitigation-scoped-narrower-than-failure` as singletons.
+**Where the round-by-round history went (2026-07-23).** The
+taxonomy's round-by-round record — which classes grew when, member
+lists, company counts, milestones — is BOARD STATE and now lives in
+`behindscale-board.md` (class-history appendix + registries). This
+document keeps only the LAWS those rounds established. Current
+registry state is always the ledger's, never reconstructed from
+prose.
 
-**The first FOUR-company class (round 19, 2026-07-16):**
-`ambiguous-failure-under-retry` +AWS (Featonby's Builders' Library
-idempotent-APIs piece — the platform-provider face, completing a
-four-face manifestation map: contract / client-at-volume / server
-interior / platform). Round 19 is also the first **pure-recurrence
-round** under the round-folder format: zero mints, three recurrences,
-including the first recurrences of two round-12 mints
-(`retryable-error-classification`, `atomic-phases` — both now
-two-company). Same-company rule made explicit: pattern recurrence
-counts COMPANIES, not articles (`idempotency-keys` gains a fifth
-article but stays a four-company pattern, AWS already counted).
-Companion-piece note: the source explicitly builds on the live AWS
-timeouts/jitter article — the two retry pathologies
-(correctness / amplification) now have their two Builders' Library
-dissections cross-linked in prose.
+**Laws distilled from rounds 12–29** (each argued in its round's
+DECISIONS and in the ledger's class-history appendix):
 
-**The second four-company class (round 20, 2026-07-16):**
-`buffer-degrades-under-backlog` +Uber (Kafka Consumer Proxy — the
-second semantics-face instance alongside Segment, which strengthens
-and resubmits round 16's proposed one-clause definition amendment
-with two supporting instances). The Segment↔Uber divergence is the
-class's teaching pair: replace the substrate (database-as-a-queue)
-versus keep it and build a ledger above it (selective-acknowledgment)
-— the sibling boundary is drawn inside both mints' definitions.
-Primary-vs-newest convention clarified: a productionization SEQUEL
-that presumes the original's mechanics (Uber's 2026 uForwarder post)
-is scoped secondary, not the dissection target — the newest-post rule
-applies to evolution RESTATEMENTS. Uber becomes the third
-three-article company.
-
-**The first FIVE-company class (round 21, 2026-07-17):**
-`ambiguous-failure-under-retry` +Segment (the 2017 exactly-once
-dedupe post — the PIPELINE face, ambiguity settled downstream of a
-boundary that can't negotiate). The class's manifestation map now
-spans where-the-ambiguity-is-settled: contract / client / server
-interior / platform / pipeline. Two firsts ride along:
-`idempotency-keys` becomes the first FIVE-COMPANY pattern (six
-articles), and the class gains its first EMPIRICAL manifestation —
-Segment's 0.6%-in-four-weeks is the measured cost of the ambiguity
-unmitigated; classes should note when a member quantifies the class.
-New mint `designated-source-of-truth` (consistency) forms a
-solution-space pole pair with `atomic-phases` inside one class:
-enclose in a real transaction where a shared store exists, or crown
-one system and repair toward it where none does. Verification-gate
-addendum: headless testing also catches PARAMETER RESONANCE, not
-just mechanic errors — round 21's default ledger cap slid exactly
-behind the re-send order, silently defeating the dedupe beat; the
-fix keyed the default miniature to steady-state (no aging) so aging
-appears only under the load-spike beat, matching the source's own
-claim shape. Segment becomes the fourth three-article company.
-
-**Round 22 (Slack Vitess): the eighth three-company class.**
-`single-cluster-scaling-ceiling` +Slack — manifestation caveat one
-level DOWN the hierarchy: after tenant-sharding, each tenant's shard
-is a single cluster, and the largest tenant finds its ceiling first
-(ruled on the post's own bolded sentence). Class answer taxonomy:
-split by function (GitHub) / split out the main DB (Airbnb) /
-re-shard by finer key behind a proxy (Slack). New mint
-`sharding-behind-a-proxy` forms the second sibling POLE PAIR in the
-pattern library — vs `id-encoded-placement`: maximally smart
-identifiers (Pinterest) versus maximally ignorant application
-(Slack), the two answers to who may know where data lives. Pattern
-recurrences can be RETIREMENT stories: `single-writer-ownership`'s
-second company arrives as Slack retiring active-active dual-writes —
-the pattern taught by the cost of its absence. gray-failure is now
-the library's only two-company class. Slack becomes the fifth
-three-article company; per-article accents (Airbnb precedent) now
-also apply to Slack (#ECB22E, #36C5F0, +#E01E5A flagged in the reds
-corridor). Sim-design law from the round's gate catch: a stage
-ladder's spread logic must key on the STAGE variable alone — gating
-it on an architecture flag the ladder never flips created dead code
-that silently reported pre-migration numbers as post-migration ones;
-headless verification of the post-migration beat is what exposed it.
-
-**Round 23 (Canva media → DynamoDB): the THIRD four-company class,
-and the 20th source.** `single-table-scaling-ceiling` +Canva — the
-class's answer taxonomy completes: partition in place (Figma), shard
-(Notion), hand-shard ahead of the wall (Pinterest), EXIT relational
-for managed NoSQL (Canva). Two caveat doctrines sharpened: the
-ceiling can be COMPOUND (six walls arriving in formation), and
-managed convenience carries MANAGED ceilings — several walls
-belonged to the rented substrate (RDS EBS caps, ext3-snapshot table
-files), not the database. Class-internal disagreements are prose
-gold, not chips: Canva's embraced EC replica reads versus
-Pinterest's master-only-reads refusal is cross-referenced, never
-inverse-tagged. Two mints that COMPOSE with an earlier one:
-`content-free-change-events` (identity-only events, truth re-read
-per apply — reorder/retry/pause correctness-free) is the transport
-discipline that keeps derived stores following a
-`designated-source-of-truth`; `hot-data-first-migration` carries the
-honesty that capability arrives per QUERY SHAPE, not per percentage
-— made playable as a refused list-by-user button below 100%.
-Timestamped answers get their timestamp kept: the post's
-would-consider-NewSQL-today candor is quoted in the tradeoffs, not
-sanded off. New-source rounds add a feeds.json agent task with the
-feed URL marked as a guess until verified.
-
-**Round 24 (AWS load shedding): the FOURTH four-company class, and
-two bar rulings.** `priority-blind-load-shedding` +AWS (Yanacek's
-doctrine piece) — manifestation caveat: classmates BUILT one
-priority mechanism each; this member states the class's DOCTRINE
-(ping above all — a shed health check shrinks the fleet;
-completion over initiation; within-quota over burst; front-of-stack
-shaping). Two source-bar rulings logged: VENDOR CASE STUDIES fail
-the bar regardless of technical content (Coinbase/Temporal exists
-only on temporal.io — rejected, not forced into
-partial-completion); and pre-committed SHELVE-DON'T-FORCE clauses
-belong in the hunt itself — this round's fetch carried a written
-rule that a retry-amplified ruling would shelve the source (AWS
-already holds that class), so the ruling risk was priced before
-authoring began. AWS becomes the SECOND four-article company —
-corrected: Airbnb was first (Orpheus, r12, owner-approved), a fact
-my round-24 ledger got wrong and the owner's concentration-rule
-note exposed; the named recurrence value for the crossing stands
-(the class's fourth company, no bar-clearing alternative). Sim-honesty additions from the gate: model finite
-client populations (retry pools saturate; unbounded feedback loops
-break meters), and when a ladder rung claims a mechanism, the sim
-must give it a measurable differential over the rung below —
-deadlines earned theirs via queue-staleness (doomed-but-admitted
-requests served uselessly at rung 3, dropped at dequeue at rung
-4). Dramatized rates (the fleet-shrink speed) are labeled as
-dramatizations in the artifact footer.
-
-**Round 25 (GitLab database decomposition): the FIFTH four-company
-class, the first same-market rivals inside one class, and the 21st
-source.** `single-cluster-scaling-ceiling` +GitLab — GitHub↔GitLab
-hit the same wall and chose the same answer species, which is the
-class taxonomy's strongest possible validation. Caveat doctrines
-added: the WRITE-PATH statement of the class (replicas scale reads
-arbitrarily; the ceiling is the primary every write must reach, and
-it arrives while read dashboards look healthy), and
-SPLIT-BY-MEASUREMENT (the write-traffic table chose CI at ~49% of
-writes — instinct confirmed, not trusted). Deferred-not-rejected
-long-term answers join a class's teaching: namespace sharding stays
-on GitLab's map; which escape is REACHABLE depends on accumulated
-coupling. Mint rulings: descriptive company coinages are keepable
-names (`loose-foreign-keys`, per the SACK precedent); and
-PROCESS patterns enforced through CI (`violation-ratchet`) may mint
-with an explicit category-strain flag and owner ruling invited —
-large-scale transitions fail without them, which earns the library
-slot. Multi-post scoping extended: an UNREAD sibling in a series
-(Part 3) is disclosed in the artifact footer, not silently skipped.
-Informed-refusal beats (r18's REFUSED precedent) now cover declined
-PLANS, not just forbidden operations: the zero-downtime design is
-examinable in the artifact and returns GitLab's three decline
-reasons instead of progress. The orange accent corridor takes its
-fourth member (#FC6D26) — the owner registry pass is ten rounds
-overdue and restated at maximum volume.
-
-**Round 26 (Meta silent data corruption): the board completes —
-no 2-company classes remain.** `gray-failure` +Meta: every
-multi-member class now holds 3+ companies (only the two declared
-singletons sit below). Caveat doctrine: SILICON gray joins
-distributed gray — the class spine (invisible to the system's own
-health signals) forced to its logical end: when no passive signal
-can ever exist, evidence must be MANUFACTURED (known-answer
-interrogation at two depths). Editorial precedents set: the first
-declared ONE-CHIP round — a single-lesson-deep post mints once and
-says so, rather than forcing recurs (candidates examined and
-rejected in DECISIONS, agent option left open); and
-SECONDARY-PRESS FACT DISCIPLINE — mechanics appearing only in press
-paraphrases of a companion paper (quarantine details) are omitted
-from article facts even when convenient, with any artifact
-rendering of them footer-labeled as illustrative miniature. The
-unread-sibling disclosure (r25) reused for Meta's 2021 mitigation
-post — flagged as a plausible distinct-crux future round.
-
-**Round 27 (DoorDash RabbitMQ → Kafka): the SECOND five-company
-class.** `buffer-degrades-under-backlog` +DoorDash (Meta, Slack,
-Segment, Uber, DoorDash) — the class's REPLACEMENT story
-(classmates rebuilt their buffers; DoorDash ruled repair
-unreachable and swapped the foundation), with the spine verbatim
-in-source: Flow Control exporting the buffer's distress upstream
-as publisher latency, amplified by the harakiri kill→churn→load
-loop. The class's completing kicker: the post documents the NEW
-buffer's backlog physics (head-of-line, rebalance stalls) with
-equal candor — you choose your pathologies, you don't escape them.
-Editorial rules hardened this round: (1) HONEST-UPDATE notes go in
-DECISIONS when a hunt's opening claim is corrected mid-turn (I
-opened saying no 5th-company candidate existed; deeper recall
-surfaced this one — the correction is on the record, not
-silently absorbed); (2) CHIPS ASSERT USE — a drafted
-dead-letter-queue chip marking a deliberate ABSENCE was removed
-before packaging, because tagging an article with a pattern it
-doesn't use falsely lists the company on that pattern's page;
-absence-contrasts are prose and boundary material
-(selective-acknowledgment ↔ fetch-execute-decoupling became the
-library's third sibling pole pair: same head-of-line problem,
-delivery-guarantee price vs bounded-loss price). Interrupted-turn
-hygiene: a stale partial artifact file discovered at write time is
-verified against the intended content and overwritten, with the
-discrepancy noted.
+- **Manifestation-caveat doctrine.** Same causal spine, different
+  face → same class plus an explicit caveat naming the face;
+  different spine → reclassify or mint honestly. Ancestral instances
+  (a member predating its classmates) are named as such — chronology
+  is part of a class's story.
+- **Registry conservatism.** A class mints only when the source's own
+  words defeat every existing tag; the rejection of each plausible
+  neighbor is written into DECISIONS. The post's own causal hierarchy
+  governs (a self-demoted proximate cause cannot be the crux). Two
+  consecutive mints is not drift when each carries its proof of work.
+- **Pitch-target flips are normal and logged** — the hunt's opening
+  claim is not the ruling, and corrections mid-round get an
+  HONEST-UPDATE note in DECISIONS, never silent absorption.
+- **Copy gating.** Landing-preview and class-count copy may not
+  assert counts that depend on unverified tags — outcomes go in the
+  decision log; the copy waits.
+- **Pattern recurrence counts COMPANIES, not articles.**
+- **Chips assert USE.** An article is never tagged with a pattern it
+  doesn't employ; deliberate absences and inverses are prose and
+  boundary material. Class-internal disagreements are cross-referenced
+  prose gold, never inverse-tagged.
+- **One-chip rounds are declared, not padded** — a single-lesson-deep
+  post mints once and says so, with rejected chip candidates logged.
+- **Conditional chips.** A pending mint (merge-or-discard unresolved)
+  may recur in a later round as a conditional chip; all conditionals
+  resolve together at publish.
+- **Sibling pole pairs.** When two patterns are opposite answers to
+  one question, the boundary is drawn inside BOTH definitions.
+  Deployment shapes fold INTO a mint's definition when they are the
+  pattern's form, not a sibling.
+- **Naming.** Descriptive company coinages are keepable pattern names.
+  Process patterns enforced through CI may mint with an explicit
+  category-strain flag and owner ruling invited.
+- **Primary-vs-newest.** Evolution restatements take the newest post;
+  a productionization sequel that presumes the original's mechanics is
+  scoped secondary, not the dissection target.
+- **Source bar.** Vendor case studies fail regardless of technical
+  content. Pre-committed shelve-don't-force clauses are written into
+  the hunt before authoring. Unreachable primaries (robots-blocked,
+  paywalled) shelve the round; owner-supplied page HTML of a public
+  first-party post is acceptable provenance, logged in DECISIONS.
+- **Secondary-press fact discipline.** Facts existing only in press
+  paraphrases of an unfetched sibling stay out of article facts;
+  illustrative renderings of them are footer-labeled.
+- **Multi-post scoping.** An unread sibling in a series is disclosed
+  in the artifact footer, not silently skipped.
+- **Timestamped answers keep their timestamps** — a source's
+  would-do-differently-today candor is quoted, not sanded off.
+- **New-source rounds** add a feeds agent task with the feed URL
+  marked as a guess until verified.
+- **Concentration rule (owner's).** Crossing the per-company
+  article-count ceiling requires a DECISIONS sentence naming the
+  recurrence value a new-company article could not deliver. The
+  current ceiling lives in the ledger.
+- **Stats.** A non-numeric stat is permitted exactly when the phrase
+  IS the finding.
+- **Sim honesty.** Model finite client populations; every ladder rung
+  claiming a mechanism must show a measurable differential over the
+  rung below; dramatized rates are labeled as dramatizations in the
+  footer. Recovery pacing is load-bearing: the mistake the story
+  turns on must be actually committable. Informed-refusal beats cover
+  declined plans, not just forbidden operations. Headless verification
+  catches parameter resonance, not just mechanic errors.
+- **Interrupted-turn hygiene.** A stale partial file discovered at
+  write time is verified against intended content and overwritten,
+  with the discrepancy noted.
 
 **Readability doctrine (2026-07-19)** — distilled from the two-pass
 audit of the 23 live articles (rubric pass over every article;
@@ -636,24 +458,6 @@ are the reference implementations.
   gloss, a de-stack, or a reorder — no substance was removed, and
   none may be in the name of this doctrine.
 
-**Round 26 (Meta silent data corruption): BOARD COMPLETION — no
-2-company classes remain.** `gray-failure` +Meta closes the last
-pair: every multi-member class now holds 3+ companies. Caveat
-doctrine: SILICON GRAY — the class's purest face (correctness
-corrupted with no trace in any log) forces its logic to the end:
-where no passive signal can exist, evidence is MANUFACTURED
-(known-answer interrogation at two depths). Precedents set: the
-FIRST ONE-CHIP ROUND, declared rather than padded — a
-single-lesson-deep post earns one honest mint
-(`known-answer-testing`, keeping crypto's own name per the coinage
-rule) with rejected chip candidates logged; and PRESS-FACT
-OMISSION discipline — mechanics that exist only in secondary press
-paraphrases (quarantine details) stay out of article facts even
-when the rendering wants them, with the artifact's illustrative
-use footer-labeled. Deployment shapes fold INTO a mint's
-definition when they are the pattern's form, not a sibling pattern
-(the shallow-constant/deep-rare tiers live inside
-known-answer-testing).
 Same discipline as everything else: the crux is traced to the source, never
 invented to sound deep.
 
@@ -716,8 +520,8 @@ Practical corollaries:
   that's when the library proves its thesis on screen rather than asserting it.
   **This is now proven, not theoretical.** The Netflix article (#6) was chosen
   precisely to recur two Uber-only singletons — `priority-aware-load-shedding`
-  and `feedback-controlled-load-management` — and both are now two-company
-  patterns whose detail pages show Uber and Netflix side by side. That
+  and `feedback-controlled-load-management` — which took both patterns from
+  singletons to multi-company (current counts in the board ledger). That
   side-by-side is the single most valuable thing a pattern page can show a
   staff reader, and it only exists because the article was sourced *for the
   recurrence*. Default posture for new articles: prefer a source that makes an
@@ -929,32 +733,13 @@ the reader feel it.
 - **Text in artifacts is captions, labels, and callouts — never paragraphs.**
   If you're writing prose inside the artifact, it belongs in the article.
 
-### Accent registry additions (rounds 12–18, 2026-07-15)
+### Accent registry (moved to the board ledger)
 
-Airbnb coral `#FF5A5F` for airbnb-orpheus-idempotent-payments (matches
-the partitioning-main-database coral precedent; same constraint —
-chrome only, never verdict) · Netflix red `#E50914` for
-netflix-conductor-microservices-orchestrator (company match with
-netflix-prioritized-load-shedding CONFIRMED against this registry;
-standing semantic-red caveat applies) · Stripe indigo `#6366F1` for
-stripe-rate-limiters (CORRECTED from brand blurple `#635BFF` to match
-the live stripe-idempotency accent — company consistency outranks
-brand fidelity) · Pinterest red `#E60023` for pinterest-sharding-mysql
-(HIGH-RISK: semantic red AND Netflix red; original teal swap candidate
-WITHDRAWN — Cadence owns teal `#2DD4BF` — new candidate magenta
-`#D946EF`; owner in-situ call required) · Segment green `#52BD94` for
-segment-centrifuge-database-queue (FLAG: nearest neighbor is Skipper
-green `#22C55E`, which is also semantic green; teal swap withdrawn per
-Cadence; owner call) · Datadog purple `#632CA6` for
-datadog-incident-response-observer-fate (purple corridor now
-three-deep with violet `#9b8cf0` and Figma `#A259FF`; darker and more
-saturated than both) · Shopify lime `#84CC16` for
-shopify-pods-architecture (CORRECTED from brand green `#96BF48` to
-match the live Shopify accent). Standing item: an **owner registry
-pass** over the crowded corridors — oranges (AWS/Cloudflare/Uber/
-resilience-chip), greens (Skipper/semantic/Segment/Shopify-lime),
-purples (violet/Figma/Datadog/Discord-indigo/Stripe-indigo), reds
-(semantic/Netflix/Pinterest/coral).
+Accent assignments and corridor-collision flags are BOARD STATE:
+the full registry lives in `behindscale-board.md`. The LAW stays
+here: accents are chrome only, never verdict colors; corridor
+collisions are flagged at assignment; the owner registry pass over
+crowded corridors is a standing open item.
 
 ### Craft moves that earned their place (rounds 10–18)
 
@@ -1064,7 +849,7 @@ contract.
 ### Technical contract (the sandbox is strict)
 - **Single self-contained `.jsx` file.** React primitives only (`useState`,
   `useEffect`, `useRef`, `useMemo`). No external libraries, no charting deps —
-  hand-roll SVG/divs. All twenty article artifacts use nothing but React.
+  hand-roll SVG/divs. All article artifacts use nothing but React.
 - **Inline styles only.** No Tailwind, no external CSS — they don't exist in
   the sandbox.
 - **No `fetch`, no `localStorage`, no `window`/`document` at module scope.**
