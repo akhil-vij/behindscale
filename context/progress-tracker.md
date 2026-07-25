@@ -4,6 +4,277 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #37 (Slack 2-22-22 incident) LANDED
+  (2026-07-25). TWELFTH cruxTag class in the library —
+  the first NEW class since r11 (May 2026, before the
+  batch series). First round under the taste doc v5
+  READABILITY DOCTRINE (borning-compliant, self-
+  audited against the nine rules).** Fable-authored
+  dissection of Laura Nolan's 2022-04-26 Slack
+  postmortem for the 2022-02-22 incident (with
+  Sanford, Scheinblum, Sullivan). A Consul agent
+  upgrade rolled in 25% steps; two steps completed
+  the prior week without incident. The third ran
+  at peak on Feb 22 and crossed a tipping point:
+  Mcrib (Slack's newer cache-ring control plane
+  that watches Consul) efficiently replaced each
+  briefly-deregistered memcached node with an empty
+  spare — and enough of the cache went cold at
+  exactly the moment demand was highest. The
+  amplifier waited in the data layout: the group-
+  DM query needed channel→users but the table was
+  sharded by user, so Vitess scatter-queried every
+  shard. Normally invisible (cached with long TTLs
+  because membership is immutable); with the cache
+  partially empty, nearly every booting user drove
+  a query to every shard, and database load rose
+  superlinearly against miss percentage until
+  timeouts began preventing cache fill. **The
+  Consul rollout was paused early — and it didn't
+  make a difference.** The database could not serve
+  boot traffic at the degraded hit rate, the empty
+  cache generated the next miss, the miss produced
+  the timeout, the timeout preserved the empty
+  cache. Recovery: throttle client boots (unbooted
+  sacrificed for booted, cache starts filling);
+  raise the throttle too much and relapse into the
+  cascade (measured steps required near the
+  tipping point); modify the scatter query to
+  fetch only cache-missing entries, allowed to
+  read Vitess replicas because immutable data is
+  staleness-tolerant.
+  **NEW cruxTag class**: `degraded-state-outlives-
+  its-trigger` — 12th class in the registry, first
+  new class since r11. Registry definition: "a
+  failure that persists after its trigger is
+  removed, because the degraded state regenerates
+  itself; exits are external (shed load below the
+  tipping point, or add capacity)." Slack is the
+  founding company; the post itself names the
+  class via HotOS 2021 metastable-states paper
+  (Bronson, Charapko, Aghayev, Zhu).
+  **Fable's honest-update note** (in-source, r27
+  precedent): opened the hunt claiming this was
+  retry-amplified-overload's SECOND company. Full
+  read overturned: the post's own accounting
+  demotes retries to "a contributor" — Slack's
+  clients already run the r19 doctrine (exponential
+  backoff + jitter) and the load still climbed —
+  while the sustaining engine is structural
+  (empty cache → DB overload → timed-out refill →
+  empty cache). Ruling captured on record.
+  **Slack = FOURTH article** for the company
+  (matches Airbnb r12, AWS r24, GitLab r25 four-
+  article precedents; not crossing them). Fable
+  invoked the taste-doc-v4 concentration rule
+  twice over: (1) this is the canonical public
+  metastable-failure postmortem — the class's
+  founding document exists at Slack and nowhere
+  else; (2) the incident RUNS ON the architecture
+  the library already dissected in r22 (Vitess
+  keyspaces, user-sharded channel membership,
+  scatter-query mechanics) — making this the
+  library's first INCIDENT-ON-A-DISSECTED-
+  ARCHITECTURE pairing, an intra-library link no
+  new-company article could provide.
+  Shipped by the Claude Code agent as `feat: publish`
+  (`<pending>`) + this docs refresh (`<pending>`).
+  No feeds.json change.
+  **First round under the READABILITY DOCTRINE**
+  (taste doc v5). Entry surfaces born-compliant
+  and self-audited against the nine rules per
+  Fable's own note: hook-first ordering (the
+  paused-trigger fact is sentence one of the
+  summary AND the title = the class's defining
+  fact in plain words); summary carries its own
+  glosses (Consul, Mcrib, Memcached, Mcrouter,
+  scatter query, metastable — each glossed at
+  first use; Vitess glossed per fix-wave phrasing);
+  no three-term stacks on entry surfaces;
+  assumable-tech shortlist respected (MySQL bare;
+  Memcached glossed — NOT on the five-item list);
+  GDM expanded to "group direct messages"; context
+  block passes the standalone test; hook-first
+  ordering also applied to the crux; entry-surface
+  sentences kept under the stack threshold.
+  **Slug correction on placement**: authored
+  pattern chip slug was `prioritized-load-shedding`
+  (Fable's conditional-slug guess per r24
+  protocol); corrected to live slug
+  `priority-aware-load-shedding` at placement.
+  Same operation as r24.
+  **NEW MINT**: `load-bearing-cache` (resilience) —
+  the structural lesson: the database could not
+  serve boot traffic at degraded hit rates, so
+  the cache was capacity wearing an optimization's
+  clothes. Definition carries the discipline (hit
+  rate as a capacity metric with a floor; warmth
+  protected during maintenance; warm-before-serve;
+  audit for queries survivable only while cached)
+  and the boundary (if losing the cache merely
+  slows you, none of this rigor is owed).
+  Generality without Slack: every memcache-fronted
+  database at scale. Retired-names pre-flight:
+  clean.
+  **conservative-auto-remediation RECUR (as its
+  own ANTI-INSTANCE, r22 retirement-story
+  precedent)**: Mcrib was faster and more correct
+  than its predecessor, and that efficiency
+  amplified cache churn; the post's exact verdict:
+  "its efficiency made the broader system behave
+  in a less safe way." Slack's follow-up Mcrib
+  control-loop changes add the restraint the
+  pattern names.
+  **priority-aware-load-shedding RECUR** —
+  pattern now 5 articles / 5 companies (Netflix +
+  Uber + Stripe + AWS + Slack). Slack's beat is
+  in-the-storm rather than in-design: the client-
+  boot throttle as an explicit priority call
+  (unbooted sacrificed for booted so refill
+  queries could land), plus the return-trip
+  discipline (relapse from raising too fast;
+  small increments watching goodput).
+  **Cameo REJECTIONS** (prose):
+  - retryable/backoff doctrine (present and
+    correctly implemented — tradeoff 6 carries
+    the honest conclusion that correct per-client
+    behavior still summed to harm; cross-class
+    link to aws-timeouts in relatedArticles)
+  - replica-reads-for-immutable-data (one
+    mechanism sentence — folded into
+    solution/tradeoff area; Canva/Pinterest
+    replica-reads contrast lives at those
+    articles)
+  - scatter-query avoidance as its own mint (fix
+    is layout-specific; carried inside load-
+    bearing-cache's audit clause)
+  **Rejected tags**: retry-amplified (retries
+  demoted by the post itself); buffer-degrades
+  (a cache is not a backlog buffer); priority-
+  blind (the boot throttle is a MECHANISM in the
+  recovery, not the crux); blast-radius /
+  observer-fate / gray (n/a).
+  **Standing symmetric-linking rule NOT
+  triggered** — new singleton class. Backlinks
+  applied: `slack-vitess-datastores` (the
+  architecture this incident RAN ON — the
+  library's first incident-on-a-dissected-
+  architecture pair) and `aws-timeouts-retries-
+  backoff-jitter` (the retry doctrine Slack
+  implemented and that still fed the cascade —
+  cross-class link).
+  **Accent** `#2EB67D` (Slack green) — Slack's
+  FOURTH accent after gold `#ECB22E`, cyan
+  `#36C5F0`, and magenta-red `#E01E5A` (per-
+  article accents Airbnb-precedented). FLAG:
+  greens corridor (Segment `#52BD94`, semantic
+  `#22c55e`); chrome-only discipline observed.
+  Logged as EIGHTH conflict in open-decisions
+  item 3.
+  Contents:
+  - content/articles/slack-incident-2-22-22.json
+    — article + crux + cruxTag (degraded-state-
+    outlives-its-trigger, founding company) +
+    cruxSummary + 3 pattern refs (load-bearing-
+    cache + conservative-auto-remediation +
+    priority-aware-load-shedding) + 2 problem
+    stats (25% + every-shard-per-miss; zero
+    solution stats per incident-piece precedent)
+    + relatedArticles → slack-vitess +
+    aws-timeouts. addedAt: 2026-07-25. Slug
+    correction on patterns[]:
+    `prioritized-load-shedding` →
+    `priority-aware-load-shedding`.
+  - content/artifacts/slack-incident-2-22-22.jsx
+    — accent `#2EB67D`. Interval sim, pure
+    step() functional setState (the self-
+    sustaining loop must be FELT). The class
+    beat is playable and headless-asserted:
+    PAUSE THE ROLLOUT after the tipping point
+    changes nothing — collapse persists for 30+
+    ticks with the trigger gone. Supporting
+    beats: two off-peak steps absorbed; third
+    step tips only AT PEAK; throttle opens
+    recovery; +50 raise relapses while +10 steps
+    walk home (their real sequence); query fix
+    demonstrably widens the corridor. Retry
+    meter labeled "backoff + jitter, still
+    arriving" — contributor demoted, honestly
+    rendered. Footer labels numeric miniature
+    as calibrated-to-relationships, not
+    measurements. Verdict-only assert strings:
+    "THE TRIGGER IS GONE, THE OUTAGE ISN'T",
+    "THE TIPPING POINT, AT PEAK", "TWO STEPS
+    PASSED. SO DID LAST WEEK'S.", "THROTTLED
+    BELOW THE TIPPING POINT", "TOO MUCH, TOO
+    SOON", "THE AMPLIFIER IS FIXED, THE
+    CORRIDOR WIDENS".
+  - content/patterns/load-bearing-cache.json —
+    NEW pattern, resilience, minted at ONE
+    company (Slack). Boundary drawn inside
+    definition (if losing the cache merely
+    slows you, none of this rigor is owed).
+  - content/cruxtags.json — NEW registry entry
+    `degraded-state-outlives-its-trigger` (12th
+    class).
+  - Back-tag on content/articles/slack-vitess-
+    datastores.json: this article added
+    (bidirectional pair — the architecture the
+    incident ran on).
+  - Back-tag on content/articles/aws-timeouts-
+    retries-backoff-jitter.json: this article
+    added (cross-class link — the retry
+    doctrine Slack implemented).
+  - No content/feeds.json change.
+  Recurrences created by this landing:
+  - degraded-state-outlives-its-trigger → NEW
+    cruxTag class; 1 article (Slack). 12th class
+    in the registry.
+  - load-bearing-cache → NEW pattern; 1 article
+    (Slack). Category resilience.
+  - conservative-auto-remediation → 2 articles
+    (Cloudflare byzantine + Slack 2-22-22 as
+    anti-instance). Stays at 2 companies (owner
+    decision on cameo promotion is open-
+    decisions item 4).
+  - priority-aware-load-shedding → 5 articles /
+    5 companies (Netflix + Uber + Stripe + AWS
+    + Slack).
+  - relatedArticles: Slack incident → slack-
+    vitess + aws-timeouts forward links; both
+    articles' backlinks applied in the same
+    commit.
+  Landing preview + catalog effects:
+  - Landing preview: new `degraded-state-
+    outlives-its-trigger` row shows "1 SYSTEM",
+    SEEN AT Slack. Preview row count grows from
+    9 to 10 (item 2 in open-decisions is a
+    design-pass question about show-all vs cap
+    — this landing bumps it to 10, still
+    reasonable).
+  - CTA "Browse all 37 breakdowns →" auto-
+    derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 35 warnings (UNCHANGED — 2 problem
+  stats, zero solution stats per incident-piece
+  precedent).
+  `npm run build` → end-to-end clean; 90 routes
+  prerendered (36 → 37 articles + 45 → 46
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 89 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 37 articles across
+  20 companies (Slack at 4 articles now — third
+  four-article company after Airbnb r12 and AWS r24,
+  per Fable's concentration-rule check);
+  46 pattern definitions (load-bearing-cache new);
+  37 artifacts. cruxTag taxonomy: 12 tags with 2
+  five-company, 3 four-company, 6 three-company,
+  0 two-company, 3 one-company (AWS retry-
+  amplified, DoorDash mitigation-scoped-narrower-
+  than-failure, Slack degraded-state-outlives-
+  its-trigger).
+
 - **Article #36 (DoorDash RabbitMQ → Kafka) LANDED
   (2026-07-24). SECOND FIVE-COMPANY cruxTag in the
   library.** Fable-authored dissection of DoorDash's

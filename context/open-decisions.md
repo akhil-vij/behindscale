@@ -47,20 +47,19 @@ _None._
   (c) split preview into "3-company" and "2-company" bands.
 - **State:** kept at show-all per prior feedback. `Landing.tsx` doc
   comment still says "revisit at 6+".
-- **Cost of waiting:** rounds-12-18 batch now complete at 9
-  rows (7 three-company + 2 two-company + 2 one-company). Next
-  landings will lift the count further; preview vertical
-  footprint grows linearly.
+- **Cost of waiting:** r28 crossed to 10 rows (new class
+  `degraded-state-outlives-its-trigger` added as a
+  singleton). Preview vertical footprint grew linearly as
+  predicted; `Landing.tsx`'s "revisit at 6+" comment is
+  now well overdue.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: seven unresolved conflicts (owner pass overdue by ten rounds per Fable)
+### 3. Accent registry: eight unresolved conflicts (owner pass overdue per Fable)
 
-- **Source:** rounds 10, 15, 16, 17, 22, 23, 25. All landed
-  as author-chose per prior-round posture; all flagged in
-  the accent-registry section of taste doc v3 §6. Fable
-  restated in r25 that the corridor pressure has compounded
-  for ten rounds and the owner registry pass is now overdue.
-- **The seven:**
+- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28. All
+  landed as author-chose per prior-round posture; all
+  flagged in the accent-registry section of taste doc v3 §6.
+- **The eight:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -89,8 +88,14 @@ _None._
     Cloudflare `#F6821F`, Uber `#F97316`). Alternative
     GitLab purple `#6E49CB` lands in the equally crowded
     purple corridor. No non-colliding standby proposed.
+  - **Slack `#2EB67D`** (round 28) — Slack's FOURTH accent
+    (after gold `#ECB22E`, cyan `#36C5F0`, magenta-red
+    `#E01E5A`). Sits in the greens corridor with Segment
+    `#52BD94` and semantic `#22c55e`. Per-article accents
+    are Airbnb-precedented; chrome-only discipline
+    observed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all seven artifacts side-by-side), then
+  deployed build with all eight artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -127,11 +132,11 @@ _None._
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 36 articles, 11 tags,
-  2 five-company + 3 four-company + 6 three-company + 0
-  two-company + 2 one-company (as of r27 DoorDash RabbitMQ —
-  buffer-degrades promoted to 5-company, joining ambiguous-
-  failure).
+  pipeline pending deploy". Live is 37 articles, 12 tags
+  (**NEW: degraded-state-outlives-its-trigger, first new
+  class since r11**), 2 five-company + 3 four-company + 6
+  three-company + 0 two-company + 3 one-company (as of r28
+  Slack 2-22-22).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
