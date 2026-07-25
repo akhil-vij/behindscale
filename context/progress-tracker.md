@@ -4,6 +4,193 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #39 (Google Colossus) LANDED (2026-07-25).
+  THIRD FIVE-COMPANY cruxTag in the library; NEW
+  company (Google = 22nd source; board doc counts 24
+  with two entries under AGENT CHECK backfill).**
+  Fable-authored dissection of "Colossus under the hood:
+  a peek into Google's scalable storage system"
+  (cloud.google.com blog, 2021-04-19, Hildebrand +
+  Serenyi). Nearly everything Google serves —
+  YouTube, Gmail, Drive, Search, and every Google
+  Cloud storage product — sits on one foundational
+  file system. Colossus exists because of a ceiling:
+  GFS, its predecessor, hit scaling limits in its
+  METADATA plane when Google tried to accommodate
+  Search. Answer: rebuild that layer as a distributed
+  metadata model — many horizontally scalable
+  Curators handle control ops (file creation), and
+  they store the file system's metadata in Bigtable
+  (Google's horizontally scalable NoSQL DB) — a move
+  the post credits with scaling Colossus more than
+  100x beyond the largest GFS clusters. Around that
+  core: a client library carrying most of the
+  intelligence (down to software RAID), D file
+  servers streaming data directly to clients with
+  no middleman hops, background Custodians for disk
+  balancing + RAID reconstruction. A single cluster
+  scales to exabytes across tens of thousands of
+  machines — one SHARED POOL where latency-critical
+  serving and batch analytics fill in each other's
+  idle gaps, with the hottest data on just enough
+  flash to keep disks doing what disks can do.
+  `single-cluster-scaling-ceiling` (GitHub + Airbnb
+  + Slack + GitLab) becomes the THIRD five-company
+  cruxTag. Manifestation caveat: the SOLVED-SIDE
+  face — first member telling the story from
+  beyond the wall (ceiling-as-history, one sentence
+  of pain, a chapter of architecture — the inverse
+  proportions of every classmate). Class answer
+  taxonomy gains its FIFTH species: rebuild the
+  metadata plane on a scalable substrate (alongside
+  split-by-function / split-out-main / reshard-
+  behind-proxy / exit-relational).
+  **Register note** (in-source honesty): the source
+  is the THINNEST in the library — a ~6-minute
+  promotional-register overview derived from a
+  Next '20 session. Logged plainly by Fable;
+  consequences applied — facts stop exactly where
+  the post's do; tradeoff 1 marks its analysis-on-
+  top-of-facts; tradeoff 6 names the register
+  honestly as the class's solved-side telling. The
+  famous Bigtable-runs-on-Colossus recursion is NOT
+  in this post and is therefore NOWHERE in the
+  round. Unread sibling disclosed (footer + article
+  solution close): the 2025 placement post "SSD
+  performance at HDD prices" — ledger hunt
+  candidate, possible distinct-crux future round.
+  Google = NEW COMPANY (22nd article-source; board
+  ledger counts 24 with two AGENT CHECK backfills
+  outstanding). Shipped by the Claude Code agent as
+  `feat: publish` (`<pending>`) + this docs refresh
+  (`<pending>`). feeds.json ADDITION: Google Cloud
+  Blog inserted between GitLab and Netflix
+  alphabetically. Feed URL is Fable-authored guess
+  (`cloudblog.withgoogle.com/rss/`); site does no
+  runtime fetching, cosmetic-only.
+  **Two NEW pattern mints (declared TWO-CHIP round)**:
+  - `distributed-metadata-model` (throughput) —
+    Google's own coinage kept per the r25 keepable-
+    coinage law. Rehost the bookkeeping on a
+    horizontally scalable substrate; ceiling
+    inherited not deleted; data path kept off the
+    metadata path. Boundary vs sharding-behind-a-
+    proxy / split-by-function drawn inside
+    definition (they partition data; this rehosts
+    the system's own bookkeeping; they compose).
+  - `shared-pool-multiplexing` (throughput) —
+    peak-provision the pool, backfill with batch,
+    isolation as an actively enforced illusion.
+    Device-tier restatement (flash sizing, cool-
+    data rebalancing) folded INTO the definition
+    per the r26 deployment-shapes law. Boundary vs
+    load-bearing-cache drawn in-definition.
+  **Zero recurs** — chips-assert-use law observed
+  explicitly (Fable scanned the ledger including
+  PENDING rows, ruled no existing pattern honestly
+  applies). A fourth consecutive class mint was NOT
+  needed; the streak honestly ends.
+  **Neighbor rejections written out** (registry
+  conservatism):
+  - blast-radius (shared pool is the OPPOSITE
+    bet — coupling embraced for efficiency; post's
+    thesis is not domain-shrinking)
+  - single-table (no table)
+  - observer-fate / degraded-state / unrecorded-
+    config (n/a — no incident)
+  - retry-amplified (n/a)
+  Pre-read hypothesis logged to the owner (single-
+  cluster via GFS master) CONFIRMED by the read —
+  no honest-update note owed.
+  **Standing symmetric-linking rule APPLIED**:
+  single-cluster cluster crosses 4→5 companies →
+  full-mesh triggered. DECISIONS §Craft authored 2
+  forward links (slack-vitess + gitlab-
+  decomposition); agent added github + airbnb as
+  the third and fourth forward links, and added
+  Google as backlink to all four classmates.
+  Result: Google ↔ all four classmates
+  bidirectional. Existing 4-company mesh (GitHub
+  ↔ Airbnb ↔ Slack ↔ GitLab) was already complete.
+  **Accent** `#4285F4` (Google blue) — FLAG: blue
+  corridor (Slack cyan `#36C5F0`, GitHub blue
+  `#58A6FF`, Meta blue `#0866FF`, Discord blurple
+  `#5865F2`). Chrome-only discipline observed.
+  Tenth entry in the accent corridor board;
+  logged in open-decisions item 3.
+  Contents:
+  - content/articles/google-colossus.json —
+    article + crux + cruxTag (single-cluster-
+    scaling-ceiling reused, FIFTH company) +
+    cruxSummary + 2 pattern refs + 2 stats +
+    relatedArticles → all four classmates (per
+    standing rule). addedAt: 2026-07-25.
+  - content/artifacts/google-colossus.jsx —
+    accent `#4285F4`. INTERVAL sim (felt
+    dynamics: the wall, the utilization delta,
+    the two-sided flash target) with exported
+    initial/step/derive for headless verification.
+    Footer separates sourced doctrine from
+    illustrative miniature and discloses the
+    unused 2025 sibling.
+  - content/patterns/distributed-metadata-model.
+    json — NEW pattern, throughput, minted at
+    ONE company (Google). Boundary vs sharding-
+    behind-a-proxy / split-by-function inside
+    definition.
+  - content/patterns/shared-pool-multiplexing.
+    json — NEW pattern, throughput, minted at
+    ONE company (Google). Boundary vs load-
+    bearing-cache inside definition.
+  - content/feeds.json — Google Cloud Blog
+    ADDED.
+  - Back-tags on slack-vitess-datastores,
+    gitlab-database-decomposition, github-
+    partitioning-relational-databases, airbnb-
+    partitioning-main-database: Google added to
+    each's relatedArticles.
+  - No content/cruxtags.json change.
+  Recurrences created by this landing:
+  - single-cluster-scaling-ceiling → 5-company
+    (GitHub + Airbnb + Slack + GitLab + Google).
+    THIRD five-company cruxTag.
+  - distributed-metadata-model → NEW pattern; 1
+    article (Google). Category throughput.
+  - shared-pool-multiplexing → NEW pattern; 1
+    article (Google). Category throughput.
+  - relatedArticles: Google ↔ all four
+    classmates full-mesh applied in the same
+    commit.
+  Landing preview + catalog effects: `single-
+  cluster-scaling-ceiling` row now shows "5
+  SYSTEMS", SEEN AT Airbnb · GitHub · GitLab ·
+  Google · Slack. THIRD five-system row on the
+  preview (joins ambiguous-failure and buffer-
+  degrades). CTA "Browse all 39 breakdowns →"
+  auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 37 warnings (UNCHANGED — Google's
+  stats cleared fuzzy match; incident-piece
+  precedent extended to promotional-register).
+  `npm run build` → end-to-end clean; 96 routes
+  prerendered (38 → 39 articles + 48 → 50
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 95 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 39 articles across
+  22 companies (Google = 22nd — board doc
+  reports 24 with 2 AGENT CHECK backfills
+  outstanding); 50 pattern definitions
+  (distributed-metadata-model + shared-pool-
+  multiplexing new); 39 artifacts. cruxTag
+  taxonomy: 13 tags with 3 five-company (NEW:
+  single-cluster joins ambiguous-failure and
+  buffer-degrades), 2 four-company, 6 three-
+  company, 0 two-company, 4 one-company (AWS
+  retry-amplified, DoorDash mitigation-scoped,
+  Slack degraded-state, Reddit unrecorded-
+  config).
+
 - **Article #38 (Reddit Pi-Day outage) LANDED
   (2026-07-25). THIRTEENTH cruxTag class — SECOND
   consecutive new-class mint (after r28); NEW company

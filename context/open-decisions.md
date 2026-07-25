@@ -56,12 +56,12 @@ _None._
   significantly overdue.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: nine unresolved conflicts (owner pass overdue per Fable)
+### 3. Accent registry: ten unresolved conflicts (owner pass overdue per Fable)
 
-- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28, 29.
+- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28, 29, 30.
   All landed as author-chose per prior-round posture; all
   flagged in the accent-registry section of taste doc v3 §6.
-- **The nine:**
+- **The ten:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -101,8 +101,12 @@ _None._
     `#E50914`, Pinterest `#E60023`, Slack `#E01E5A`).
     Chrome-only discipline observed. The reds corridor
     is now as dense as oranges and cyans.
+  - **Google `#4285F4`** (round 30) — Google blue. Blue
+    corridor (Slack cyan `#36C5F0`, GitHub `#58A6FF`,
+    Meta `#0866FF`, Discord blurple `#5865F2`).
+    Chrome-only discipline observed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all nine artifacts side-by-side), then
+  deployed build with all ten artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -146,18 +150,22 @@ _None._
 
 - **Source:** ongoing since round 12; reframed 2026-07-25 after
   the owner split live counts out of the taste doc into
-  `behindscale-board.md`. The audit-fix commit
-  (`<pending>`) cleaned the stale count claims from the taste
-  doc's ratified-taxonomy paragraph, "twenty article
-  artifacts" line, and version-5 changelog, and rebuilt the
-  board doc from actual repo data (13 cruxTag classes, 50
-  patterns, 21 sources, 38 articles LIVE).
-- **What's still owner-owned:** the taste doc header itself
-  (version narrative) — the agent trimmed count claims but
-  left the changelog structure and voice untouched. Owner
-  may want a further pass to reword the v5 changelog once
-  the doc's role is stable.
-- **Reply:** further-refactor / leave-as-is.
+  `behindscale-board.md`. The taste-doc side has been
+  cleaned (ratified-taxonomy paragraph, "twenty article
+  artifacts" line, and version-5 changelog no longer carry
+  count claims). Board-doc side is now Fable-maintained per
+  the ledger's own protocol: the implementation agent's
+  expanded backfill was reverted (2026-07-25) in favor of
+  Fable's canonical structure with AGENT CHECK markers
+  preserved for the fields Fable wants filled per-round.
+- **What's still owner-owned:** the taste doc header
+  (version narrative) and the board doc's format. Also
+  outstanding on the board doc as of r30: two source
+  entries under AGENT CHECK, per-pattern live company
+  counts, per-company article-count table, retired-names
+  fill, pre-r12 accents — all marked AGENT CHECK for the
+  next backfill pass.
+- **Reply:** further-refactor / leave-as-is / do-backfill.
 
 ### 8. Primary-vs-newest source convention
 
