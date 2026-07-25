@@ -4,6 +4,221 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Article #38 (Reddit Pi-Day outage) LANDED
+  (2026-07-25). THIRTEENTH cruxTag class — SECOND
+  consecutive new-class mint (after r28); NEW company
+  (Reddit = 21st source).** Fable-authored dissection
+  of "You Broke Reddit: The Pi-Day Outage" (r/RedditEng,
+  2023-03-21). Reddit was down for 314 minutes on
+  Pi Day 2023: two minutes after a routine Kubernetes
+  upgrade landed on the cluster running Old Reddit
+  (the most critical legacy piece of the dependency
+  graph), all routes for all nodes dropped. Proximate
+  cause: Calico's route reflectors selected nodes by
+  the label `node-role.kubernetes.io/master`;
+  Kubernetes renamed master→control-plane in 1.20 and
+  REMOVED the old label from running clusters in 1.24
+  — every selector matched nothing. The actual cause,
+  the post insists: INCONSISTENCY. That route-reflector
+  config was set up years earlier by a departed
+  precursor team, manageable only via Calico's CLI
+  (fetch, hand-edit, re-upload), the tooling to codify
+  it never built — committed nowhere, no record, no
+  breadcrumbs. One engineer remembered the feature
+  existed during the postmortem.
+  Response: metrics were k8s-native and died with the
+  cluster (flying blind, logs survived by being
+  low-level); no downgrade path in k8s (schema/data
+  migrations forward-only); four fix-forward dead-ends
+  before pulling the ripcord to restore from backup;
+  the runbook was years old (pre-CRI-O), never run
+  against production, rewritten live; a backup that
+  could be taken on ANY control-plane node but
+  restored only on the SAME one (silent etcd join
+  failures until certs were regenerated); AWS
+  capacity exhausted for the control-plane instance
+  type; then a staged readmission from 1% to 100% in
+  eight steps against thundering-herd and cold caches.
+  **NEW cruxTag class**: `unrecorded-config-outlives-
+  its-authors` — 13th class in the registry, SECOND
+  consecutive new-class mint after r28's
+  degraded-state-outlives-its-trigger. Registry
+  definition: "load-bearing configuration that
+  outlives its authors and its record, detonated by
+  an environmental change nothing could check it
+  against." Reddit is founding company; the post
+  itself deserves the mint (proximate/actual split
+  is explicit: "Really, that's the proximate cause.
+  The actual cause is more systemic… Inconsistency.").
+  **Neighbor rejections written out** (registry
+  conservatism):
+  - blast-radius-scales-with-cluster-size REJECTED
+    (TL;DR says "blast radius" as impact framing;
+    class's answer is smaller/isolated domains;
+    Reddit's is standardize + codify)
+  - single-cluster-scaling-ceiling REJECTED (SPOF
+    present but no scaling ceiling hit)
+  - degraded-state-outlives-its-trigger REJECTED
+    (not metastable — trigger couldn't even be
+    removed)
+  - observer-shares-fate-with-observed REJECTED as
+    CRUX, retained as STRONG CAMEO (metrics died
+    with the cluster — flying blind; carried in
+    prose + via roblox relatedArticle)
+  **Reddit = NEW company (21st source; 23rd named
+  count in project-overview)**. feeds.json ADDITION:
+  r/RedditEng inserted between Pinterest and Roblox
+  alphabetically (source name is `r/RedditEng`, feed
+  is the subreddit's `.rss`). Shipped by the Claude
+  Code agent as `feat: publish` (`<pending>`) + this
+  docs refresh (`<pending>`).
+  **Provenance note** (Fable-in-source): the primary
+  post is robots-blocked to automated access; per
+  shelve-don't-force, the round paused rather than
+  authoring from secondary reconstructions. Owner
+  supplied page HTML of the public first-party post;
+  full text extracted (22,528 chars, opening to
+  close). All facts traced to first-party source.
+  **Two NEW pattern mints**:
+  - `no-uncommitted-config` (resilience) — the
+    remediation's floor: no load-bearing state
+    outside version control; CLI-only state gets
+    tooling, replacement, or a NAMED documented
+    exception with owner + review date — never the
+    unrecorded fourth state. Record's dual purpose:
+    consistent application + archaeology. Boundary
+    vs `violation-ratchet` drawn inside definition
+    (ratchet enforces an invariant; this establishes
+    the all-state-recorded invariant).
+  - `rehearsed-restore` (resilience) — backup and
+    restore age at different rates; rehearse the
+    full restore on production-shaped environments,
+    re-validate on every environmental change, keep
+    the pair symmetric in degrees of freedom, and
+    TIME it (unknown duration rationally prolongs
+    fix-forward). Boundary vs forward-path safety
+    patterns.
+  **Two recurs**:
+  - `universal-staged-rollout` — 6 articles / 6
+    companies (Datadog + Slack + Canva + GitLab +
+    DoorDash + Reddit). Reddit contributes the
+    readmission face — a staged rollout of LOAD
+    (1→100 in eight steps, idle-scaled services,
+    hand-gated legacy), the direction nobody
+    practices.
+  - `load-bearing-cache` — 2 articles / 2
+    companies (Slack r28 + Reddit) — SECOND
+    company for the r28 mint just one round later;
+    the ramp exists because the caches are load-
+    bearing.
+  **Chip count = FOUR** (two mints + two recurs) —
+  house-precedented per r23 / r25.
+  **Cameo REJECTIONS** (prose only):
+  - observer-shares-fate (retained as strong cameo
+    in problem/solution prose and via the roblox
+    relatedArticle — see rejections above)
+  - scatter/thundering-herd mechanics as their own
+    mint (carried inside load-bearing-cache + the
+    ramp)
+  **Standing symmetric-linking rule NOT triggered**
+  — new singleton class, no cluster. Standard
+  backlinks applied to both classmates named in
+  DECISIONS §8: roblox-return-to-service (flying-
+  blind + staged-readmission double resonance) and
+  gitlab-database-decomposition (the codify-
+  everything remediation program echoes GitLab's
+  violation-ratchet + as-if-two-databases
+  discipline).
+  **Accent** `#FF4500` (Reddit orange-red) — RED-
+  CORRIDOR HARD FLAG: semantic red `#ef4444`,
+  Netflix `#E50914`, Pinterest `#E60023`, Slack
+  `#E01E5A` (r22 magenta-red). Chrome-only
+  discipline observed. Ninth accent conflict —
+  the reds corridor is now as dense as oranges and
+  cyans. Logged in open-decisions item 3.
+  Contents:
+  - content/articles/reddit-piday-outage.json —
+    article + crux + cruxTag (unrecorded-config-
+    outlives-its-authors, founding company) +
+    cruxSummary + 4 pattern refs + 3 stats
+    (2-min + 314-min + 3.9B — "committed nowhere"
+    as the third non-numeric stat per r19's zero-
+    stat precedent extended) + relatedArticles →
+    roblox + gitlab. addedAt: 2026-07-25.
+  - content/artifacts/reddit-piday-outage.jsx —
+    accent `#FF4500`. Pure act() stage machine
+    (narrative incident → reducer, per r28 sim-
+    design law; initial/act EXPORTED for
+    headless verification). The class beat is
+    the REVEAL card; response beats each
+    playable — four fix-forward dead-ends with
+    honest verdicts, the ripcord, the restore-
+    node choice (runbook-faithful path hits the
+    silent join failure; hindsight path names
+    itself as such), the firehose-vs-walk
+    readmission, the three-clue log dig. Footer
+    labels the 30-min attempt costs and single-
+    choice restore branch as illustrative
+    compression.
+  - content/patterns/no-uncommitted-config.json —
+    NEW pattern, resilience, minted at ONE
+    company (Reddit). Boundary vs violation-
+    ratchet inside definition.
+  - content/patterns/rehearsed-restore.json —
+    NEW pattern, resilience, minted at ONE
+    company (Reddit). Boundary vs forward-path
+    safety patterns inside definition.
+  - content/cruxtags.json — NEW registry entry
+    `unrecorded-config-outlives-its-authors`
+    (13th class).
+  - content/feeds.json — r/RedditEng ADDED (21st
+    source).
+  - Back-tag on content/articles/roblox-return-
+    to-service.json: Reddit added.
+  - Back-tag on content/articles/gitlab-
+    database-decomposition.json: Reddit added.
+  Recurrences created by this landing:
+  - unrecorded-config-outlives-its-authors → NEW
+    cruxTag class; 1 article (Reddit). 13th
+    class in the registry.
+  - no-uncommitted-config → NEW pattern; 1
+    article (Reddit). Category resilience.
+  - rehearsed-restore → NEW pattern; 1 article
+    (Reddit). Category resilience.
+  - universal-staged-rollout → 6 articles / 6
+    companies (Datadog + Slack + Canva + GitLab
+    + DoorDash + Reddit).
+  - load-bearing-cache → 2 articles / 2
+    companies (Slack + Reddit). Second company
+    for the r28 mint one round later.
+  - relatedArticles: Reddit → Roblox + GitLab
+    forward links; both articles' backlinks
+    applied in the same commit.
+  Landing preview + catalog effects: new
+  `unrecorded-config-outlives-its-authors` row
+  shows "1 SYSTEM", SEEN AT Reddit. Preview row
+  count grows from 10 to 11. CTA "Browse all 38
+  breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 37 warnings (was 35; +2 cosmetic fuzzy-
+  misses from Reddit stats; same residual class).
+  `npm run build` → end-to-end clean; 93 routes
+  prerendered (37 → 38 articles + 46 → 48
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 92 URLs. `npm test` → 100
+  passed.
+  Library state after landing: 38 articles across
+  21 companies (Reddit = 21st); 48 pattern
+  definitions (no-uncommitted-config + rehearsed-
+  restore new); 38 artifacts. cruxTag taxonomy:
+  13 tags (SECOND consecutive class mint) with 2
+  five-company, 3 four-company, 6 three-company,
+  0 two-company, 4 one-company (AWS retry-
+  amplified, DoorDash mitigation-scoped, Slack
+  degraded-state, Reddit unrecorded-config —
+  three consecutive singleton-class introductions
+  since r24).
+
 - **Article #37 (Slack 2-22-22 incident) LANDED
   (2026-07-25). TWELFTH cruxTag class in the library —
   the first NEW class since r11 (May 2026, before the

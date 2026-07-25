@@ -47,19 +47,21 @@ _None._
   (c) split preview into "3-company" and "2-company" bands.
 - **State:** kept at show-all per prior feedback. `Landing.tsx` doc
   comment still says "revisit at 6+".
-- **Cost of waiting:** r28 crossed to 10 rows (new class
-  `degraded-state-outlives-its-trigger` added as a
-  singleton). Preview vertical footprint grew linearly as
-  predicted; `Landing.tsx`'s "revisit at 6+" comment is
-  now well overdue.
+- **Cost of waiting:** r29 crossed to 11 rows (r28 added
+  `degraded-state-outlives-its-trigger`, r29 added
+  `unrecorded-config-outlives-its-authors` — two
+  consecutive new-class mints as singleton rows). Preview
+  vertical footprint grew linearly as predicted;
+  `Landing.tsx`'s "revisit at 6+" comment is now
+  significantly overdue.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: eight unresolved conflicts (owner pass overdue per Fable)
+### 3. Accent registry: nine unresolved conflicts (owner pass overdue per Fable)
 
-- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28. All
-  landed as author-chose per prior-round posture; all
+- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28, 29.
+  All landed as author-chose per prior-round posture; all
   flagged in the accent-registry section of taste doc v3 §6.
-- **The eight:**
+- **The nine:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -94,8 +96,13 @@ _None._
     `#52BD94` and semantic `#22c55e`. Per-article accents
     are Airbnb-precedented; chrome-only discipline
     observed.
+  - **Reddit `#FF4500`** (round 29) — orange-red; joins
+    the reds corridor (semantic `#ef4444`, Netflix
+    `#E50914`, Pinterest `#E60023`, Slack `#E01E5A`).
+    Chrome-only discipline observed. The reds corridor
+    is now as dense as oranges and cyans.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all eight artifacts side-by-side), then
+  deployed build with all nine artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
@@ -104,39 +111,46 @@ _None._
 
 ## Lower priority
 
-### 4. `conservative-auto-remediation` cameo promotion
+### 4. `conservative-auto-remediation` Pinterest cameo promotion
 
 - **Source:** round 15 (Pinterest). "Even today we don't use
   auto-failover" is a strong cameo but left in tradeoff prose per
   the r13 cameo rule (taste doc v3 §4).
-- **What's needed:** decide whether the 2-company recurrence
-  (Cloudflare + Pinterest) is worth relaxing the cameo rule for this
-  specific pattern chip.
-- **Recommended:** no strong opinion. The Pinterest line is a
-  one-clause stance; promoting it would take the pattern from
-  1-company to 2-company but with a thin second instance.
+- **State update (r28):** r28 Slack 2-22-22 chipped the pattern
+  as an anti-instance (Mcrib retirement story), so the pattern
+  is now at 2 articles / 2 companies (Cloudflare + Slack) via a
+  different path than Pinterest. Promoting the Pinterest cameo
+  would push to 3 companies.
+- **What's needed:** decide whether to add Pinterest as a chip
+  now that the pattern has real recurrence, or leave the cameo
+  in prose.
+- **Recommended:** still no strong opinion. Recurrence urgency
+  has decreased; the pattern is well-instantiated now.
 - **Reply:** promote / keep-as-cameo.
 
-### 5. `retry-amplified-overload` last singleton
+### 5. `retry-amplified-overload` singleton candidate fill
 
 - **Source:** flagged since round 11 (DoorDash Aperture). DoorDash
   June 2021 postmortem is shelved as a candidate fill; depth
   assessment needed.
-- **What's needed:** owner call on whether to pursue the DoorDash
-  postmortem as a dedicated article, or leave the class as a
-  singleton anchored by AWS.
-- **State:** no urgency; the class is well-anchored by the AWS
-  timeouts-retries-backoff-jitter article.
+- **State update (r28/r29):** no longer "last singleton" — r28
+  and r29 minted two consecutive new singleton classes
+  (degraded-state, unrecorded-config), so `retry-amplified` is
+  now one of FOUR one-company classes rather than a standout.
+  Filling it is optional cleanup, not board-completion work.
+- **What's needed:** owner call on whether to pursue the
+  DoorDash postmortem (or another candidate) as a dedicated
+  article. Class remains well-anchored by AWS timeouts.
 
 ### 6. Taste doc count sync
 
 - **Source:** ongoing since round 12. Doc still reads "twenty
   articles, eleven tags" and "rounds 12–18 authored 2026-07-15,
-  pipeline pending deploy". Live is 37 articles, 12 tags
-  (**NEW: degraded-state-outlives-its-trigger, first new
-  class since r11**), 2 five-company + 3 four-company + 6
-  three-company + 0 two-company + 3 one-company (as of r28
-  Slack 2-22-22).
+  pipeline pending deploy". Live is 38 articles, 13 tags (TWO
+  new classes since r28: degraded-state-outlives-its-trigger,
+  unrecorded-config-outlives-its-authors), 2 five-company +
+  3 four-company + 6 three-company + 0 two-company + 4
+  one-company (as of r29 Reddit Pi-Day).
 - **What's needed:** owner-authored batch refresh of the count line
   and pipeline-status paragraph. Cosmetic; self-heals when the batch
   finishes landing.
@@ -278,29 +292,35 @@ _None._
   affect the chip ramp.
 - **Reply:** keep-in-consistency / new-category / reject-mint.
 
-### 19. "Chips assert USE; absences are prose" rule → taste doc?
+### 17. `universal-staged-rollout` note ordering curation
 
-- **Source:** round 27 (DoorDash RabbitMQ→Kafka) DECISIONS
-  §3. Fable drafted a `dead-letter-queue` chip as a
-  "present by conspicuous absence" cross-reference and
-  REMOVED it before packaging on the reasoning that tagging
-  an article with a pattern it deliberately does NOT use
-  would falsely list DoorDash on that pattern's back-link
-  page. The absence-contrast lives in the mint's boundary
-  and tradeoff prose instead.
-- **What's needed:** ruling on whether to formalize the
-  proposed rule as a taste doc §4 (Patterns) bullet:
-  "Chips assert USE; absences are prose. If a pattern's
-  absence is a load-bearing choice, articulate the
-  contrast in the crux/tradeoffs/pattern-mint-boundary,
-  not by chip-tagging."
-- **Recommended:** formalize. The rule is small,
-  self-explanatory, and the reasoning is architectural
-  (pattern back-links must reflect real embodiment or the
-  library's cross-reference contract breaks). Same class
-  as the counterfactual-labeling rule that landed via
-  Fable and item 4b was subsequently retired.
-- **Reply:** formalize / defer.
+- **Source:** round 25 (GitLab decomposition) DECISIONS §3.
+  Fable's agent note: the pattern page is becoming the
+  migration-craft hub, and the notes are accumulating in
+  landing-order rather than teaching-order.
+- **State update (r29):** pattern now at 6 articles / 6
+  companies (Datadog r17 mint; Slack r22; Canva r23; GitLab
+  r25; DoorDash r27; Reddit r29). Two consecutive datastore
+  migrations (Canva, GitLab) followed by two consecutive
+  application migrations (DoorDash, Reddit). Curation urgency
+  has grown accordingly.
+- **What's needed:** owner-authored review of the
+  `universal-staged-rollout` pattern page notes — decide
+  whether to reorder them by teaching progression
+  (introduce the pattern → increasing stakes → the largest
+  case) instead of chronological landing order. Chip note
+  authoring is agent-owned; pattern-page composition and
+  ordering is owner-owned per the taste doc.
+- **Recommended:** worth a curation pass. Suggested order:
+  Datadog (why staged rollouts save security-patch fleets)
+  → DoorDash (staged application migration with reversible
+  feature flags) → Reddit (staged READMISSION under load,
+  the direction nobody practices) → Canva (the "hot-data-
+  first" application to a datastore migration) → Slack
+  (three-year version at datastore scale) → GitLab (seven-
+  phase + seven-rehearsal ceremony as the fullest
+  articulation).
+- **Reply:** reorder / keep-chronological / defer.
 
 ### 18. Invariant-8 vs one-chip article intent
 
@@ -334,29 +354,29 @@ _None._
 - **Reply:** keep-invariant / formalize-case-study-type /
   loosen-invariant.
 
-### 17. `universal-staged-rollout` note ordering curation
+### 19. "Chips assert USE; absences are prose" rule → taste doc?
 
-- **Source:** round 25 (GitLab decomposition) DECISIONS §3.
-  Fable's agent note: at four straight recurrences (Datadog
-  r17 mint; Slack r22; Canva r23; GitLab r25) the pattern
-  page is becoming the migration-craft hub, and the notes
-  are accumulating in landing-order rather than teaching-
-  order.
-- **What's needed:** owner-authored review of the
-  `universal-staged-rollout` pattern page notes — decide
-  whether to reorder them by teaching progression
-  (introduce the pattern → increasing stakes → the largest
-  case) instead of chronological landing order. Chip note
-  authoring is agent-owned; pattern-page composition and
-  ordering is owner-owned per the taste doc.
-- **Recommended:** worth a curation pass. Suggested order:
-  Datadog (why staged rollouts save security-patch fleets)
-  → Canva (the "hot-data-first" application of the pattern
-  to a datastore migration) → Slack (the three-year
-  version at datastore scale) → GitLab (the seven-phase +
-  seven-rehearsal ceremony as the pattern's fullest
-  articulation).
-- **Reply:** reorder / keep-chronological / defer.
+- **Source:** round 27 (DoorDash RabbitMQ→Kafka) DECISIONS
+  §3. Fable drafted a `dead-letter-queue` chip as a
+  "present by conspicuous absence" cross-reference and
+  REMOVED it before packaging on the reasoning that tagging
+  an article with a pattern it deliberately does NOT use
+  would falsely list DoorDash on that pattern's back-link
+  page. The absence-contrast lives in the mint's boundary
+  and tradeoff prose instead.
+- **What's needed:** ruling on whether to formalize the
+  proposed rule as a taste doc §4 (Patterns) bullet:
+  "Chips assert USE; absences are prose. If a pattern's
+  absence is a load-bearing choice, articulate the
+  contrast in the crux/tradeoffs/pattern-mint-boundary,
+  not by chip-tagging."
+- **Recommended:** formalize. The rule is small,
+  self-explanatory, and the reasoning is architectural
+  (pattern back-links must reflect real embodiment or the
+  library's cross-reference contract breaks). Same class
+  as the counterfactual-labeling rule that landed via
+  Fable and item 4b was subsequently retired.
+- **Reply:** formalize / defer.
 
 
 ---
