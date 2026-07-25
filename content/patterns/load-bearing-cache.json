@@ -1,0 +1,16 @@
+{
+  "slug": "load-bearing-cache",
+  "name": "Load-Bearing Cache",
+  "category": "resilience",
+  "definition": "A cache begins life as an optimization: the system works without it, just slower. At scale, that quietly stops being true — the backing datastore's provisioned capacity assumes the cache absorbs most reads, and the moment the hit rate drops far enough, offered load exceeds what the database can serve at all. The cache has become load-bearing: its warmth is part of the system's capacity, and losing it is not a latency regression but an availability cliff, often a self-sustaining one, because the overloaded backing store times out exactly the queries that would refill the cache.\n\nThe pattern is the discipline for systems on the load-bearing side of that line. Treat hit rate as a capacity metric with an explicit floor, and know the tipping point — the hit rate below which the database cannot keep up at peak traffic. Protect warmth as an operational invariant: node replacement and maintenance must not churn more cold capacity into the ring than the backing store can absorb refilling (pace replacements, avoid unnecessary flushes, budget cold slots per unit time). Warm before serving where possible, rather than promoting empty nodes into the hot path. And audit the query inventory for hidden amplifiers: any high-volume query whose cost is only acceptable because the cache currently hides it — scatter reads, fan-outs, expensive joins on immutable data — is a latent cliff-steepener that fires precisely when the cache is cold. Boundary against ordinary caching: if losing the cache merely slows you down, none of this rigor is owed; the pattern applies exactly when the honest answer to 'can the database take the traffic alone?' is no.",
+  "whenItApplies": [
+    "The backing datastore is provisioned assuming high cache hit rates — it cannot serve peak traffic at realistically degraded hit rates",
+    "Cache-node lifecycle events (replacement, flushes, deploys, network blips) can remove meaningful fractions of warm capacity quickly",
+    "The read path contains queries whose per-miss cost is high (scatter/fan-out/expensive), currently masked by long TTLs and high hit rates"
+  ],
+  "tradeoffs": [
+    "Protecting warmth slows operations: paced node replacement, flush avoidance, and warm-before-serve all add time and machinery to maintenance that used to be free",
+    "The tipping point moves with traffic and data shape, so the hit-rate floor must be validated under peak-load conditions, not derived once and trusted",
+    "Warmth protection can conflict with correctness mechanisms (flushing rejoined nodes to avoid stale data was the safe choice that also created cold slots) — the pattern forces that tradeoff to be explicit rather than incidental"
+  ]
+}
