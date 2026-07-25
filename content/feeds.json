@@ -77,6 +77,13 @@
     "feed": "https://about.gitlab.com/atom.xml"
   },
   {
+    "name": "Google Cloud Blog",
+    "slug": "google-cloud",
+    "company": "Google",
+    "url": "https://cloud.google.com/blog/",
+    "feed": "https://cloudblog.withgoogle.com/rss/"
+  },
+  {
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",

@@ -50,7 +50,8 @@
     "airbnb-partitioning-main-database",
     "github-partitioning-relational-databases",
     "gitlab-database-decomposition",
-    "slack-incident-2-22-22"
+    "slack-incident-2-22-22",
+    "google-colossus"
   ],
   "stats": [
     {

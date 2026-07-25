@@ -50,7 +50,8 @@
     "github-partitioning-relational-databases",
     "slack-vitess-datastores",
     "airbnb-partitioning-main-database",
-    "reddit-piday-outage"
+    "reddit-piday-outage",
+    "google-colossus"
   ],
   "stats": [
     {

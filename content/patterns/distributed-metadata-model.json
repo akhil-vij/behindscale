@@ -1,0 +1,16 @@
+{
+  "slug": "distributed-metadata-model",
+  "name": "Distributed Metadata Model",
+  "category": "throughput",
+  "definition": "Every storage or data system has a bookkeeping layer — the metadata plane that knows what exists, who may touch it, and where the pieces live — and every operation consults it. When that layer is a bespoke, bounded design (a single master, a fixed-size index, one process's memory), it becomes the whole system's ceiling: racks of additional data capacity change nothing once the layer that locates data cannot grow. The pattern is the escape Google named for Colossus: rebuild the metadata plane as a distributed service — stateless, horizontally scalable front-ends (Colossus's Curators) for control operations, with the metadata itself rehosted on a database that already scales horizontally (Bigtable). The bookkeeping becomes an ordinary workload on a scalable substrate, and the control plane scales like any stateless service.\n\nTwo honest properties come with the move. First, the ceiling is inherited, not deleted: the system now scales until its metadata substrate doesn't, so the substrate choice IS the new ceiling — choose one whose wall is far away and someone else's full-time job. Second, the data path must be kept off the metadata path for the scaling to matter: clients consult the metadata service for control operations, then move data directly to storage servers, so metadata throughput bounds operations per second, never bytes per second. Boundary against sharding-behind-a-proxy and split-by-function: those partition the DATA a cluster holds; this rehosts the system's own bookkeeping — and they compose, since a sharded data plane still needs a metadata plane that scales.",
+  "whenItApplies": [
+    "A storage, file, or object system whose control operations (create, open, locate) route through a bounded bookkeeping component while data capacity itself can grow",
+    "Metadata volume growing with object count rather than byte count — small-file-heavy workloads that exhaust the index long before the disks",
+    "A horizontally scalable database or KV substrate exists (or can be operated) whose ceiling is far beyond the bespoke design's"
+  ],
+  "tradeoffs": [
+    "The metadata plane's availability and latency now depend on a full database system — a heavier operational dependency than a single in-memory master, bought for a far higher ceiling",
+    "Control-plane operations pay a database round-trip; the design only wins if the data path bypasses metadata entirely (direct client-to-storage flow) so the toll is per-operation, not per-byte",
+    "The substrate's semantics (consistency, transactions, hotspotting) become invisible constraints on file-system semantics; the bookkeeping inherits the database's sharp edges along with its scale"
+  ]
+}

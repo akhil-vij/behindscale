@@ -51,7 +51,8 @@
     "figma-postgres-sharding",
     "airbnb-partitioning-main-database",
     "slack-vitess-datastores",
-    "gitlab-database-decomposition"
+    "gitlab-database-decomposition",
+    "google-colossus"
   ],
   "stats": [
     {

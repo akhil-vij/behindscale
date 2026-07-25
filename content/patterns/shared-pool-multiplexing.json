@@ -1,0 +1,16 @@
+{
+  "slug": "shared-pool-multiplexing",
+  "name": "Shared-Pool Multiplexing",
+  "category": "throughput",
+  "definition": "Siloed provisioning wastes capacity by construction: each workload's dedicated storage must be sized for that workload's peak, so every valley — every off-peak hour, every idle weekend — is bought and unused, multiplied by the number of silos. The pattern pools the substrate instead: one shared storage pool under one control plane, serving workload classes with opposite shapes — latency-critical serving with hard peaks, and elastic batch work that can run whenever capacity is free. Provision the pool for the interactive peaks; schedule batch into the valleys; maintain per-tenant isolation as an actively enforced illusion of the control plane rather than a physical fact. Colossus states the doctrine at cluster scale (VM traffic, YouTube serving, and MapReduce sharing one exabyte pool) and repeats it at device scale: buy just enough flash to pull hot-data I/O density per gigabyte into what disks natively provide, spread newly written (statistically hottest) data across all drives, and rebalance data onto larger-capacity drives as it cools — every device class kept doing exactly what it is economical at.\n\nThe pattern's price is that isolation becomes a service-level obligation. Physical silos isolate by construction; a shared pool isolates by continuous enforcement — admission, placement, and scheduling must deliver the illusion for every tenant class simultaneously, and a failure of enforcement is a noisy-neighbor incident across workloads that were never supposed to meet. Boundary against load-bearing-cache: that pattern is about a performance layer that has silently become capacity; this one is about deliberately pooling capacity and harvesting its statistical slack.",
+  "whenItApplies": [
+    "Multiple workload classes with complementary demand shapes — latency-critical peaks alongside deferrable batch — currently provisioned in separate silos each sized for its own peak",
+    "The pool is large enough for statistical multiplexing to hold (many tenants, uncorrelated peaks); small pools with correlated demand get coupling without the efficiency",
+    "A control plane exists (or will be built) that can enforce per-tenant isolation, admission, and placement continuously — the illusion has to be delivered, not assumed"
+  ],
+  "tradeoffs": [
+    "Efficiency is bought with coupling: workloads that never shared fate now share a substrate, and the control plane's enforcement quality is the only thing between them",
+    "Provisioning discipline inverts — instead of per-team sizing decisions, one pool's capacity and admission policy must arbitrate everyone's peaks, a central planning burden silos never had",
+    "Device-tier multiplexing (flash sized to workload temperature) is a moving target: the right mix tracks shifting access patterns, making capacity planning a continuous control loop rather than a purchase"
+  ]
+}
