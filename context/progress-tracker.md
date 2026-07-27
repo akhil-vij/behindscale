@@ -4,6 +4,225 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Articles #40 (LinkedIn Hodor) + #41 (Google
+  Colossus SSD placement) LANDED together (2026-07-27,
+  Agent B's first two rounds).** Batch publish of
+  Fable's r31 + r32 zips.
+- **r31 — LinkedIn Hodor overload protection (article
+  #40; LinkedIn = 23rd source, first Agent B round).**
+  Pure recurrence round — zero mints, three recurs.
+  Hodor runs on 1,000+ Java microservices with zero
+  per-service tuning; the v1 shedder (2022) capped
+  concurrency with no tier concept — the priority-blind
+  mechanism the class names — and v2 (2023) is the
+  priority answer: three tiers (1000/5000/10000
+  spaced for future) stamped at the DC edge, carried
+  through the call tree, dropped bottom-up with
+  member-ID hash buckets inside tiers. Integration
+  broke the load metric itself (dropped requests
+  contribute nothing meaningful to a concurrency
+  histogram → rate-based limit + per-endpoint per-tier
+  throughput histograms). Detection: in-process
+  heartbeat/GC/thread-queue detectors with latency
+  confirmation filter. Two-post round (2022 + 2023
+  primary + secondary first-party) — Fable's
+  newest-restates convention applied.
+  `priority-blind-load-shedding` (Uber + Netflix +
+  Stripe + AWS) becomes the FOURTH five-company
+  cruxTag (after ambiguous-failure, buffer-degrades,
+  single-cluster). Manifestation caveat named: the
+  fleet-default face — classmates built priority into
+  a specific chokepoint or stated the doctrine;
+  LinkedIn builds it into a zero-tuning default
+  across 1,000+ services, and the histogram-break
+  detail is unique to this member.
+  Three recurs (chips-assert-use honored, mint
+  candidates rejected written-out):
+  - priority-aware-load-shedding — 5th company
+    (Fable's r24 conditional slug already aligned to
+    the live slug; this chip lands directly on the
+    live pattern). Pattern now 7 articles / 7
+    companies.
+  - feedback-controlled-load-management — 5th
+    company (Uber + Netflix + Stripe + DoorDash +
+    LinkedIn). Fable estimated 3rd but the live
+    count was already 4 before this round.
+  - retry-budget — 2nd company (AWS + LinkedIn).
+    Server-assisted form; Google SRE-book lineage
+    credited in-source.
+  **Standing symmetric-linking rule APPLIED**:
+  priority-blind cluster crosses 4→5 → full-mesh
+  triggered. Fable authored 2 forward links
+  (netflix-prioritized-load-shedding +
+  aws-timeouts-retries-backoff-jitter); agent added
+  uber-intelligent-load-management + stripe-rate-
+  limiters + aws-load-shedding as the third, fourth,
+  fifth forward links, and added LinkedIn as backlink
+  to all four cluster classmates (netflix,
+  uber, stripe-rate-limiters, aws-load-shedding)
+  plus the aws-timeouts cross-class backlink
+  Fable named.
+  **Accent** `#0A66C2` (LinkedIn brand blue) — HARD
+  FLAG: blue corridor is now FIVE deep (GitHub
+  #58A6FF, Slack cyan #36C5F0, Roblox #00A2FF,
+  Google #4285F4, + LinkedIn). Chrome-only observed.
+- **r32 — Google Colossus SSD placement (article
+  #41; Google's 2nd article, mint round).**
+  MINT: `placement-precedes-the-access-pattern`
+  (14th cruxTag class). The board's strongest
+  vetted candidate; disclosed as the unread
+  sibling in r30's DECISIONS with the explicit
+  condition "must establish distinct crux or
+  shelve." Distinct-crux condition met — the post
+  takes exabyte scale as SOLVED background and
+  asks the orthogonal question ("which device
+  should hold each piece").
+  Google's L4 answer: a distributed SSD layer as
+  BOTH read cache and writeback cache; applications
+  pass features per file, L4 groups files into
+  categories, watches each category's real I/O, and
+  continuously simulates competing placement
+  policies — the winning policy governs each
+  category. New files from the right categories
+  are born on SSD and migrated to HDD later; best
+  case, deleted before migration and never touch a
+  spinning disk. Same simulations double as a
+  capacity oracle telling Google how much SSD to
+  buy.
+  **NEW cruxTag class**:
+  `placement-precedes-the-access-pattern`.
+  Registry definition (Fable's guard-rail
+  installed verbatim): "A placement decision
+  (device, tier, region, replication level) must be
+  made before the access pattern that would
+  justify it exists — only files/objects whose
+  placement decision precedes its evidence belong
+  to this class. Systems where prediction merely
+  optimizes an answer to some other wall (an
+  ML-tuned cache atop a solved placement, a
+  forecast feeding an autoscaler) do NOT belong:
+  there prediction is the answer, not the wall."
+  Face: capability/designs-it — second consecutive
+  Google capability-face ruling (r30 set the
+  precedent).
+  **NEW pattern MINT**: `simulated-policy-
+  selection` (throughput; corrected from Fable's
+  first-draft "efficiency" per taste doc's four-
+  category law — throughput is the honest home,
+  matching both r30 sibling mints). Definition
+  carries the boundaries (not A/B testing — no
+  user-visible variation served; not offline
+  modeling — continuous, live, self-revising) and
+  the second dividend (same machinery answers
+  capacity sizing).
+  Two same-company recurs (Google → Google, no
+  company-count change):
+  - distributed-metadata-model (r30 mint) — the
+    curator is the placement ENFORCEMENT point;
+    L4 advises, curator directs.
+  - shared-pool-multiplexing (r30 mint) — device-
+    tier detail folded into definition per r26
+    law; this post is that detail at full depth.
+  **Full 13-class neighbor test written out** in
+  DECISIONS — every rejection on source content.
+  **Accent** `#4285F4` (reuse from r30's google-
+  colossus per company-match rule; Netflix
+  precedent). Blue corridor stays at five members
+  (r31's flag stands).
+  Contents:
+  - content/articles/linkedin-hodor-overload-
+    protection.json — article + cruxTag priority-
+    blind (5th company) + 3 pattern refs + 2 stats
+    + relatedArticles full-mesh (5 members) +
+    aws-timeouts cross-class. addedAt: 2026-07-27.
+  - content/artifacts/linkedin-hodor-overload-
+    protection.jsx — accent `#0A66C2`. Interval
+    sim, pure step() with exported constants.
+  - content/articles/google-colossus-ssd-placement.
+    json — article + cruxTag placement-precedes
+    (founding company) + 3 pattern refs + 2 stats
+    + relatedArticles → google-colossus + slack-
+    incident-2-22-22. addedAt: 2026-07-27. Source
+    URL normalized (trailing slash to match
+    feeds.json).
+  - content/artifacts/google-colossus-ssd-
+    placement.jsx — accent `#4285F4` (r30 reuse).
+    Interval sim with 14/14 headless-asserted
+    beats.
+  - content/patterns/simulated-policy-selection.
+    json — NEW pattern, throughput. Boundaries vs
+    A/B testing + offline modeling inside
+    definition.
+  - content/cruxtags.json — NEW entry
+    placement-precedes-the-access-pattern (14th
+    class) with Fable's guard-rail definition.
+  - content/feeds.json — LinkedIn Engineering
+    ADDED between Google Cloud and Netflix
+    Technology Blog. Feed URL is Fable's guess
+    `engineering.linkedin.com/blog.rss`; not
+    verified.
+  - Backlinks: netflix + uber + stripe-rate-
+    limiters + aws-load-shedding + aws-timeouts
+    → LinkedIn (5 files); google-colossus + slack-
+    incident-2-22-22 → google-colossus-ssd-
+    placement (2 files).
+  Recurrences created by this batch:
+  - priority-blind-load-shedding → 5-company
+    (Uber + Netflix + Stripe + AWS + LinkedIn).
+    FOURTH five-company cruxTag.
+  - placement-precedes-the-access-pattern → NEW
+    cruxTag class; 1 article (Google). 14th class
+    in the registry.
+  - simulated-policy-selection → NEW pattern; 1
+    article (Google). Category throughput.
+  - priority-aware-load-shedding → 7 articles / 7
+    companies.
+  - feedback-controlled-load-management → 5
+    articles / 5 companies.
+  - retry-budget → 2 articles / 2 companies (AWS
+    + LinkedIn).
+  - distributed-metadata-model → 2 articles / 1
+    company (Google).
+  - shared-pool-multiplexing → 2 articles / 1
+    company (Google).
+  Landing preview + catalog effects:
+  - `priority-blind-load-shedding` row now shows
+    5 SYSTEMS (Uber + Netflix + Stripe + AWS +
+    LinkedIn). FOURTH five-company row.
+  - New `placement-precedes-the-access-pattern`
+    row shows 1 SYSTEM (Google). 14th row on the
+    preview (was 11 after r30, +1 for placement).
+    Actually — placement is a new singleton, and
+    priority-blind was already a row at 4-company.
+    So preview count went from 11 rows to 12
+    rows (only the new class is a new row; the
+    priority-blind row grew but stayed one row).
+  - CTA "Browse all 41 breakdowns →" auto-derived.
+  Validation: `npm run validate` → 6 checks, 0
+  errors, 38 warnings (was 37; +1 cosmetic fuzzy-
+  miss; same residual class).
+  `npm run build` → end-to-end clean; 99 routes
+  prerendered (39 → 41 articles + 50 → 51
+  patterns + 4 top pages + /404 + /artifacts/
+  _hero); sitemap 98 URLs. `npm test` → 100
+  passed.
+  Library state after batch: 41 articles across
+  23 companies (LinkedIn = 23rd; Google now 2
+  articles); 51 pattern definitions (simulated-
+  policy-selection new); 41 artifacts. cruxTag
+  taxonomy: 14 tags (NEW placement class) with 4
+  five-company (NEW: priority-blind joins), 1
+  four-company (single-table alone; priority-
+  blind promoted out; buffer-degrades and
+  ambiguous-failure and single-cluster already at
+  5), 4 three-company (gray-failure, partial-
+  completion, observer-fate, blast-radius), 0
+  two-company, 5 one-company (AWS retry-
+  amplified, DoorDash mitigation-scoped, Slack
+  degraded-state, Reddit unrecorded-config,
+  Google placement-precedes). Verified: 4+1+4+0+5
+  = 14 total.
+
 - **Article #39 (Google Colossus) LANDED (2026-07-25).
   THIRD FIVE-COMPANY cruxTag in the library; NEW
   company (Google = 22nd source; board doc counts 24

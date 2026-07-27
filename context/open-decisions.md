@@ -56,12 +56,12 @@ _None._
   significantly overdue.
 - **Reply:** direction (a/b/c/other) or "wait" if you want to defer.
 
-### 3. Accent registry: ten unresolved conflicts (owner pass overdue per Fable)
+### 3. Accent registry: eleven unresolved conflicts (blue corridor now five-deep)
 
-- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28, 29, 30.
+- **Source:** rounds 10, 15, 16, 17, 22, 23, 25, 28, 29, 30, 31.
   All landed as author-chose per prior-round posture; all
-  flagged in the accent-registry section of taste doc v3 §6.
-- **The ten:**
+  flagged in the accent-registry section of the board doc.
+- **The eleven:**
   - **Cloudflare `#F6821F`** (round 10) — third orange in the corridor
     (AWS `#FF9900`, Uber `#F97316`, resilience-chip `#EA580C`).
   - **Pinterest `#E60023`** (round 15) — collides with semantic red
@@ -105,8 +105,14 @@ _None._
     corridor (Slack cyan `#36C5F0`, GitHub `#58A6FF`,
     Meta `#0866FF`, Discord blurple `#5865F2`).
     Chrome-only discipline observed.
+  - **LinkedIn `#0A66C2`** (round 31) — Fable flagged the
+    blue corridor as five-deep (adds a fifth blue after
+    GitHub, Slack cyan, Roblox, Google). Darkest of the
+    family; distinguishable in isolation but the crowded
+    corridor makes the owner registry pass "loud."
+    Chrome-only discipline observed.
 - **What's needed:** in-situ visual review (best done against a
-  deployed build with all ten artifacts side-by-side), then
+  deployed build with all eleven artifacts side-by-side), then
   either keep or swap. Owner may do a corridor-wide pass and pick
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.

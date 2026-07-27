@@ -24,22 +24,22 @@ every board-state change goes HERE.
   zip delivered, not yet published), PENDING (exists conditionally —
   e.g. a mint awaiting merge-or-discard).
 
-## Board summary (as of round 30 — Agent A sync commit)
+## Board summary (as of round 32 — batch r31+r32 sync commit)
 
-39 articles LIVE · 22 sources · 13 crux classes · 50 pattern
-definitions · 39 artifacts. All rounds through r30 are deployed
+41 articles LIVE · 23 sources · 14 crux classes · 51 pattern
+definitions · 41 artifacts. All rounds through r32 are deployed
 to production; the implementation agent pushes each round to
 `main` at landing, which Vercel deploys automatically.
 
-## CruxTag registry (13 classes)
+## CruxTag registry (14 classes)
 
 | # | cruxTag | companies | members / status |
 |---|---------|-----------|------------------|
 | 1 | ambiguous-failure-under-retry | 5 | Stripe, Shopify, Airbnb, AWS, Segment — LIVE |
 | 2 | buffer-degrades-under-backlog | 5 | Meta, Slack, Segment, Uber, DoorDash — LIVE |
-| 3 | single-table-scaling-ceiling | 4 | Figma, Notion, Pinterest, Canva — LIVE |
-| 4 | priority-blind-load-shedding | 4 | Netflix, Stripe, Uber, AWS (Builders, r24) — LIVE |
-| 5 | single-cluster-scaling-ceiling | 5 | GitHub, Airbnb, Slack, GitLab, Google (r30, solved-side face) — LIVE |
+| 3 | single-cluster-scaling-ceiling | 5 | GitHub, Airbnb, Slack, GitLab, Google (r30, solved-side face) — LIVE |
+| 4 | priority-blind-load-shedding | 5 | Netflix, Stripe, Uber, AWS (Builders, r24), LinkedIn (r31, fleet-default face) — LIVE |
+| 5 | single-table-scaling-ceiling | 4 | Figma, Notion, Pinterest, Canva — LIVE |
 | 6 | gray-failure-defeats-automatic-detection | 3 | Slack, Cloudflare, Meta — LIVE |
 | 7 | partial-completion-under-crashes | 3 | Airbnb (Skipper), Uber (Cadence), Netflix (Conductor) — LIVE |
 | 8 | observer-shares-fate-with-observed | 3 | Airbnb, Roblox, Datadog — LIVE |
@@ -48,6 +48,7 @@ to production; the implementation agent pushes each round to
 | 11 | mitigation-scoped-narrower-than-failure | 1 | DoorDash (Aperture) — LIVE |
 | 12 | degraded-state-outlives-its-trigger | 1 | Slack 2-22-22 — LIVE (r28) |
 | 13 | unrecorded-config-outlives-its-authors | 1 | Reddit Pi-Day — LIVE (r29) |
+| 14 | placement-precedes-the-access-pattern | 1 | Google Colossus SSD placement — LIVE (r32) |
 
 Open class quests: partial-completion 4th, observer-fate 4th,
 blast-radius 4th (all currently lack bar-clearing sources — see the
@@ -89,9 +90,12 @@ exhausted-candidates list below), plus growing any singleton.
 | replica-promotion-split | r7 | LIVE |
 | throttled-readmission | r8 | LIVE |
 | shuffle-sharding | r9 | LIVE |
+| simulated-policy-selection | r32 | LIVE (throughput); Google's L4 as reference form; boundary vs A/B testing + offline modeling inside definition |
+| feedback-controlled-load-management | pre-r12 | LIVE; 5 articles / 5 companies as of r31 (Uber + Netflix + Stripe + DoorDash + LinkedIn) |
+| retry-budget | pre-r12 | LIVE; 2 companies as of r31 (AWS + LinkedIn) |
 
 Above lists every pattern surfaced round-by-round in DECISIONS. The
-full live library is **50 patterns** — the remainder (pre-r12
+full live library is **51 patterns** — the remainder (pre-r12
 mints: application-layer-sharding, batched-routing-by-destination,
 cell-architecture, checkpoint-bounded-scans, circuit-breaker,
 circular-dependency-avoidance, compile-time-boundary-enforcement,
@@ -106,7 +110,7 @@ Retired pattern names (do not reuse):
 - `pid-controlled-adaptive-thresholds`
 - `byos-platform-design` (Uber jargon; re-minted and retracted at r11 for DoorDash Aperture — see taste doc for the retraction lesson)
 
-## Sources (22)
+## Sources (23)
 
 All in `content/feeds.json`, deduped from every article's
 `source.slug`. Numbering below is round-order-joined:
@@ -121,9 +125,10 @@ Pinterest Engineering Blog (r15), Segment Blog (r16), Datadog
 Engineering Blog (r17), Canva Engineering Blog (r23), GitLab Blog
 Engineering (r25), r/RedditEng (r29), Google Cloud Blog (r30 —
 feed URL is Fable's guess `cloudblog.withgoogle.com/rss/`, not
-yet verified against the actual feed).
+yet verified), LinkedIn Engineering (r31 — feed URL is Fable's
+guess `engineering.linkedin.com/blog.rss`, not yet verified).
 
-Total: 22 sources. New sources must be added here with slug +
+Total: 23 sources. New sources must be added here with slug +
 feed URL when first used.
 
 ## Company concentration (owner's rule)
@@ -137,8 +142,8 @@ ceiling): **Airbnb, AWS, Slack**.
 |----------|-----------|
 | 4 | Airbnb, Amazon (AWS), Slack |
 | 3 | Uber |
-| 2 | DoorDash, Meta, Netflix, Segment, Shopify, Stripe |
-| 1 | Canva, Cloudflare, Datadog, Discord, Figma, GitHub, GitLab, Google, Notion, Pinterest, Reddit, Roblox |
+| 2 | DoorDash, Google, Meta, Netflix, Segment, Shopify, Stripe |
+| 1 | Canva, Cloudflare, Datadog, Discord, Figma, GitHub, GitLab, LinkedIn, Notion, Pinterest, Reddit, Roblox |
 
 ## Accent registry (chrome colors)
 
@@ -161,6 +166,8 @@ purples / reds).
 | slack-incident-2-22-22 (r28) | #2EB67D | greens corridor (Segment #52BD94, semantic GREEN) |
 | reddit-piday-outage (r29) | #FF4500 | RED corridor — HARD flag |
 | google-colossus (r30) | #4285F4 | blue corridor (Slack cyan #36C5F0) |
+| linkedin-hodor-overload-protection (r31) | #0A66C2 | HARD FLAG: blue corridor FIVE-deep (GitHub #58A6FF, Slack #36C5F0, Roblox #00A2FF, Google #4285F4, this) |
+| google-colossus-ssd-placement (r32) | #4285F4 | company-match REUSE of r30 (Netflix precedent); no new corridor entry |
 | pre-r12 articles | AGENT CHECK | complete from repo |
 
 ## Hunt candidates (vetted, unclaimed)
@@ -199,7 +206,9 @@ Cloudflare Nov-2023, Netflix active-active 2013, Figma 2024.
 | 28 | slack-incident-2-22-22 | MINT degraded-state-outlives-its-trigger (12th) | load-bearing-cache | Agent A |
 | 29 | reddit-piday-outage | MINT unrecorded-config-outlives-its-authors (13th) | no-uncommitted-config, rehearsed-restore | Agent A |
 | 30 | google-colossus | single-cluster-scaling-ceiling 5th (solved-side face; third 5-company class) | distributed-metadata-model, shared-pool-multiplexing (declared two-chip) | Agent A |
-| 31+ | — | assigned by owner | — | — |
+| 31 | linkedin-hodor-overload-protection | priority-blind-load-shedding 5th (fleet-default face; fourth 5-company class) | pure-recurrence (zero mints; three recurs) | Agent B |
+| 32 | google-colossus-ssd-placement | MINT placement-precedes-the-access-pattern (14th class) | simulated-policy-selection (throughput) | Agent B |
+| 33+ | — | assigned by owner | — | — |
 
 ## In-flight claims
 
