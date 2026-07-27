@@ -1051,3 +1051,34 @@ reflect it.
 > verdict. The test for everything: would the engineer
 > who built this nod, and would the staff engineer reading it learn something
 > real?
+## Structural bands (codified 2026-07-27 — owner ruling on P1; taste doc v6)
+
+Until now the article's structural envelope lived in Agent A's
+working habits, never in law. The owner has ruled: codify. The bands
+below are computed from the corpus itself (N=25: the 23 live
+articles as of the audit export, plus rounds 31–32), median-anchored
+and roughly p10–p90:
+
+- **summary:** 550–1,050 chars (corpus median ~890)
+- **crux:** 400–1,100 chars (median ~645)
+- **problem:** 1,300–3,000 chars (median ~1,970)
+- **solution:** 2,400–4,500 chars (median ~3,175)
+- **cruxSummary:** 12–16 words (median 15)
+- **tradeoffs:** SIX is the standard (19 of 25 live articles);
+  five is acceptable when each is load-bearing and the count is
+  declared; below five, don't thin — deepen.
+
+**The declared-deviation valve (binding on both agents):** any
+section outside its band is permitted when the round's DECISIONS
+names the deviation and its reason in one line ("solution runs long:
+two-source round"). Undeclared deviation is the violation, not the
+length itself. Existing live articles outside these bands are
+grandfathered; the bands govern authoring from round 33 onward.
+
+**Honest-update, logged with this ruling:** the rounds 31–32 review's
+cruxSummary should-fixes (14→12 and 16→12 words) were Agent A
+folklore — the corpus median is 15 and both values sit inside the
+codified band. Retracted. The review's crux-length and
+solution-length observations stand (r31–32 cruxes are the corpus
+maximum at ~2.5x median; r31's solution is the corpus maximum) but
+under this ruling they resolve as one-line declarations, not edits.
