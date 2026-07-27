@@ -84,6 +84,13 @@
     "feed": "https://cloudblog.withgoogle.com/rss/"
   },
   {
+    "name": "LinkedIn Engineering",
+    "slug": "linkedin-engineering",
+    "company": "LinkedIn",
+    "url": "https://engineering.linkedin.com/blog",
+    "feed": "https://engineering.linkedin.com/blog.rss"
+  },
+  {
     "name": "Netflix Technology Blog",
     "slug": "netflix-techblog",
     "company": "Netflix",

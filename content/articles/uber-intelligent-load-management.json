@@ -47,7 +47,8 @@
     "stripe-idempotency",
     "doordash-aperture-global-failure-mitigation",
     "stripe-rate-limiters",
-    "aws-load-shedding"
+    "aws-load-shedding",
+    "linkedin-hodor-overload-protection"
   ],
   "artifact": {
     "path": "/artifacts/uber-intelligent-load-management/index.html",

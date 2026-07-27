@@ -51,7 +51,8 @@
     "uber-intelligent-load-management",
     "stripe-idempotency",
     "stripe-rate-limiters",
-    "aws-load-shedding"
+    "aws-load-shedding",
+    "linkedin-hodor-overload-protection"
   ],
   "artifact": {
     "path": "/artifacts/netflix-prioritized-load-shedding/index.html",
