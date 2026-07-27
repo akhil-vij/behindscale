@@ -48,7 +48,8 @@
   ],
   "relatedArticles": [
     "slack-vitess-datastores",
-    "aws-timeouts-retries-backoff-jitter"
+    "aws-timeouts-retries-backoff-jitter",
+    "google-colossus-ssd-placement"
   ],
   "stats": [
     {

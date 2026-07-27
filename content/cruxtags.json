@@ -50,5 +50,9 @@
   "unrecorded-config-outlives-its-authors": {
     "label": "Unrecorded config outlives its authors",
     "definition": "Load-bearing configuration that outlives its authors and its record, detonated by an environmental change nothing could check it against."
+  },
+  "placement-precedes-the-access-pattern": {
+    "label": "Placement precedes the access pattern",
+    "definition": "A placement decision (device, tier, region, replication level) must be made before the access pattern that would justify it exists — only files/objects whose placement decision precedes its evidence belong to this class. Systems where prediction merely optimizes an answer to some other wall (an ML-tuned cache atop a solved placement, a forecast feeding an autoscaler) do NOT belong: there prediction is the answer, not the wall."
   }
 }

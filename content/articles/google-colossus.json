@@ -46,7 +46,8 @@
     "slack-vitess-datastores",
     "gitlab-database-decomposition",
     "github-partitioning-relational-databases",
-    "airbnb-partitioning-main-database"
+    "airbnb-partitioning-main-database",
+    "google-colossus-ssd-placement"
   ],
   "stats": [
     {
