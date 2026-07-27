@@ -17,216 +17,158 @@ every board-state change goes HERE.
 - Never mint a cruxTag or pattern that could overlap anything listed
   here (live, authored, or pending). Possible overlap = OWNER CALL
   flag in DECISIONS, not a mint.
+- Rows marked `AGENT CHECK` have gaps only the repo can fill. One-time
+  backfill task for the implementation agent: complete them from the
+  repo export, after which this ledger is authoritative.
 - Status vocabulary: LIVE (deployed to production), AUTHORED (round
   zip delivered, not yet published), PENDING (exists conditionally —
-  e.g. a mint awaiting merge-or-discard). As of the 2026-07-25 audit,
-  every round through r29 is LIVE (the implementation agent has been
-  pushing each round to `main`, which Vercel deploys automatically).
+  e.g. a mint awaiting merge-or-discard).
 
-## Board summary (as of round 29, audited 2026-07-25)
+## Board summary (as of round 30 — Agent A sync commit)
 
-38 articles LIVE across 21 sources · 13 crux classes · 50 pattern
-definitions · 38 artifacts. Live counts audited directly from
-`content/`, `feeds.json`, and `cruxtags.json`.
+39 articles LIVE · 22 sources · 13 crux classes · 50 pattern
+definitions · 39 artifacts. All rounds through r30 are deployed
+to production; the implementation agent pushes each round to
+`main` at landing, which Vercel deploys automatically.
 
 ## CruxTag registry (13 classes)
 
-Membership derived from live `content/articles/*.json` (`cruxTag` field).
+| # | cruxTag | companies | members / status |
+|---|---------|-----------|------------------|
+| 1 | ambiguous-failure-under-retry | 5 | Stripe, Shopify, Airbnb, AWS, Segment — LIVE |
+| 2 | buffer-degrades-under-backlog | 5 | Meta, Slack, Segment, Uber, DoorDash — LIVE |
+| 3 | single-table-scaling-ceiling | 4 | Figma, Notion, Pinterest, Canva — LIVE |
+| 4 | priority-blind-load-shedding | 4 | Netflix, Stripe, Uber, AWS (Builders, r24) — LIVE |
+| 5 | single-cluster-scaling-ceiling | 5 | GitHub, Airbnb, Slack, GitLab, Google (r30, solved-side face) — LIVE |
+| 6 | gray-failure-defeats-automatic-detection | 3 | Slack, Cloudflare, Meta — LIVE |
+| 7 | partial-completion-under-crashes | 3 | Airbnb (Skipper), Uber (Cadence), Netflix (Conductor) — LIVE |
+| 8 | observer-shares-fate-with-observed | 3 | Airbnb, Roblox, Datadog — LIVE |
+| 9 | blast-radius-scales-with-cluster-size | 3 | Discord, AWS, Shopify — LIVE |
+| 10 | retry-amplified-overload | 1 | AWS (timeouts doctrine) — LIVE |
+| 11 | mitigation-scoped-narrower-than-failure | 1 | DoorDash (Aperture) — LIVE |
+| 12 | degraded-state-outlives-its-trigger | 1 | Slack 2-22-22 — LIVE (r28) |
+| 13 | unrecorded-config-outlives-its-authors | 1 | Reddit Pi-Day — LIVE (r29) |
 
-| # | cruxTag | companies | members |
-|---|---------|-----------|---------|
-| 1 | ambiguous-failure-under-retry | 5 | Airbnb (Orpheus), Amazon (AWS) (idempotent-APIs), Segment (exactly-once), Shopify (resilient payments), Stripe (idempotency) |
-| 2 | buffer-degrades-under-backlog | 5 | DoorDash (RabbitMQ→Kafka), Meta (FOQS), Segment (Centrifuge), Slack (job queue), Uber (consumer proxy) |
-| 3 | single-cluster-scaling-ceiling | 4 | Airbnb (partitioning main DB), GitHub (partitioning relational DBs), GitLab (decomposition), Slack (Vitess) |
-| 4 | single-table-scaling-ceiling | 4 | Canva (media→DynamoDB), Figma (postgres sharding), Notion (postgres sharding), Pinterest (mysql sharding) |
-| 5 | priority-blind-load-shedding | 4 | Amazon (AWS) (load-shedding doctrine), Netflix (prioritized shedding), Stripe (rate limiters), Uber (intelligent load management) |
-| 6 | blast-radius-scales-with-cluster-size | 3 | Amazon (AWS) (shuffle sharding), Discord (trillions message search), Shopify (pods architecture) |
-| 7 | gray-failure-defeats-automatic-detection | 3 | Cloudflare (byzantine failure), Meta (silent data corruption), Slack (cellular architecture) |
-| 8 | observer-shares-fate-with-observed | 3 | Airbnb (monitoring reliably), Datadog (incident-response deep dive), Roblox (return to service) |
-| 9 | partial-completion-under-crashes | 3 | Airbnb (Skipper), Netflix (Conductor), Uber (Cadence) |
-| 10 | mitigation-scoped-narrower-than-failure | 1 | DoorDash (Aperture) |
-| 11 | retry-amplified-overload | 1 | Amazon (AWS) (timeouts-retries-backoff-jitter) |
-| 12 | degraded-state-outlives-its-trigger | 1 | Slack (2-22-22 incident) |
-| 13 | unrecorded-config-outlives-its-authors | 1 | Reddit (Pi-Day outage) |
+Open class quests: partial-completion 4th, observer-fate 4th,
+blast-radius 4th (all currently lack bar-clearing sources — see the
+exhausted-candidates list below), plus growing any singleton.
 
-Open class quests: grow any singleton with a bar-clearing first-party
-source. The `retry-amplified-overload` DoorDash June-2021 postmortem
-remains a shelved candidate fill (see the exhausted-candidates list
-below for what's off the table).
+## Pattern registry
 
-## Pattern registry (50 patterns)
+| pattern | minted | status / notes |
+|---------|--------|----------------|
+| idempotency-keys | early | LIVE; first FIVE-company pattern (6 articles / 5 companies, r21) |
+| retryable-error-classification | r12 | LIVE; 2-company since r19 |
+| atomic-phases | r12 | LIVE; 2-company since r19; pole pair w/ designated-source-of-truth |
+| single-writer-ownership | pre-r20 | LIVE; 2nd company r22 (retirement story) |
+| conservative-auto-remediation | pre-r20 | LIVE; recurred r28 (anti-instance) |
+| universal-staged-rollout | pre-r20 | LIVE; recurred r25, r27, r29 (readmission face); 6 articles / 6 companies |
+| selective-acknowledgment | r20 | LIVE; pole pair w/ fetch-execute-decoupling (r27) |
+| designated-source-of-truth | r21 | LIVE (consistency); pole pair w/ atomic-phases |
+| sharding-behind-a-proxy | r22 | LIVE; pole pair w/ id-encoded-placement |
+| content-free-change-events | r23 | LIVE; composes w/ designated-source-of-truth |
+| hot-data-first-migration | r23 | LIVE |
+| priority-aware-load-shedding | (live pre-r12) | LIVE; chipped by r24 + r28 (Fable's r24 conditional-slug guess `prioritized-load-shedding` resolved to this live slug at placement); 6 articles / 6 companies |
+| loose-foreign-keys | r25 | LIVE (company coinage kept) |
+| violation-ratchet | r25 | LIVE; process-pattern ruling still open (OWNER CALL — open-decisions item 16) |
+| known-answer-testing | r26 | LIVE (crypto's own name kept; tiers fold into definition) |
+| distributed-metadata-model | r30 | LIVE (throughput; Google's coinage kept) |
+| shared-pool-multiplexing | r30 | LIVE (throughput; device-tier folded into definition) |
+| load-bearing-cache | r28 | LIVE; 2nd company chipped r29 (Reddit) |
+| no-uncommitted-config | r29 | LIVE (resilience); boundary vs violation-ratchet inside definition |
+| rehearsed-restore | r29 | LIVE (resilience) |
+| dead-letter-queue | r20 | LIVE (resilience); companion to selective-acknowledgment |
+| fetch-execute-decoupling | r27 | LIVE (throughput); pole pair w/ selective-acknowledgment |
+| deadline-propagation | r24 | LIVE (resilience); boundary vs bounded-queue-age (open-decisions item 15) |
+| layered-admission-control | r14 | LIVE; 2nd company r24 (Stripe + AWS) |
+| master-only-reads | r15 | LIVE; canonical 2-company mint (Pinterest + Airbnb Orpheus) |
+| id-encoded-placement | r15 | LIVE (throughput); pole pair w/ sharding-behind-a-proxy |
+| database-as-a-queue | r16 | LIVE (resilience); pole pair w/ selective-acknowledgment (r20 Uber's answer) |
+| independent-observability | r17 | LIVE; canonical 3-company launch (Airbnb + Roblox + Datadog) |
+| choreography-vs-orchestration | r13 | LIVE (category-strain flag noted at mint, still open) |
+| replica-promotion-split | r7 | LIVE |
+| throttled-readmission | r8 | LIVE |
+| shuffle-sharding | r9 | LIVE |
 
-Company counts derived from live `content/articles/*.json`
-(`patterns[].slug` field, dedup by `source.company`).
+Above lists every pattern surfaced round-by-round in DECISIONS. The
+full live library is **50 patterns** — the remainder (pre-r12
+mints: application-layer-sharding, batched-routing-by-destination,
+cell-architecture, checkpoint-bounded-scans, circuit-breaker,
+circular-dependency-avoidance, compile-time-boundary-enforcement,
+dead-mans-switch, durable-front-buffer, durable-workflows,
+embedded-vs-centralized-orchestration, fault-isolation,
+feedback-controlled-load-management, generic-mitigation,
+hibernation-vs-polling, logical-physical-migration-split,
+queue-with-guaranteed-delivery, retry-budget,
+retry-with-backoff-and-jitter, shard-key-colocation) all LIVE.
 
-| pattern | category | articles / companies | notes |
-|---------|----------|----------------------|-------|
-| application-layer-sharding | throughput | 4 / 4 | Discord, Figma, Notion, Pinterest |
-| atomic-phases | consistency | 3 / 2 | Airbnb + Amazon (AWS); r19 mint, pole pair w/ designated-source-of-truth |
-| batched-routing-by-destination | throughput | 1 / 1 | Discord |
-| cell-architecture | resilience | 3 / 3 | Discord + Shopify + Slack; r22 conditional resolved to RECUR |
-| checkpoint-bounded-scans | performance | 1 / 1 | Meta |
-| choreography-vs-orchestration | resilience | 1 / 1 | Netflix; r13 mint, category-strain flag |
-| circuit-breaker | resilience | 3 / 3 | DoorDash, Meta, Shopify |
-| circular-dependency-avoidance | resilience | 2 / 2 | Airbnb, Roblox |
-| compile-time-boundary-enforcement | consistency | 1 / 1 | GitHub |
-| conservative-auto-remediation | resilience | 2 / 2 | Cloudflare + Slack (r28 anti-instance) |
-| content-free-change-events | consistency | 1 / 1 | Canva; r23 mint; composes w/ designated-source-of-truth |
-| database-as-a-queue | resilience | 1 / 1 | Segment; r16 mint; pole pair w/ selective-acknowledgment |
-| dead-letter-queue | resilience | 1 / 1 | Uber; r20 mint |
-| dead-mans-switch | observability | 1 / 1 | Airbnb; boundary vs independent-observability |
-| deadline-propagation | resilience | 1 / 1 | Amazon (AWS); r24 mint |
-| designated-source-of-truth | consistency | 1 / 1 | Segment; r21 mint; pole pair w/ atomic-phases |
-| durable-front-buffer | resilience | 1 / 1 | Slack |
-| durable-workflows | resilience | 3 / 3 | Airbnb, Netflix, Uber |
-| embedded-vs-centralized-orchestration | resilience | 3 / 3 | Airbnb, Netflix, Uber |
-| fault-isolation | resilience | 14 / 12 | Most-recurring pattern; Airbnb, Amazon (AWS), Cloudflare, Datadog, Discord, GitHub, Meta, Netflix, Roblox, Segment, Shopify, Slack, Uber |
-| feedback-controlled-load-management | resilience | 4 / 4 | DoorDash, Netflix, Stripe, Uber |
-| fetch-execute-decoupling | throughput | 1 / 1 | DoorDash; r27 mint; pole pair w/ selective-acknowledgment |
-| generic-mitigation | resilience | 3 / 3 | Cloudflare, Shopify, Slack; arc: improvised → pre-positioned → rehearsed |
-| hibernation-vs-polling | performance | 1 / 1 | Airbnb |
-| hot-data-first-migration | throughput | 1 / 1 | Canva; r23 mint |
-| id-encoded-placement | throughput | 1 / 1 | Pinterest; r15 mint; pole pair w/ sharding-behind-a-proxy |
-| idempotency-keys | consistency | 6 / 5 | FIRST five-company pattern; Airbnb, Amazon (AWS), Segment, Shopify, Stripe (r21 landing) |
-| independent-observability | observability | 3 / 3 | Airbnb, Datadog, Roblox; r17 canonical three-company mint |
-| known-answer-testing | observability | 1 / 1 | Meta; r26 mint; boundary vs health checks + vs independent-observability |
-| layered-admission-control | resilience | 2 / 2 | Amazon (AWS), Stripe; r14 mint, r24 second company |
-| load-bearing-cache | resilience | 2 / 2 | Reddit, Slack; r28 mint, r29 second company one round later |
-| logical-physical-migration-split | consistency | 3 / 3 | Airbnb, Figma, GitHub |
-| loose-foreign-keys | consistency | 1 / 1 | GitLab; r25 mint; company-coinage kept per SACK precedent |
-| master-only-reads | consistency | 2 / 2 | Airbnb, Pinterest; r15 canonical two-company mint |
-| no-uncommitted-config | resilience | 1 / 1 | Reddit; r29 mint; boundary vs violation-ratchet |
-| priority-aware-load-shedding | resilience | 6 / 6 | Amazon (AWS), DoorDash, Netflix, Slack, Stripe, Uber — 6-company breadth |
-| queue-with-guaranteed-delivery | resilience | 3 / 3 | Discord, Meta, Slack |
-| rehearsed-restore | resilience | 1 / 1 | Reddit; r29 mint |
-| replica-promotion-split | consistency | 1 / 1 | Airbnb; r7 mint |
-| retry-budget | resilience | 1 / 1 | Amazon (AWS) |
-| retry-with-backoff-and-jitter | resilience | 4 / 4 | Airbnb, Amazon (AWS), Segment, Stripe |
-| retryable-error-classification | resilience | 2 / 2 | Airbnb, Amazon (AWS); r12 mint, r19 second company |
-| selective-acknowledgment | throughput | 1 / 1 | Uber; r20 mint (TCP SACK name kept); pole pair w/ fetch-execute-decoupling |
-| shard-key-colocation | throughput | 2 / 2 | Figma, Notion |
-| sharding-behind-a-proxy | throughput | 1 / 1 | Slack; r22 mint; pole pair w/ id-encoded-placement |
-| shuffle-sharding | resilience | 1 / 1 | Amazon (AWS); r9 mint |
-| single-writer-ownership | throughput | 3 / 2 | Segment, Slack; r16 mint, r22 second company (retirement story) |
-| throttled-readmission | resilience | 1 / 1 | Roblox; r8 mint |
-| universal-staged-rollout | resilience | 6 / 6 | Canva, Datadog, DoorDash, GitLab, Reddit, Slack — six consecutive migration recurrences (see item 17 in open-decisions for page-ordering curation) |
-| violation-ratchet | consistency | 1 / 1 | GitLab; r25 mint; category-strain flag (process-pattern, owner ruling pending — item 16 in open-decisions) |
+Retired pattern names (do not reuse):
+- `pid-controlled-adaptive-thresholds`
+- `byos-platform-design` (Uber jargon; re-minted and retracted at r11 for DoorDash Aperture — see taste doc for the retraction lesson)
 
-### Retired pattern names (do NOT reuse)
+## Sources (22)
 
-- `pid-controlled-adaptive-thresholds` — retired
-- `byos-platform-design` — retired (Uber jargon; re-minted and retracted at r11 for DoorDash Aperture)
+All in `content/feeds.json`, deduped from every article's
+`source.slug`. Numbering below is round-order-joined:
 
-Retired-names pre-flight is required before any new mint.
+Pre-round-folder era (rounds 1–11): Amazon Builders' Library
+(Amazon (AWS)), Airbnb Engineering, The Cloudflare Blog,
+Discord Engineering, Engineering at Meta, Figma Blog, The GitHub
+Blog, Netflix Technology Blog, Notion Blog, Roblox Blog, Shopify
+Engineering, Slack Engineering, Stripe Engineering, Uber
+Engineering, DoorDash Engineering Blog. Rounds-12+ additions:
+Pinterest Engineering Blog (r15), Segment Blog (r16), Datadog
+Engineering Blog (r17), Canva Engineering Blog (r23), GitLab Blog
+Engineering (r25), r/RedditEng (r29), Google Cloud Blog (r30 —
+feed URL is Fable's guess `cloudblog.withgoogle.com/rss/`, not
+yet verified against the actual feed).
 
-## Sources (21 in `content/feeds.json`)
+Total: 22 sources. New sources must be added here with slug +
+feed URL when first used.
 
-Every source below has at least one live article. `slug` matches
-`article.source.slug`; `company` matches `article.source.company` (a
-minor cosmetic divergence for AWS uses "Amazon (AWS)" — enforce this
-at authoring time; two r19/r24 articles were normalized 2026-07-25).
+## Company concentration (owner's rule)
 
-| # | name | slug | company |
-|---|------|------|---------|
-| 1 | Amazon Builders' Library | amazon-builders-library | Amazon (AWS) |
-| 2 | Airbnb Engineering | airbnb-engineering | Airbnb |
-| 3 | Canva Engineering Blog | canva-engineering | Canva |
-| 4 | The Cloudflare Blog | cloudflare-blog | Cloudflare |
-| 5 | Datadog Engineering Blog | datadog-engineering | Datadog |
-| 6 | Discord Engineering | discord-engineering | Discord |
-| 7 | DoorDash Engineering Blog | doordash-engineering | DoorDash |
-| 8 | Engineering at Meta | meta-engineering | Meta |
-| 9 | Figma Blog | figma-blog | Figma |
-| 10 | The GitHub Blog | github-blog | GitHub |
-| 11 | GitLab Blog (Engineering) | gitlab-engineering | GitLab |
-| 12 | Netflix Technology Blog | netflix-techblog | Netflix |
-| 13 | Notion Blog | notion-blog | Notion |
-| 14 | Pinterest Engineering Blog | pinterest-engineering | Pinterest |
-| 15 | r/RedditEng | reddit-eng | Reddit |
-| 16 | Roblox Blog | roblox-blog | Roblox |
-| 17 | Segment Blog | segment-engineering | Segment |
-| 18 | Shopify Engineering | shopify-engineering | Shopify |
-| 19 | Slack Engineering | slack-engineering | Slack |
-| 20 | Stripe Engineering | stripe-engineering | Stripe |
-| 21 | Uber Engineering | uber-engineering | Uber |
-
-New sources: add here with slug + feed URL when first used, and
-insert into `content/feeds.json` in first-real-word alphabetical order.
-
-## Company article counts (concentration table)
+Crossing the highest existing per-company article count requires an
+explicit DECISIONS sentence naming the recurrence value a new-company
+article could not deliver. Current four-article companies (the
+ceiling): **Airbnb, AWS, Slack**.
 
 | articles | companies |
 |----------|-----------|
 | 4 | Airbnb, Amazon (AWS), Slack |
 | 3 | Uber |
 | 2 | DoorDash, Meta, Netflix, Segment, Shopify, Stripe |
-| 1 | Canva, Cloudflare, Datadog, Discord, Figma, GitHub, GitLab, Notion, Pinterest, Reddit, Roblox |
-
-**Company concentration (owner's rule)**: crossing the highest existing
-per-company article count requires an explicit DECISIONS sentence
-naming the recurrence value a new-company article could not deliver.
-The 4-article ceiling currently belongs to Airbnb (Orpheus r12,
-owner-approved precedent), Amazon (AWS) (load-shedding r24), and
-Slack (2-22-22 r28). Uber sits one below at 3.
+| 1 | Canva, Cloudflare, Datadog, Discord, Figma, GitHub, GitLab, Google, Notion, Pinterest, Reddit, Roblox |
 
 ## Accent registry (chrome colors)
 
-LAW stays in the taste doc: accents are chrome only, never verdict
-colors; corridor collisions are flagged at assignment; the owner
-registry pass over crowded corridors is a standing open item
-(open-decisions item 3, nine unresolved conflicts).
-
-Extracted directly from `content/artifacts/*.jsx` on 2026-07-25.
+Moved here from the taste doc (2026-07-23). LAW stays in the taste
+doc: chrome only, never verdict colors. The owner registry pass over
+the crowded corridors is a standing open item (oranges / greens /
+purples / reds).
 
 | article | accent | notes / flags |
 |---------|--------|---------------|
-| airbnb-monitoring-reliably-at-scale | #06B6D4 cyan | pre-r12; uses semantic red/green as verdict colors (compliant) |
-| airbnb-orpheus-idempotent-payments | #FF5A5F coral | matches partitioning-main-database |
-| airbnb-partitioning-main-database | #FF5A5F coral | Airbnb per-article precedent origin |
-| aws-idempotent-apis | #FF9900 | Amazon orange (established) |
-| aws-load-shedding | #FF9900 | Amazon orange |
-| aws-shuffle-sharding | #FF9900 | Amazon orange |
-| aws-timeouts-retries-backoff-jitter | #FF9900 | Amazon orange |
-| canva-media-dynamodb | #00C4CC teal-cyan | FLAG: cyan/teal corridor (Slack #36C5F0, Roblox #00A2FF, Airbnb #06B6D4, Cadence #2DD4BF) |
-| cloudflare-byzantine-failure | #F6821F orange | FLAG: orange corridor (AWS #FF9900, Uber #F97316, resilience-chip #EA580C) |
-| datadog-incident-response-observer-fate | #632CA6 purple | FLAG: purple corridor (DoorDash #9b8cf0, Stripe #6366F1) |
-| discord-trillions-message-search | #5865F2 blurple | |
-| doordash-aperture-global-failure-mitigation | #9b8cf0 violet | |
-| doordash-rabbitmq-kafka | #EB1700 red | DoorDash brand red |
-| figma-postgres-sharding | #A259FF purple | |
-| github-partitioning-relational-databases | #58A6FF blue | |
-| gitlab-database-decomposition | #FC6D26 orange | FLAG: orange corridor 4th member |
-| meta-foqs-priority-queue | #0866FF blue | Meta brand |
-| meta-silent-data-corruption | #0866FF blue | Meta brand (from FOQS) |
-| netflix-conductor-microservices-orchestrator | #E50914 red | FLAG: near semantic red |
-| netflix-prioritized-load-shedding | #E50914 red | Netflix brand (from Conductor) |
-| notion-sharding-postgres | #DE8A5A tan | |
-| pinterest-sharding-mysql | #E60023 red | FLAG: reds corridor + semantic red |
-| reddit-piday-outage | #FF4500 orange-red | FLAG: reds corridor (semantic, Netflix, Pinterest, Slack) |
-| roblox-return-to-service | #00A2FF cyan | FLAG: cyan/teal corridor |
-| segment-centrifuge-database-queue | #52BD94 green | FLAG: greens corridor near semantic |
-| segment-exactly-once-delivery | #52BD94 green | Segment brand (from Centrifuge) |
-| shopify-pods-architecture | #84CC16 lime | matches shopify-resilient-payments (company consistency) |
-| shopify-resilient-payments | #84CC16 lime | pre-r12; Shopify chrome |
-| skipper-workflow-engine | #22C55E green | pre-r12; VIOLATES chrome-only law (semantic green as accent) — legacy, flagged for the owner registry pass |
-| slack-cellular-architecture | #ECB22E gold | Slack per-article accent |
-| slack-incident-2-22-22 | #2EB67D green | FLAG: greens corridor |
-| slack-scaling-job-queue | #36C5F0 cyan | Slack per-article accent |
-| slack-vitess-datastores | #E01E5A magenta-red | FLAG: reds corridor |
-| stripe-idempotency | #6366F1 indigo | corrected from brand #635BFF |
-| stripe-rate-limiters | #6366F1 indigo | matches stripe-idempotency |
-| uber-cadence-workflow-platform | #2DD4BF teal | Cadence's own accent (not Uber orange) |
-| uber-intelligent-load-management | #f97316 orange | Uber brand (lowercase hex — cosmetic) |
-| uber-kafka-consumer-proxy | #F97316 orange | Uber brand |
-| _hero (site-level) | #F5B841 gold | landing-page hero, contract-exempt (taste doc §6) |
+| airbnb-orpheus-idempotent-payments | #FF5A5F coral | matches partitioning-main-database coral |
+| netflix-conductor-microservices-orchestrator | #E50914 | company match w/ netflix-prioritized-load-shedding; semantic-red caveat |
+| stripe-rate-limiters | #6366F1 indigo | CORRECTED from brand #635BFF to match live stripe-idempotency |
+| pinterest-sharding-mysql | #E60023 | HIGH-RISK (semantic red + Netflix red); teal swap withdrawn (Cadence owns #2DD4BF); candidate #D946EF — OWNER in-situ call |
+| segment-centrifuge-database-queue | #52BD94 green | FLAG: near Skipper #22C55E (also semantic green) — OWNER call |
+| datadog-incident-response-observer-fate | #632CA6 purple | purple corridor 3-deep (violet #9b8cf0, Figma #A259FF) |
+| shopify-pods-architecture | #84CC16 lime | CORRECTED from brand #96BF48 to match live Shopify accent |
+| slack (r22 set) | #ECB22E, #36C5F0, #E01E5A | #E01E5A flagged reds corridor |
+| gitlab (r25) | #FC6D26 | orange corridor 4th member |
+| slack-incident-2-22-22 (r28) | #2EB67D | greens corridor (Segment #52BD94, semantic GREEN) |
+| reddit-piday-outage (r29) | #FF4500 | RED corridor — HARD flag |
+| google-colossus (r30) | #4285F4 | blue corridor (Slack cyan #36C5F0) |
+| pre-r12 articles | AGENT CHECK | complete from repo |
 
 ## Hunt candidates (vetted, unclaimed)
 
-- **Google "Colossus under the hood" (Cloud blog, 2021)** — the
-  strongest Google candidate; first-party architecture dissection in
-  blog register. Google is absent from the library because its
-  deepest material is books/papers (bar-failing); its developers
-  blog verified 2026-07-24 as dev-rel/announcements only.
+- **Google "Colossus under the hood: SSD performance at HDD prices"
+  (2025)** — the placement/tiering sequel to r30's source; deeper and
+  more technical than the 2021 piece; possible distinct crux
+  (placement doctrine). Disclosed as unread sibling in r30.
 - **Google HTTP/2 Rapid Reset (2023)** — first-party, technical;
   sibling of the exhausted Cloudflare Nov-2023 post — ruling must
   establish a distinct crux or shelve.
@@ -242,53 +184,45 @@ Cloudflare Nov-2023, Netflix active-active 2013, Figma 2024.
 
 ## Publish sequencing constraints
 
-_All prior sequencing constraints (r22 before r28; r25 before r29
-gitlab backlink; r24/r28/r29 conditional pattern chip resolutions)
-were satisfied at each round's landing and are now closed. Add new
-constraints here as they arise._
+- r22 (slack-vitess-datastores) must publish before or with r28
+  (relatedArticles dependency).
+- r29's gitlab relatedArticle depends on the r25 slug (AGENT CHECK
+  alignment) and r25 being published.
+- All r24/r28/r29 conditional pattern chips resolve together at
+  publish (merge-or-discard).
 
 ## Round log
 
 | round | article (slug) | class ruling | mints | agent |
 |-------|----------------|--------------|-------|-------|
-| ≤11 | 15 LIVE articles (pre-round-folder era; pattern library seeded, first cruxTags coined) | seed taxonomy | seed pattern set (see registry above) | pre-Fable authoring |
-| 12 | airbnb-orpheus-idempotent-payments | RECUR ambiguous-failure-under-retry → 3rd company | atomic-phases; retryable-error-classification | Agent A |
-| 13 | uber-cadence-workflow-platform | RECUR partial-completion-under-crashes | choreography-vs-orchestration | Agent A |
-| 14 | stripe-rate-limiters | RECUR priority-blind-load-shedding → 3rd company | layered-admission-control | Agent A |
-| 15 | pinterest-sharding-mysql | RECUR single-table-scaling-ceiling → 3rd company | id-encoded-placement; master-only-reads | Agent A |
-| 16 | segment-centrifuge-database-queue | RECUR buffer-degrades-under-backlog → 3rd company | database-as-a-queue; single-writer-ownership | Agent A |
-| 17 | datadog-incident-response-observer-fate | RECUR observer-shares-fate-with-observed → 3rd company | independent-observability (3-company canonical); universal-staged-rollout | Agent A |
-| 18 | shopify-pods-architecture | RECUR blast-radius-scales-with-cluster-size → 3rd company | (none — cell-architecture conditional resolved RECUR) | Agent A |
-| 19 | aws-idempotent-apis | RECUR ambiguous-failure-under-retry → 4th company (FIRST four-company) | pure recurrence round | Agent A |
-| 20 | uber-kafka-consumer-proxy | RECUR buffer-degrades → 4th company | selective-acknowledgment; dead-letter-queue | Agent A |
-| 21 | segment-exactly-once-delivery | RECUR ambiguous-failure → 5th company (FIRST five-company) | designated-source-of-truth | Agent A |
-| 22 | slack-vitess-datastores | RECUR single-cluster-scaling-ceiling → 3rd company | sharding-behind-a-proxy | Agent A |
-| 23 | canva-media-dynamodb | RECUR single-table → 4th company | content-free-change-events; hot-data-first-migration | Agent A |
-| 24 | aws-load-shedding | RECUR priority-blind → 4th company | deadline-propagation | Agent A |
-| 25 | gitlab-database-decomposition | RECUR single-cluster → 4th company | loose-foreign-keys; violation-ratchet | Agent A |
-| 26 | meta-silent-data-corruption | RECUR gray-failure → 3rd company (declared ONE-CHIP; fault-isolation added via AGENT OPTION) | known-answer-testing | Agent A |
-| 27 | doordash-rabbitmq-kafka | RECUR buffer-degrades → 5th company | fetch-execute-decoupling | Agent A |
-| 28 | slack-incident-2-22-22 | MINT degraded-state-outlives-its-trigger (12th class) | load-bearing-cache | Agent A |
-| 29 | reddit-piday-outage | MINT unrecorded-config-outlives-its-authors (13th class) | no-uncommitted-config; rehearsed-restore | Agent A |
-| 30+ | — | assigned by owner | — | — |
+| ≤27 | rounds 12–27 all LIVE (r12 Airbnb Orpheus through r27 DoorDash RabbitMQ→Kafka, plus the pre-round-folder pattern-library seed) | see class-history appendix | see pattern registry | Agent A (original) |
+| 28 | slack-incident-2-22-22 | MINT degraded-state-outlives-its-trigger (12th) | load-bearing-cache | Agent A |
+| 29 | reddit-piday-outage | MINT unrecorded-config-outlives-its-authors (13th) | no-uncommitted-config, rehearsed-restore | Agent A |
+| 30 | google-colossus | single-cluster-scaling-ceiling 5th (solved-side face; third 5-company class) | distributed-metadata-model, shared-pool-multiplexing (declared two-chip) | Agent A |
+| 31+ | — | assigned by owner | — | — |
 
 ## In-flight claims
 
-None. When a round is assigned, the assigned agent adds a row here
+| round | target source | agent |
+|-------|---------------|-------|
+_(none)_
+
+When a round is assigned, the assigned agent adds a row here
 immediately (round number, target source, agent name) so the sibling
 never hunts the same source. The row moves to the round log at
 completion.
 
-## Appendix — Class history, round by round (moved from the taste doc, 2026-07-23)
+## Round narratives (round by round, newest last)
 
-Historical record of how the board reached its current state; the
-registries above are authoritative for CURRENT state. Laws these
-rounds established live in the taste doc's distilled-laws list.
+One narrative entry per round — the ruling, the lessons, the
+precedents. Appended by the authoring agent as part of each round's
+sync commit, directly after the previous round's entry. (Rounds
+12–29 migrated here from the taste doc on 2026-07-23.)
 
 **Taxonomy update — the third-company run (rounds 12–18, authored
-2026-07-15).** Seven classes reached three companies in one run, each
-with an explicit manifestation caveat recorded in its round's decision
-log:
+2026-07-15, pipeline pending deploy).** Seven classes reached three
+companies in one run, each with an explicit manifestation caveat
+recorded in its round's decision log:
 `ambiguous-failure-under-retry` +Airbnb (Orpheus — the deepest
 server-side treatment; Airbnb becomes the first three-article
 company, owner-approved precedent) ·
@@ -574,3 +508,17 @@ narrative incident became a pure act() reducer, and the round's
 teaching beats (the runbook-faithful path hitting the silent
 failure; the firehose punished; the hindsight path naming itself)
 were all headless-asserted before zip.
+
+**Round 30 (Google Colossus, Agent A).** single-cluster-scaling-
+ceiling's 5th company and the class's first SOLVED-SIDE face — the
+successor system's origin story, ruled on the post's own motivation
+sentence (GFS's metadata ceiling, answered by Curators + Bigtable,
+100x). The register call is the round's main lesson: the thinnest
+source in the library (6-minute promotional overview) was authored
+with facts held strictly to the post — the famous Bigtable-on-
+Colossus recursion excluded as not-in-source, analysis marked as
+analysis in the tradeoffs, and the solved-side telling's omissions
+named for the reader. Declared two-chip round (distributed-metadata-
+model — Google's coinage; shared-pool-multiplexing — device-tier
+folded in); zero recurs, honestly, after a full registry scan. The
+three-round mint streak ends without a forced fourth.

@@ -159,12 +159,18 @@ _None._
   Fable's canonical structure with AGENT CHECK markers
   preserved for the fields Fable wants filled per-round.
 - **What's still owner-owned:** the taste doc header
-  (version narrative) and the board doc's format. Also
-  outstanding on the board doc as of r30: two source
-  entries under AGENT CHECK, per-pattern live company
-  counts, per-company article-count table, retired-names
-  fill, pre-r12 accents — all marked AGENT CHECK for the
-  next backfill pass.
+  (version narrative) and the board doc's format. The
+  2026-07-27 board-doc audit (owner-prompted) closed the
+  remaining AGENT CHECK gaps that had actionable data:
+  status fields synced to LIVE across all rounds, source
+  count corrected from phantom 24 to actual 22, retired-
+  names filled, per-company article-count table filled,
+  round-log ≤27 row reworded, and the r24 pattern slug
+  corrected from Fable's guess `prioritized-load-shedding`
+  to the live `priority-aware-load-shedding`. Remaining
+  AGENT CHECK: pre-r12 per-article accent registry (rows
+  27 pre-r12 articles that aren't in Fable's accent
+  table). Leave-as-is fine unless owner wants completion.
 - **Reply:** further-refactor / leave-as-is / do-backfill.
 
 ### 8. Primary-vs-newest source convention
