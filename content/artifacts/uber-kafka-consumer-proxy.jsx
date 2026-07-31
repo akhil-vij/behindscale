@@ -42,7 +42,12 @@ function step(w) {
       n.committed = c;
     }
   }
-  const moving = n.msgs.some(m => m.state === "inflight" && m.left !== Infinity) || n.msgs.some(m => m.state === "queued" && m.i <= n.committed + (n.mode === "native" ? 1 : WINDOW));
+  // FIX (2026-07-31 review): "moving" is barrier-aware. Queued messages inside the fetch
+  // cap only count as potential movement if this mode can actually dispatch them — in
+  // naive mode the batch barrier blocks dispatch while anything is in flight, so a stuck
+  // poison pill must read as JAMMED, not "moving".
+  const naiveBlocked = n.mode === "naive" && n.msgs.some(m => m.state === "inflight");
+  const moving = n.msgs.some(m => m.state === "inflight" && m.left !== Infinity) || (!naiveBlocked && n.msgs.some(m => m.state === "queued" && m.i <= n.committed + (n.mode === "native" ? 1 : WINDOW)));
   n.stalledTicks = moving ? 0 : n.stalledTicks + 1;
   return n;
 }
@@ -71,7 +76,10 @@ export default function LedgerAboveTheLog() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis) => ({ padding: "7px 10px", borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffd0ab" : "#8b90a0", background: on ? "rgba(249,115,22,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11, marginRight: 6, marginTop: 6 }),
+    btn: (on, dis) => ({ padding: "7px 10px", borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffd0ab" : "#9aa0b0", background: on ? "rgba(249,115,22,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11, marginRight: 6, marginTop: 6 }),
+    // FIX (2026-07-31 review): trouble toggles carry their signal color permanently.
+    // ON/OFF is shown by fill, never by brightness — an off toggle must still look like a button.
+    tog: (on, color) => ({ padding: "7px 10px", borderRadius: 6, cursor: "pointer", border: `1px solid ${color}`, color, background: on ? `${color}29` : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11, marginRight: 6, marginTop: 6 }),
   };
   const modeBtn = (m, label) => <button key={m} style={S.btn(w.mode === m, false)} onClick={() => setW(x => ({ ...initial(m), slow: x.slow, poison: x.poison }))}>{label}</button>;
   const cell = (m) => {
@@ -93,12 +101,16 @@ export default function LedgerAboveTheLog() {
       <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>One partition, fourteen charges, and the coupling Kafka's ordering imposes — then the ledger that uncouples it, one vocabulary word at a time.</p>
       <ContextBlock />
 
-      <div style={{ marginTop: 12 }}>
+      {/* FIX (2026-07-31 review): MODE and TROUBLE are separate dedicated rows — a shared
+          wrapping row let the TROUBLE label orphan onto the end of the mode line. */}
+      <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", alignItems: "center" }}>
         <span style={S.label}>MODE · </span>
         {modeBtn("native", "1 · NATIVE CONSUMER")}{modeBtn("naive", "2 · +PARALLEL (no ledger)")}{modeBtn("oooack", "3 · +OUT-OF-ORDER ACK")}{modeBtn("dlq", "4 · +DLQ")}
-        <span style={{ ...S.label, marginLeft: 10 }}>TROUBLE · </span>
-        <button style={{ ...S.btn(w.slow, false), borderColor: w.slow ? AMBER : undefined, color: w.slow ? AMBER : undefined }} onClick={() => setW(x => ({ ...initial(x.mode), slow: !x.slow, poison: x.poison }))}>VISA SLOWDOWN: {w.slow ? "ON" : "OFF"}</button>
-        <button style={{ ...S.btn(w.poison, false), borderColor: w.poison ? RED : undefined, color: w.poison ? RED : undefined }} onClick={() => setW(x => ({ ...initial(x.mode), poison: !x.poison, slow: x.slow }))}>POISON PILL AT #2: {w.poison ? "ON" : "OFF"}</button>
+      </div>
+      <div style={{ marginTop: 2, display: "flex", flexWrap: "wrap", alignItems: "center" }}>
+        <span style={S.label}>TROUBLE · </span>
+        <button style={S.tog(w.slow, AMBER)} onClick={() => setW(x => ({ ...initial(x.mode), slow: !x.slow, poison: x.poison }))}>VISA SLOWDOWN: {w.slow ? "ON" : "OFF"}</button>
+        <button style={S.tog(w.poison, RED)} onClick={() => setW(x => ({ ...initial(x.mode), poison: !x.poison, slow: x.slow }))}>POISON PILL AT #2: {w.poison ? "ON" : "OFF"}</button>
         <button style={S.btn(false, false)} onClick={() => setW(x => initial(x.mode))}>↺ RESET LANE</button>
       </div>
 
