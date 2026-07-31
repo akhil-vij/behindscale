@@ -4,7 +4,7 @@ const ACCENT = "#0866FF";
 const RED = "#ef4444"; const AMBER = "#eab308"; const GREEN = "#22c55e"; const VIOLET = "#9b8cf0";
 
 const N = 6; const MAINT_EVERY = 24; // ticks between a given machine's maintenance event (~"180 days")
-const initial = () => ({ t: 0, fs: false, ripple: false, defect: null, rare: false, corrupted: 0, exposedTicks: 0, detectedBy: null, detectedAt: null, quarantined: false });
+const initial = () => ({ t: 0, fs: false, ripple: false, defect: null, rare: false, plantedAt: null, corrupted: 0, exposedTicks: 0, detectedBy: null, detectedAt: null, quarantined: false });
 
 function step(w) {
   const n = { ...w };
@@ -13,10 +13,16 @@ function step(w) {
   if (active) {
     n.corrupted += n.rare ? 1 : 3; // wrong answers shipped downstream this tick
     n.exposedTicks++;
-    // ripple: constant shallow probes — catches common-pattern defects fast, never the rare-mode one
+    // FIX (2026-07-31 review, bug 1): ripple catches the COMMON defect only. The rare-mode
+    // defect must stay invisible to ripple — that blindness IS the "23% only the deep test
+    // finds" lesson and the teaser's promise. Guard the whole branch on !n.rare so ripple
+    // never quarantines a rare defect.
     if (n.ripple && !n.rare && n.exposedTicks >= 3) { n.detectedBy = "ripple"; n.detectedAt = n.t; n.quarantined = true; }
-    // fleetscanner: deep probe only when this machine's maintenance window arrives
-    else if (n.fs && (n.t % MAINT_EVERY === 0)) { n.detectedBy = "fleetscanner"; n.detectedAt = n.t; n.quarantined = true; }
+    // FIX (2026-07-31 review, bug 2): the deep test fires one full maintenance interval AFTER
+    // the defect was planted, not on an absolute-clock boundary. Previously w.t % 24 === 0 meant
+    // exposure depended on when the user happened to click — planting near a boundary made
+    // fleetscanner look instant and destroyed the "months of exposure" lesson.
+    else if (n.fs && n.plantedAt !== null && n.exposedTicks >= MAINT_EVERY) { n.detectedBy = "fleetscanner"; n.detectedAt = n.t; n.quarantined = true; }
   }
   return n;
 }
@@ -25,7 +31,10 @@ export default function NoTraceInAnyLog() {
   const [w, setW] = useState(initial);
   useEffect(() => { const id = setInterval(() => setW(step), 600); return () => clearInterval(id); }, []);
   const active = w.defect !== null && !w.quarantined;
-  const ticksToMaint = w.t % MAINT_EVERY === 0 ? 0 : MAINT_EVERY - (w.t % MAINT_EVERY);
+  // FIX (2026-07-31 review): the countdown reflects the plant-relative rule — a full
+  // maintenance interval after the defect was planted, so the number matches when the
+  // deep test will actually fire regardless of when the user clicked.
+  const ticksToMaint = w.plantedAt === null ? MAINT_EVERY : Math.max(0, MAINT_EVERY - w.exposedTicks);
 
   const verdict = (() => {
     if (w.quarantined && w.detectedBy === "ripple") return { c: GREEN, code: "FIFTEEN DAYS, NOT SIX MONTHS", t: `A ripple probe — a known bit pattern with a known answer, hundreds of milliseconds, injected beside the live workload — got a wrong answer back after ${w.exposedTicks} ticks of exposure. ${w.corrupted} corrupted results shipped before detection; without ripple, this machine's next deep test was ${ticksToMaint || MAINT_EVERY} ticks away. Now plant the RARE-MODE defect and watch ripple go blind.` };
@@ -42,7 +51,11 @@ export default function NoTraceInAnyLog() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? (col || ACCENT) : "#2a2a3a"}`, color: on ? "#b9d4ff" : "#8b90a0", background: on ? "rgba(8,102,255,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? (col || ACCENT) : "#4a4f60"}`, color: on ? "#b9d4ff" : "#9aa0b0", background: on ? "rgba(8,102,255,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    // FIX (2026-07-31 review): regime toggles carry their signal color permanently — ON/OFF
+    // shown by fill, never by brightness, so an off toggle still looks like a button. The
+    // Kafka round's off-state matched the page background and became invisible.
+    tog: (on, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${col}`, color: col, background: on ? `${col}29` : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11 }),
   };
 
   return (
@@ -55,11 +68,11 @@ export default function NoTraceInAnyLog() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           <div style={S.label}>PLANT A DEFECT (machine 3)</div>
-          <button style={S.btn(w.defect === "common", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "common", t: x.t }))}>COMMON-PATTERN DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>wrong answers under an everyday data pattern</div></button>
-          <button style={S.btn(w.defect === "rare", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "rare", rare: true, t: x.t }))}>RARE-MODE DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>manifests only in a mode shallow probes don't reach</div></button>
+          <button style={S.btn(w.defect === "common", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "common", plantedAt: x.t, t: x.t }))}>COMMON-PATTERN DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>wrong answers under an everyday data pattern</div></button>
+          <button style={S.btn(w.defect === "rare", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "rare", rare: true, plantedAt: x.t, t: x.t }))}>RARE-MODE DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>manifests only in a mode shallow probes don't reach</div></button>
           <div style={{ ...S.label, marginTop: 12 }}>TESTING REGIMES</div>
-          <button style={S.btn(w.fs, false)} onClick={() => setW(x => ({ ...x, fs: !x.fs }))}>FLEETSCANNER: {w.fs ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>deep · minutes · rides maintenance (every {MAINT_EVERY} ticks)</div></button>
-          <button style={S.btn(w.ripple, false)} onClick={() => setW(x => ({ ...x, ripple: !x.ripple }))}>RIPPLE: {w.ripple ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>shallow · milliseconds · beside the workload, always</div></button>
+          <button style={S.tog(w.fs, AMBER)} onClick={() => setW(x => ({ ...x, fs: !x.fs }))}>FLEETSCANNER: {w.fs ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>deep · minutes · rides maintenance (every {MAINT_EVERY} ticks)</div></button>
+          <button style={S.tog(w.ripple, GREEN)} onClick={() => setW(x => ({ ...x, ripple: !x.ripple }))}>RIPPLE: {w.ripple ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>shallow · milliseconds · beside the workload, always</div></button>
           <button style={{ ...S.btn(false, false), marginTop: 12 }} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple }))}>↺ RESET (keep regimes)</button>
         </div>
 
