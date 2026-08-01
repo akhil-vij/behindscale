@@ -11,7 +11,7 @@ function mulberry32(seed) {
   };
 }
 
-// ---------- constants (illustrative — labeled on screen) ----------
+// ---------- constants (illustrative - labeled on screen) ----------
 const ACCENT = "#f97316";       // t1, the protected tier
 const T3C = "#9aa3b2";          // t3 internal services
 const T5C = "#5f6b7a";          // t5 batch pipelines
@@ -30,15 +30,15 @@ const TIER_META = {
 
 const PHASES = [
   { id: "quota", label: "PHASE 1 · QUOTA AT THE QUERY LAYER", caption: "Static per-tenant budgets in the stateless query engine, priced in capacity units, usage tracked in a central Redis. Every request pays the Redis hop before touching storage." },
-  { id: "codel", label: "PHASE 2 · CODEL + SCORECARD", caption: "Control moves into the storage node: CoDel queues shed on wait time (not length), and Scorecard caps each tenant's concurrency. Stability arrives — judgment doesn't." },
+  { id: "codel", label: "PHASE 2 · CODEL + SCORECARD", caption: "Control moves into the storage node: CoDel queues shed on wait time (not length), and Scorecard caps each tenant's concurrency. Stability arrives - judgment doesn't." },
   { id: "cinnamon", label: "PHASE 3 · CINNAMON", caption: "Requests carry priority tiers (t0–t5, three shown). A PID controller walks the admission threshold against measured latency; BYOS lets any overload signal join the same loop." },
 ];
 
 const SCENARIOS = [
   { id: "baseline", label: "BASELINE", hint: "healthy traffic, ~70% utilization" },
-  { id: "batch", label: "BATCH SPIKE", hint: "t5 pipelines quadruple — the post's most common cause" },
+  { id: "batch", label: "BATCH SPIKE", hint: "t5 pipelines quadruple - the post's most common cause" },
   { id: "noisy", label: "NOISY TENANT", hint: "one t3 tenant floods shared storage" },
-  { id: "retry", label: "RETRY PRESSURE", hint: "rejected requests come back — together" },
+  { id: "retry", label: "RETRY PRESSURE", hint: "rejected requests come back - together" },
   { id: "lag", label: "FOLLOWER LAG", hint: "leader healthy; followers falling behind" },
 ];
 
@@ -54,30 +54,30 @@ function verdictOf(phase, scenario, byos, live) {
   const V = (sev, code, text) => ({ sev, code, text });
   const { t1Avail, latMs, lagS, lagTrend } = live;
   if (scenario === "baseline") {
-    if (phase === "quota") return V("ok", "HEALTHY — WITH A STANDING TAX", "70 rps against ~100 capacity. But note the constant cost: every request detours through Redis for quota accounting — an extra network hop and a new failure point, bought before any overload has arrived.");
-    if (phase === "codel") return V("ok", "HEALTHY — CONTROL AT REST", "Queues empty, shedding idle. The machinery lives inside the storage node, so its cost at rest is near zero — no extra hop, no external dependency.");
-    return V("ok", "HEALTHY — PRIORITY COSTS NOTHING YET", "Tiers and the PID engage only under pressure. The same property Netflix found at the service layer: prioritization is free until the limiter has something to decide.");
+    if (phase === "quota") return V("ok", "HEALTHY - WITH A STANDING TAX", "70 rps against ~100 capacity. But note the constant cost: every request detours through Redis for quota accounting - an extra network hop and a new failure point, bought before any overload has arrived.");
+    if (phase === "codel") return V("ok", "HEALTHY - CONTROL AT REST", "Queues empty, shedding idle. The machinery lives inside the storage node, so its cost at rest is near zero - no extra hop, no external dependency.");
+    return V("ok", "HEALTHY - PRIORITY COSTS NOTHING YET", "Tiers and the PID engage only under pressure. The same property Netflix found at the service layer: prioritization is free until the limiter has something to decide.");
   }
   if (scenario === "batch") {
-    if (phase === "quota") return V("bad", "QUOTAS GREEN · NODE SATURATED", `The batch tenant never exceeds its budget — scans meter far below their true cost — so the query layer sheds nothing while the node drowns. P99 is at ${latMs >= 3000 ? "3.1s" : Math.round(latMs) + "ms"} for everyone, rides included. The layer with the decision cannot see the layer with the problem.`);
-    if (phase === "codel") return V("mixed", "STABLE — BUT LOOK WHO PAID", `CoDel sheds on queue delay and the node survives; accepted requests succeed again. But the drop budget was spent blind: every tier cut proportionally — t1 availability ${t1Avail}%. Rides paid to protect pipelines.`);
+    if (phase === "quota") return V("bad", "QUOTAS GREEN · NODE SATURATED", `The batch tenant never exceeds its budget - scans meter far below their true cost - so the query layer sheds nothing while the node drowns. P99 is at ${latMs >= 3000 ? "3.1s" : Math.round(latMs) + "ms"} for everyone, rides included. The layer with the decision cannot see the layer with the problem.`);
+    if (phase === "codel") return V("mixed", "STABLE - BUT LOOK WHO PAID", `CoDel sheds on queue delay and the node survives; accepted requests succeed again. But the drop budget was spent blind: every tier cut proportionally - t1 availability ${t1Avail}%. Rides paid to protect pipelines.`);
     return V("ok", "BUDGET SPENT BOTTOM-UP", `t5 absorbs the entire cut; t1 holds at ${t1Avail}%. This is the regime the post measured: +80% throughput under overload, P99 from 3.1s to 1.0s.`);
   }
   if (scenario === "noisy") {
-    if (phase === "quota") return V("bad", "CLIPPED LATE, HOT ANYWAY", "The static quota eventually clips the flood — but it was sized for a different month's capacity, the cost model undercounts, and by the time the budget bites, every other tenant is already feeling the node run hot.");
-    if (phase === "codel") return V("ok", "SCORECARD'S CASE — CONTAINED", `The tenant hits its concurrency cap at the node and is boxed in deterministically, without punishing anyone else — t1 availability ${t1Avail}%. Fairness turns out to be a separate mechanism from overload.`);
-    return V("ok", "STILL SCORECARD'S CASE", "The containment is Scorecard's, carried forward into the Cinnamon era; tiers add nothing here. Not every failure needs the newest tool — the post keeps both.");
+    if (phase === "quota") return V("bad", "CLIPPED LATE, HOT ANYWAY", "The static quota does eventually reject the flood - but it was sized for a different month's capacity, and the cost model undercounts scans, so by the time it starts rejecting, every other tenant is already feeling the node run hot.");
+    if (phase === "codel") return V("ok", "SCORECARD'S CASE - CONTAINED", `The tenant hits its concurrency cap at the node and is boxed in deterministically, without punishing anyone else - t1 availability ${t1Avail}%. Fairness turns out to be a separate mechanism from overload.`);
+    return V("ok", "STILL SCORECARD'S CASE", "The containment is Scorecard's, carried forward into the Cinnamon era; tiers add nothing here. Not every failure needs the newest tool - the post keeps both.");
   }
   if (scenario === "retry") {
-    if (phase === "quota") return V("bad", "THE HERD MEETS THE WINDOW", "Rejected callers return in sync, the quota window admits a fresh batch, exhausts, rejects the rest together — and the cycle repeats. Watch the shed trace spike in rhythm.");
+    if (phase === "quota") return V("bad", "THE HERD MEETS THE WINDOW", "Rejected callers return in sync, the quota window admits a fresh batch, exhausts, rejects the rest together - and the cycle repeats. Watch the shed trace spike in rhythm.");
     if (phase === "codel") return V("bad", "THE POST'S OWN DIAGNOSIS", "Fixed wait times reject in bursts; the rejected retry together; the system oscillates between overload and idle. The hammer pattern in the shed trace below is Figure 16's left-hand side.");
-    return V("ok", "THE DIMMER, NOT THE HAMMER", "The PID sheds early, smoothly, and only as much as needed — fewer premature rejections, so retries spread out instead of synchronizing. The shed trace flattens; the cycle never forms.");
+    return V("ok", "THE DIMMER, NOT THE HAMMER", "The PID sheds early, smoothly, and only as much as needed - fewer premature rejections, so retries spread out instead of synchronizing. The shed trace flattens; the cycle never forms.");
   }
   // lag
-  if (phase === "quota") return V("bad", "NO LOCAL SIGNAL WILL EVER FIRE", `The leader is healthy and every quota is green — but followers are falling behind. Commit index lag: ${lagS}s and climbing. The overload is real; it just isn't where the meter is.`);
-  if (phase === "codel") return V("bad", "THE QUEUES ARE FINE. THAT'S THE PROBLEM.", `CoDel watches its own queues; they're empty. The overload is one hop away and invisible — lag ${lagS}s. (The traditional fix, external token-bucket limiters, brought split-brain and globally suboptimal shedding.)`);
+  if (phase === "quota") return V("bad", "NO LOCAL SIGNAL WILL EVER FIRE", `The leader is healthy and every quota is green - but followers are falling behind. Commit index lag: ${lagS}s and climbing. The overload is real; it just isn't where the meter is.`);
+  if (phase === "codel") return V("bad", "THE QUEUES ARE FINE. THAT'S THE PROBLEM.", `CoDel watches its own queues; they're empty. The overload is one hop away and invisible - lag ${lagS}s. (The traditional fix, external token-bucket limiters, brought split-brain and globally suboptimal shedding.)`);
   if (!byos) return V("bad", "CONCURRENCY-ONLY SHEDDING IS BLIND HERE", `Local signals green, lag at ${lagS}s and ${lagTrend > 0.05 ? "climbing" : "high"}. A shedder that only understands its own inflight count cannot see a distributed signal. Flip BYOS on.`);
-  return V("ok", "ONE LOOP, ANY SIGNAL", `The follower's commit lag plugs into the same admission path as every local signal; the leader sheds t5 until the followers ${lagTrend < -0.01 ? "catch up — lag draining" : "stabilize"} (${lagS}s). This is the platform the post ends on: a general-purpose overload control engine.`);
+  return V("ok", "ONE LOOP, ANY SIGNAL", `The follower's commit lag plugs into the same admission path as every local signal; the leader sheds t5 until the followers ${lagTrend < -0.01 ? "catch up - lag draining" : "stabilize"} (${lagS}s). This is the platform the post ends on: a general-purpose overload control engine.`);
 }
 
 // ---------- component ----------
@@ -167,8 +167,14 @@ export default function DropBudget() {
           W.queue -= excess;
           const tot = acc.t1 + acc.t3 + acc.t5 || 1;
           for (const k of ["t1", "t3", "t5"]) {
-            const cut = excess * (acc[k] / tot);
-            shed[k] += cut; // shed from backlog attributed by mix
+            // FIX (2026-07-31 review): reduce acc[k] as well as raising shed[k]. Previously the
+            // bulk CoDel shed only incremented shed[k], so acceptedCum[k] += acc[k] below counted
+            // the dropped requests as accepted - making t1 availability read ~100% in CoDel batch
+            // even though the verdict said "Rides paid to protect pipelines." The drop counters
+            // were right; the availability metric the verdict points at was wrong.
+            const cut = Math.min(excess * (acc[k] / tot), acc[k]);
+            acc[k] -= cut;
+            shed[k] += cut;
           }
         }
       } else {
@@ -247,8 +253,16 @@ export default function DropBudget() {
     btn: (on, disabled) => ({
       display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6,
       cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
-      border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffd7b0" : "#8b90a0",
+      border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffd7b0" : "#9aa0b0",
       background: on ? "rgba(249,115,22,0.08)" : "#0c0d13", fontFamily: mono, fontSize: 11,
+    }),
+    // FIX (2026-07-31 review): BYOS is a real on/off toggle and it drives the whole lag lesson
+    // (follower lag stabilizes only with it ON), so it carries its signal color permanently -
+    // state shown by fill, never by brightness, so an off toggle stays findable.
+    tog: (on) => ({
+      display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6,
+      cursor: "pointer", border: `1px solid ${ACCENT}`, color: ACCENT,
+      background: on ? "rgba(249,115,22,0.16)" : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11,
     }),
     bar: { height: 10, borderRadius: 5, background: "#1a1b24", overflow: "hidden", display: "flex" },
   };
@@ -263,9 +277,9 @@ export default function DropBudget() {
 
   return (
     <div style={S.root}>
-      <div style={S.eyebrow}>UBER · INTELLIGENT LOAD MANAGEMENT — INTERACTIVE</div>
+      <div style={S.eyebrow}>UBER · INTELLIGENT LOAD MANAGEMENT - INTERACTIVE</div>
       <div style={S.h1}>The drop budget</div>
-      <p style={S.sub}>One storage node, three generations of overload control, four ways to hurt it. The question each generation answers differently: when you must drop work — whose?</p>
+      <p style={S.sub}>One storage node, three generations of overload control, four ways to hurt it. The question each generation answers differently: when you must drop work - whose?</p>
 
       <ContextBlock />
 
@@ -277,8 +291,8 @@ export default function DropBudget() {
             <button key={p.id} style={S.btn(phase === p.id, false)} onClick={() => pickPhase(p.id)}>{p.label}</button>
           ))}
           {phase === "cinnamon" && (
-            <button style={S.btn(byos, false)} onClick={toggleByos}>
-              BYOS — BRING YOUR OWN SIGNAL: {byos ? "ON" : "OFF"}
+            <button style={S.tog(byos)} onClick={toggleByos}>
+              BYOS - BRING YOUR OWN SIGNAL: {byos ? "ON" : "OFF"}
               <div style={{ color: "#6b7080", fontSize: 10 }}>plug distributed signals (follower commit lag) into the same loop</div>
             </button>
           )}
@@ -334,10 +348,10 @@ export default function DropBudget() {
               )}
             </div>
 
-            {/* the drop budget — cumulative shed composition */}
+            {/* the drop budget - cumulative shed composition */}
             <div style={{ marginTop: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>
-                <span>THE DROP BUDGET — WHO GOT SHED THIS RUN</span>
+                <span>THE DROP BUDGET - WHO GOT SHED THIS RUN</span>
                 <span>{Math.round(droppedTotal)} requests</span>
               </div>
               {droppedTotal > 1 ? (
@@ -358,7 +372,7 @@ export default function DropBudget() {
 
             {/* shed trace: hammer vs dimmer */}
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>SHED TRACE (last 12s) — the hammer sheds in bursts; the dimmer sheds a steady trickle</div>
+              <div style={{ fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>SHED TRACE (last 12s) - the hammer sheds in bursts; the dimmer sheds a steady trickle</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 36, background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 6px" }}>
                 {W.shedHist.map((h, i) => (
                   <div key={i} style={{ flex: 1, height: `${Math.min(100, (h / maxShed) * 100)}%`, background: h > 0.5 ? ACCENT : "#1a1b24", borderRadius: 1 }} />
@@ -370,7 +384,7 @@ export default function DropBudget() {
       </div>
 
       <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
-        Rates, quotas, tier mix (three tiers shown of six), PID gains, and the follower apply rate are illustrative. The sourced mechanisms: capacity-unit quotas with usage in central Redis and an imprecise cost model (a scan returning one row meters like a point read); CoDel shedding on queue wait time with adaptive LIFO, plus Scorecard's per-tenant concurrency caps and node-local regulators (write bytes, hot partition keys, memory, goroutines — named here, not simulated); Cinnamon's t0–t5 tiers shedding lowest-first, P90-adaptive queue timeouts, an Auto Tuner on inflight limits, and PID control — the post's hammer-vs-dimmer contrast; BYOS folding distributed signals like follower commit index lag into one admission loop, replacing external token-bucket limiters that split-brained. Measured results: +80% throughput under overload, P99 3.1s→1.0s, ~93% fewer goroutines, ~60% lower heap.
+        Rates, quotas, tier mix (three tiers shown of six), PID gains, and the follower apply rate are illustrative. The sourced mechanisms: capacity-unit quotas with usage in central Redis and an imprecise cost model (a scan returning one row meters like a point read); CoDel shedding on queue wait time with adaptive LIFO, plus Scorecard's per-tenant concurrency caps and node-local regulators (write bytes, hot partition keys, memory, goroutines - named here, not simulated); Cinnamon's t0–t5 tiers shedding lowest-first, P90-adaptive queue timeouts, an Auto Tuner on inflight limits, and PID control - the post's hammer-vs-dimmer contrast; BYOS folding distributed signals like follower commit index lag into one admission loop, replacing external token-bucket limiters that split-brained. Measured results: +80% throughput under overload, P99 3.1s→1.0s, ~93% fewer goroutines, ~60% lower heap.
         {" "}
         <a href="https://behindscale.com/articles/uber-intelligent-load-management" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
@@ -387,12 +401,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>At tens of millions of requests per second, overload is routine and self-amplifying — timeouts feed retries, and one noisy tenant degrades every neighbor. Static quotas at the stateless layer could not see storage health, and shedding that treats all traffic equally spends the drop budget on rides and payments to protect batch jobs.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>At tens of millions of requests per second, overload is routine and self-amplifying - timeouts feed retries, and one noisy tenant degrades every neighbor. Static quotas at the stateless layer could not see storage health, and shedding that treats all traffic equally spends the drop budget on rides and payments to protect batch jobs.</div>
       <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Move the decision into the storage engine and give it judgment: Cinnamon sheds by priority tier (t0-t5) with a PID controller walking the rejection threshold against measured latency, and any overload signal can plug into the same loop.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Pick a failure, then walk it through all three generations. Watch the drop budget — who each generation sheds — the shed trace turn from hammer to dimmer, and the one failure only BYOS can see.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Pick a failure, then walk it through all three generations. Watch the drop budget - who each generation sheds - the shed trace turn from hammer to dimmer, and the one failure only BYOS can see.</div>
     </div>
   );
 }
