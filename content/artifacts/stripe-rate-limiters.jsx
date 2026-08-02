@@ -7,7 +7,7 @@ const BASE = { crit: 20, posts: 25, gets: 30, test: 15 };
 const TIERS = ["test", "gets", "posts", "crit"]; // shed order, bottom up
 const NAME = { crit: "CRITICAL (create charges)", posts: "POSTs", gets: "GETs", test: "TEST MODE" };
 
-const initial = () => ({ t: 0, flood: false, incident: false, rrl: false, fleet: false, worker: false, flap: false, shedLevel: 0, holdTicks: 0, served: { ...BASE }, util: 0.9, rejected: { rrl: 0, fleet: 0, worker: 0 }, chargeOk: 100, lost: 0 });
+const initial = () => ({ t: 0, flood: false, incident: false, rrl: false, fleet: false, worker: false, flap: false, shedLevel: 0, holdTicks: 0, served: { ...BASE }, dServed: { ...BASE }, util: 0.9, rejected: { rrl: 0, fleet: 0, worker: 0 }, chargeOk: 100, dChargeOk: 100, lost: 0 });
 
 function step(w) {
   const n = { ...w, served: { ...w.served }, rejected: { ...w.rejected } };
@@ -20,7 +20,7 @@ function step(w) {
     if (n.rrl && n.flood) n.rejected.rrl += 70;
     d.test += extra;
   }
-  // worker-utilization shedder: ramp shed level against utilization (slowly — or all-at-once in flap mode)
+  // worker-utilization shedder: ramp shed level against utilization (slowly - or all-at-once in flap mode)
   if (n.worker) {
     n.holdTicks++;
     if (n.flap) { // no damping: overshoot fully, both directions
@@ -50,6 +50,18 @@ function step(w) {
   n.util = Math.min(1.35, total === 0 ? 0 : (n.worker ? servedTotal : total) / cap);
   n.chargeOk = Math.round((n.served.crit / BASE.crit) * 100);
   n.lost += Math.max(0, BASE.crit - n.served.crit);
+  // DISPLAY EASING (2026-07-31 review): the sim values above are the true targets and jump in
+  // one tick; the dServed/dChargeOk values shown in the UI glide toward them ~40% per tick so a
+  // viewer can watch charges fall under a flood and recover when a layer is armed, instead of
+  // snapping. This is presentation only - it never feeds back into the sim math.
+  const ease = (cur, tgt) => Math.abs(tgt - cur) < 0.5 ? tgt : cur + (tgt - cur) * 0.4;
+  n.dServed = {
+    crit: ease(w.dServed ? w.dServed.crit : n.served.crit, n.served.crit),
+    posts: ease(w.dServed ? w.dServed.posts : n.served.posts, n.served.posts),
+    gets: ease(w.dServed ? w.dServed.gets : n.served.gets, n.served.gets),
+    test: ease(w.dServed ? w.dServed.test : n.served.test, n.served.test),
+  };
+  n.dChargeOk = Math.round(ease(w.dChargeOk != null ? w.dChargeOk : n.chargeOk, n.chargeOk));
   return n;
 }
 
@@ -59,14 +71,14 @@ export default function WhileTheRestIsOnFire() {
   const stressed = w.flood || w.incident;
 
   const verdict = (() => {
-    if (w.flap && w.worker && stressed) return { c: RED, code: "FLAPPING — SHED FAST, RESTORE FAST, REGRET BOTH", t: "The shedder reacts instantly in both directions: drop test mode, utilization looks fine, bring it back, everything is awful again. This is the oscillation Stripe tuned away by trial and error — shed and restore must move slowly, and the damping is paid in reaction time. Turn FLAP MODE off and watch the ladder hold a level." };
-    if (w.chargeOk < 90 && stressed && !w.fleet && !w.worker) return { c: RED, code: w.flood && !w.rrl ? "CHARGES DIED FOR A TEST SCRIPT" : "PRIORITY-BLIND — EVERYONE DILUTED EQUALLY", t: w.flood && !w.rrl ? "One user's runaway test-mode script is competing head-to-head with charge creation, and the queue doesn't know the difference — every tier is diluted by the same fraction, so the most important traffic fails at the same rate as the least. This is the crux. Arm the REQUEST RATE LIMITER (the everyday fix) or the shedding layers (the emergency one)." : "Capacity shrank and admission is first-come-first-served: charges, analytics reads, and test scripts all take the same haircut. Nothing in the system knows that creating a charge matters more than listing one. Arm the FLEET RESERVATION." };
+    if (w.flap && w.worker && stressed) return { c: RED, code: "FLAPPING - SHED FAST, RESTORE FAST, REGRET BOTH", t: "The shedder reacts instantly in both directions: drop test mode, utilization looks fine, bring it back, everything is awful again. This is the oscillation Stripe tuned away by trial and error - shed and restore must move slowly, and the damping is paid in reaction time. Turn FLAP MODE off and watch the ladder hold a level." };
+    if (w.chargeOk < 90 && stressed && !w.fleet && !w.worker) return { c: RED, code: w.flood && !w.rrl ? "CHARGES DIED FOR A TEST SCRIPT" : "PRIORITY-BLIND - EVERYONE DILUTED EQUALLY", t: w.flood && !w.rrl ? "One user's runaway test-mode script is competing head-to-head with charge creation, and the queue doesn't know the difference - every tier is diluted by the same fraction, so the most important traffic fails at the same rate as the least. This is the crux. Arm the REQUEST RATE LIMITER (the everyday fix) or the shedding layers (the emergency one)." : "Capacity shrank and admission is first-come-first-served: charges, analytics reads, and test scripts all take the same haircut. Nothing in the system knows that creating a charge matters more than listing one. Arm the FLEET RESERVATION." };
     if (stressed && w.chargeOk >= 95 && (w.fleet || w.worker || w.rrl)) {
-      if (w.flood && w.rrl && !w.fleet && !w.worker) return { c: GREEN, code: "THE EVERYDAY LAYER CAUGHT IT", t: "Token buckets capped the runaway script at its per-user rate — millions-a-month territory for Stripe, boring by design. Note what this layer can't do: try RUN INTERNAL SLOWDOWN, where the excess traffic is legitimate and spread across users, and pacing fairness stops being the right question." };
-      return { c: GREEN, code: "THE LADDER HELD", t: `Charges are succeeding at ${w.chargeOk}% while lower tiers absorb the squeeze${w.fleet ? " — the 20% reservation means non-critical traffic can never spend the last of the fleet" : ""}${w.worker && w.shedLevel > 0 ? `. The worker shedder is holding level ${w.shedLevel} (${TIERS.slice(0, w.shedLevel).map(t => NAME[t].split(" ")[0]).join(", ")} shed), moving one rung at a time` : ""}. Importance was decided before the emergency, not during it. Compare CHARGE-CAPACITY LOST across configurations.` };
+      if (w.flood && w.rrl && !w.fleet && !w.worker) return { c: GREEN, code: "THE EVERYDAY LAYER CAUGHT IT", t: "Token buckets capped the runaway script at its per-user rate - millions-a-month territory for Stripe, boring by design. Note what this layer can't do: try RUN INTERNAL SLOWDOWN, where the excess traffic is legitimate and spread across users, and pacing fairness stops being the right question." };
+      return { c: GREEN, code: "THE LADDER HELD", t: `Charges are succeeding at ${w.chargeOk}% while lower tiers absorb the squeeze${w.fleet ? " - the 20% reservation means non-critical traffic can never spend the last of the fleet" : ""}${w.worker && w.shedLevel > 0 ? `. The worker shedder is holding level ${w.shedLevel} (${TIERS.slice(0, w.shedLevel).map(t => NAME[t].split(" ")[0]).join(", ")} shed), moving one rung at a time` : ""}. Importance was decided before the emergency, not during it. Compare CHARGE-CAPACITY LOST across configurations.` };
     }
-    if (stressed) return { c: AMBER, code: "UNDER PRESSURE — WATCH THE CRITICAL ROW", t: "Demand exceeds capacity. Whatever admission logic is armed right now is deciding what survives — the charge success gauge is the scoreboard." };
-    return { c: AMBER, code: "FOUR LAYERS, ALL QUIET", t: "Baseline traffic fits. Trigger a RUNAWAY TEST SCRIPT (one user, absurd volume) or an INTERNAL SLOWDOWN (capacity 100 → 55) — first with every layer off, to meet the priority-blind default the architecture exists to prevent." };
+    if (stressed) return { c: AMBER, code: "UNDER PRESSURE - WATCH THE CRITICAL ROW", t: "Demand exceeds capacity. Whatever admission logic is armed right now is deciding what survives - the charge success gauge is the scoreboard." };
+    return { c: AMBER, code: "FOUR LAYERS, ALL QUIET", t: "Baseline traffic fits. Trigger a RUNAWAY TEST SCRIPT (one user, absurd volume) or an INTERNAL SLOWDOWN (capacity 100 → 55) - first with every layer off, to meet the priority-blind default the architecture exists to prevent." };
   })();
 
   const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
@@ -74,39 +86,44 @@ export default function WhileTheRestIsOnFire() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#c7c3ff" : "#8b90a0", background: on ? "rgba(99,102,241,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#c7c3ff" : "#9aa0b0", background: on ? "rgba(99,102,241,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    // FIX (2026-07-31 review): the scenario and limiter toggles carry their signal color
+    // permanently - state shown by fill, never brightness, so an off toggle stays findable
+    // instead of matching the page background. col is the toggle's identity color.
+    tog: (on, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${col}`, color: col, background: on ? `${col}29` : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11 }),
   };
   const tierRow = (k, i) => {
     const shed = w.worker && w.shedLevel > i;
-    const pct = Math.round((w.served[k] / (BASE[k] + (k === "test" && w.flood ? (w.rrl ? 10 : 80) : 0))) * 100);
+    const dsv = w.dServed ? w.dServed[k] : w.served[k];
+    const pct = Math.round((dsv / (BASE[k] + (k === "test" && w.flood ? (w.rrl ? 10 : 80) : 0))) * 100);
     return (
       <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, marginTop: 4, background: "#0c0d13", border: `1px ${shed ? "dashed" : "solid"} ${shed ? RED : k === "crit" ? (w.chargeOk >= 95 ? GREEN : w.chargeOk >= 80 ? AMBER : RED) : "#2a2f45"}` }}>
         <div style={{ width: 175, fontSize: 10, fontWeight: k === "crit" ? 700 : 400, color: k === "crit" ? "#edeff3" : "#8b90a0" }}>{NAME[k]}{k === "test" && w.flood ? " ⚠ FLOOD" : ""}</div>
         <div style={{ flex: 1, height: 6, background: "#1a1a24", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${shed ? 0 : Math.min(100, pct)}%`, height: "100%", background: shed ? RED : k === "crit" ? GREEN : ACCENT, opacity: k === "crit" ? 1 : 0.6 }} />
+          <div style={{ width: `${shed ? 0 : Math.min(100, pct)}%`, height: "100%", background: shed ? RED : k === "crit" ? GREEN : ACCENT, opacity: k === "crit" ? 1 : 0.6, transition: "width 350ms ease-out, background 300ms" }} />
         </div>
-        <div style={{ width: 88, textAlign: "right", fontSize: 10, color: shed ? RED : "#8b90a0" }}>{shed ? "SHED (rung " + (i + 1) + ")" : `${w.served[k]} served`}</div>
+        <div style={{ width: 88, textAlign: "right", fontSize: 10, color: shed ? RED : "#8b90a0" }}>{shed ? "SHED (rung " + (i + 1) + ")" : `${Math.round(dsv)} served`}</div>
       </div>
     );
   };
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>STRIPE · RATE LIMITERS &amp; LOAD SHEDDERS — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>STRIPE · RATE LIMITERS &amp; LOAD SHEDDERS - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>While the rest is on fire</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Four tiers of traffic, one pool of workers. When there isn't room for everything, something decides what gets in — or nothing does.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Four tiers of traffic, one pool of workers. When there isn't room for everything, something decides what gets in - or nothing does.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           <div style={S.label}>MAKE TROUBLE</div>
-          <button style={S.btn(w.flood, false)} onClick={() => setW(x => ({ ...x, flood: !x.flood }))}>RUNAWAY TEST SCRIPT: {w.flood ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>one user, +80 workers' worth of test-mode calls</div></button>
-          <button style={S.btn(w.incident, false)} onClick={() => setW(x => ({ ...x, incident: !x.incident }))}>INTERNAL SLOWDOWN: {w.incident ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>effective capacity 100 → 55; the traffic is all legitimate</div></button>
+          <button style={S.tog(w.flood, AMBER)} onClick={() => setW(x => ({ ...x, flood: !x.flood }))}>RUNAWAY TEST SCRIPT: {w.flood ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>one user, +80 workers' worth of test-mode calls</div></button>
+          <button style={S.tog(w.incident, AMBER)} onClick={() => setW(x => ({ ...x, incident: !x.incident }))}>INTERNAL SLOWDOWN: {w.incident ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>effective capacity 100 → 55; the traffic is all legitimate</div></button>
           <div style={{ ...S.label, marginTop: 12 }}>ARM THE LAYERS (Stripe's build order)</div>
-          <button style={S.btn(w.rrl, false)} onClick={() => setW(x => ({ ...x, rrl: !x.rrl }))}>1 · REQUEST RATE LIMITER: {w.rrl ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>token bucket per user — the millions-a-month layer</div></button>
+          <button style={S.btn(w.rrl, false)} onClick={() => setW(x => ({ ...x, rrl: !x.rrl }))}>1 · REQUEST RATE LIMITER: {w.rrl ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>token bucket per user - the millions-a-month layer</div></button>
           <button style={S.btn(w.fleet, false)} onClick={() => setW(x => ({ ...x, fleet: !x.fleet }))}>3 · FLEET RESERVATION (20%): {w.fleet ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>critical methods always have fleet; non-critical 503s past 80%</div></button>
           <button style={S.btn(w.worker, false)} onClick={() => setW(x => ({ ...x, worker: !x.worker, shedLevel: 0, holdTicks: 0 }))}>4 · WORKER SHEDDER (the ladder): {w.worker ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>sheds tiers bottom-up, one rung at a time, slowly</div></button>
-          <button style={{ ...S.btn(w.flap, !w.worker), borderColor: w.flap ? RED : undefined, color: w.flap ? RED : undefined }} disabled={!w.worker} onClick={() => setW(x => ({ ...x, flap: !x.flap }))}>FLAP MODE: {w.flap ? "ON — no damping" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>shed fast, restore fast — the tuning mistake, playable</div></button>
+          <button style={{ ...S.tog(w.flap, RED), opacity: w.worker ? 1 : 0.4, cursor: w.worker ? "pointer" : "not-allowed" }} disabled={!w.worker} onClick={() => setW(x => ({ ...x, flap: !x.flap }))}>FLAP MODE: {w.flap ? "ON - shedding with no damping" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>make the shedder react instantly instead of slowly, so it drops traffic and restores it over and over - the oscillation Stripe had to tune away</div></button>
           <button style={{ ...S.btn(false, false), marginTop: 12 }} onClick={() => setW(initial())}>↺ RESET</button>
         </div>
 
@@ -117,14 +134,14 @@ export default function WhileTheRestIsOnFire() {
           </div>
           <div style={S.panel}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={S.label}>THE CRITICALITY LADDER — shed from the bottom</div>
+              <div style={S.label}>THE CRITICALITY LADDER - shed from the bottom</div>
               <div style={{ fontSize: 11, color: w.util > 1 ? RED : w.util > 0.9 ? AMBER : GREEN, fontWeight: 700 }}>DEMAND/CAPACITY {(w.util * 100).toFixed(0)}%</div>
             </div>
             <div style={{ marginTop: 6 }}>
               {["crit", "posts", "gets", "test"].map(k => tierRow(k, TIERS.indexOf(k)))}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-              <div style={{ flex: 1 }}><div style={S.label}>CHARGES SUCCEEDING</div><div style={{ fontSize: 16, fontWeight: 700, color: w.chargeOk >= 95 ? GREEN : w.chargeOk >= 80 ? AMBER : RED }}>{w.chargeOk}%</div></div>
+              <div style={{ flex: 1 }}><div style={S.label}>CHARGES SUCCEEDING</div><div style={{ fontSize: 16, fontWeight: 700, color: w.chargeOk >= 95 ? GREEN : w.chargeOk >= 80 ? AMBER : RED, transition: "color 300ms" }}>{w.dChargeOk != null ? w.dChargeOk : w.chargeOk}%</div></div>
               <div style={{ flex: 1 }}><div style={S.label}>CHARGE-CAPACITY LOST</div><div style={{ fontSize: 16, fontWeight: 700, color: RED }}>{Math.round(w.lost)}</div></div>
               <div style={{ flex: 1 }}><div style={S.label}>REJECTED BY LAYER</div><div style={{ fontSize: 11, marginTop: 3, color: "#8b90a0" }}>rate-limit {w.rejected.rrl} · fleet {w.rejected.fleet} · worker {w.rejected.worker}</div></div>
             </div>
@@ -147,12 +164,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>When demand outruns capacity — a runaway script, an analytics batch, an internal slowdown — a queue that doesn't know importance drops indiscriminately: charge creation takes the same haircut as test-mode traffic, and the shedding meant to protect the service sacrifices its most critical work.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Stripe layers four admission controls: per-user token buckets and concurrency caps for everyday fairness, then a standing 20% fleet reservation for critical methods, then a last-resort worker shedder that walks a four-tier ladder — test mode first, critical last — shedding and restoring slowly to avoid flapping. Keep the core working while the rest is on fire.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run the test-script flood with every layer off and watch charges die for a script. Arm the rate limiter — then trigger the internal slowdown it can't help with, and arm the reservation and the ladder instead. Finish in FLAP MODE and meet the oscillation Stripe tuned away.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>When demand outruns capacity - a runaway script, an analytics batch, an internal slowdown - a queue that doesn't know importance drops indiscriminately: charge creation takes the same haircut as test-mode traffic, and the shedding meant to protect the service sacrifices its most critical work.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Stripe layers four admission controls: per-user token buckets and concurrency caps for everyday fairness, then a standing 20% fleet reservation for critical methods, then a last-resort worker shedder that walks a four-tier ladder - test mode first, critical last - shedding and restoring slowly to avoid flapping. Keep the core working while the rest is on fire.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run the test-script flood with every layer off and watch charges die for a script. Arm the rate limiter - then trigger the internal slowdown it can't help with, and arm the reservation and the ladder instead. Finish by turning on FLAP MODE, which makes the shedder react too fast and thrash between dropping traffic and restoring it - the oscillation Stripe had to tune away.</div>
     </div>
   );
 }
