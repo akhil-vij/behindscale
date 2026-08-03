@@ -34,7 +34,7 @@
   "patterns": [
     {
       "slug": "independent-observability",
-      "note": "The design argument for the pattern: the redesign's throughline is that no layer of the safety mechanism may share dependencies with the thing it's protecting. Compute isolation (dedicated K8s clusters), network isolation (a custom Envoy L7 plane outside the shared Istio mesh), and the Dead Man's Switch (Prometheus heartbeats to AWS SNS, watched by CloudWatch on infrastructure Airbnb doesn't own) together sever every channel through which an outage could disable its own detection — the pattern's canonical statement of independence bought layer by deliberate layer."
+      "note": "The design argument for the pattern: the redesign's throughline is that no layer of the safety mechanism may share dependencies with the thing it's protecting. Compute isolation (dedicated K8s clusters), network isolation (a custom Envoy L7 plane outside the shared Istio mesh), and the Dead Man's Switch (Prometheus heartbeats to AWS SNS, watched by CloudWatch on infrastructure Airbnb doesn't own) together sever every channel through which an outage could disable its own detection — the pattern's canonical statement of independence bought layer by deliberate layer. Each severed channel was a circular dependency invisible during normal operation and visible only when it mattered: dedicated clusters break the compute dependency, the dedicated network plane breaks the data-flow dependency, and external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how those loops hide in plain sight inside 'reasonable' shared-infrastructure choices — and of the discipline of mapping every one before severing it deliberately."
     },
     {
       "slug": "fault-isolation",
@@ -43,10 +43,6 @@
     {
       "slug": "dead-mans-switch",
       "note": "The Prometheus + SNS + CloudWatch chain is the canonical implementation: a heartbeat that always fires when healthy, an external recipient that counts messages, and an alarm that fires when the count drops. The architecture detects absence of expected signal rather than presence of bad signal — which collapses what would otherwise be an infinite recursion of 'who monitors the monitor?' into a single dirt-simple absence detector."
-    },
-    {
-      "slug": "circular-dependency-avoidance",
-      "note": "The original monitoring architecture had overlapping circular dependencies, each invisible until activated. The redesign maps and severs each one: dedicated clusters break the compute dependency; dedicated network plane breaks the data-flow dependency; external SNS+CloudWatch breaks the alerting dependency. The article is a worked example of how circular dependencies hide in plain sight inside 'reasonable' shared-infrastructure choices."
     }
   ],
   "relatedArticles": [

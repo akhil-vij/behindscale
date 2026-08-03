@@ -95,10 +95,10 @@ exhausted-candidates list below), plus growing any singleton.
 | retry-budget | pre-r12 | LIVE; 2 companies as of r31 (AWS + LinkedIn) |
 
 Above lists every pattern surfaced round-by-round in DECISIONS. The
-full live library is **51 patterns** — the remainder (pre-r12
+full live library is **50 patterns** — the remainder (pre-r12
 mints: application-layer-sharding, batched-routing-by-destination,
 cell-architecture, checkpoint-bounded-scans, circuit-breaker,
-circular-dependency-avoidance, compile-time-boundary-enforcement,
+compile-time-boundary-enforcement,
 dead-mans-switch, durable-front-buffer, durable-workflows,
 embedded-vs-centralized-orchestration, fault-isolation,
 feedback-controlled-load-management, generic-mitigation,
@@ -109,6 +109,7 @@ retry-with-backoff-and-jitter, shard-key-colocation) all LIVE.
 Retired pattern names (do not reuse):
 - `pid-controlled-adaptive-thresholds`
 - `byos-platform-design` (Uber jargon; re-minted and retracted at r11 for DoorDash Aperture — see taste doc for the retraction lesson)
+- `circular-dependency-avoidance` (merged into `independent-observability` on 2026-08-03; the target pattern's definition already carried the circular-dependency framing as the general trap, so the two chips on airbnb-monitoring-reliably-at-scale collapsed to one merged note)
 
 ## Sources (23)
 

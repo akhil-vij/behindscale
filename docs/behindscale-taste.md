@@ -102,10 +102,10 @@ cold-storage / Dropbox Magic Pocket candidates in the hunt list.
 | retry-budget | pre-r12 | LIVE; SECOND company at r31 publish (LinkedIn, server-assisted form; AWS was sole holder) |
 
 Above lists every pattern surfaced round-by-round in DECISIONS. The
-full live library is **50 patterns** — the remainder (pre-r12
+full live library is **49 patterns** — the remainder (pre-r12
 mints: application-layer-sharding, batched-routing-by-destination,
 cell-architecture, checkpoint-bounded-scans, circuit-breaker,
-circular-dependency-avoidance, compile-time-boundary-enforcement,
+compile-time-boundary-enforcement,
 dead-mans-switch, durable-front-buffer, durable-workflows,
 embedded-vs-centralized-orchestration, fault-isolation,
 feedback-controlled-load-management, generic-mitigation,

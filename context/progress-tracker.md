@@ -4,6 +4,31 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Pattern merger (2026-08-03): `circular-dependency-
+  avoidance` merged into `independent-observability`.**
+  Owner-directed. Rationale: the target pattern's
+  definition (as of r17 mint) already carried the
+  circular-dependency framing as "the more general
+  trap" — the source pattern was a duplicate lens on
+  the same discipline. Only one article carried both
+  chips (airbnb-monitoring-reliably-at-scale); its
+  two chip notes were folded into a single richer
+  note on the independent-observability chip.
+  content/patterns/circular-dependency-avoidance.json
+  deleted. Docs (taste + board) pattern counts
+  decremented (taste 50→49, board 51→50 — the pre-
+  existing count drift between the two documents is
+  preserved untouched); board's Retired pattern names
+  section extended with the merger note.
+  progress-tracker's historical mentions of the old
+  slug are preserved (no rewriting the record of
+  what was true at the time). Library state after:
+  52 pattern .json files on disk (all article-
+  referenced, zero orphans), 41 articles, 14 crux
+  classes. Validation: 6 checks, 0 errors, 38
+  warnings (residual class unchanged). 100 tests
+  pass. Build: 99 → 98 routes (one fewer pattern
+  page); sitemap 97 URLs.
 - **Articles #40 (LinkedIn Hodor) + #41 (Google
   Colossus SSD placement) LANDED together (2026-07-27,
   Agent B's first two rounds).** Batch publish of
