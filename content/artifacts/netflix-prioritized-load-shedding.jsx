@@ -9,13 +9,16 @@ const MUTED = "#7a7a88";
 const CRIT = "#22c55e";         // user-initiated / critical survives = green
 const PREFETCH = "#E09F3E";     // pre-fetch / non-critical = amber
 
-function Pill({ active, onClick, children, color = ACCENT }) {
+function Pill({ active, onClick, children, color = ACCENT, signal = false }) {
+  // signal=true: the pill carries its color permanently (border + text) and shows state by fill,
+  // so a fault toggle stays findable when off instead of matching the dark background.
+  // (2026-07-31 review: the inject-latency toggle drives view 1 and was invisible when off.)
   return (
     <button onClick={onClick} style={{
       fontFamily: "inherit", fontSize: 11, padding: "6px 11px", borderRadius: 6, cursor: "pointer",
-      border: `1px solid ${active ? color : BORDER}`,
+      border: `1px solid ${active ? color : (signal ? color : "#4a4f60")}`,
       background: active ? `${color}22` : "transparent",
-      color: active ? color : MUTED, transition: "all 120ms",
+      color: active ? color : (signal ? color : MUTED), fontWeight: active && signal ? 700 : 400, transition: "all 120ms",
     }}>{children}</button>
   );
 }
@@ -64,8 +67,8 @@ function InjectionView() {
       border: `1px solid ${injected && highlight ? CRIT + "66" : BORDER}`,
     }}>
       <div style={{ fontSize: 9, letterSpacing: 2, color: injected && highlight ? CRIT : MUTED, marginBottom: 10 }}>{title}</div>
-      <Bar label="User-initiated (press play)" val={data.user} color={CRIT} />
-      <Bar label="Pre-fetch (browsing, optimistic)" val={data.prefetch} color={PREFETCH} />
+      <Bar label="User-initiated (someone pressed play)" val={data.user} color={CRIT} />
+      <Bar label="Pre-fetch (low priority, from browsing)" val={data.prefetch} color={PREFETCH} />
     </div>
   );
 
@@ -73,18 +76,18 @@ function InjectionView() {
     <div>
       <p style={{ fontSize: 12, color: TEXT, lineHeight: 1.7, marginBottom: 12 }}>
         Netflix's actual validation test, reproduced in shape: the same 2s of latency injected into
-        pre-fetch calls (normally &lt;200ms p99) on two instances at once — a baseline limiter and a
+        pre-fetch calls (normally &lt;200ms p99) on two instances at once - a baseline limiter and a
         prioritized canary. One button, both outcomes.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-        <Pill active={injected} color={ACCENT} onClick={() => setInjected(!injected)}>
+        <Pill active={injected} color={ACCENT} signal={true} onClick={() => setInjected(!injected)}>
           {injected ? "⏹ stop injection" : "💉 inject 2s latency → pre-fetch (both instances)"}
         </Pill>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <Instance title="BASELINE INSTANCE — single limiter" data={baseline} highlight={false} />
-        <Instance title="PRIORITIZED CANARY — partitioned limiter" data={canary} highlight={true} />
+        <Instance title="BASELINE INSTANCE - single limiter" data={baseline} highlight={false} />
+        <Instance title="PRIORITIZED CANARY - partitioned limiter" data={canary} highlight={true} />
       </div>
 
       <div style={{
@@ -94,8 +97,8 @@ function InjectionView() {
         color: injected ? "#95d5b2" : MUTED,
       }}>
         {!injected
-          ? "Steady state: no throttling on either instance. Prioritization has zero effect until the server hits its concurrency limit — the partition costs nothing when there is nothing to shed."
-          : "Same injection, same traffic. The baseline shed playback starts and pre-fetch together — even though it had the capacity to serve all the user-initiated work. The canary spent its entire shed budget on the traffic a user never notices: user-initiated holds at 100% while pre-fetch absorbs the hit."}
+          ? "Steady state: no throttling on either instance. Prioritization has zero effect until the server hits its concurrency limit - the partition costs nothing when there is nothing to shed."
+          : "Same injection, same traffic. The baseline shed playback starts and pre-fetch together - even though it had the capacity to serve all the user-initiated work. The canary spent its entire shed budget on the traffic a user never notices: user-initiated holds at 100% while pre-fetch absorbs the hit."}
       </div>
 
       <div style={{ fontSize: 9.5, color: MUTED, lineHeight: 1.7, marginTop: 10 }}>
@@ -130,7 +133,7 @@ function CurvesView() {
   return (
     <div>
       <p style={{ fontSize: 12, color: TEXT, lineHeight: 1.7, marginBottom: 14 }}>
-        Two layers, two shedding curves — same shed-lowest-first principle, different shapes. The gateway runs
+        Two layers, two shedding curves - same shed-lowest-first principle, different shapes. The gateway runs
         one continuous cubic threshold over a 1–100 priority score; the service runs staggered per-bucket ramps
         over CPU. Each is faithful to the curve published in its respective post.
       </p>
@@ -160,7 +163,7 @@ function CurvesView() {
           </div>
           <div style={{ fontSize: 9.5, color: MUTED, marginTop: 6, lineHeight: 1.6 }}>
             A cascading staircase: each tier is fully shed before the next more-critical tier begins. CRITICAL
-            only sheds past ~84% — "never if we are not in complete failure." Shedding starts only after the
+            only sheds past ~84% - "never if we are not in complete failure." Shedding starts only after the
             autoscale target, preserving the scale-up signal.
           </div>
         </div>
@@ -230,7 +233,7 @@ function LimitView() {
     <div>
       <p style={{ fontSize: 12, color: TEXT, lineHeight: 1.7, marginBottom: 12 }}>
         The 2018 substrate: adaptive concurrency limits discover capacity with no manual tuning, borrowing TCP
-        congestion control. The limit probes upward while latency stays flat, then backs off when a queue forms —
+        congestion control. The limit probes upward while latency stays flat, then backs off when a queue forms - 
         the saw-tooth. Watch it re-converge when true capacity shifts mid-run.
       </p>
       <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -270,11 +273,11 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>PlayAPI's single concurrency limiter throttled all traffic equally: a burst of optional pre-fetch requests crowded out the user-initiated requests that gate playback, and under backend latency it shed both alike — failing playback starts while capacity for them still existed. Separate clusters would fix it at a permanent price: two fleets sized for peak instead of one.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Partition one limiter by priority inside the service: user-initiated requests get guaranteed capacity, pre-fetch borrows only what is spare, and shedding starts with the traffic a user will never notice — the isolation without the second cluster.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>PlayAPI's single concurrency limiter throttled all traffic equally: a burst of optional pre-fetch requests crowded out the user-initiated requests that gate playback, and under backend latency it shed both alike - failing playback starts while capacity for them still existed. Separate clusters would fix it at a permanent price: two fleets sized for peak instead of one.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Partition one limiter by priority inside the service: user-initiated requests get guaranteed capacity, low-priority pre-fetch borrows only what is spare, and shedding starts with the traffic a user will never notice - the isolation without the second cluster.</div>
       <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Inject latency into pre-fetch traffic and watch a baseline instance and a prioritized canary take the same hit side by side. The other tabs hold the two shedding curves and the adaptive limit.</div>
     </div>
   );
