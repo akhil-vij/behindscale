@@ -38,12 +38,12 @@
       "note": "The caller attaches a unique identifier to a request, and the service treats any later request carrying the same identifier as the same request, so a retry replays the first outcome instead of doing the work twice. Stripe, Shopify, and Airbnb have all appeared in the library making this call from the client-facing side; AWS's piece is the platform provider's view of the same contract (EC2 calls the identifier a ClientToken). The reason a caller-supplied key beats a hash of the request is intent: identical parameters don't mean identical intent, and only the caller knows whether a second identical request is a mistaken duplicate or a genuine second order."
     },
     {
-      "slug": "atomic-phases",
-      "note": "Recording the idempotency key and making all the changes that service the request have to commit as one all-or-nothing unit (an ACID transaction). The post is blunt about why: if the key is saved but the work fails, a retry replays a success that never happened; if the work commits but the key isn't saved, a retry does the work a second time. The guarantee that makes retries safe is not the key by itself but the key and the work landing together or not at all."
+      "slug": "retryable-error-classification",
+      "note": "AWS turns the whole client contract into a single line to classify errors by: any error that isn't a validation error can be retried until it succeeds. That one rule is what the SDK's default retry policy runs on - it retries everything on the non-validation side and stops on the validation side. And the validation side does real work here, not just rejection: when a reused token arrives with different parameters, the service returns a validation error precisely so the retry won't blindly repeat against a changed request. Airbnb drew the same line inside an internal framework with per-exception judgments; AWS draws it at the public API boundary itself, where the SDK can act on it for every caller."
     },
     {
-      "slug": "retryable-error-classification",
-      "note": "When a retry arrives for a request already handled, the service returns a response that means the same thing as the first one, rather than a technically-correct-but-different answer like ResourceAlreadyExists. The post's reasoning is sharp: the alternative has no side effect on the service but a real one on the client, because a caller that never saw the resource created now has to handle it already existing, and that changed flow is what makes automatic retries hard to offer. Sameness of meaning, held for the token's lifetime and even after the resource is deleted, is what lets an SDK retry underneath application code without the caller ever knowing."
+      "slug": "atomic-phases",
+      "note": "Recording the idempotency key and making all the changes that service the request have to commit as one all-or-nothing unit (an ACID transaction). The post is blunt about why: if the key is saved but the work fails, a retry replays a success that never happened; if the work commits but the key isn't saved, a retry does the work a second time. The guarantee that makes retries safe is not the key by itself but the key and the work landing together or not at all."
     }
   ],
   "relatedArticles": [
