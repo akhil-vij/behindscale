@@ -8,7 +8,7 @@ const STAGES = ["MONOLITH", "DOUBLE-WRITE", "BACKFILL", "VERIFY", "SWITCHOVER"];
 
 export default function BeforeTheWraparound() {
   const [stage, setStage] = useState(0);
-  const [risk, setRisk] = useState(34);          // TXID wraparound risk %
+  const [risk, setRisk] = useState(20);          // TXID wraparound risk %
   const [frozen, setFrozen] = useState(false);   // switchover complete
   const [dw, setDw] = useState(null);            // chosen double-write strategy verdict key
   const [compare, setCompare] = useState(true);  // backfill version-compare
@@ -28,7 +28,7 @@ export default function BeforeTheWraparound() {
       setT((x) => x + 0.3);
       setRisk((r) => {
         if (frozen || finale === "wraparound") return r;
-        const nr = Math.min(100, r + 0.35);
+        const nr = Math.min(100, r + 0.22);
         return nr;
       });
     }, 300);
@@ -37,7 +37,7 @@ export default function BeforeTheWraparound() {
 
   useEffect(() => { if (risk >= 100 && !frozen && finale !== "wraparound") setFinale("wraparound"); }, [risk, frozen, finale]);
 
-  const resetAll = () => { setStage(0); setRisk(34); setFrozen(false); setDw(null); setCompare(true); setTwoAuthors(true); setBackfilled(false); setBackfillDirty(false); setVerifyState(null); setFinale(null); setShards(480); setHosts(32); setGrowMsg(null); rng.current = mulberry32(42); };
+  const resetAll = () => { setStage(0); setRisk(20); setFrozen(false); setDw(null); setCompare(true); setTwoAuthors(true); setBackfilled(false); setBackfillDirty(false); setVerifyState(null); setFinale(null); setShards(480); setHosts(32); setGrowMsg(null); rng.current = mulberry32(42); };
 
   const runBackfill = () => { setBackfilled(true); setBackfillDirty(!compare); setVerifyState(null); setStage(3); };
   const runVerify = () => {
@@ -54,23 +54,23 @@ export default function BeforeTheWraparound() {
   const grow = () => {
     const seq = { 32: 40, 40: 48, 48: 48 };
     const next = seq[hosts] || 48;
-    if (shards % next === 0) { setHosts(next); setGrowMsg(`even: ${shards / next} shards per host — the factors of ${shards} at work`); }
+    if (shards % next === 0) { setHosts(next); setGrowMsg(`even: ${shards / next} shards per host - the factors of ${shards} at work`); }
     else setGrowMsg(`UNEVEN: ${shards} does not divide by ${next}. With ${shards} shards your only even move is DOUBLING to ${hosts * 2} hosts. Pick values with a lot of factors.`);
   };
 
   const verdict = (() => {
-    if (finale === "wraparound") return { c: RED, code: "TXID WRAPAROUND — POSTGRES STOPS ALL WRITES", t: "The safety mechanism fired: to avoid clobbering existing data, the database no longer accepts writes. For a product where every keystroke is a write, this is the existential outcome the whole migration raced against. Reset and move faster." };
-    if (finale === "corrupted") return { c: RED, code: "SWITCHOVER SHIPS THE CORRUPTION", t: "The backfill clobbered newer records (no version compare) and verification passed anyway — the same engineer wrote the migration and the check, so the check shared its author's blind spot. This is exactly why Notion had different people implement migration and verification. Reset the backfill." };
-    if (finale === "shipnow") return { c: GREEN, code: "SWITCHED OVER — 5 MINUTES OF DOWNTIME", t: `Wraparound risk frozen at ${Math.round(risk)}%. The window was gated on the catch-up script draining the double-write backlog — Notion's actual outcome, and users noticed the speedup unprompted. The post's hindsight: one more week optimizing catch-up to under 30 seconds might have made this a zero-downtime hot swap at the load balancer.` };
-    if (finale === "optimized") return { c: GREEN, code: "ZERO DOWNTIME — AND A WEEK CLOSER TO THE EDGE", t: `Catch-up under 30 seconds allowed a hot swap: no maintenance window at all. Risk climbed to ${Math.round(risk)}% while you spent the week — the tradeoff in one number. Downtime windows are engineering variables with a price, not fixed ceremonies; the moment to cost them is before the banner goes up.` };
-    if (stage === 0) return { c: risk > 70 ? RED : AMBER, code: "VACUUM IS STALLING — THE CLOCK IS THE CRUX", t: "Dead tuples aren't being reclaimed, and behind a stalled vacuum waits transaction-ID wraparound. Query performance and upkeep degrade well before a table hits its hardware-bound maximum — the ceiling is soft. Resize the instance if you like; the meter will tell you what it buys." };
-    if (stage === 1) return { c: dw === "audit" ? GREEN : dw ? RED : AMBER, code: dw === "audit" ? "AUDIT LOG + CATCH-UP — PROCEED" : dw === "direct" ? "TOO FLAKY FOR THE CRITICAL PATH" : dw === "logical" ? "LOGICAL REPLICATION CANNOT KEEP UP" : "CHOOSE A DOUBLE-WRITE STRATEGY", t: dw === "audit" ? "Every write to a migrating table is journaled; a catch-up script replays the journal onto the shards, backfilling the missing workspace-ID partition key on the fly — the strained monolith couldn't afford a column backfill. A reverse audit log stands ready for the road back." : dw === "direct" ? "Either write failing breeds inconsistency between databases. Seemingly straightforward, and disqualified for exactly that reason." : dw === "logical" ? "The built-in choice — and it struggled to keep up with the block table's write volume during the initial snapshot step. Waiting this long ruled out the standard tool; this is what 'shard earlier' costs when ignored." : "Direct dual-write, logical replication, or an audit log. Two of these fail for sourced reasons." };
-    if (stage === 2) return { c: AMBER, code: "BACKFILL — 96 CPUs, THREE DAYS", t: `Historical data flows to the shards on an m5.24xlarge. The rule that makes it safe: compare record versions before writing, so newer updates are never clobbered — catch-up and backfill can then run in any order and converge. Version compare is currently ${compare ? "ON" : "OFF — try it and see what verification thinks"}.` };
-    if (stage === 3) return verifyState === "pass" ? { c: GREEN, code: "VERIFIED — SAMPLED RANGES + DARK READS", t: "Sampled UUID ranges match; dark reads compared both databases on live traffic (at an API-latency price) and logged no discrepancies. Migration and verification were written by different people — correlated errors, not missing checks, are what let bad migrations pass their own tests. Switchover unlocked." }
-      : verifyState === "fail" ? { c: RED, code: "MISMATCHES FOUND — THE COMPARE RULE MATTERED", t: "The backfill overwrote newer records with stale history; independent verification caught it. Re-run the backfill with version compare on." }
-      : verifyState === "falsepass" ? { c: AMBER, code: "VERIFICATION PASSES — SHOULD IT HAVE?", t: "Same engineer, same blind spot: the check inherits the migration's own bug. Everything looks green. The switchover will tell you the truth." }
+    if (finale === "wraparound") return { c: RED, code: "TXID WRAPAROUND - POSTGRES STOPS ALL WRITES", t: "The safety mechanism fired: to avoid clobbering existing data, the database no longer accepts writes. For a write-heavy product like Notion, this is the existential outcome the whole migration raced against. Reset and move faster." };
+    if (finale === "corrupted") return { c: RED, code: "SWITCHOVER SHIPS THE CORRUPTION", t: "The backfill clobbered newer records (no version compare) and verification passed anyway - the same engineer wrote the migration and the check, so the check shared its author's blind spot. This is exactly why Notion had different people implement migration and verification. Reset the backfill." };
+    if (finale === "shipnow") return { c: GREEN, code: "SWITCHED OVER - 5 MINUTES OF DOWNTIME", t: `Wraparound risk frozen at ${Math.round(risk)}%. The window was gated on the catch-up script draining the double-write backlog - Notion's actual outcome, and users noticed the speedup unprompted. The post's hindsight: one more week optimizing catch-up to under 30 seconds might have made this a zero-downtime hot swap at the load balancer.` };
+    if (finale === "optimized") return { c: GREEN, code: "ZERO DOWNTIME - AND A WEEK CLOSER TO THE EDGE", t: `Catch-up under 30 seconds allowed a hot swap: no maintenance window at all. Risk climbed to ${Math.round(risk)}% while you spent the week - the tradeoff in one number. Downtime windows are engineering variables with a price, not fixed ceremonies; the moment to cost them is before the banner goes up.` };
+    if (stage === 0) return { c: risk > 70 ? RED : AMBER, code: "VACUUM IS STALLING - THE CLOCK IS THE CRUX", t: "Dead tuples aren't being reclaimed, and behind a stalled vacuum waits transaction-ID wraparound. Query performance and upkeep degrade well before a table hits its hardware-bound maximum - the ceiling is soft. Resize the instance if you like; the meter will tell you what it buys." };
+    if (stage === 1) return { c: dw === "audit" ? GREEN : dw ? RED : AMBER, code: dw === "audit" ? "AUDIT LOG + CATCH-UP - PROCEED" : dw === "direct" ? "TOO FLAKY FOR THE CRITICAL PATH" : dw === "logical" ? "LOGICAL REPLICATION CANNOT KEEP UP" : "CHOOSE A DOUBLE-WRITE STRATEGY", t: dw === "audit" ? "Every write to a migrating table is journaled; a catch-up script replays the journal onto the shards, backfilling the missing workspace-ID partition key on the fly - the strained monolith couldn't afford a column backfill. A reverse audit log stands ready for the road back." : dw === "direct" ? "Either write failing breeds inconsistency between databases. Seemingly straightforward, and disqualified for exactly that reason." : dw === "logical" ? "The built-in choice - and it struggled to keep up with the block table's write volume during the initial snapshot step. Waiting this long ruled out the standard tool; this is what 'shard earlier' costs when ignored." : "Direct dual-write, logical replication, or an audit log. Two of these fail for sourced reasons." };
+    if (stage === 2) return { c: AMBER, code: "BACKFILL - 96 CPUs, THREE DAYS", t: `Historical data flows to the shards on an m5.24xlarge. The rule that makes it safe: compare record versions before writing, so newer updates are never clobbered - catch-up and backfill can then run in any order and converge. Version compare is currently ${compare ? "ON" : "OFF - try it and see what verification thinks"}.` };
+    if (stage === 3) return verifyState === "pass" ? { c: GREEN, code: "VERIFIED - SAMPLED RANGES + DARK READS", t: "Sampled UUID ranges match; dark reads compared both databases on live traffic (at an API-latency price) and logged no discrepancies. Migration and verification were written by different people - correlated errors, not missing checks, are what let bad migrations pass their own tests. Switchover unlocked." }
+      : verifyState === "fail" ? { c: RED, code: "MISMATCHES FOUND - THE COMPARE RULE MATTERED", t: "The backfill overwrote newer records with stale history; independent verification caught it. Re-run the backfill with version compare on." }
+      : verifyState === "falsepass" ? { c: AMBER, code: "VERIFICATION PASSES - SHOULD IT HAVE?", t: "Same engineer, same blind spot: the check inherits the migration's own bug. Everything looks green. The switchover will tell you the truth." }
       : { c: AMBER, code: "VERIFY BEFORE YOU TRUST", t: "Run sampled verification and dark reads. And note who wrote them." };
-    return { c: AMBER, code: "THE SWITCHOVER GATE", t: "Downtime is gated on the catch-up script draining. Ship now at five minutes, or spend a week for under 30 seconds — while the risk meter keeps running." };
+    return { c: AMBER, code: "THE SWITCHOVER GATE", t: "Downtime is gated on the catch-up script draining. Ship now at five minutes, or spend a week for under 30 seconds - while the risk meter keeps running." };
   })();
 
   const mono = "'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace";
@@ -78,15 +78,19 @@ export default function BeforeTheWraparound() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.45 : 1, border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffd2b8" : "#8b90a0", background: on ? "rgba(222,138,90,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.45 : 1, border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffd2b8" : "#9aa0b0", background: on ? "rgba(222,138,90,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    // FIX (2026-07-31 review): the double-write strategy choices and the 480/512 selector are
+    // selection controls - the chosen one carries the accent permanently and shows state by fill,
+    // never brightness, so an unchosen option stays findable instead of matching the background.
+    tog: (on) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${ACCENT}`, color: on ? "#ffd2b8" : ACCENT, background: on ? "rgba(222,138,90,0.16)" : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11 }),
     chip: (i) => ({ padding: "5px 9px", borderRadius: 6, fontSize: 10, border: `1px solid ${i === stage ? ACCENT : i < stage ? "#5a4432" : "#2a2a3a"}`, color: i === stage ? ACCENT : i < stage ? "#8b90a0" : "#4a4f5e" }),
   };
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>NOTION · SHARDING POSTGRES — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>NOTION · SHARDING POSTGRES - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>Before the wraparound</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Migrate the monolith while the TXID clock runs. Every fork in this machine is a decision Notion actually faced — including the ones that fail.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Migrate the monolith while the transaction-ID (TXID) wraparound clock runs. Every fork in this machine is a decision Notion actually faced - including the ones that fail.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", marginTop: 12 }}>
@@ -98,7 +102,7 @@ export default function BeforeTheWraparound() {
 
       <div style={{ ...S.panel, marginTop: 10, borderColor: risk > 80 && !frozen ? RED : "#2a2a3a" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, marginBottom: 4 }}>
-          <span style={{ color: frozen ? GREEN : risk > 80 ? RED : "#8b90a0", letterSpacing: 1.2 }}>TXID WRAPAROUND RISK {frozen ? "— FROZEN (sharded fleet vacuums keep up)" : "— climbing while the monolith carries the writes"}</span>
+          <span style={{ color: frozen ? GREEN : risk > 80 ? RED : "#8b90a0", letterSpacing: 1.2 }}>TXID WRAPAROUND RISK {frozen ? " - FROZEN (sharded fleet vacuums keep up)" : " - climbing while the monolith carries the writes"}</span>
           <span style={{ color: frozen ? GREEN : risk > 80 ? RED : AMBER, fontWeight: 700 }}>{Math.round(risk)}%</span>
         </div>
         <div style={{ height: 10, background: "#1a1b24", borderRadius: 5, overflow: "hidden" }}>
@@ -109,15 +113,15 @@ export default function BeforeTheWraparound() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           {stage === 0 && (<>
-            <div style={S.label}>THE MONOLITH — 5 YEARS, 4 ORDERS OF MAGNITUDE</div>
-            <button style={S.btn(false, false)} onClick={() => setRisk((r) => Math.min(100, r + 4))}>RESIZE INSTANCE (Cookie Clicker)<div style={{ color: "#6b7080", fontSize: 10 }}>bigger box, same stalling vacuum — the ceiling is soft</div></button>
+            <div style={S.label}>THE MONOLITH - 5 YEARS, 4 ORDERS OF MAGNITUDE</div>
+            <button style={S.btn(false, false)} onClick={() => setRisk((r) => Math.min(100, r + 4))}>RESIZE INSTANCE (Cookie Clicker)<div style={{ color: "#6b7080", fontSize: 10 }}>bigger box, same stalling vacuum - the ceiling is soft</div></button>
             <button style={S.btn(true, false)} onClick={() => setStage(1)}>BEGIN THE MIGRATION</button>
           </>)}
           {stage === 1 && (<>
             <div style={S.label}>PICK THE DOUBLE-WRITE STRATEGY</div>
-            <button style={S.btn(dw === "direct", false)} onClick={() => setDw("direct")}>WRITE DIRECTLY TO BOTH</button>
-            <button style={S.btn(dw === "logical", false)} onClick={() => setDw("logical")}>POSTGRES LOGICAL REPLICATION</button>
-            <button style={S.btn(dw === "audit", false)} onClick={() => setDw("audit")}>AUDIT LOG + CATCH-UP SCRIPT</button>
+            <button style={S.tog(dw === "direct")} onClick={() => setDw("direct")}>WRITE DIRECTLY TO BOTH</button>
+            <button style={S.tog(dw === "logical")} onClick={() => setDw("logical")}>POSTGRES LOGICAL REPLICATION</button>
+            <button style={S.tog(dw === "audit")} onClick={() => setDw("audit")}>AUDIT LOG + CATCH-UP SCRIPT</button>
             <button style={S.btn(false, dw !== "audit")} disabled={dw !== "audit"} onClick={() => setStage(2)}>PROCEED → BACKFILL</button>
           </>)}
           {stage === 2 && (<>
@@ -133,13 +137,13 @@ export default function BeforeTheWraparound() {
             <button style={S.btn(false, !(verifyState === "pass" || verifyState === "falsepass"))} disabled={!(verifyState === "pass" || verifyState === "falsepass")} onClick={() => setStage(4)}>PROCEED → SWITCHOVER</button>
           </>)}
           {stage === 4 && !finale && (<>
-            <div style={S.label}>THE SWITCHOVER — CATCH-UP LAG DECIDES</div>
-            <button style={S.btn(false, false)} onClick={() => ship(false)}>SHIP NOW — CATCH-UP TAKES 5 MINUTES</button>
-            <button style={S.btn(false, false)} onClick={() => ship(true)}>SPEND A WEEK OPTIMIZING — UNDER 30s<div style={{ color: "#6b7080", fontSize: 10 }}>hot swap at the load balancer; the risk meter keeps running</div></button>
+            <div style={S.label}>THE SWITCHOVER - CATCH-UP LAG DECIDES</div>
+            <button style={S.btn(false, false)} onClick={() => ship(false)}>SHIP NOW - CATCH-UP TAKES 5 MINUTES</button>
+            <button style={S.btn(false, false)} onClick={() => ship(true)}>SPEND A WEEK OPTIMIZING - UNDER 30s<div style={{ color: "#6b7080", fontSize: 10 }}>hot swap at the load balancer; the risk meter keeps running</div></button>
           </>)}
-          <div style={{ ...S.label, marginTop: 16 }}>CAPACITY PANEL — WHY 480?</div>
-          <button style={S.btn(shards === 480, false)} onClick={() => { setShards(480); setHosts(32); setGrowMsg(null); }}>480 LOGICAL SHARDS</button>
-          <button style={S.btn(shards === 512, false)} onClick={() => { setShards(512); setHosts(32); setGrowMsg(null); }}>512 (a power of 2)</button>
+          <div style={{ ...S.label, marginTop: 16 }}>CAPACITY PANEL - WHY 480?</div>
+          <button style={S.tog(shards === 480)} onClick={() => { setShards(480); setHosts(32); setGrowMsg(null); }}>480 LOGICAL SHARDS</button>
+          <button style={S.tog(shards === 512)} onClick={() => { setShards(512); setHosts(32); setGrowMsg(null); }}>512 (a power of 2)</button>
           <button style={S.btn(false, false)} onClick={grow}>GROW FLEET: {hosts} → {hosts === 32 ? 40 : 48} HOSTS</button>
           {growMsg && <div style={{ fontSize: 10, marginTop: 6, color: growMsg.startsWith("UNEVEN") ? RED : GREEN, lineHeight: 1.5 }}>{growMsg}</div>}
         </div>
@@ -151,13 +155,13 @@ export default function BeforeTheWraparound() {
           </div>
           <div style={{ ...S.panel, marginTop: 12, fontSize: 10.5, color: "#8b90a0", lineHeight: 1.8 }}>
             <div style={S.label}>THE SCHEME (sourced)</div>
-            {shards} logical shards (Postgres schemas) · {hosts} physical databases · {Math.round(shards / hosts)} shards per host · partition key: workspace_id · everything transitively reachable from block sharded together, so rows that commit together live together · routing: application code → database → schema, one source of truth
+            {shards} logical shards (Postgres schemas) · {hosts} physical databases · {Math.round(shards / hosts)} shards per host · partition key: workspace_id · every table linked to block sharded together, so rows that commit together live together · routing: application code → database → schema, one source of truth
           </div>
         </div>
       </div>
 
       <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
-        The risk meter and its pacing are illustrative pressure — the threat is sourced: a consistently stalling VACUUM with transaction-ID wraparound behind it, the mechanism where Postgres stops processing writes. Everything else is the post's: the soft ceiling ("Cookie Clicker with the Resize Instance button"); three double-write options with two sourced disqualifications (direct writes too flaky; logical replication unable to keep up with block volume, the price of sharding late); the audit log with on-the-fly partition-key backfill and a tested reverse log; version-compared backfill on 96 CPUs for ~3 days; sampled verification, dark reads, and migration-vs-verification by different people; the five-minute switchover with the team's own hindsight that a week of catch-up optimization could have made it zero; and 480 shards across 32 databases, chosen for 480's many factors.
+        The risk meter and its pacing are illustrative pressure - the threat is sourced: a consistently stalling VACUUM with transaction-ID wraparound behind it, the mechanism where Postgres stops processing writes. Everything else is the post's: the soft ceiling ("Cookie Clicker with the Resize Instance button"); three double-write options with two sourced disqualifications (direct writes too flaky; logical replication unable to keep up with block volume, the price of sharding late); the audit log with on-the-fly partition-key backfill and a tested reverse log; version-compared backfill on 96 CPUs for ~3 days; sampled verification, dark reads, and migration-vs-verification by different people; the five-minute switchover with the team's own hindsight that a week of catch-up optimization could have made it zero; and 480 shards across 32 databases, chosen for 480's many factors.
         {" "}<a href="https://behindscale.com/articles/notion-sharding-postgres" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
     </div>
@@ -171,12 +175,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Notion's Postgres monolith carried five years and four orders of magnitude of growth before the block table's write volume began defeating the instance beneath it: VACUUM stalled, and behind it waited transaction-ID wraparound — Postgres refusing all writes. The ceiling was soft; bigger instances could not buy the way out.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Application-level sharding, chosen over Citus and Vitess for control: 480 logical shards (picked for its many factors) across 32 databases, partitioned by workspace ID with everything transitively related to block colocated — migrated by double-write, backfill, verification, and a five-minute switchover.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Race the wraparound meter through the four migration phases. Pick the double-write strategy (two fail for sourced reasons), turn off version compare and see what verification catches — then let the same engineer write both, and see what it doesn't. Then try growing a 512-shard fleet.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>In Notion, every piece of content (a paragraph, image, to-do) is a "block", and all of them are rows in one giant Postgres table. That block table carried five years and four orders of magnitude of growth before its write volume began defeating the single database beneath it: VACUUM stalled, and behind it waited transaction-ID wraparound - Postgres refusing all writes. The ceiling was soft; a bigger instance could not buy the way out.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Application-level sharding, chosen over Citus and Vitess for control: 480 logical shards (picked for its many factors) across 32 databases, partitioned by workspace ID with every table linked to block kept on the same host - migrated by double-write, backfill, verification, and a five-minute switchover.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Race the wraparound meter through the four migration phases. Pick the double-write strategy (two fail for sourced reasons), turn off version compare and see what verification catches - then let the same engineer write both, and see what it doesn't. Then try growing a 512-shard fleet.</div>
     </div>
   );
 }
