@@ -17,13 +17,13 @@ function sampleLatency(rng, p50, sigma) {
   return p50 * Math.exp(sigma * z - (sigma * sigma) / 2);
 }
 
-// ---------- constants (illustrative — labeled on screen) ----------
+// ---------- constants (illustrative - labeled on screen) ----------
 const N_WORKERS = 12;
 const HEALTHY_P50 = 0.3;        // s
 const NOMINAL_CAP = N_WORKERS / HEALTHY_P50; // 40 rps
-const CLIENT_TIMEOUT = 10;      // s — buyer gives up
-const TIMEOUT_DEFAULT = 60;     // s — Ruby Net::HTTP defaults
-const TIMEOUT_TUNED = 5;        // s — the post's starting point (read/write)
+const CLIENT_TIMEOUT = 10;      // s - buyer gives up
+const TIMEOUT_DEFAULT = 60;     // s - Ruby Net::HTTP defaults
+const TIMEOUT_TUNED = 5;        // s - the post's starting point (read/write)
 const THROTTLE_CAP = 16;        // admitted in-system when throttle is on
 const BREAK_FAILS = 5, BREAK_WINDOW = 10, BREAK_COOLDOWN = 8; // s
 const SIGMA = 0.6;
@@ -74,9 +74,9 @@ function freshSim(seed) {
 
 function verdictOf(m, breakerOpen, roomLen) {
   if (m.total >= 5 && m.abandons / Math.max(m.total, 1) > 0.5)
-    return { code: "DOWN", color: "#EF4444", note: "buyers wait past their timeout, then leave — from the client's perspective, the service is down" };
+    return { code: "DOWN", color: "#EF4444", note: "buyers wait past their timeout, then leave - from the client's perspective, the service is down" };
   if (breakerOpen)
-    return { code: "FAILING FAST", color: "#F59E0B", note: "circuit open: instant errors instead of hung workers — the pool stays free and recovery is immediate" };
+    return { code: "FAILING FAST", color: "#F59E0B", note: "circuit open: instant errors instead of hung workers - the pool stays free and recovery is immediate" };
   if (m.total >= 5 && (m.errRate > 0.25 || m.p95 > 5))
     return { code: "DEGRADED", color: "#F59E0B", note: "errors or slow checkouts above tolerance, but the system is still answering" };
   if (roomLen > 0)
@@ -105,7 +105,7 @@ export default function SaturationKnee() {
       const s = simRef.current;
       const { scenario, tuned, breakerOn, throttleOn, manualPct } = cfgRef.current;
       const sc = SCENARIOS[scenario];
-      const DT = 0.1, SUB = 4; // 4 substeps of 0.1s per 80ms tick (5× real time)
+      const DT = 0.1, SUB = 2; // 2 substeps of 0.1s per 100ms tick (2× real time - slow enough to watch each defense take effect)
       const pTimeout = tuned ? TIMEOUT_TUNED : TIMEOUT_DEFAULT;
 
       for (let step = 0; step < SUB; step++) {
@@ -214,7 +214,7 @@ export default function SaturationKnee() {
         if (s2.knee.length > 90) s2.knee.shift();
       }
       force((x) => x + 1);
-    }, 80);
+    }, 100);
     return () => clearInterval(id);
   }, [running]);
 
@@ -238,7 +238,11 @@ export default function SaturationKnee() {
     row: { display: "flex", flexWrap: "wrap", gap: 12 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    toggle: (on) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${on ? "#84CC16" : "#2a2a3a"}`, color: on ? "#D3F58C" : "#8b90a0", background: on ? "rgba(132,204,22,0.08)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    toggle: (on) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${on ? "#84CC16" : "#4a4f60"}`, color: on ? "#D3F58C" : "#9aa0b0", background: on ? "rgba(132,204,22,0.08)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    // FIX (2026-08-05 review): the three defense toggles are what the whole sim pivots on,
+    // so each carries a permanent signal-color border and shows state by fill, never brightness,
+    // so an off toggle stays findable against the dark background. col = the toggle's color.
+    tog: (on, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${col}`, color: col, background: on ? `${col}29` : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11 }),
     big: { color: "#EDEFF3", fontSize: 18, fontWeight: 700 },
     verdict: { padding: "10px 12px", borderRadius: 8, border: `1px solid ${v.color}`, background: `${v.color}14`, marginBottom: 12 },
     stat: { minWidth: 106, flex: 1 },
@@ -255,27 +259,27 @@ export default function SaturationKnee() {
 
   return (
     <div style={S.root}>
-      <div style={S.eyebrow}>SHOPIFY · RESILIENT PAYMENTS — INTERACTIVE</div>
+      <div style={S.eyebrow}>SHOPIFY · RESILIENT PAYMENTS - INTERACTIVE</div>
       <div style={S.h1}>The saturation knee</div>
-      <p style={S.sub}>capacity = throughput × latency — {N_WORKERS} workers ÷ {HEALTHY_P50}s p50 ≈ {NOMINAL_CAP.toFixed(0)} rps nominal. Buyers give up after {CLIENT_TIMEOUT}s.</p>
+      <p style={S.sub}>{N_WORKERS} workers each handle one payment at a time. A healthy call takes about {HEALTHY_P50}s, so the pool clears roughly {NOMINAL_CAP.toFixed(0)} payments per second before it starts falling behind. A buyer who waits more than {CLIENT_TIMEOUT}s gives up and leaves.</p>
 
       {ctxOpen ? (
         <div style={{ ...S.panel, marginTop: 12, borderColor: "#374b16" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-            <div style={S.label}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+            <div style={S.label}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
             <button style={{ background: "none", border: "none", color: "#6b7080", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: 0 }} onClick={() => setCtxOpen(false)}>HIDE ✕</button>
           </div>
           <div style={{ marginTop: 8 }}>
             <span style={{ color: "#84CC16", fontSize: 10, letterSpacing: 1.2 }}>THE PROBLEM · </span>
-            At Shopify's volume, a once-in-a-million network failure during payment processing happens many times a day — and in payments the unit of damage is money. An unbounded wait takes checkout down for everyone.
+            At Shopify's volume, a once-in-a-million network failure during payment processing happens many times a day - and in payments the unit of damage is money. An unbounded wait takes checkout down for everyone.
           </div>
           <div style={{ marginTop: 6 }}>
             <span style={{ color: "#84CC16", fontSize: 10, letterSpacing: 1.2 }}>THE MOVE · </span>
-            Bound every wait: tuned timeouts instead of 60-second defaults, circuit breakers that fail fast while a partner is down, and a checkout throttle that queues buyers instead of collapsing. The defenses chain — retries these failures trigger are safe only because idempotency keys make them safe.
+            Bound every wait: tuned timeouts instead of 60-second defaults, circuit breakers that fail fast while a partner is down, and a checkout throttle that queues buyers instead of collapsing. The defenses chain - retries these failures trigger are safe only because idempotency keys make them safe.
           </div>
           <div style={{ marginTop: 6 }}>
             <span style={{ color: "#84CC16", fontSize: 10, letterSpacing: 1.2 }}>TRY · </span>
-            Pick a scenario, toggle defenses on and off, and watch the verdict — judged from the buyer's side of the checkout.
+            Pick a scenario, toggle defenses on and off, and watch the verdict - judged from the buyer's side of the checkout.
           </div>
         </div>
       ) : (
@@ -295,21 +299,21 @@ export default function SaturationKnee() {
         {/* controls */}
         <div style={{ ...S.panel, flex: "1 1 220px", minWidth: 220 }}>
           <div style={S.label}>DEFENSES</div>
-          <button style={S.toggle(tuned)} onClick={() => setTuned(!tuned)}>
-            TIMEOUTS — {tuned ? "5s TUNED" : "60s DEFAULT"}
+          <button style={S.tog(tuned, "#3B82F6")} onClick={() => setTuned(!tuned)}>
+            TIMEOUTS - {tuned ? "5s TUNED" : "60s DEFAULT"}
             <div style={{ color: "#6b7080", fontSize: 10 }}>{tuned ? "the post's read/write starting point" : "Ruby Net::HTTP ships 60s per phase"}</div>
           </button>
-          <button style={S.toggle(breakerOn)} onClick={() => setBreakerOn(!breakerOn)}>
-            CIRCUIT BREAKER — {breakerOn ? "ON" : "OFF"}
+          <button style={S.tog(breakerOn, "#eab308")} onClick={() => setBreakerOn(!breakerOn)}>
+            CIRCUIT BREAKER - {breakerOn ? "ON" : "OFF"}
             <div style={{ color: "#6b7080", fontSize: 10 }}>opens after {BREAK_FAILS} timeouts / {BREAK_WINDOW}s · probes after {BREAK_COOLDOWN}s cooldown</div>
           </button>
-          <button style={S.toggle(throttleOn)} onClick={() => setThrottleOn(!throttleOn)}>
-            CHECKOUT THROTTLE — {throttleOn ? "ON" : "OFF"}
+          <button style={S.tog(throttleOn, "#84CC16")} onClick={() => setThrottleOn(!throttleOn)}>
+            CHECKOUT THROTTLE - {throttleOn ? "ON" : "OFF"}
             <div style={{ color: "#6b7080", fontSize: 10 }}>admits {THROTTLE_CAP} in-system; the rest hold in a waiting queue</div>
           </button>
           {scenario === "manual" && (
             <div style={{ marginTop: 10 }}>
-              <div style={S.label}>ARRIVAL RATE — {manualPct}% OF NOMINAL ({rateNow.toFixed(0)} rps)</div>
+              <div style={S.label}>ARRIVAL RATE - {manualPct}% OF NOMINAL ({rateNow.toFixed(0)} rps)</div>
               <input type="range" min={10} max={120} value={manualPct} onChange={(e) => setManualPct(+e.target.value)} style={{ width: "100%", accentColor: "#84CC16" }} />
             </div>
           )}
@@ -339,7 +343,7 @@ export default function SaturationKnee() {
           </div>
 
           <div style={S.panel}>
-            <div style={S.label}>LAST 70s — QUEUE DEPTH (lime), +WAITING ROOM (dashed lime), P95 WAIT (gray, 0–{CLIENT_TIMEOUT}s)</div>
+            <div style={S.label}>LAST 70s - QUEUE DEPTH (lime), +WAITING ROOM (dashed lime), P95 WAIT (gray, 0–{CLIENT_TIMEOUT}s)</div>
             <svg viewBox={`0 0 ${W} ${HT}`} style={{ width: "100%", height: HT, display: "block", marginTop: 6 }}>
               <line x1={0} y1={HT - (5 / CLIENT_TIMEOUT) * HT} x2={W} y2={HT - (5 / CLIENT_TIMEOUT) * HT} stroke="#2a2a3a" strokeDasharray="3 5" />
               <polyline points={pLine} fill="none" stroke="#6b7080" strokeWidth="1.5" />
@@ -350,7 +354,7 @@ export default function SaturationKnee() {
 
           {scenario === "manual" && (
             <div style={{ ...S.panel, marginTop: 12 }}>
-              <div style={S.label}>YOUR RUNS — P95 WAIT vs UTILIZATION · the post: queues start growing around the 70–80% mark</div>
+              <div style={S.label}>YOUR RUNS - P95 WAIT vs UTILIZATION · the post: queues start growing around the 70–80% mark</div>
               <svg viewBox="0 0 320 120" style={{ width: "100%", maxWidth: 480, height: 120, display: "block", marginTop: 6 }}>
                 <rect x={0.7 * 320} y={0} width={0.1 * 320} height={104} fill="#84CC16" opacity="0.08" />
                 <line x1={0} y1={104} x2={320} y2={104} stroke="#2a2a3a" />
@@ -366,7 +370,7 @@ export default function SaturationKnee() {
       </div>
 
       <div style={S.foot}>
-        Worker count, latencies, and thresholds are illustrative. The sourced content is the mechanism: Little's law capacity math, queue growth starting around 70–80% saturation, 60-second client defaults vs a 5-second starting point, breakers converting hung waits into instant failures, and a checkout waiting queue bounding admission. Retries triggered by these failures are safe only because idempotency keys make them safe — see the article's Stripe cross-link.
+        Worker count, latencies, and thresholds are illustrative. The sourced content is the mechanism: Little's law capacity math, queue growth starting around 70–80% saturation, 60-second client defaults vs a 5-second starting point, breakers converting hung waits into instant failures, and a checkout waiting queue bounding admission. Retries triggered by these failures are safe only because idempotency keys make them safe - see the article's Stripe cross-link.
         {" "}
         <a href="https://behindscale.com/articles/shopify-resilient-payments" target="_blank" rel="noopener noreferrer" style={{ color: "#84CC16", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
