@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 
 // ---------------------------------------------------------------------------
 // behindscale artifact · stripe-idempotency (rebuild, sourced exclusively from
-// https://stripe.com/blog/idempotency — failure taxonomy, key resolution,
+// https://stripe.com/blog/idempotency - failure taxonomy, key resolution,
 // backoff + jitter. Mid-operation recovery is shown as the ACID-rollback case
 // the post describes, with its implementation-dependence stated on screen.)
 // ---------------------------------------------------------------------------
@@ -33,17 +33,17 @@ const SCENARIOS = [
       events: [
         { who: "client", text: "POST /charges  ·  $20", tone: "info", keys: null },
         { who: "net", text: "✂ connection fails before reaching the server", tone: "bad", keys: null },
-        { who: "client", text: "failure is definitive — nothing reached the server, retry is safe", tone: "info", keys: null },
+        { who: "client", text: "failure is definitive - nothing reached the server, retry is safe", tone: "info", keys: null },
         { who: "client", text: "retry: POST /charges  ·  $20", tone: "info", keys: null },
         { who: "server", text: "processes the charge → ch_1", tone: "ok", keys: null },
       ],
-      verdict: { good: true, text: "Charged once — but only because this failure mode is unambiguous. The other two aren't." },
+      verdict: { good: true, text: "Charged once - but only because this failure mode is unambiguous. The other two aren't." },
     },
     withKey: {
       events: [
-        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: "— empty —" },
-        { who: "net", text: "✂ connection fails before reaching the server", tone: "bad", keys: "— empty —" },
-        { who: "client", text: "retry with the same key", tone: "info", keys: "— empty —" },
+        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: " - empty - " },
+        { who: "net", text: "✂ connection fails before reaching the server", tone: "bad", keys: " - empty - " },
+        { who: "client", text: "retry with the same key", tone: "info", keys: " - empty - " },
         { who: "server", text: "first time seeing key agj6…X → process normally", tone: "ok", keys: "agj6…X · seen, in flight" },
         { who: "server", text: "charge → ch_1  ·  result cached under the key", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
       ],
@@ -58,7 +58,7 @@ const SCENARIOS = [
       events: [
         { who: "client", text: "POST /charges  ·  $20", tone: "info", keys: null },
         { who: "server", text: "begins fulfilling the operation…", tone: "info", keys: null },
-        { who: "server", text: "💥 fails midway — the work is in limbo", tone: "bad", keys: null },
+        { who: "server", text: "💥 fails midway - the work is in limbo", tone: "bad", keys: null },
         { who: "client", text: "timeout. Did the charge happen? The client cannot tell.", tone: "warn", keys: null },
         { who: "client", text: "retry: POST /charges  ·  $20", tone: "warn", keys: null },
         { who: "server", text: "treats it as a brand-new charge → ch_2 (?)", tone: "bad", keys: null },
@@ -67,38 +67,38 @@ const SCENARIOS = [
     },
     withKey: {
       events: [
-        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: "— empty —" },
+        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: " - empty - " },
         { who: "server", text: "records the key, begins fulfilling the operation…", tone: "info", keys: "agj6…X · seen, in flight" },
-        { who: "server", text: "💥 fails midway — interrupted attempt rolled back by the ACID database", tone: "bad", keys: "agj6…X · seen, no result" },
+        { who: "server", text: "💥 fails midway - interrupted attempt rolled back by the ACID database", tone: "bad", keys: "agj6…X · seen, no result" },
         { who: "client", text: "retry with the same key", tone: "info", keys: "agj6…X · seen, no result" },
         { who: "server", text: "key seen, no stored result → previous attempt rolled back, safe to retry wholesale", tone: "ok", keys: "agj6…X · seen, in flight" },
         { who: "server", text: "charge → ch_1  ·  result cached under the key", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
       ],
-      verdict: { good: true, text: "Charged once. The key told the server this was a retry of in-limbo work — and the rollback made wholesale re-execution safe. (The post is explicit: behavior in this case is heavily implementation-dependent.)" },
+      verdict: { good: true, text: "Charged once. The key told the server this was a retry of in-limbo work - and the rollback made wholesale re-execution safe. (The post is explicit: behavior in this case is heavily implementation-dependent.)" },
     },
   },
   {
     id: "response",
     title: "Response lost",
-    sub: "the charge succeeded — the news didn't arrive",
+    sub: "the charge succeeded - the news didn't arrive",
     without: {
       events: [
         { who: "client", text: "POST /charges  ·  $20", tone: "info", keys: null },
         { who: "server", text: "charge succeeds → ch_1", tone: "ok", keys: null },
         { who: "net", text: "✂ connection breaks before the server can tell the client", tone: "bad", keys: null },
-        { who: "client", text: "saw only an error — retries", tone: "warn", keys: null },
+        { who: "client", text: "saw only an error - retries", tone: "warn", keys: null },
         { who: "server", text: "brand-new request, brand-new charge → ch_2", tone: "bad", keys: null },
       ],
       verdict: { good: false, text: "Double charge. The operation succeeded; only the news of it was lost." },
     },
     withKey: {
       events: [
-        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: "— empty —" },
+        { who: "client", text: "POST /charges  ·  Idempotency-Key: agj6…X", tone: "info", keys: " - empty - " },
         { who: "server", text: "charge succeeds → ch_1  ·  result cached under the key", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
         { who: "net", text: "✂ connection breaks before the server can tell the client", tone: "bad", keys: "agj6…X → ch_1 ✓ cached" },
         { who: "client", text: "retry with the same key", tone: "info", keys: "agj6…X → ch_1 ✓ cached" },
         { who: "server", text: "key has a cached result → replay it, execute nothing", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
-        { who: "client", text: "receives ch_1 — the same outcome as the original attempt", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
+        { who: "client", text: "receives ch_1 - the same outcome as the original attempt", tone: "ok", keys: "agj6…X → ch_1 ✓ cached" },
       ],
       verdict: { good: true, text: "Charged once. For the server, the retry was a read." },
     },
@@ -129,9 +129,12 @@ function Pill({ active, onClick, children, color = ACCENT, title }) {
         padding: "6px 10px",
         borderRadius: 6,
         cursor: "pointer",
-        border: `1px solid ${active ? color : BORDER}`,
+        // FIX (2026-08-05 review): inactive pills used the panel border color (#2a2a3a),
+        // which vanishes against the dark background. Lighten it so an off toggle stays findable;
+        // active state still reads via the signal-color border + fill.
+        border: `1px solid ${active ? color : "#4a4f60"}`,
         background: active ? `${color}22` : "transparent",
-        color: active ? color : MUTED,
+        color: active ? color : "#9aa0b0",
         transition: "all 120ms",
       }}
     >
@@ -157,7 +160,7 @@ function RetryAnatomy() {
   const allSix = SCENARIOS.every((sc) => (sc.id + ":n") in outcomes && (sc.id + ":k") in outcomes);
   const visible = run.events.slice(0, Math.min(step + 1, run.events.length));
   const currentKeys = keyed
-    ? (visible.length ? visible[visible.length - 1].keys : "— empty —")
+    ? (visible.length ? visible[visible.length - 1].keys : " - empty - ")
     : null;
 
   const pick = (i) => { setScenarioIdx(i); setStep(0); };
@@ -177,12 +180,12 @@ function RetryAnatomy() {
       </div>
 
       <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>
-        {scenario.title} — {scenario.sub}. Step through the attempt, then flip the key toggle and run the same crash again.
+        {scenario.title} - {scenario.sub}. Step through the attempt, then flip the key toggle and run the same crash again.
       </div>
 
       {/* outcome scoreboard: the 3x2 thesis, filled in by the reader's own runs */}
       <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>
-        <div style={{ fontSize: 9, letterSpacing: 2, color: MUTED, marginBottom: 8 }}>YOUR RUNS — THE MONEY'S PERSPECTIVE</div>
+        <div style={{ fontSize: 9, letterSpacing: 2, color: MUTED, marginBottom: 8 }}>YOUR RUNS - THE MONEY'S PERSPECTIVE</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {SCENARIOS.map((sc) => (
             <div key={sc.id} style={{ flex: "1 1 150px", minWidth: 150 }}>
@@ -194,7 +197,7 @@ function RetryAnatomy() {
                 return (
                   <div key={m} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 11, color: has ? (outcomes[k] ? OK : BAD) : MUTED, opacity: has || isHere ? 1 : 0.55 }}>
                     <span style={{ minWidth: 14 }}>{has ? (outcomes[k] ? "✓" : "✗") : "·"}</span>
-                    <span>{lbl}{has ? (outcomes[k] ? " — charged once" : " — money at risk") : ""}</span>
+                    <span>{lbl}{has ? (outcomes[k] ? " - charged once" : " - money at risk") : ""}</span>
                   </div>
                 );
               })}
@@ -203,7 +206,7 @@ function RetryAnatomy() {
         </div>
         {allSix && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${BORDER}`, fontSize: 11, lineHeight: 1.6, color: TEXT }}>
-            All six run. Without a key, the only safe cell is the one where the failure was unambiguous — nothing reached the server. The other two force a guess with money on both sides of it. With a key, all three are the same cell: charged once.
+            All six run. Without a key, the only safe cell is the one where the failure was unambiguous - nothing reached the server. The other two force a guess with money on both sides of it. With a key, all three are the same cell: charged once.
           </div>
         )}
       </div>
@@ -271,12 +274,12 @@ function RetryAnatomy() {
               </div>
             ) : (
               <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
-                (not in use — the server has no way to recognize a retry)
+                (not in use - the server has no way to recognize a retry)
               </div>
             )}
           </div>
           <div style={{ fontSize: 10, color: MUTED, lineHeight: 1.7, marginTop: 10, padding: "0 2px" }}>
-            Per HTTP semantics (RFC 7231), PUT and DELETE are idempotent by definition — fully-specified
+            Per HTTP semantics (RFC 7231), PUT and DELETE are idempotent by definition - fully-specified
             resources can be retried freely with no key at all. The key machinery exists for the operations
             that must happen exactly once: Stripe applies it to every mutating POST endpoint via the
             <span style={{ color: TEXT }}> Idempotency-Key</span> header.
@@ -293,8 +296,10 @@ function ThunderingHerd() {
   const [seed, setSeed] = useState(7);
 
   const ATTEMPTS = 5; // waits ∝ 2^0 .. 2^4
-  const WINDOW = 36; // seconds
+  const BASE = 2;     // base retry interval in seconds; wait ∝ BASE·2^n
+  const WINDOW = 64;  // seconds (covers 5 backoff steps: BASE·(2^0+..+2^4)=62s)
   const BUCKET = 0.75;
+  const CAPACITY = 10; // retries per bucket the recovering server can absorb
 
   const { buckets, peak, capacity } = useMemo(() => {
     const rand = mulberry32(seed * 1000 + n * 7 + (jitter ? 1 : 0));
@@ -303,14 +308,16 @@ function ThunderingHerd() {
     for (let c = 0; c < n; c++) {
       let t = 0;
       for (let a = 0; a < ATTEMPTS; a++) {
-        const base = Math.pow(2, a);
-        const wait = jitter ? rand() * base : base; // full jitter: rand(0, 2^n)
+        const base = BASE * Math.pow(2, a);
+        // equal jitter: wait a fixed half of the interval, randomize the other half,
+        // so each retry wave spreads around its center instead of piling up at zero.
+        const wait = jitter ? base / 2 + rand() * (base / 2) : base;
         t += wait;
         const b = Math.floor(t / BUCKET);
         if (b < nb) counts[b]++;
       }
     }
-    return { buckets: counts, peak: Math.max(...counts), capacity: Math.max(3, Math.round(n / 7)) };
+    return { buckets: counts, peak: Math.max(...counts), capacity: CAPACITY };
   }, [n, jitter, seed]);
 
   const maxBar = Math.max(peak, capacity) || 1;
@@ -335,9 +342,9 @@ function ThunderingHerd() {
 
       <div style={{ fontSize: 11, color: MUTED, marginBottom: 12, lineHeight: 1.6 }}>
         A server incident fails all {n} clients at t=0. Every client retries with exponential backoff
-        (waits ∝ 2ⁿ). {jitter
-          ? "With jitter, each wait is randomized — the same retries spread into a curve the server can absorb while it recovers."
-          : "Without jitter, every client shares the same schedule — the retries arrive as synchronized waves that hammer the recovering server."}
+        (each wait roughly doubles: BASE·2ⁿ). {jitter
+          ? "With jitter, each wait is randomized around its center, so the retries spread into a low curve that mostly stays under what the recovering server can absorb."
+          : "Without jitter, every client shares the exact same schedule - the retries arrive as synchronized towers that hammer the recovering server far over its capacity."}
       </div>
 
       <div style={{ background: PANEL, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "16px 12px 8px" }}>
@@ -376,15 +383,15 @@ function ThunderingHerd() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 12, fontSize: 11 }}>
         <span style={{ color: peak > capacity ? BAD : OK }}>
-          peak: {peak} retries/bucket {peak > capacity ? `— ${Math.round(peak / capacity)}× over capacity` : "— within capacity"}
+          peak: {peak} retries/bucket {peak > capacity ? ` - ${Math.round(peak / capacity)}× over capacity` : " - within capacity"}
         </span>
         <span style={{ color: overload > 0 ? BAD : OK }}>
-          {overload > 0 ? `${overload} overloaded windows — each wave can re-fail its clients` : "no overloaded windows"}
+          {overload > 0 ? `${overload} overloaded windows - each wave can re-fail its clients` : "no overloaded windows"}
         </span>
       </div>
 
       <div style={{ fontSize: 10, color: MUTED, lineHeight: 1.7, marginTop: 10 }}>
-        Same clients, same backoff, same total retries — the only variable is randomness in the waits.
+        Same clients, same backoff, same total retries - the only variable is randomness in the waits.
         Stripe's Ruby client library ships the full combination by default: automatic retries with an
         idempotency key, increasing backoff, and jitter.
       </div>
@@ -402,12 +409,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Two of the three ways a network call can fail leave the client unable to tell whether the operation happened. For a payments API both guesses are catastrophic: retry a charge that actually succeeded and you double-charge the customer; abandon one that actually failed and you drop revenue. Two computers passing messages already qualify — there is no scale below which the ambiguity disappears.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Of the three ways a network call can fail, two leave the client unable to tell whether the operation actually happened. For a payments API, guessing wrong either way is catastrophic: assume the charge went through when it didn't and the customer paid for nothing; assume it failed when it actually succeeded and the retry charges them twice.</div>
       <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Make retries safe instead of rare: idempotent endpoint design where HTTP semantics allow it, client-supplied idempotency keys where a charge must happen exactly once, and exponential backoff with jitter so a recovering fleet of clients does not become the next outage.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Crash the same charge at all three points — with and without an Idempotency-Key — and step through what the server remembers. Then open the thundering-herd view and watch what jitter does to synchronized retries.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Crash the same charge at all three points - with and without an Idempotency-Key - and step through what the server remembers. Then open the thundering-herd view and watch what jitter does to synchronized retries.</div>
     </div>
   );
 }
@@ -430,7 +437,7 @@ export default function StripeIdempotency() {
           </h1>
           <p style={{ fontSize: 12, color: MUTED, marginTop: 6, lineHeight: 1.6, maxWidth: 640 }}>
             A network call fails three ways: before arrival, mid-operation, or after success with the
-            response lost. Crash a charge at each point — with and without an idempotency key.
+            response lost. Crash a charge at each point - with and without an idempotency key.
           </p>
         </div>
 
