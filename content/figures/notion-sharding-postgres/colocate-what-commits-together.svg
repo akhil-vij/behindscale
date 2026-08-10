@@ -1,0 +1,27 @@
+<svg viewBox="0 0 700 224" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Related rows kept on one shard so a delete and its updates commit together">
+ <defs><marker id="n_rd" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#E5484D"/></marker></defs>
+ <line x1="350" y1="14" x2="350" y2="210" stroke="#E7E4DE"/>
+ <!-- LEFT: split across shards (fails) -->
+ <text x="20" y="28" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#E5484D">IF SPLIT ACROSS SHARDS</text>
+ <rect x="24" y="42" width="140" height="56" rx="8" fill="#FFFFFF" stroke="#D6D2CA"/>
+ <text x="38" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#8A8A94">SHARD 1</text>
+ <rect x="38" y="66" width="72" height="22" rx="5" fill="#EEF3FE" stroke="#2563EB"/><text x="74" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB" text-anchor="middle">block</text>
+ <rect x="188" y="42" width="140" height="56" rx="8" fill="#FFFFFF" stroke="#D6D2CA"/>
+ <text x="202" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#8A8A94">SHARD 2</text>
+ <rect x="202" y="66" width="86" height="22" rx="5" fill="#F4F2EE" stroke="#B8B4AC"/><text x="245" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="middle">comment</text>
+ <line x1="112" y1="77" x2="186" y2="77" stroke="#E5484D" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#n_rd)"/>
+ <line x1="142" y1="70" x2="156" y2="84" stroke="#E5484D" stroke-width="2"/><line x1="156" y1="70" x2="142" y2="84" stroke="#E5484D" stroke-width="2"/>
+ <text x="149" y="112" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#E5484D" text-anchor="middle">a commit can&#x27;t cross shards</text>
+ <line x1="30" y1="150" x2="42" y2="162" stroke="#E5484D" stroke-width="2.25"/><line x1="42" y1="150" x2="30" y2="162" stroke="#E5484D" stroke-width="2.25"/>
+ <text x="52" y="160" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#52525B">delete the block, orphan the comment</text>
+ <!-- RIGHT: colocated (works) -->
+ <text x="366" y="28" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#2E7D46">NOTION: ALL ON ONE SHARD</text>
+ <rect x="370" y="42" width="308" height="56" rx="8" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+ <text x="384" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#8A8A94">ONE SHARD &#183; everything for a workspace</text>
+ <rect x="384" y="66" width="66" height="22" rx="5" fill="#EEF3FE" stroke="#2563EB"/><text x="417" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB" text-anchor="middle">block</text>
+ <rect x="458" y="66" width="86" height="22" rx="5" fill="#F4F2EE" stroke="#B8B4AC"/><text x="501" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="middle">comment</text>
+ <rect x="552" y="66" width="66" height="22" rx="5" fill="#F4F2EE" stroke="#B8B4AC"/><text x="585" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="middle">child</text>
+ <text x="524" y="112" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#2E7D46" text-anchor="middle">one commit, one host</text>
+ <path d="M372,150 l6,7 l12,-14" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+ <text x="398" y="160" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#52525B">delete and update commit together</text>
+</svg>
