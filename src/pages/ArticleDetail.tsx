@@ -109,12 +109,16 @@ export default function ArticleDetail() {
         )}
 
         <Section title="Problem">
-          <Prose>{article.problem}</Prose>
+          <Prose articleSlug={article.slug} figures={article.figures}>
+            {article.problem}
+          </Prose>
           <StatsRow stats={statsByPlacement('problem')} />
         </Section>
 
         <Section title="Solution">
-          <Prose>{article.solution}</Prose>
+          <Prose articleSlug={article.slug} figures={article.figures}>
+            {article.solution}
+          </Prose>
           <StatsRow stats={statsByPlacement('solution')} />
         </Section>
       </div>
