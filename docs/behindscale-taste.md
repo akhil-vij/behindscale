@@ -20,6 +20,15 @@ Tracked in CORRECTIONS but deliberately NOT folded in here pending an owner
 call: spaced hyphens instead of em-dashes (P12), and the artifact
 toggle-visibility law (P15/P16) — see the accompanying review note.
 
+**Figures added (2026-08-09).** A new static-diagram content type — the
+reading-shell counterpart to the interactive artifact — is codified in §6.5,
+with its bands in the structural-bands section. Authored SVG only, drawn in our
+own visual language (never a screenshot of the vendor's diagram), placed by
+inline `{{figure:<slug>}}` markers that survive readability rounds, and with
+in-figure text held to the same prose law as the body. The schema, validators,
+and rendering pipeline live in the figures design doc (2026-08-09); this
+document owns the editorial bar and the authoring judgment.
+
 **Version 5** — v4 plus the readability doctrine appended after the
 2026-07 two-pass audit of the then-23-live articles. v4 was updated
 through the round 27 authoring run; the v3 base covered rounds 12–18
@@ -900,6 +909,101 @@ contract.
   This bit us once ("If you\u2019re the candidate" shipping literally); don't
   repeat it.
 
+### 6.5 Figures — the static idiom (diagrams that earn their keep)
+
+A figure is a static, authored diagram in the reading shell. It is the
+counterpart to the artifact: where the artifact lets the reader *do* something,
+the figure shows a structure or relationship at a glance and never moves. §6's
+governing rule already draws the line — *a static diagram is not an artifact* —
+so the two never substitute for each other. If the reader needs to click,
+toggle, or simulate, it's an artifact; if a single still picture makes a
+spatial or structural idea land, it's a figure.
+
+> **A figure earns its place only when the picture carries something the prose
+> cannot: a magnitude seen in one glance, a structure, a sequence, or a mental
+> model. A diagram that merely restates a sentence — or a cover image added for
+> completeness — fails the bar and stays out. And a figure never re-draws what
+> the article's artifact already does live; that is the namesake trap in a new
+> costume.**
+
+The value test, made concrete, is two questions. Does the image show
+*magnitude* (relative sizes seen instantly — a bar of "∞ vs 60s vs 5s vs 1s"
+lands faster than any sentence), *structure* (parts and how they connect),
+*sequence* (an ordered flow), or a *mental model* (where a thing sits — inside
+versus outside)? And would the article's interactive artifact already convey it
+if the reader opened it? If the first answer is no, or the second is yes, don't
+draw it. Typical count is 0–2 per article; more is permitted but is itself a
+signal to re-check the bar.
+
+**The idiom is the light reading shell, not the dark artifact surface** (§6.0).
+A figure is text-to-be-read furniture: warm off-white surface, the site's blue
+accent, semantic red/green only where they mean failure/health, monospace
+reserved for labels. Do not reach for the dark monospace idiom — a dark diagram
+in the reading flow is the "terminal in a magazine" mistake §6.0 warns about,
+and it visually lies that a still picture is an interactive artifact.
+
+**Drawn, never screenshotted.** Figures are SVG, drawn in behindscale's own
+visual language. Never screenshot the vendor's diagram from the source post:
+that is source discipline (§2) inverted — lift without fidelity — and it drags
+a foreign visual language into the reading shell. If a diagram is worth having,
+someone draws it in our tokens. Raster is not permitted; there are no cover
+photos, dashboards, or product screenshots on the site.
+
+**Anatomy.** Each figure is a `<figure>` in the reading shell with four parts:
+an uppercase mono **eyebrow** (2–6 words — "WHERE HODOR RUNS"); the **SVG**
+itself (`role="img"` with an `aria-label`); and a plain-English **caption**
+below (12–40 words, the same source-faithful register as the crux — it says
+what the figure shows, it does not apologize for it). Because figures render as
+`<img>`-loaded SVG (the figures design doc explains why: it preserves the
+reading shell's zero-script-injection property), each SVG hardcodes its own
+palette and fonts rather than inheriting page CSS. Short mono labels falling
+back to the system monospace is acceptable.
+
+**The maintainability doctrine — the part that survives readability rounds.**
+Figures live in a body that gets rewritten repeatedly, so they are built to
+move with the prose, never to be re-pinned every pass:
+
+- **Placement is an inline marker, not a paragraph number.** A figure is
+  anchored by a `{{figure:<slug>}}` marker on its own line between paragraphs in
+  `problem` or `solution` — never in the browse-surface strings (summary, crux,
+  cruxSummary). The marker travels with its neighbors when a round splits,
+  merges, or reorders paragraphs; a positional index would silently mis-place
+  the moment paragraph count changes. Markers are stripped before any length is
+  measured, so they never inflate a structural band.
+- **The text inside an SVG is prose, held to prose law.** Labels baked into a
+  figure ("priority," "shedder," "drops lowest priority first") obey the same
+  rules as the body: the plain-language bar, the vocabulary the article settled
+  on (`priority` not `label`), spaced hyphens not em-dashes, the ~40-word
+  ceiling. A validator lints every `<text>` node, but the author owns it: when a
+  readability round changes the article's wording, it must change the figure's
+  wording to match, or the figure quietly drifts into contradicting the prose it
+  sits beside — the exact inconsistency the reader catches.
+- **A marker guarantees position, not correctness.** It keeps the figure in the
+  right spot; it cannot know the figure's *content* went stale. So any round
+  that edits a paragraph adjacent to a figure must re-verify that figure and say
+  so in its DECISIONS line. This is the one check no validator can make for us.
+
+**Authoring workflow.** Adding figures is its own deliberate step, and each
+figure earns a DECISIONS entry naming why it adds real value (not namesake) —
+the same discipline that governs pattern mints, and the direct defense against
+"why not add a picture while I'm here" drift. A readability round may edit a
+figure's eyebrow, caption, and in-SVG text, but adding or removing a figure is a
+figure-round decision. A Fable agent may draw and edit the SVGs, with the safety
+and vocabulary validators as the guardrail — owner-only authoring would strand
+figures on every wording change. Removal is first-class, not a ratchet: a later
+round may conclude a figure never earned its keep and pull it (drop the marker,
+drop the entry, delete the file).
+
+**The reference figures.** The two on `linkedin-hodor-overload-protection` are
+the first in the library and the calibration bar. "WHERE HODOR RUNS" — the
+service box with Hodor's detectors and shedder *inside* it — carries the one
+framing the prose fights hardest to establish and that no artifact shows.
+"THREE SIGNS OF OVERLOAD, ONE CONFIRMATION" — three detectors converging on a
+single latency gate — shows a structure the prose can only list. Note what was
+*not* drawn: no bar chart (Hodor has no natural magnitude comparison) and no
+priority-ladder or probe-timeline figure (the artifact already does those live).
+What each figure adds, and what it declines to duplicate, is the model to copy.
+
 ---
 
 ## 7. The teaser and the stats (small surfaces, real discipline)
@@ -1109,3 +1213,13 @@ codified band. Retracted. The review's crux-length and
 solution-length observations stand (r31–32 cruxes are the corpus
 maximum at ~2.5x median; r31's solution is the corpus maximum) but
 under this ruling they resolve as one-line declarations, not edits.
+
+**Figure bands (added 2026-08-09 — see §6.5).** For each figure:
+- **eyebrow:** 2–6 words, uppercase.
+- **caption:** 12–40 words.
+- **ariaLabel:** 4–20 words.
+
+In-figure `<text>` is prose and inherits the body's rules (plain language,
+settled vocabulary, spaced hyphens not em-dashes, the ~40-word ceiling). The
+declared-deviation valve applies here as everywhere: a figure outside a band is
+permitted when the round's DECISIONS names the deviation and its reason.

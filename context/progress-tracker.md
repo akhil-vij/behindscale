@@ -4,6 +4,176 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Figures feature LANDED (2026-08-10).** A new
+  static-diagram content type — the reading-shell
+  counterpart to the interactive artifact — is live
+  end-to-end and shipping on production. Reading
+  shell now supports optional per-article inline
+  SVG figures placed by `{{figure:<slug>}}` markers
+  in problem/solution prose. Zero-figure articles
+  (40 of 41 today) render byte-identical to before.
+
+  Design + resolution: docs/figures-design.md
+  (2026-08-09 draft; 2026-08-10 §0 canonical
+  resolutions locking all 15 open questions).
+  Editorial law: docs/behindscale-taste.md §6.5
+  (owner-authored, 2026-08-10).
+
+  Shape of the feature:
+  - **Format**: SVG only. No raster / photos /
+    screenshots. Owner rationale: match visual
+    language + block "screenshot the vendor's
+    diagram" drift (source discipline §2 inverted).
+  - **Storage**: per-figure files at
+    `content/figures/<article>/<slug>.svg`. Mirrored
+    to `public/figures/` at build time by
+    `scripts/copy-figures.ts`.
+  - **Placement**: inline `{{figure:<slug>}}`
+    markers on their own line, blank-line delimited,
+    in `problem` or `solution` only. Marker travels
+    with its paragraph across readability edits
+    (positional-index would silently mis-place).
+  - **Rendering**: `<img src="/figures/<article>/
+    <slug>.svg">` inside a `<figure>` element with
+    uppercase mono eyebrow + plain-English caption.
+    NOT inline SVG via
+    `dangerouslySetInnerHTML` — the audit found the
+    reading shell had zero XSS surface today, so
+    `<img>` (browser-sandbox by spec) preserves
+    that; `figure-svg-safe` is demoted from security
+    perimeter to build-time hygiene.
+  - **Bands** (Q10): eyebrow 2–6 words uppercase,
+    caption 12–40 words, ariaLabel 4–20 words.
+    Enforced by `figure-fields-nonempty`.
+  - **Ceiling** (Q7): soft-warn at > 3 figures per
+    article, hard-error at > 5.
+  - **Workflow** (Q6): figure-round is its own
+    deliberate step with a DECISIONS entry per
+    figure ("adds real value, not namesake").
+    Fable may draw and edit SVGs; safety + future
+    vocabulary lints are the guardrail.
+  - **Removal is first-class** (Q14): drop the
+    marker, drop the figures[] entry, delete the
+    SVG file. Not a one-way ratchet.
+
+  New content contract:
+  - `Article.figures?: Figure[]` optional field.
+    Figure = {slug, eyebrow, caption, ariaLabel}.
+  - `src/types/figure.ts` + `src/types/predicates.ts`
+    checkFigure() with kebab-case slug + duplicate-
+    slug rejection.
+
+  New helper: `src/lib/proseText.ts`.
+  - `proseText(field)` strips markers, collapses
+    empty paragraphs. For measurers / indexers /
+    description-builders.
+  - `proseRaw(field)` returns field unchanged. For
+    the renderer only.
+  - `extractFigureMarkers(field)` returns slugs in
+    appearance order. For marker validators.
+  - Wired into `stats-value-in-prose` today
+    (zero-drift on current corpus).
+  - Rule (taste-doc guarded, contributor
+    checklist): every new reader of problem/
+    solution for measurement / indexing /
+    description must call proseText().
+
+  Eight new validators (all registered in
+  scripts/validate-content.ts):
+  - `figure-svg-exists` — file must exist at
+    `content/figures/<article>/<slug>.svg`.
+  - `figure-svg-safe` — Q11 allowlist (script,
+    foreignObject, style, on*, javascript:, base64
+    raster, off-repo href). Hygiene, not perimeter.
+  - `figure-text-vocabulary` — scaffold: extracts
+    every `<text>` node's textContent; concrete
+    rules grow as prose lints get formalized.
+  - `figure-fields-nonempty` — Q10 word bands.
+  - `orphan-figure-markers` — every marker
+    resolves to a figures[] entry.
+  - `unused-figure-defs` — every figures[] entry
+    referenced by a marker.
+  - `marker-placement-legal` — markers in problem/
+    solution only, own line, blank-line delimited,
+    no duplicates, kebab-case slugs.
+  - `figure-count-ceiling` — Q7 ceiling.
+
+  Build pipeline:
+  - New `scripts/copy-figures.ts` step, wired into
+    `npm run build` after `compile-artifacts`,
+    before `tsc/vite`. Mirrors content/figures/ →
+    public/figures/ with stale-file cleanup.
+    Trusts `figure-svg-safe` (already run by
+    validate) — no re-validation here.
+
+  JSON-LD extension:
+  - `TechArticle.image` now prefers the article's
+    first figure's public URL when
+    figures.length > 0; falls back to site default
+    OG_IMAGE. og:image (social cards) stays at
+    default per Q5 — no SVG rasterization built.
+
+  Rendering:
+  - `src/components/Figure.tsx` — one figure as
+    `<figure>` > mono eyebrow div > `<img>` >
+    figcaption. Uses site design tokens.
+  - `src/components/Prose.tsx` — extended with
+    optional `articleSlug` + `figures` props. Any
+    paragraph chunk matching FIGURE_MARKER_EXACT
+    with a matching figures[] entry renders as
+    `<Figure>`. Callers omitting the props (pattern
+    definition pages) get the today-identical
+    behavior — backwards compatible.
+  - `src/pages/ArticleDetail.tsx` — passes
+    `article.slug` + `article.figures` to both
+    Prose call sites.
+
+  First figures LIVE on
+  linkedin-hodor-overload-protection:
+  - `where-hodor-runs` (WHERE HODOR RUNS): the
+    service box with Hodor's detectors and shedder
+    *inside* it — the one framing the prose fights
+    hardest to establish and no artifact shows.
+  - `three-signs-of-overload` (THREE SIGNS OF
+    OVERLOAD, ONE CONFIRMATION): three detectors
+    converging on a single latency gate.
+  - Both placed inside the Solution section, at
+    the paragraph gaps that anchor them to their
+    context. Files under
+    `content/figures/linkedin-hodor-overload-
+    protection/`.
+  - JSON-LD TechArticle.image now points at
+    `https://www.behindscale.com/figures/linkedin-
+    hodor-overload-protection/where-hodor-runs.svg`.
+
+  Commit trail (all pushed to origin/main):
+  - `a378678` docs: lock figures-design resolutions
+  - `f0cb0f3` feat(figures): Figure type + optional
+    Article.figures field
+  - `1d2e0c6` feat(figures): proseText helper + 8
+    validators (green on zero-figure corpus)
+  - `6f87029` feat(figures): Figure component +
+    figure-aware Prose renderer
+  - `c99da21` feat(figures): copy-figures build
+    step + TechArticle.image JSON-LD
+  - `db416e5` feat(figures): first figures land on
+    linkedin-hodor-overload-protection
+  - (taste-doc §6.5 edit committed alongside;
+    board-doc deferred to owner per this session)
+
+  Validation state after landing: 14 checks (was
+  6; +8 figure-related), 0 errors, 38 warnings
+  (unchanged residual class). Tests: 21 files,
+  188 passed (was 100; +88 new: 13 proseText, 17
+  Figure schema, 58 across 8 validator test
+  files). Build: 42 artifacts, 98 routes, 97
+  sitemap URLs (unchanged). Copy-figures ships 2
+  SVGs today.
+
+  Reading shell continues to carry zero
+  `dangerouslySetInnerHTML` — the audit
+  invariant survives the feature landing.
+
 - **Pattern merger (2026-08-03): `circular-dependency-
   avoidance` merged into `independent-observability`.**
   Owner-directed. Rationale: the target pattern's
