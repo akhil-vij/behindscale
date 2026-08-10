@@ -1,0 +1,23 @@
+<svg viewBox="0 0 700 224" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Default HTTP client timeouts compared with Shopify's one and five second caps">
+ <defs><pattern id="hz" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="9" height="9" fill="#FDECEC"/><rect width="4.5" height="9" fill="#E5484D"/></pattern></defs>
+ <!-- row 1: Go / Node -->
+ <text x="16" y="40" font-family="'Inter',system-ui,sans-serif" font-size="12.5" font-weight="700" fill="#1A1A1F">Go / Node</text>
+ <text x="16" y="55" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">defaults</text>
+ <rect x="190" y="31" width="460" height="26" rx="4" fill="url(#hz)" stroke="#E5484D" stroke-width="0.75"/>
+ <text x="662" y="49" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="14" font-weight="700" fill="#E5484D">&#8734;</text>
+ <!-- row 2: Ruby Net::HTTP -->
+ <text x="16" y="92" font-family="'Inter',system-ui,sans-serif" font-size="12.5" font-weight="700" fill="#1A1A1F">Ruby Net::HTTP</text>
+ <text x="16" y="107" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">default, per phase</text>
+ <rect x="190" y="83" width="425" height="26" rx="4" fill="#E5484D"/>
+ <text x="624" y="101" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#E5484D">60s</text>
+ <!-- row 3: Shopify read -->
+ <text x="16" y="144" font-family="'Inter',system-ui,sans-serif" font-size="12.5" font-weight="700" fill="#1A1A1F">Shopify</text>
+ <text x="16" y="159" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">read timeout</text>
+ <rect x="190" y="135" width="36" height="26" rx="4" fill="#2E7D46"/>
+ <text x="234" y="153" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46">5s</text>
+ <!-- row 4: Shopify connect -->
+ <text x="16" y="196" font-family="'Inter',system-ui,sans-serif" font-size="12.5" font-weight="700" fill="#1A1A1F">Shopify</text>
+ <text x="16" y="211" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">connect timeout</text>
+ <rect x="190" y="187" width="11" height="26" rx="4" fill="#2E7D46"/>
+ <text x="209" y="205" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46">1s</text>
+</svg>
