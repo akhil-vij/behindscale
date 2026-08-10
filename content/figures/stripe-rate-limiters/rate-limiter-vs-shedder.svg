@@ -1,0 +1,24 @@
+<svg viewBox="0 0 700 226" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rate limiter and load shedder compared side by side">
+ <rect x="140" y="12" width="270" height="30" rx="6" fill="#EEF3FE" stroke="#2563EB"/>
+ <text x="275" y="32" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">RATE LIMITER</text>
+ <rect x="420" y="12" width="266" height="30" rx="6" fill="#FDF3E7" stroke="#B45309"/>
+ <text x="553" y="32" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">LOAD SHEDDER</text>
+ <line x1="415" y1="12" x2="415" y2="214" stroke="#E7E4DE"/>
+ <text x="14" y="70" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8A8A94" letter-spacing="1">LOOKS AT</text>
+ <text x="150" y="70" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">one user</text>
+ <text x="430" y="70" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">the whole system</text>
+ <line x1="14" y1="86" x2="686" y2="86" stroke="#E7E4DE"/>
+ <text x="14" y="112" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8A8A94" letter-spacing="1">ASKS</text>
+ <text x="150" y="112" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">is this user&#x27;s pace fair?</text>
+ <text x="430" y="112" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">which work matters most?</text>
+ <line x1="14" y1="128" x2="686" y2="128" stroke="#E7E4DE"/>
+ <text x="14" y="154" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8A8A94" letter-spacing="1">WHEN</text>
+ <text x="150" y="154" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">every day</text>
+ <text x="430" y="154" font-family="'Inter',system-ui,sans-serif" font-size="13" fill="#1A1A1F">only in incidents</text>
+ <line x1="14" y1="170" x2="686" y2="170" stroke="#E7E4DE"/>
+ <text x="14" y="198" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8A8A94" letter-spacing="1">SAYS NO WITH</text>
+ <rect x="150" y="182" width="52" height="24" rx="6" fill="#EEF3FE" stroke="#2563EB"/>
+ <text x="176" y="199" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">429</text>
+ <rect x="430" y="182" width="52" height="24" rx="6" fill="#FDF3E7" stroke="#B45309"/>
+ <text x="456" y="199" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">503</text>
+</svg>
