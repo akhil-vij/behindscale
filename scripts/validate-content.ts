@@ -17,6 +17,14 @@ import { artifactPathMatchesSlug } from './checks/artifact-path-matches-slug'
 import { statsValueInProse } from './checks/stats-value-in-prose'
 import { cruxSummaryLength } from './checks/crux-summary-length'
 import { cruxTagRegistryCoverage } from './checks/cruxtag-registry-coverage'
+import { figureSvgExists } from './checks/figure-svg-exists'
+import { figureSvgSafe } from './checks/figure-svg-safe'
+import { figureTextVocabulary } from './checks/figure-text-vocabulary'
+import { figureFieldsNonempty } from './checks/figure-fields-nonempty'
+import { orphanFigureMarkers } from './checks/orphan-figure-markers'
+import { unusedFigureDefs } from './checks/unused-figure-defs'
+import { markerPlacementLegal } from './checks/marker-placement-legal'
+import { figureCountCeiling } from './checks/figure-count-ceiling'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -29,6 +37,14 @@ const CHECKS: readonly Check[] = [
   statsValueInProse,
   cruxSummaryLength,
   cruxTagRegistryCoverage,
+  figureSvgExists,
+  figureSvgSafe,
+  figureTextVocabulary,
+  figureFieldsNonempty,
+  orphanFigureMarkers,
+  unusedFigureDefs,
+  markerPlacementLegal,
+  figureCountCeiling,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

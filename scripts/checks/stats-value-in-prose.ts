@@ -40,6 +40,7 @@
 // error, value-in-prose miss is a warning.
 
 import type { Check, CheckError } from '../types'
+import { proseText } from '../../src/lib/proseText'
 
 const MAX_STATS = 3
 
@@ -106,9 +107,12 @@ export const statsValueInProse: Check = {
       // per article (a stat can appear in any of them, not just its
       // declared `placement` section -- placement controls where the
       // callout *renders*, not where the value is sourced from).
+      // problem/solution are marker-stripped via proseText() so a
+      // `{{figure:...}}` marker inside the prose can never accidentally
+      // "satisfy" a stat lookup (docs/figures-design.md §0.3 #2).
       const prose = [
-        article.problem,
-        article.solution,
+        proseText(article.problem),
+        proseText(article.solution),
         ...article.tradeoffs,
         article.summary,
       ].join('\n\n')

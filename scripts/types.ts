@@ -18,6 +18,16 @@ export interface ContentSet {
   // the runner resolves slug -> path when rendering.
   readonly articlePaths: ReadonlyMap<string, string>
   readonly patternPaths: ReadonlyMap<string, string>
+  // Preloaded SVG contents for every figure declared in any
+  // article's `figures[]`. Key: `<article-slug>/<figure-slug>`.
+  // `contents` is null when the file does not exist on disk (that
+  // gap is what `figure-svg-exists` reports). Preloading here
+  // preserves the invariant that checks do no IO -- the loader has
+  // already read everything they need.
+  readonly figureSvgs: ReadonlyMap<
+    string,
+    { readonly path: string; readonly contents: string | null }
+  >
 }
 
 export interface CheckError {

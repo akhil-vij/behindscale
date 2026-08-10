@@ -27,6 +27,7 @@ import type { CheckError, ContentSet } from './types'
 const ARTICLES_DIR = 'content/articles'
 const PATTERNS_DIR = 'content/patterns'
 const CRUXTAGS_PATH = 'content/cruxtags.json'
+const FIGURES_DIR = 'content/figures'
 
 // The [schema] section label is owned here so a future renamer can
 // grep this constant for the producer + every consumer in one shot.
@@ -150,6 +151,36 @@ export function loadContent(): LoadResult {
     })
   }
 
+  // Preload figure SVGs for every declared figure on every article.
+  // Missing files are stored with `contents: null` so figure-svg-
+  // exists can report them consistently; present files are read once
+  // and made available to figure-svg-safe + figure-text-vocabulary.
+  const figureSvgs = new Map<
+    string,
+    { path: string; contents: string | null }
+  >()
+  for (const article of articles) {
+    if (article.figures === undefined) continue
+    for (const figure of article.figures) {
+      const key = `${article.slug}/${figure.slug}`
+      const path = join(FIGURES_DIR, article.slug, `${figure.slug}.svg`)
+      if (!existsSync(path)) {
+        figureSvgs.set(key, { path, contents: null })
+        continue
+      }
+      try {
+        const raw = readFileSync(path, 'utf8')
+        figureSvgs.set(key, { path, contents: raw })
+      } catch (err) {
+        schemaErrors.push({
+          file: path,
+          message: `could not read figure SVG: ${(err as Error).message}`,
+        })
+        figureSvgs.set(key, { path, contents: null })
+      }
+    }
+  }
+
   return {
     content: {
       articles,
@@ -157,6 +188,7 @@ export function loadContent(): LoadResult {
       cruxTagRegistry,
       articlePaths,
       patternPaths,
+      figureSvgs,
     },
     schemaErrors,
     skippedFileCount,

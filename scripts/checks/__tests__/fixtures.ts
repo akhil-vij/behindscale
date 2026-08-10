@@ -5,6 +5,7 @@
 import type {
   Article,
   CruxTagRegistry,
+  Figure,
   PatternDefinition,
 } from '../../../src/types'
 import type { ContentSet } from '../../types'
@@ -57,10 +58,34 @@ const DEFAULT_REGISTRY: CruxTagRegistry = {
   },
 }
 
+// Convenience: build a Figure with reasonable defaults inside the
+// Q10 bands. Callers override only what they care about.
+export function figure(
+  slug: string,
+  overrides: Partial<Figure> = {},
+): Figure {
+  return {
+    slug,
+    eyebrow: 'PLACEHOLDER EYEBROW TEXT',
+    caption:
+      'Placeholder caption sentence for the figure test fixture. Not editorial output; the length falls inside the caption word band.',
+    ariaLabel: 'placeholder figure fixture aria label',
+    ...overrides,
+  }
+}
+
 export function makeContent(input: {
   articles: readonly Article[]
   patterns: readonly PatternDefinition[]
   cruxTagRegistry?: CruxTagRegistry
+  // Preloaded figure SVGs, keyed by `<article-slug>/<figure-slug>`.
+  // Missing key => figure-svg-exists reports a missing file.
+  // Present with contents === null => same (loader gave up).
+  // Present with a string => figure-svg-safe et al iterate.
+  figureSvgs?: ReadonlyMap<
+    string,
+    { readonly path: string; readonly contents: string | null }
+  >
 }): ContentSet {
   return {
     articles: input.articles,
@@ -72,5 +97,6 @@ export function makeContent(input: {
     patternPaths: new Map(
       input.patterns.map((p) => [p.slug, `content/patterns/${p.slug}.json`]),
     ),
+    figureSvgs: input.figureSvgs ?? new Map(),
   }
 }
