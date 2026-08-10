@@ -1,5 +1,6 @@
 import type { Source } from './source'
 import type { PatternReference } from './pattern'
+import type { Figure } from './figure'
 
 export interface Article {
   slug: string
@@ -77,6 +78,18 @@ export interface Article {
   // `placement` controls which prose section the callout renders
   // after.
   stats?: ArticleStat[]
+  // Inline SVG figures placed in the Problem/Solution prose via
+  // `{{figure:<slug>}}` markers (docs/figures-design.md, resolved
+  // 2026-08-10). Zero-to-many per article; typical 0-1-2.
+  // Rendered as <img src="/figures/<article>/<slug>.svg"> inside
+  // a <figure> element with eyebrow + caption. Each entry in this
+  // array must be referenced by exactly one marker in problem or
+  // solution prose (validators: orphan-figure-markers,
+  // unused-figure-defs, marker-placement-legal). Rendering strategy
+  // is <img> not inline SVG -- the browser sandbox prevents SVG
+  // scripts from executing, so the reading shell adds no XSS
+  // surface. Soft-warn at 4 figures, hard-error at 6.
+  figures?: Figure[]
 }
 
 export interface ArticleStat {

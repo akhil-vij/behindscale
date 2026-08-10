@@ -27,6 +27,7 @@ import type {
   PatternLibraryArticleRef,
 } from './pattern-library'
 import type { CruxTagEntry, CruxTagRegistry } from './cruxtag'
+import type { Figure } from './figure'
 
 export type Result = { ok: true } | { ok: false; reason: string }
 
@@ -55,6 +56,22 @@ export function checkPatternReference(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   if (typeof value.slug !== 'string') return fail('`slug` expected string')
   if (typeof value.note !== 'string') return fail('`note` expected string')
+  return ok
+}
+
+export function checkFigure(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (typeof value.slug !== 'string') return fail('`slug` expected string (kebab-case, unique within the article)')
+  if (value.slug.trim().length === 0) return fail('`slug` expected non-empty string')
+  if (!KEBAB_CASE.test(value.slug)) {
+    return fail(`\`slug\` expected lowercase-kebab-case (got "${value.slug}"; pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
+  }
+  if (typeof value.eyebrow !== 'string') return fail('`eyebrow` expected string (2-6 words, uppercase mono label)')
+  if (value.eyebrow.trim().length === 0) return fail('`eyebrow` expected non-empty string')
+  if (typeof value.caption !== 'string') return fail('`caption` expected string (12-40 words, plain-English sentence rendered below the SVG)')
+  if (value.caption.trim().length === 0) return fail('`caption` expected non-empty string')
+  if (typeof value.ariaLabel !== 'string') return fail('`ariaLabel` expected string (4-20 words, screen-reader label for the SVG)')
+  if (value.ariaLabel.trim().length === 0) return fail('`ariaLabel` expected non-empty string')
   return ok
 }
 
@@ -125,6 +142,19 @@ export function checkArticle(value: unknown): Result {
     for (let i = 0; i < value.stats.length; i++) {
       const statResult = checkArticleStat(value.stats[i])
       if (!statResult.ok) return fail(`\`stats[${i}]\`: ` + statResult.reason)
+    }
+  }
+  if (value.figures !== undefined) {
+    if (!Array.isArray(value.figures)) return fail('`figures` expected array when present')
+    const seenSlugs = new Set<string>()
+    for (let i = 0; i < value.figures.length; i++) {
+      const figureResult = checkFigure(value.figures[i])
+      if (!figureResult.ok) return fail(`\`figures[${i}]\`: ` + figureResult.reason)
+      const slug = (value.figures[i] as { slug: string }).slug
+      if (seenSlugs.has(slug)) {
+        return fail(`\`figures[${i}]\`: duplicate slug "${slug}" (figure slugs must be unique within the article)`)
+      }
+      seenSlugs.add(slug)
     }
   }
   return ok
@@ -228,3 +258,4 @@ export const isPatternLibraryEntry = (v: unknown): v is PatternLibraryEntry =>
 export const isPatternLibrary = (v: unknown): v is PatternLibrary => checkPatternLibrary(v).ok
 export const isCruxTagEntry = (v: unknown): v is CruxTagEntry => checkCruxTagEntry(v).ok
 export const isCruxTagRegistry = (v: unknown): v is CruxTagRegistry => checkCruxTagRegistry(v).ok
+export const isFigure = (v: unknown): v is Figure => checkFigure(v).ok
