@@ -351,7 +351,17 @@ function articleMeta(article: Article): Meta {
       url: SITE_URL,
     },
     mainEntityOfPage: `${SITE_URL}/articles/${article.slug}`,
-    image: OG_IMAGE,
+    // TechArticle.image: when the article has figures, prefer the
+    // first figure's public URL over the site default OG_IMAGE.
+    // Google's image-discovery signal is best when it points at a
+    // per-article visual asset (docs/figures-design.md §0.1 Q5).
+    // og:image (used by Slack/Twitter/LinkedIn cards) stays at the
+    // site default; rasterizing SVG for social cards is out of
+    // scope per Q5.
+    image:
+      article.figures !== undefined && article.figures.length > 0
+        ? `${SITE_URL}/figures/${article.slug}/${article.figures[0]!.slug}.svg`
+        : OG_IMAGE,
     isBasedOn: {
       '@type': 'Article',
       url: article.url,

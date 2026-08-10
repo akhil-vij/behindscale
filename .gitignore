@@ -34,3 +34,9 @@ pipeline/processed.db-wal
 # generated artifact bundles — produced by the pipeline's generate stage
 public/artifacts/*
 !public/artifacts/.gitkeep
+
+# figure SVGs mirrored from content/figures/ by scripts/copy-figures.ts.
+# Source of truth lives under content/figures/<article>/<slug>.svg;
+# the build copies each file here so Vite ships it as a static asset.
+public/figures/*
+!public/figures/.gitkeep
