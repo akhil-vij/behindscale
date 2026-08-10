@@ -1,0 +1,29 @@
+<svg viewBox="0 0 700 244" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two peak-sized clusters versus one cluster with a partitioned limiter">
+ <defs><marker id="n_bl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker></defs>
+ <line x1="350" y1="16" x2="350" y2="228" stroke="#E7E4DE"/>
+ <!-- LEFT: separate clusters -->
+ <text x="20" y="30" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#52525B">SEPARATE CLUSTERS</text>
+ <text x="176" y="30" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">the obvious fix</text>
+ <rect x="20" y="46" width="308" height="46" rx="8" fill="#EEF3FE" stroke="#2563EB"/>
+ <text x="174" y="73" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle">USER-INITIATED CLUSTER</text>
+ <rect x="20" y="102" width="308" height="46" rx="8" fill="#F4F2EE" stroke="#B8B4AC"/>
+ <text x="174" y="129" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">PRE-FETCH CLUSTER</text>
+ <text x="20" y="182" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="13" font-weight="700" fill="#E5484D">2&#215; COMPUTE</text>
+ <text x="20" y="200" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">two fleets, each sized for peak</text>
+ <!-- RIGHT: one partitioned limiter -->
+ <text x="366" y="30" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#1A1A1F">ONE PARTITIONED LIMITER</text>
+ <text x="586" y="30" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">Netflix</text>
+ <rect x="366" y="46" width="314" height="102" rx="8" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+ <text x="382" y="66" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#8A8A94" letter-spacing="0.5">PLAYAPI &#183; ONE CLUSTER</text>
+ <rect x="382" y="76" width="200" height="44" rx="5" fill="#2563EB"/>
+ <text x="482" y="94" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">USER-INITIATED</text>
+ <text x="482" y="108" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DBE7FF" text-anchor="middle">guaranteed 100%</text>
+ <rect x="582" y="76" width="82" height="44" rx="5" fill="#ECEBEF" stroke="#C9C6CE"/>
+ <text x="623" y="94" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#52525B" text-anchor="middle">PRE-FETCH</text>
+ <text x="623" y="108" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#8A8A94" text-anchor="middle">excess only</text>
+ <line x1="582" y1="70" x2="582" y2="126" stroke="#1A1A1F" stroke-width="1" stroke-dasharray="4 3"/>
+ <line x1="576" y1="132" x2="600" y2="132" stroke="#2563EB" stroke-width="1.5" marker-end="url(#n_bl)"/>
+ <text x="570" y="136" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#2563EB" text-anchor="end">steals the spare when it needs it</text>
+ <text x="366" y="182" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="13" font-weight="700" fill="#2E7D46">1&#215; COMPUTE</text>
+ <text x="366" y="200" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">same isolation, one fleet</text>
+</svg>
