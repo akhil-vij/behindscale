@@ -1,0 +1,35 @@
+<svg viewBox="0 0 700 224" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A full Redis has no room to dequeue, so it cannot drain">
+ <defs>
+  <marker id="k_gn" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker>
+  <clipPath id="tankL"><rect x="70" y="42" width="122" height="150" rx="9"/></clipPath>
+  <clipPath id="tankR"><rect x="470" y="42" width="122" height="150" rx="9"/></clipPath>
+ </defs>
+ <!-- LEFT: healthy -->
+ <text x="70" y="30" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#2E7D46">HEALTHY</text>
+ <text x="146" y="30" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">has headroom</text>
+ <g clip-path="url(#tankL)">
+  <rect x="70" y="42" width="122" height="54" fill="#EAF6EE"/>
+  <rect x="70" y="96" width="122" height="96" fill="#FDF3E7"/>
+ </g>
+ <rect x="70" y="42" width="122" height="150" rx="9" fill="none" stroke="#B8B4AC" stroke-width="1.5"/>
+ <line x1="70" y1="96" x2="192" y2="96" stroke="#B8B4AC" stroke-width="1" stroke-dasharray="3 2"/>
+ <text x="131" y="65" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle">ROOM TO</text>
+ <text x="131" y="78" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle">DEQUEUE</text>
+ <text x="131" y="150" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#B45309" text-anchor="middle">backlog</text>
+ <line x1="192" y1="68" x2="250" y2="68" stroke="#2E7D46" stroke-width="1.75" marker-end="url(#k_gn)"/>
+ <text x="196" y="88" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#2E7D46">a job moves out</text>
+ <text x="131" y="212" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94" text-anchor="middle">room to spare</text>
+ <!-- RIGHT: seized -->
+ <text x="470" y="30" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#E5484D">AT THE LIMIT</text>
+ <text x="566" y="30" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">seized</text>
+ <g clip-path="url(#tankR)"><rect x="470" y="42" width="122" height="150" fill="#FDECEC"/></g>
+ <rect x="470" y="42" width="122" height="54" fill="none" stroke="#E5484D" stroke-width="1.25" stroke-dasharray="4 3"/>
+ <rect x="470" y="42" width="122" height="150" rx="9" fill="none" stroke="#B8B4AC" stroke-width="1.5"/>
+ <line x1="523" y1="61" x2="539" y2="77" stroke="#E5484D" stroke-width="2"/><line x1="539" y1="61" x2="523" y2="77" stroke="#E5484D" stroke-width="2"/>
+ <text x="552" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#E5484D">no room</text>
+ <text x="531" y="150" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#E5484D" text-anchor="middle">backlog fills it</text>
+ <line x1="592" y1="68" x2="628" y2="68" stroke="#E5484D" stroke-width="1.75" stroke-dasharray="5 4"/>
+ <line x1="622" y1="61" x2="636" y2="75" stroke="#E5484D" stroke-width="2"/><line x1="636" y1="61" x2="622" y2="75" stroke="#E5484D" stroke-width="2"/>
+ <text x="596" y="88" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#E5484D">blocked</text>
+ <text x="531" y="212" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94" text-anchor="middle">no room left</text>
+</svg>
