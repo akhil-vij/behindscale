@@ -244,7 +244,7 @@ incrementally as Fable's editorial backfill commits land.
 `stat.placement`, only when `article.stats` is present). Large
 mono value + small label, accent-tinted. Editorial constraints
 enforced by the `stats-value-in-prose` validator check (Content
-Contract): at most 3 per article, every value must appear in the
+Contract): at most 5 per article, every value must appear in the
 article's own prose. The field is a lift, not a source of new
 claims.
 
@@ -507,7 +507,7 @@ Every per-article summary JSON in `content/articles/` conforms to the
   - `placement` — one of `"problem" | "solution" | "tradeoffs"`,
     controlling which prose section the callout renders after.
   Editorial constraints, enforced by the `stats-value-in-prose`
-  validator check: **at most 3 entries per article** (zero is fine
+  validator check: **at most 5 entries per article** (zero is fine
   — an article without strong figures ships without callouts
   rather than with weak ones), and **every `value` must already
   appear in the article's own prose** (problem/solution/tradeoffs/

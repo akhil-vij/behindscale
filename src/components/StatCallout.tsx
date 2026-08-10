@@ -1,8 +1,8 @@
 import type { ArticleStat } from '../types'
 
-// Unit 10. Pull-stat callouts. Renders a row of up to 3 stats for a
+// Unit 10. Pull-stat callouts. Renders a row of up to 5 stats for a
 // single placement section (problem / solution / tradeoffs). Editorial
-// constraints (max 3, value-must-appear-in-prose) are enforced by the
+// constraints (max 5, value-must-appear-in-prose) are enforced by the
 // `stats-value-in-prose` validator check, not this component.
 
 interface StatsRowProps {

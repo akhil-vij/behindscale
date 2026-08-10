@@ -19,6 +19,20 @@ Update this file after every meaningful implementation change.
   Editorial law: docs/behindscale-taste.md §6.5
   (owner-authored, 2026-08-10).
 
+  **Stats cap raised 3 → 5 (2026-08-10, owner
+  decision).** `stats-value-in-prose` MAX_STATS is
+  now 5 (was 3); the value-must-appear-in-prose rule
+  is unchanged (still a warning). Prompted by
+  segment-centrifuge-database-queue carrying 5 stats
+  (2 problem + 3 solution) alongside its figure
+  round. Updated: the check + its tests, the
+  Article.stats type comment, StatCallout header
+  comment, and architecture.md Content Contract (two
+  spots). StatCallout renders flex-wrap per
+  placement, so 5 needs no layout change. The 2026-
+  06-11 "stats are a lift, not a source" decision
+  entry below records the original 3 as history.
+
   Shape of the feature:
   - **Format**: SVG only. No raster / photos /
     screenshots. Owner rationale: match visual

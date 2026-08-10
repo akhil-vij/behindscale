@@ -71,7 +71,7 @@ export interface Article {
   // teaser card renders only when `teaser` is present; a vague hook is
   // worse than none.
   artifact: { path: string; teaser?: string } | null
-  // Pull-stat callouts (Unit 10). Max 3 per article, editorially
+  // Pull-stat callouts (Unit 10). Max 5 per article, editorially
   // enforced by the stats-value-in-prose validator check. Each value
   // must appear in this article's own prose (problem/solution/
   // tradeoffs) -- the field is a lift, not a source of new claims.

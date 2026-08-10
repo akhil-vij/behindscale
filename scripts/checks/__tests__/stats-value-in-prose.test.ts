@@ -94,17 +94,19 @@ describe('statsValueInProse', () => {
     })
   })
 
-  it('flags more than 3 stats with the max-3 rule', () => {
+  it('flags more than 5 stats with the max-5 rule', () => {
     const content = makeContent({
       articles: [
         articleWithStats(
           'cinnamon',
-          { solution: '1 2 3 4' },
+          { solution: '1 2 3 4 5 6' },
           [
             { value: '1', label: 'a', placement: 'solution' },
             { value: '2', label: 'b', placement: 'solution' },
             { value: '3', label: 'c', placement: 'solution' },
             { value: '4', label: 'd', placement: 'solution' },
+            { value: '5', label: 'e', placement: 'solution' },
+            { value: '6', label: 'f', placement: 'solution' },
           ],
         ),
       ],
@@ -113,20 +115,22 @@ describe('statsValueInProse', () => {
     const errors = statsValueInProse.run(content)
     const maxErrs = errors.filter((e) => e.message.includes('max is'))
     expect(maxErrs).toHaveLength(1)
-    expect(maxErrs[0]?.message).toContain('4 stats')
+    expect(maxErrs[0]?.message).toContain('6 stats')
   })
 
-  it('flags one max-3 error AND one value-not-in-prose error in a single pass', () => {
+  it('flags one max-5 error AND one value-not-in-prose error in a single pass', () => {
     const content = makeContent({
       articles: [
         articleWithStats(
           'cinnamon',
-          { solution: '1 2 3 fine' },
+          { solution: '1 2 3 4 5 fine' },
           [
             { value: '1', label: 'a', placement: 'solution' },
             { value: '2', label: 'b', placement: 'solution' },
             { value: '3', label: 'c', placement: 'solution' },
-            { value: '999', label: 'd-missing', placement: 'solution' },
+            { value: '4', label: 'd', placement: 'solution' },
+            { value: '5', label: 'e', placement: 'solution' },
+            { value: '999', label: 'f-missing', placement: 'solution' },
           ],
         ),
       ],
@@ -136,17 +140,19 @@ describe('statsValueInProse', () => {
     expect(errors).toHaveLength(2)
   })
 
-  it('emits the value-not-in-prose miss as a warning, the max-3 violation as an error', () => {
+  it('emits the value-not-in-prose miss as a warning, the max-5 violation as an error', () => {
     const content = makeContent({
       articles: [
         articleWithStats(
           'cinnamon',
-          { solution: '1 2 3 fine' },
+          { solution: '1 2 3 4 5 fine' },
           [
             { value: '1', label: 'a', placement: 'solution' },
             { value: '2', label: 'b', placement: 'solution' },
             { value: '3', label: 'c', placement: 'solution' },
-            { value: '999', label: 'd-missing', placement: 'solution' },
+            { value: '4', label: 'd', placement: 'solution' },
+            { value: '5', label: 'e', placement: 'solution' },
+            { value: '999', label: 'f-missing', placement: 'solution' },
           ],
         ),
       ],

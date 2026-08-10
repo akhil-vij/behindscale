@@ -1,7 +1,7 @@
 // Unit 10 stats-value-in-prose check. Enforces two editorial
 // constraints on Article.stats[]:
 //
-//   1. At most 3 stats per article. Zero is a fine number -- an
+//   1. At most 5 stats per article. Zero is a fine number -- an
 //      article without strong figures ships without callouts rather
 //      than with weak ones. Hard error.
 //   2. Every stat.value must already appear in this article's own
@@ -11,7 +11,7 @@
 //      phrases the figure differently, not that the stat is
 //      fabricated, so this is a `severity: 'warning'` (architecture.md
 //      Content Contract: "flag, don't block, on fuzzy misses"). The
-//      max-3 rule stays a hard error -- that's structural, not
+//      max-5 rule stays a hard error -- that's structural, not
 //      phrasing-sensitive.
 //
 // Normalization (Unit 11 sprint pt 2):
@@ -36,13 +36,13 @@
 //
 // Fits the same shape as the other three checks (orphan-pattern-
 // slugs, minimum-pattern-coverage, artifact-path-matches-slug):
-// per-article CheckError with articleSlug, message, fix; max-3 is an
+// per-article CheckError with articleSlug, message, fix; max-5 is an
 // error, value-in-prose miss is a warning.
 
 import type { Check, CheckError } from '../types'
 import { proseText } from '../../src/lib/proseText'
 
-const MAX_STATS = 3
+const MAX_STATS = 5
 
 function normalize(s: string): string {
   // Strip the chars that vary between prose and stat values; collapse
