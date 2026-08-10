@@ -1,0 +1,29 @@
+<svg viewBox="0 0 700 208" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Deterministic database phases wall off the one external call that runs at most once">
+ <defs><marker id="o_ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker></defs>
+ <!-- PRE-RPC -->
+ <rect x="24" y="30" width="200" height="72" rx="9" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+ <text x="124" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">PRE-RPC</text>
+ <text x="124" y="72" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">record the request</text>
+ <text x="124" y="88" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">in one DB transaction</text>
+ <!-- RPC -->
+ <rect x="252" y="30" width="196" height="72" rx="9" fill="#FDF3E7" stroke="#B45309" stroke-width="1.5"/>
+ <text x="350" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">RPC</text>
+ <text x="350" y="72" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">the one external call</text>
+ <text x="350" y="88" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">to the payment processor</text>
+ <!-- POST-RPC -->
+ <rect x="476" y="30" width="200" height="72" rx="9" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+ <text x="576" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">POST-RPC</text>
+ <text x="576" y="72" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">record the outcome</text>
+ <text x="576" y="88" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">in one DB transaction</text>
+ <!-- arrows -->
+ <line x1="226" y1="66" x2="250" y2="66" stroke="#8A8A94" stroke-width="1.5" marker-end="url(#o_ah)"/>
+ <line x1="450" y1="66" x2="474" y2="66" stroke="#8A8A94" stroke-width="1.5" marker-end="url(#o_ah)"/>
+ <!-- tags -->
+ <rect x="52" y="114" width="144" height="24" rx="12" fill="#EAF6EE" stroke="#2E7D46"/><text x="124" y="130" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle">DB &#183; no network</text>
+ <rect x="280" y="114" width="140" height="24" rx="12" fill="#FDF3E7" stroke="#B45309"/><text x="350" y="130" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle">network &#183; no DB</text>
+ <rect x="504" y="114" width="144" height="24" rx="12" fill="#EAF6EE" stroke="#2E7D46"/><text x="576" y="130" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle">DB &#183; no network</text>
+ <!-- ground-rule ribbon -->
+ <rect x="24" y="158" width="652" height="30" rx="8" fill="#EEF3FE" stroke="#2563EB"/>
+ <text x="42" y="177" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" font-weight="700" fill="#2563EB">GROUND RULE</text>
+ <text x="150" y="177" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#1A1A1F">network and transactions never mix, so an interruption anywhere is recoverable.</text>
+</svg>
