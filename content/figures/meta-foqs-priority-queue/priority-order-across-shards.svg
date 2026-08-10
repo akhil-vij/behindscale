@@ -1,0 +1,35 @@
+<svg viewBox="0 0 700 244" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Per-shard priority lists merged into one global order by a k-way merge">
+<defs><marker id="f_ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker></defs>
+<text x="16" y="20" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" letter-spacing="0.5">EACH SHARD SORTS ONLY ITS OWN ITEMS</text>
+<text x="16" y="48" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB">SHARD A</text>
+<rect x="84" y="32" width="32" height="24" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="100" y="48" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">9</text>
+<rect x="122" y="32" width="32" height="24" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="138" y="48" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">5</text>
+<rect x="160" y="32" width="32" height="24" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="176" y="48" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">2</text>
+<line x1="200" y1="44" x2="252" y2="82" stroke="#8A8A94" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<text x="16" y="88" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46">SHARD B</text>
+<rect x="84" y="72" width="32" height="24" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="100" y="88" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">8</text>
+<rect x="122" y="72" width="32" height="24" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="138" y="88" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">7</text>
+<rect x="160" y="72" width="32" height="24" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="176" y="88" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">3</text>
+<line x1="200" y1="84" x2="252" y2="82" stroke="#8A8A94" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<text x="16" y="128" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#B45309">SHARD C</text>
+<rect x="84" y="112" width="32" height="24" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="100" y="128" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">6</text>
+<rect x="122" y="112" width="32" height="24" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="138" y="128" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">4</text>
+<rect x="160" y="112" width="32" height="24" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="176" y="128" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">1</text>
+<line x1="200" y1="124" x2="252" y2="82" stroke="#8A8A94" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<rect x="256" y="52" width="150" height="60" rx="8" fill="#FFFFFF" stroke="#1A1A1F" stroke-width="1.5"/>
+<text x="331" y="78" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#1A1A1F" text-anchor="middle">PREFETCH BUFFER</text>
+<text x="331" y="94" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#52525B" text-anchor="middle">k-way merge</text>
+<line x1="331" y1="112" x2="331" y2="150" stroke="#8A8A94" stroke-width="1.5" marker-end="url(#f_ah)"/>
+<text x="16" y="168" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" letter-spacing="0.5">ONE GLOBAL ORDER &#183; HIGHEST FIRST</text>
+<rect x="84" y="178" width="34" height="26" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="101" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">9</text>
+<rect x="124" y="178" width="34" height="26" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="141" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">8</text>
+<rect x="164" y="178" width="34" height="26" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="181" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">7</text>
+<rect x="204" y="178" width="34" height="26" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="221" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">6</text>
+<rect x="244" y="178" width="34" height="26" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="261" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">5</text>
+<rect x="284" y="178" width="34" height="26" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="301" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">4</text>
+<rect x="324" y="178" width="34" height="26" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/><text x="341" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46" text-anchor="middle">3</text>
+<rect x="364" y="178" width="34" height="26" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/><text x="381" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2563EB" text-anchor="middle">2</text>
+<rect x="404" y="178" width="34" height="26" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/><text x="421" y="194" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#B45309" text-anchor="middle">1</text>
+<text x="101" y="220" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#1A1A1F" text-anchor="middle">next</text>
+<path d="M101,210 l0,-6 M97,207 l4,-4 l4,4" stroke="#1A1A1F" stroke-width="1.25" fill="none"/>
+</svg>
