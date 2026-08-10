@@ -1,0 +1,29 @@
+<svg viewBox="0 0 700 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A server fingerprint cannot tell a retry from two intents; a client token can">
+ <text x="350" y="16" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#8A8A94" text-anchor="middle">Same parameters, two different meanings: a retry, or a second one on purpose.</text>
+ <line x1="350" y1="30" x2="350" y2="216" stroke="#E7E4DE"/>
+ <!-- LEFT: server fingerprint (fails) -->
+ <text x="20" y="52" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#E5484D">SERVER FINGERPRINT</text>
+ <text x="20" y="68" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">hash of the parameters</text>
+ <text x="24" y="100" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#1A1A1F">a retry</text>
+ <text x="150" y="100" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#8A8A94">&#8594;</text>
+ <rect x="176" y="86" width="60" height="22" rx="5" fill="#FDECEC" stroke="#E5484D"/><text x="206" y="101" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#E5484D" text-anchor="middle">9f2c</text>
+ <text x="24" y="134" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#1A1A1F">a 2nd, on purpose</text>
+ <text x="150" y="134" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#8A8A94">&#8594;</text>
+ <rect x="176" y="120" width="60" height="22" rx="5" fill="#FDECEC" stroke="#E5484D"/><text x="206" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#E5484D" text-anchor="middle">9f2c</text>
+ <line x1="256" y1="90" x2="256" y2="138" stroke="#E5484D" stroke-width="1" stroke-dasharray="3 3"/>
+ <text x="266" y="117" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#E5484D">same hash</text>
+ <line x1="26" y1="170" x2="38" y2="182" stroke="#E5484D" stroke-width="2.25"/><line x1="38" y1="170" x2="26" y2="182" stroke="#E5484D" stroke-width="2.25"/>
+ <text x="48" y="180" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#52525B">cannot tell them apart</text>
+ <!-- RIGHT: client token (works) -->
+ <text x="366" y="52" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" font-weight="700" fill="#2E7D46">CLIENT TOKEN</text>
+ <text x="366" y="68" font-family="'Inter',system-ui,sans-serif" font-size="11" fill="#8A8A94">the caller stamps intent</text>
+ <text x="370" y="100" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#1A1A1F">a retry</text>
+ <text x="496" y="100" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#8A8A94">&#8594;</text>
+ <rect x="522" y="86" width="70" height="22" rx="5" fill="#EAF6EE" stroke="#2E7D46"/><text x="557" y="101" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2E7D46" text-anchor="middle">tok-abc</text>
+ <text x="370" y="134" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#1A1A1F">a 2nd, on purpose</text>
+ <text x="496" y="134" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#8A8A94">&#8594;</text>
+ <rect x="522" y="120" width="70" height="22" rx="5" fill="#EEF3FE" stroke="#2563EB"/><text x="557" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle">tok-xyz</text>
+ <text x="612" y="117" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#52525B">two tokens</text>
+ <path d="M369,176 l6,7 l12,-14" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+ <text x="396" y="180" font-family="'Inter',system-ui,sans-serif" font-size="12" fill="#52525B">kept apart by intent</text>
+</svg>
