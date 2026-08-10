@@ -1,0 +1,40 @@
+<svg viewBox="0 0 700 198" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kafka's single watermark versus the proxy's per-message ledger">
+<text x="16" y="30" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#1A1A1F">PROXY&#x27;S LEDGER</text>
+<text x="150" y="30" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">each message acked on its own</text>
+<rect x="48" y="40" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="82" y="67" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">MSG 1</text>
+<path d="M106,62 l5,6 l11,-13" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+<rect x="152" y="40" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="186" y="67" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">MSG 2</text>
+<path d="M210,62 l5,6 l11,-13" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+<rect x="256" y="40" width="96" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.5"/>
+<text x="304" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#B45309" text-anchor="middle">MSG 3</text>
+<text x="304" y="74" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#B45309" text-anchor="middle">stuck</text>
+<rect x="360" y="40" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="394" y="67" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">MSG 4</text>
+<path d="M418,62 l5,6 l11,-13" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+<rect x="464" y="40" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="498" y="67" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">MSG 5</text>
+<path d="M522,62 l5,6 l11,-13" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+<rect x="568" y="40" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="602" y="67" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#52525B" text-anchor="middle">MSG 6</text>
+<path d="M626,62 l5,6 l11,-13" fill="none" stroke="#2E7D46" stroke-width="2.25"/>
+<text x="16" y="132" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" font-weight="700" fill="#1A1A1F">KAFKA&#x27;S LOG</text>
+<text x="128" y="132" font-family="'Inter',system-ui,sans-serif" font-size="11.5" fill="#8A8A94">one line: everything up to here is done</text>
+<rect x="48" y="142" width="96" height="44" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="96" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2E7D46" text-anchor="middle">MSG 1</text>
+<rect x="152" y="142" width="96" height="44" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="200" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2E7D46" text-anchor="middle">MSG 2</text>
+<rect x="256" y="142" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#D6D2CA" stroke-dasharray="4 3"/>
+<text x="304" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="middle">MSG 3</text>
+<rect x="360" y="142" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#D6D2CA" stroke-dasharray="4 3"/>
+<text x="408" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="middle">MSG 4</text>
+<rect x="464" y="142" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#D6D2CA" stroke-dasharray="4 3"/>
+<text x="512" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="middle">MSG 5</text>
+<rect x="568" y="142" width="96" height="44" rx="7" fill="#FFFFFF" stroke="#D6D2CA" stroke-dasharray="4 3"/>
+<text x="616" y="169" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="middle">MSG 6</text>
+<line x1="252" y1="134" x2="252" y2="192" stroke="#2563EB" stroke-width="2"/>
+<path d="M252,134 l40,0 l0,14 l-40,0" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<text x="256" y="145" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#2563EB">committed up to here</text>
+<line x1="304" y1="86" x2="256" y2="134" stroke="#B45309" stroke-width="1.25" stroke-dasharray="3 3"/>
+</svg>
