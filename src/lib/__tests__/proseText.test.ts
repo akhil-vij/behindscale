@@ -51,6 +51,11 @@ describe('proseText', () => {
       'Body.\n\n{{figure:Bad_Slug}}\n\nMore.',
     )
   })
+
+  it('strips list markers, keeping item text, so counts see only prose', () => {
+    const input = 'Lead-in:\n\n- first item\n- second item\n\nAfter.'
+    expect(proseText(input)).toBe('Lead-in:\n\nfirst item\nsecond item\n\nAfter.')
+  })
 })
 
 describe('proseRaw', () => {

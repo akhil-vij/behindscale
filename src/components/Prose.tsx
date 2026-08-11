@@ -14,8 +14,17 @@
 // pattern definition pages) get the today-identical behavior. This
 // is proseRaw() territory per §0.3 -- the marker must remain in the
 // string so the renderer can see it.
+//
+// Lists extension (docs/lists-design.md, 2026-08-11). A chunk whose
+// lines are all supported list items renders as a <ul>/<ol> instead
+// of a <p>. This is the same "one more chunk classification" move as
+// figures. parseList() is the shared classifier; the build-time
+// `list-block-well-formed` check has already rejected every malformed
+// shape, so the renderer trusts it and falls a null result through to
+// a <p>.
 
 import { FIGURE_MARKER_EXACT } from '../lib/proseText'
+import { parseList } from '../lib/proseList'
 import type { Figure as FigureType } from '../types'
 import Figure from './Figure'
 
@@ -49,6 +58,26 @@ export default function Prose({ children, articleSlug, figures }: ProseProps) {
           // orphan-figure-markers check catches this case before it
           // ships, so this branch is defense-in-depth for dev
           // preview only.
+        }
+        const list = parseList(trimmed)
+        if (list) {
+          const listClass = `ml-5 space-y-2 marker:text-text-muted ${
+            list.ordered ? 'list-decimal' : 'list-disc'
+          }`
+          const items = list.items.map((item, j) => (
+            <li key={j} className="pl-1 leading-relaxed text-text-secondary">
+              {item}
+            </li>
+          ))
+          return list.ordered ? (
+            <ol key={i} className={listClass}>
+              {items}
+            </ol>
+          ) : (
+            <ul key={i} className={listClass}>
+              {items}
+            </ul>
+          )
         }
         return (
           <p key={i} className="leading-relaxed text-text-secondary">

@@ -455,13 +455,17 @@ Every per-article summary JSON in `content/articles/` conforms to the
   assumes one line).
 - `problem` — required string. What the team was solving — the
   motivating problem the original post describes. Plain
-  paragraph-separated text (paragraphs split on blank lines); markdown
-  rendering is deferred until the first real Claude output lands
-  (Unit 7+), at which point we adopt a renderer (likely `react-markdown`)
-  and these fields gain lists/code/links. Until then, treat as plain
-  prose.
+  paragraph-separated text (paragraphs split on blank lines), **plus
+  one Markdown-subset construct: unordered (`- `) and ordered (`1. `)
+  lists** (docs/lists-design.md). A chunk whose lines are all list
+  items renders as a `<ul>`/`<ol>`; `list-block-well-formed` hard-errors
+  on malformed shapes. Full markdown (bold/code/links/headings) is
+  still deferred until the first real Claude output lands (Unit 7+), at
+  which point we adopt a renderer (likely `react-markdown`); the list
+  syntax is a strict CommonMark subset, so that migration renders
+  today's list content unchanged.
 - `solution` — required string. How they solved it — the architectural
-  approach the post takes. Same paragraph-separated-plain-text contract
+  approach the post takes. Same paragraph-separated-plus-lists contract
   as `problem`.
 - `tradeoffs` — required string array. The costs, constraints, and
   limitations the solution introduces.
@@ -552,9 +556,10 @@ pattern's detail page.
 - `slug` — canonical identifier.
 - `name` — human-readable pattern name (e.g. "Atomic Phases").
 - `definition` — a hand-authored or hand-reviewed multi-paragraph
-  description: what the pattern is, how it works, when to use it. Plain
-  paragraph-separated text (same rendering contract as `Article.problem`
-  / `Article.solution`); markdown rendering deferred to Unit 7+.
+  description: what the pattern is, how it works, when to use it. Same
+  paragraph-separated-plus-lists rendering contract as `Article.problem`
+  / `Article.solution` (`- `/`1. ` lists supported; full markdown
+  deferred to Unit 7+).
 - `whenItApplies` — short bullet list of situations where this pattern is
   the right tool.
 - `tradeoffs` — short bullet list of the costs and constraints the pattern

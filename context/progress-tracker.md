@@ -33,6 +33,41 @@ Update this file after every meaningful implementation change.
   06-11 "stats are a lift, not a source" decision
   entry below records the original 3 as history.
 
+  **Inline prose lists — IMPLEMENTED (2026-08-11,
+  owner decision).** Design doc: `docs/lists-design.md`.
+  Body prose (`problem`, `solution`) and pattern
+  `definition` now render `- ` blocks as `<ul>` and
+  `1. ` blocks as `<ol>`. Approach: extended
+  `Prose.tsx`'s chunk classifier with one list branch
+  (the same mechanism that turns a lone
+  `{{figure:...}}` chunk into a `<Figure>`) — NOT a
+  react-markdown dependency; the accepted syntax is a
+  strict CommonMark subset so the eventual Unit 7+
+  markdown adoption renders today's content unchanged.
+  Owner-locked: bulleted (list-disc/list-decimal)
+  style; unordered + ordered in v1; strict validator
+  (hard errors). Shipped:
+  - `src/lib/proseList.ts` — shared classifier
+    (`parseList` for the renderer, `analyzeChunk` for
+    the validator, `stripListMarkers` for proseText).
+    Single source of truth so render and validation
+    can't diverge.
+  - `Prose.tsx` list branch; `proseText.ts` strips
+    list markers (counts/indexes see item prose only).
+  - `scripts/checks/list-block-well-formed.ts` (15th
+    validator) — six malformed-shape hard errors
+    (mixed chunk, mixed markers, single-item, blank-
+    separated items, nesting, unsupported form).
+  - architecture.md prose-field contract updated (3
+    spots); proseList + list-check + proseText tests
+    (188 → 217 tests).
+  - segment-centrifuge-database-queue re-listed: the
+    three blocks flattened in `6b666e6` restored to
+    real `- ` lists (2 in problem, 1 in solution).
+  Prompted by the segment-centrifuge bundle authoring
+  `- ` bullets that the old plain-text renderer emitted
+  as literal dashes.
+
   Shape of the feature:
   - **Format**: SVG only. No raster / photos /
     screenshots. Owner rationale: match visual

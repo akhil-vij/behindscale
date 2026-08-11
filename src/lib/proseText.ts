@@ -13,6 +13,13 @@
 // of problem/solution for measurement, indexing, or description must
 // call proseText(). proseRaw() is for rendering only.
 //
+// List markers (docs/lists-design.md): proseText() also strips the
+// leading `- ` / `N. ` from list-item lines, keeping the item text,
+// for the same reason it strips figure markers -- the marker
+// characters are structure, not prose, and must not inflate length-
+// band counts or leak into any future index/description. The renderer
+// keeps them (via proseRaw) because it needs to see the list.
+//
 // Today's consumers wired in:
 //   - scripts/checks/stats-value-in-prose.ts -> proseText()
 //   - src/components/Prose.tsx                -> proseRaw()
@@ -26,6 +33,8 @@
 //     crux, title, source, company, patternNames -- not body prose.
 //     If a future revision starts indexing body prose, it must call
 //     proseText().
+
+import { stripListMarkers } from './proseList'
 
 // The marker syntax accepted in prose fields. Locked at:
 //   {{figure:<kebab-case-slug>}}
@@ -44,7 +53,7 @@ const FIGURE_MARKER_RE = /\{\{figure:[a-z0-9]+(?:-[a-z0-9]+)*\}\}/g
 //   Input:  "First paragraph.\n\n{{figure:foo}}\n\nSecond paragraph."
 //   Output: "First paragraph.\n\nSecond paragraph."
 export function proseText(field: string): string {
-  return field
+  return stripListMarkers(field)
     .replace(FIGURE_MARKER_RE, '')
     // A marker on its own line, with blank lines both sides, leaves
     // three consecutive newlines after removal (`\n\n` + `` + `\n\n`

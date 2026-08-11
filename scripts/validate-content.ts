@@ -25,6 +25,7 @@ import { orphanFigureMarkers } from './checks/orphan-figure-markers'
 import { unusedFigureDefs } from './checks/unused-figure-defs'
 import { markerPlacementLegal } from './checks/marker-placement-legal'
 import { figureCountCeiling } from './checks/figure-count-ceiling'
+import { listBlockWellFormed } from './checks/list-block-well-formed'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -45,6 +46,7 @@ const CHECKS: readonly Check[] = [
   unusedFigureDefs,
   markerPlacementLegal,
   figureCountCeiling,
+  listBlockWellFormed,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()
