@@ -2030,3 +2030,142 @@ each data-URI decodes back to valid SVG. The .jsx artifact was NOT touched this 
 
 **Deliverables:** the JSON (with `figures[]` + markers), three `.svg` files, the rebuilt
 preview .html, and this entry. The .jsx is unchanged from the plain-language round.
+
+---
+
+## github-partitioning-relational-databases - Review + produce (2026-08-11)
+
+Fresh full review, then produced on owner "Go". Verdict was SHIP WITH FIXES. Source
+grounded against Thomas Maurer's GitHub post (github.blog); the live behindscale page
+rendered and was byte-for-byte the uploaded JSON, so no drift. The teaching, structure,
+and the artifact's two-stage simulation were sound; fixes were one factual error, the
+house-style sweep, sentence length, and plain-language glosses per the owner's standing
+preference, plus one recurring artifact defect.
+
+**Correctness.** One real error, now fixed: the solution claimed queries were "up more
+than 30% from 2019", but the post reports 950,000 -> 1,200,000 queries/s, which is
++26.3%, and gives no percentage at all. Replaced with "up from 950,000 two years
+earlier" so the two real numbers carry the growth. Everything else ground clean: the six
+cutover steps and order, 130 tables, 950k/1.2M, the 50% per-host halving, schema-domain
+YAML, both linters, annotate / disable_joins / preload-vs-includes / Scientist, the
+transaction linter, the polymorphic reactions extraction, Vitess VTGate/VReplication,
+ProxySQL, "boring" tech, and the horizontal-sharding deferral. Two minor notes left as
+is: "Vitess born at YouTube" is true and well known but not in this post (kept as common
+knowledge), and the artifact's "reactions -> issue_reactions" is an invented example name
+covered by the artifact's own "illustrative" footer.
+
+**Em-dash overrun - PRESENT, swept: 63 total (37 JSON + 26 JSX) -> 0.** Spaced hyphens,
+colons, or parentheses depending on the join; the artifact's UI arrows and middots kept.
+
+**Sentence length.** Ten sentences ran over ~40 words (the summary's 64-word run-on the
+worst); all split to <= 40. Longest now 40, in a crux sentence carried over unchanged
+from the upload; everything I rewrote is <= 38.
+
+**Plain language (owner preference).** Glossed the deep terms the way LSN was handled on
+the GitLab piece: GTID -> "a marker of how far its writes have gotten"; preload vs
+includes -> "loading the two tables in separate queries instead of one JOIN"; vertical
+sharding -> "it moves whole tables to another cluster"; horizontal -> "splitting one
+individual table across clusters"; read-your-writes -> "being able to read data you just
+wrote"; VTGate/VReplication softened to "proxies sit in front" / "copies the tables
+between clusters".
+
+**Artifact - off-state toggle contrast fixed.** The btn helper's off-state border
+#2a2a3a on a #0c0d13 background (the recurring invisible-toggle defect) raised to
+#4a4f60. The 6 remaining #2a2a3a are panel/meter/root/footer chrome, not controls, and
+were left. No other artifact change.
+
+**Logic untouched, proven.** Only display strings and that one border value changed. The
+code skeleton (all non-string tokens) is byte-identical to the upload, esbuild parses
+clean, and the cutover math is therefore unchanged - traced earlier as exact: clean run
+19-36 ms (green "tens of milliseconds"), lagging replica 1,165-1,427 ms (red "visible
+outage"), failed-write counts scaling correctly with traffic. The gate (physical move
+unlocks only at zero violations AND zero exemptions) is faithful to the article's
+"backlog, not progress".
+
+**Bands after fixes:** summary 744, crux 516, problem 1762, solution 4488. The glosses
+pushed solution to the top of its band; trimmed "originally" and a leading "But" to land
+under 4500 without dropping any gloss. cruxSummary 15 words. P27 frozen fields
+byte-identical to the upload; stats values and labels unchanged.
+
+**Recurring-defect scorecard:** em-dash overrun PRESENT (63); invisible off-state toggles
+PRESENT (fixed this article); taxonomy-first crux ABSENT (good - crux opens on GitHub's
+own two-axis ceiling); registry jargon in pattern notes ABSENT (good - the Figma
+cross-reference is legitimate teaching). The off-state toggle border is the same
+shared-component defect seen across articles; fixed per-article again, upstream fix still
+open.
+
+**Deliverables:** corrected .json, patched .jsx, rebuilt preview .html, this entry. NO
+svg - text round; figures are the separate step after text approval. My read on figures
+for this piece: the strongest candidates are the virtual-then-physical ordering (the
+whole thesis), the linter gate burning down to zero to unlock the move, and the six-step
+cutover as a timeline with the read-only window shrinking to tens of milliseconds. I will
+propose a set once the text is approved.
+
+### github-partitioning-relational-databases - Produce round 2 (2026-08-11): deeper plain language, list, stat, figures, artifact
+
+Owner reviewed round 1 line by line and asked for a deeper plain-language pass, the six
+cutover steps as a list, a new stat, several artifact fixes, and made the image call mine.
+
+**Deeper plain-language pass.** Glossed or simplified every term the owner flagged: schema
+domain -> "a named group of tables that belong together"; ProxySQL -> "a connection
+pooler"; double bind -> "a problem on two fronts at once"; shared-fate domain ->
+"everything shared mysql1's fate"; "give boundaries teeth" -> "enforce those boundaries";
+the has_many :through / disable_joins / annotate sentence broken into plain steps, with
+has_many :through glossed as "a Rails way of reaching related rows through a link table";
+Scientist experiment -> "old and new both run on the same real requests, results compared,
+only the old result used, so users are never affected" (this also answers the owner's "is
+it A/B testing" - it is shadow comparison, not user-facing A/B); polymorphic table -> "one
+shared table that stores rows for several features at once"; VTGate/VReplication -> "a
+proxy in front that speaks the MySQL protocol" / "copies whole tables between clusters in
+the background" (names dropped from prose); write-cutover replica/multiplexing -> "a live
+copy of the old one" / "ProxySQL shares the app's connections so traffic can be redirected
+from one place"; GTID -> "the last write position, a marker of how far its writes have
+gotten"; exemption annotation -> "a comment that tells the linter to ignore a query that
+still crosses a boundary"; deployment topology -> "which tables sit on which cluster", with
+the sentence rewritten to show how it entered the trade-off; denormalization by partition
+boundary -> "a new kind of coupling introduced to remove an old one"; GTID poll -> "the
+wait in step three, until the new cluster has caught up". Artifact subtitle rewritten (the
+owner could not tell what "the move" was) and the context block given a schema-domain gloss
+and a simpler cutover line.
+
+**Six cutover steps as a list.** Converted the run-on six-step sentence into a real
+bulleted list in the solution (renders as <ul> on the site, per the problem-field list
+convention). GTID glossed inside the list.
+
+**New stat (owner-authorized).** Appended a fourth stat, "1,200,000 queries/s" (placement
+solution), so the reader can compare it with the existing 950,000 stat. Stats are normally
+P27-frozen; this addition was explicitly requested. The existing three stats are unchanged.
+
+**Band tension, resolved honestly.** All that glossing pushed the solution 374 over its
+4,500 band. Rather than quietly drop anything the owner asked for, I leaned on the three
+figures to trim the prose they now carry (the "behaves as if split" line, the cutover
+setup, the Vitess detail), landing solution at 4,495 with every gloss, the list, and the
+new stat intact. summary 855, crux 516, problem 1,797. Longest prose sentence 40 (the
+untouched crux line); everything rewritten is <= 38.
+
+**Figures - my call: 3, from the owner's 5 candidates.** Text is approved, so this round
+adds figures. Chosen: (1) tables-split-breaks (problem) - a JOIN and a transaction across
+an issues and a users table, both severed by a new cluster boundary; the owner's
+"well-framed, good image candidate". (2) virtual-before-physical (solution) - Stage 1 shows
+mysql1 holding the gists / repositories / users domains with their member tables and a
+linter blocking a cross-domain query; Stage 2 moves the repositories domain to cluster_b.
+This one figure merges two of the owner's candidates: it is the schema-domains explainer
+(answering "what are schema domains", asked four times) and the virtual-then-physical thesis
+(which the owner explicitly asked to visualize). (3) write-cutover-window (solution) - the
+six steps as a timeline, steps 1-5 the read-only window (tens of ms, writes refused), step 6
+release; the owner asked for this one twice. Dropped the weakest candidate, the app-side-join
+performance chart: the post gives no numbers, so the chart would be hand-wavy, and the prose
+now explains the point plainly. House SVG idiom, rasterized and eyeballed, one label
+collision in fig 1 fixed. Each figure has eyebrow/caption/ariaLabel; markers placed as their
+own paragraphs; preview inlines all three as decoded, valid data-URIs.
+
+**Artifact - three fixes, logic still safe.** Subtitle and context block reworded (above);
+the cutover animation slowed from a dur-scaled delay to a fixed 600 ms per step (1,200 ms on
+the lagging-replica step, 450 ms initial) because the owner could not perceive steps 0-7
+going by. Only display strings and the setTimeout delays changed; the simulated read-only
+window (clockMs) and failed-write math are untouched, so the numbers stay faithful (clean
+19-36 ms, lag 1,165-1,427 ms). Parse OK.
+
+**Frozen fields:** all P27 non-stats byte-identical to the upload; existing stats unchanged;
+one owner-requested stat appended. Deliverables: corrected .json, patched .jsx, rebuilt
+preview .html, three .svg figures, this log.

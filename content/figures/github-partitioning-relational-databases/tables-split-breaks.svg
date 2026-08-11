@@ -1,0 +1,21 @@
+<svg viewBox="0 0 700 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A JOIN and a transaction each span an issues table and a users table; a new cluster boundary between them severs both, so the cross-cluster JOIN is impossible and the transaction is no longer consistent"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">ONE DATABASE: BOTH WORK. TWO CLUSTERS: BOTH BREAK.</text>
+<text x="135" y="44" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#52525B" text-anchor="middle" font-weight="400">a JOIN between them</text>
+<rect x="60" y="58" width="150" height="52" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="135" y="82" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="13" fill="#2563EB" text-anchor="middle" font-weight="700">issues</text>
+<text x="135" y="98" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="400">repositories domain</text>
+<rect x="490" y="58" width="150" height="52" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="565" y="82" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="13" fill="#2E7D46" text-anchor="middle" font-weight="700">users</text>
+<text x="565" y="98" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="400">users domain</text>
+<line x1="210" y1="84" x2="490" y2="84" stroke="#8A8A94" stroke-width="1.5"/>
+<rect x="60" y="150" width="580" height="46" rx="8" fill="#FDF3E7" stroke="#1A1A1F" stroke-width="1.5"/>
+<text x="70" y="146" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="start" font-weight="400">one transaction touching both</text>
+<text x="90" y="178" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#1A1A1F" text-anchor="start" font-weight="400">update issues</text>
+<text x="430" y="178" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#1A1A1F" text-anchor="start" font-weight="400">insert into users</text>
+<line x1="350" y1="50" x2="350" y2="210" stroke="#DC2626" stroke-width="1.75" stroke-dasharray="5 4"/>
+<text x="350" y="226" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#DC2626" text-anchor="middle" font-weight="700">new cluster boundary</text>
+<circle cx="350" cy="84" r="9" fill="#FFFFFF" stroke="#DC2626" stroke-width="1.5"/><line x1="346.5" y1="80.5" x2="353.5" y2="87.5" stroke="#DC2626" stroke-width="1.75"/><line x1="346.5" y1="87.5" x2="353.5" y2="80.5" stroke="#DC2626" stroke-width="1.75"/>
+<circle cx="350" cy="173" r="9" fill="#FFFFFF" stroke="#DC2626" stroke-width="1.5"/><line x1="346.5" y1="169.5" x2="353.5" y2="176.5" stroke="#DC2626" stroke-width="1.75"/><line x1="346.5" y1="176.5" x2="353.5" y2="169.5" stroke="#DC2626" stroke-width="1.75"/>
+<text x="340" y="118" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="end" font-weight="400">JOIN: cannot reach across</text>
+<text x="370" y="206" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="start" font-weight="400">transaction: consistency lost</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stage one shows mysql1 holding gists, repositories, and users schema domains with a linter blocking a query between two of them; stage two shows the repositories domain moved out to a separate cluster_b"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">THE APP BEHAVES SPLIT BEFORE THE DATA MOVES</text>
+<rect x="12" y="34" width="330" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="400">STAGE 1 - VIRTUAL (in the code)</text>
+<rect x="24" y="66" width="306" height="120" rx="8" fill="#FFFFFF" stroke="#8A8A94" stroke-width="1.25" stroke-dasharray="4 3"/>
+<text x="32" y="80" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#8A8A94" text-anchor="start" font-weight="400">mysql1</text>
+<rect x="34" y="86" width="92" height="92" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/>
+<text x="80" y="102" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB" text-anchor="middle" font-weight="700">gists</text>
+<text x="80" y="120" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">gists</text>
+<text x="80" y="135" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">gist_comments</text>
+<text x="80" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">starred_gists</text>
+<rect x="134" y="86" width="92" height="92" rx="6" fill="#FDF3E7" stroke="#B45309" stroke-width="1.25"/>
+<text x="180" y="102" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="700">repositories</text>
+<text x="180" y="120" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">issues</text>
+<text x="180" y="135" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">pull_requests</text>
+<text x="180" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">repositories</text>
+<rect x="234" y="86" width="92" height="92" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="280" y="102" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">users</text>
+<text x="280" y="120" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">users</text>
+<text x="280" y="135" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">avatars</text>
+<text x="280" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">...</text>
+<line x1="126" y1="132" x2="134" y2="132" stroke="#DC2626" stroke-width="1.5"/>
+<circle cx="130" cy="132" r="8" fill="#FFFFFF" stroke="#DC2626" stroke-width="1.5"/><line x1="127.0" y1="129.0" x2="133.0" y2="135.0" stroke="#DC2626" stroke-width="1.75"/><line x1="127.0" y1="135.0" x2="133.0" y2="129.0" stroke="#DC2626" stroke-width="1.75"/>
+<text x="178" y="200" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DC2626" text-anchor="middle" font-weight="400">linter fails any query crossing a domain</text>
+<text x="28" y="232" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="start" font-weight="400">all tables still on mysql1</text>
+<line x1="344" y1="130" x2="372" y2="130" stroke="#1A1A1F" stroke-width="2" marker-end="url(#fah)"/>
+<text x="358" y="120" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">then</text>
+<rect x="378" y="34" width="310" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="394" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="400">STAGE 2 - PHYSICAL (in the database)</text>
+<rect x="390" y="72" width="150" height="120" rx="8" fill="#FFFFFF" stroke="#8A8A94" stroke-width="1.25" stroke-dasharray="4 3"/>
+<text x="398" y="86" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#8A8A94" text-anchor="start" font-weight="400">mysql1</text>
+<rect x="400" y="96" width="60" height="84" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/>
+<text x="430" y="140" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2563EB" text-anchor="middle" font-weight="700">gists</text>
+<rect x="468" y="96" width="60" height="84" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="498" y="140" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">users</text>
+<rect x="598" y="104" width="82" height="74" rx="8" fill="#FDF3E7" stroke="#B45309" stroke-width="1.75"/>
+<text x="639" y="132" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">cluster_b</text>
+<text x="639" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#B45309" text-anchor="middle" font-weight="400">repositories</text>
+<line x1="544" y1="140" x2="596" y2="140" stroke="#B45309" stroke-width="2" marker-end="url(#fah)"/>
+<text x="570" y="131" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#B45309" text-anchor="middle" font-weight="700">move</text>
+<text x="394" y="232" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="start" font-weight="400">only a domain with zero violations moves</text>
+</svg>

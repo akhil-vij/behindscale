@@ -19,14 +19,14 @@ const GREEN = "#22c55e";
 const QUERIES = [
   {
     id: "q1", sql: "SELECT * FROM gists WHERE user_id = ?", domains: "gists",
-    clean: true, note: "one domain — the linter has nothing to say",
+    clean: true, note: "one domain - the linter has nothing to say",
   },
   {
     id: "q2", sql: "SELECT * FROM repositories INNER JOIN users ON users.id = repositories.owner_id", domains: "repositories + users",
     clean: false,
     fixes: [
-      { id: "exempt", label: "ANNOTATE /* cross-schema-domain-query-exempted */", kind: "exempt", note: "CI passes again — and the query joins the burndown backlog" },
-      { id: "split", label: "SPLIT: two queries, union in Ruby", kind: "fix", note: "app-side join; shipped behind a Scientist experiment — occasionally faster than the planner" },
+      { id: "exempt", label: "ANNOTATE /* cross-schema-domain-query-exempted */", kind: "exempt", note: "CI passes again - and the query joins the burndown backlog" },
+      { id: "split", label: "SPLIT: two queries, union in Ruby", kind: "fix", note: "app-side join; shipped behind a Scientist experiment - occasionally faster than the planner" },
     ],
   },
   {
@@ -42,7 +42,7 @@ const QUERIES = [
     clean: false,
     fixes: [
       { id: "exempt", label: "ANNOTATE (transaction linter, prod-sampled)", kind: "exempt", note: "sampled in production; the consistency loss stays live" },
-      { id: "extract", label: "EXTRACT per-domain table (reactions -> issue_reactions)", kind: "fix", note: "rows that must commit together stay on one cluster — the schema bends to topology" },
+      { id: "extract", label: "EXTRACT per-domain table (reactions -> issue_reactions)", kind: "fix", note: "rows that must commit together stay on one cluster - the schema bends to topology" },
     ],
   },
 ];
@@ -90,13 +90,13 @@ export default function TensOfMilliseconds() {
       i += 1;
       if (i < CUT_STEPS.length) {
         setStepIdx(i);
-        setTimeout(advance, Math.min(900, 60 + dur * (st.id === 3 && lag ? 0.7 : 28)));
+        setTimeout(advance, st.id === 3 && lag ? 1200 : 600);
       } else {
         setStepIdx(6); setRunning(false);
         setDoneRun({ windowMs: ms, failed: Math.round(failed), lag, peak });
       }
     };
-    setTimeout(advance, 250);
+    setTimeout(advance, 450);
   };
   const resetCutover = () => { setRunning(false); setStepIdx(-1); setClockMs(0); setFailedWrites(0); setDoneRun(null); rng.current = mulberry32(42); };
 
@@ -108,23 +108,23 @@ export default function TensOfMilliseconds() {
     btn: (on, disabled) => ({
       padding: "6px 10px", marginTop: 6, marginRight: 6, borderRadius: 6, display: "inline-block", textAlign: "left",
       cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
-      border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#bcd8ff" : "#8b90a0",
+      border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#bcd8ff" : "#8b90a0",
       background: on ? "rgba(88,166,255,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11,
     }),
   };
 
   const gateColor = unlocked ? GREEN : exemptions > 0 && violations === 0 ? AMBER : RED;
   const gateText = unlocked
-    ? "gists + repositories domains: VIRTUALLY PARTITIONED — zero violations, zero exemptions. The physical move is unlocked."
+    ? "gists + repositories domains: VIRTUALLY PARTITIONED - zero violations, zero exemptions. The physical move is unlocked."
     : violations > 0
-      ? `${violations} violation${violations > 1 ? "s" : ""} remaining — the linter fails CI on each. Fix or annotate them.`
-      : `0 violations, ${exemptions} exemption${exemptions > 1 ? "s" : ""} — CI passes, but an annotated query is backlog, not progress. The move stays LOCKED until the backlog burns to zero.`;
+      ? `${violations} violation${violations > 1 ? "s" : ""} remaining - the linter fails CI on each. Fix or annotate them.`
+      : `0 violations, ${exemptions} exemption${exemptions > 1 ? "s" : ""} - CI passes, but an annotated query is backlog, not progress. The move stays LOCKED until the backlog burns to zero.`;
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>GITHUB · PARTITIONING MYSQL1 — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>GITHUB · PARTITIONING MYSQL1 - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>Tens of milliseconds</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>The move happens twice: first in the application, enforced by a linter — then in the database, in a read-only window you can measure.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Moving the tables happens in two stages: first in the code, where a linter blocks any query that crosses a domain boundary, then in the database, in a brief read-only window you can measure.</p>
 
       <ContextBlock />
 
@@ -137,13 +137,13 @@ export default function TensOfMilliseconds() {
       </div>
 
       <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-        <button style={S.btn(tab === "lint", false)} onClick={() => setTab("lint")}>STAGE 1 · VIRTUAL — THE LINTER</button>
-        <button style={S.btn(tab === "cut", !unlocked)} disabled={!unlocked} onClick={() => unlocked && setTab("cut")}>STAGE 2 · PHYSICAL — THE WRITE-CUTOVER {unlocked ? "" : "(locked)"}</button>
+        <button style={S.btn(tab === "lint", false)} onClick={() => setTab("lint")}>STAGE 1 · VIRTUAL - THE LINTER</button>
+        <button style={S.btn(tab === "cut", !unlocked)} disabled={!unlocked} onClick={() => unlocked && setTab("cut")}>STAGE 2 · PHYSICAL - THE WRITE-CUTOVER {unlocked ? "" : "(locked)"}</button>
       </div>
 
       {tab === "lint" && (
         <div style={{ ...S.panel, marginTop: 10 }}>
-          <div style={S.label}>db/schema-domains.yml — gists: [gists, gist_comments, starred_gists] · repositories: [issues, pull_requests, repositories] · users: [avatars, users, …]</div>
+          <div style={S.label}>db/schema-domains.yml - gists: [gists, gist_comments, starred_gists] · repositories: [issues, pull_requests, repositories] · users: [avatars, users, …]</div>
           {QUERIES.map((q) => {
             const state = q.clean ? "clean" : resolved[q.id] || "violation";
             const color = state === "clean" || state === "fix" ? GREEN : state === "exempt" ? AMBER : RED;
@@ -151,10 +151,10 @@ export default function TensOfMilliseconds() {
               <div key={q.id} style={{ marginTop: 10, background: "#0c0d13", border: `1px solid ${color}55`, borderRadius: 6, padding: "8px 10px" }}>
                 <code style={{ fontSize: 10.5, color: "#c8cdd8" }}>{q.sql}</code>
                 <div style={{ fontSize: 10, marginTop: 4, color }}>
-                  {state === "clean" && `LINTER: PASS — ${q.note}`}
-                  {state === "violation" && `LINTER: EXCEPTION — query spans schema domains (${q.domains})`}
-                  {state === "exempt" && "LINTER: SUPPRESSED — exempted; added to the burndown backlog"}
-                  {state === "fix" && "LINTER: PASS — coupling removed"}
+                  {state === "clean" && `LINTER: PASS - ${q.note}`}
+                  {state === "violation" && `LINTER: EXCEPTION - query spans schema domains (${q.domains})`}
+                  {state === "exempt" && "LINTER: SUPPRESSED - exempted; added to the burndown backlog"}
+                  {state === "fix" && "LINTER: PASS - coupling removed"}
                 </div>
                 {!q.clean && state !== "fix" && (
                   <div>
@@ -207,8 +207,8 @@ export default function TensOfMilliseconds() {
           {doneRun && (
             <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 6, border: `1px solid ${doneRun.windowMs < 100 ? GREEN : RED}`, background: doneRun.windowMs < 100 ? "#0f2418" : "#241012", fontSize: 11.5, lineHeight: 1.6 }}>
               {doneRun.windowMs < 100
-                ? `✓ Cutover complete: read-only for ${doneRun.windowMs.toFixed(1)} ms, ${doneRun.failed} writes failed${doneRun.peak ? " — even brief windows hurt at peak; this is why GitHub runs cutovers in the lowest-traffic window" : " — the sourced result: tens of milliseconds, a handful of user-facing errors. This is how 130 of the busiest tables moved in one shot."}`
-                : `✗ Read-only for ${(doneRun.windowMs / 1000).toFixed(2)} s — ${doneRun.failed} writes failed. Step 3 is the load-bearing detail: the window stays short only if cluster_b is already caught up when the script starts. Lagging replication turns tens of milliseconds into a visible outage — which is why the process demands thorough preparation and rehearsal.`}
+                ? `✓ Cutover complete: read-only for ${doneRun.windowMs.toFixed(1)} ms, ${doneRun.failed} writes failed${doneRun.peak ? " - even brief windows hurt at peak; this is why GitHub runs cutovers in the lowest-traffic window" : " - the sourced result: tens of milliseconds, a handful of user-facing errors. This is how 130 of the busiest tables moved in one shot."}`
+                : `✗ Read-only for ${(doneRun.windowMs / 1000).toFixed(2)} s - ${doneRun.failed} writes failed. Step 3 is the load-bearing detail: the window stays short only if cluster_b is already caught up when the script starts. Lagging replication turns tens of milliseconds into a visible outage - which is why the process demands thorough preparation and rehearsal.`}
             </div>
           )}
         </div>
@@ -232,12 +232,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>GitHub.com spent a decade built around one MySQL cluster — mysql1 — and hit the ceiling on two axes at once: staying adequately sized meant perpetually buying bigger machines, and any incident on the cluster took every core feature down together. Worse, ten years of code silently assumed all tables lived in one database.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Partition virtually before physically: schema domains declared in YAML, SQL linters that fail CI on any query or transaction crossing a domain, and only then the physical move — a six-step ProxySQL + GTID write-cutover whose read-only window lasts tens of milliseconds.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Fix or exempt the four queries and watch the gate: exemptions pass CI but keep the move locked. Then run the cutover — at low traffic, at peak, and with a lagging replica — and read the window in milliseconds.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>GitHub.com spent a decade built around one MySQL cluster - mysql1 - and hit the ceiling on two axes at once: staying adequately sized meant perpetually buying bigger machines, and any incident on the cluster took every core feature down together. Worse, ten years of code silently assumed all tables lived in one database.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Split in two stages. First in the code: group related tables into named schema domains (a schema domain is just a set of tables that belong together), and add linters that fail the build on any query or transaction that crosses a domain. Only then move the data, with a six-step cutover that briefly makes the tables read-only while it switches them to a new database, a window of tens of milliseconds.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Fix or exempt the four queries and watch the gate: exemptions pass CI but keep the move locked. Then run the cutover - at low traffic, at peak, and with a lagging replica - and read the window in milliseconds.</div>
     </div>
   );
 }
