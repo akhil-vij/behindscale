@@ -1,0 +1,24 @@
+<svg viewBox="0 0 700 222" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The application spreads reads across many replicas, but every write goes to one primary server already maxed at 96 of 96 cores"><defs><marker id="f_ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">READS FAN OUT &#183; EVERY WRITE HITS ONE SERVER</text>
+<rect x="28" y="86" width="120" height="48" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="88" y="108" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2563EB" text-anchor="middle" font-weight="700">APPLICATION</text>
+<text x="88" y="124" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#52525B" text-anchor="middle" font-weight="400">fleet</text>
+<text x="300" y="44" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="start" font-weight="400">READ REPLICAS &#183; add as many as you like</text>
+<rect x="300" y="54" width="84" height="30" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="342" y="73" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="400">replica</text>
+<line x1="150" y1="100" x2="342" y2="86" stroke="#8A8A94" stroke-width="1.1" marker-end="url(#f_ah)"/>
+<rect x="392" y="54" width="84" height="30" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="434" y="73" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="400">replica</text>
+<line x1="150" y1="100" x2="434" y2="86" stroke="#8A8A94" stroke-width="1.1" marker-end="url(#f_ah)"/>
+<rect x="484" y="54" width="84" height="30" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="526" y="73" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="400">replica</text>
+<line x1="150" y1="100" x2="526" y2="86" stroke="#8A8A94" stroke-width="1.1" marker-end="url(#f_ah)"/>
+<rect x="576" y="54" width="84" height="30" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.25"/>
+<text x="618" y="73" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="400">replica</text>
+<line x1="150" y1="100" x2="618" y2="86" stroke="#8A8A94" stroke-width="1.1" marker-end="url(#f_ah)"/>
+<rect x="360" y="158" width="200" height="48" rx="7" fill="#FDF3E7" stroke="#1A1A1F" stroke-width="1.75"/>
+<text x="460" y="180" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#1A1A1F" text-anchor="middle" font-weight="700">THE ONE PRIMARY</text>
+<text x="460" y="196" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="400">96 / 96 cores &#183; 22 TiB &#183; maxed</text>
+<line x1="150" y1="120" x2="356" y2="182" stroke="#B45309" stroke-width="2.25" marker-end="url(#f_ah)"/>
+<text x="250" y="150" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="700">every write</text>
+</svg>

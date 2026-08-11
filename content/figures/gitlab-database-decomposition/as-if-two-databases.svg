@@ -1,0 +1,32 @@
+<svg viewBox="0 0 700 216" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Phases one to six run the app with two connection sets both pointing at one database; phase seven points the second connection at a new database host"><defs><marker id="f_ah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8A8A94"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">RUN AS IF TWO DATABASES, THEN FLIP ONE CONNECTION</text>
+<rect x="12" y="36" width="330" height="168" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="58" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="400">PHASES 1-6 &#183; reversible</text>
+<rect x="34" y="96" width="96" height="44" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="82" y="118" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2563EB" text-anchor="middle" font-weight="700">APP</text>
+<text x="82" y="133" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="400">two conn sets</text>
+<rect x="232" y="90" width="84" height="56" rx="7" fill="#FFFFFF" stroke="#1A1A1F" stroke-width="1.75"/>
+<text x="274" y="114" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#1A1A1F" text-anchor="middle" font-weight="700">ONE</text>
+<text x="274" y="130" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="400">database</text>
+<line x1="130" y1="108" x2="228" y2="104" stroke="#2563EB" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<line x1="130" y1="128" x2="228" y2="132" stroke="#2E7D46" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<text x="180" y="96" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="middle" font-weight="700">A</text>
+<text x="180" y="150" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">B</text>
+<text x="28" y="190" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="start" font-weight="400">app thinks it has two &#183; both still one host</text>
+<line x1="346" y1="120" x2="372" y2="120" stroke="#1A1A1F" stroke-width="2" marker-end="url(#f_ah)"/>
+<text x="359" y="110" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">flip</text>
+<rect x="378" y="36" width="310" height="168" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="394" y="58" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="400">PHASE 7 &#183; the real switch</text>
+<rect x="398" y="96" width="88" height="44" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="442" y="118" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2563EB" text-anchor="middle" font-weight="700">APP</text>
+<text x="442" y="133" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="400">two conn sets</text>
+<rect x="576" y="64" width="96" height="42" rx="7" fill="#FFFFFF" stroke="#1A1A1F" stroke-width="1.75"/>
+<text x="624" y="86" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">DB #1</text>
+<text x="624" y="100" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">rest</text>
+<rect x="576" y="132" width="96" height="42" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.75"/>
+<text x="624" y="154" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">DB #2</text>
+<text x="624" y="168" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="400">CI</text>
+<line x1="486" y1="106" x2="572" y2="88" stroke="#2563EB" stroke-width="1.25" marker-end="url(#f_ah)"/>
+<line x1="486" y1="128" x2="572" y2="150" stroke="#2E7D46" stroke-width="1.5" marker-end="url(#f_ah)"/>
+<text x="394" y="190" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="start" font-weight="400">one connection now points at the new host</text>
+</svg>
