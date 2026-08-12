@@ -1,0 +1,18 @@
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A chart with a horizontal tenant-count axis in green that scales by adding shards, and a red tenant-size curve that rises from the origin until it hits a dashed red ceiling line marked largest hardware money could buy"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">TWO AXES, ONE WALL</text>
+<line x1="90" y1="200" x2="640" y2="200" stroke="#52525B" stroke-width="1.5"/>
+<line x1="90" y1="200" x2="90" y2="48" stroke="#52525B" stroke-width="1.5"/>
+<line x1="90" y1="80" x2="640" y2="80" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="640" y="74" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="end" font-weight="700">largest hardware money could buy</text>
+<rect x="140" y="208" width="20" height="14" rx="3" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.1"/>
+<rect x="220" y="208" width="20" height="14" rx="3" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.1"/>
+<rect x="300" y="208" width="20" height="14" rx="3" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.1"/>
+<rect x="380" y="208" width="20" height="14" rx="3" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.1"/>
+<rect x="460" y="208" width="20" height="14" rx="3" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.1"/>
+<line x1="98" y1="200" x2="560" y2="200" stroke="#2E7D46" stroke-width="2" marker-end="url(#gah)"/>
+<text x="150" y="238" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#2E7D46" text-anchor="start" font-weight="700">TENANT COUNT: add shards, serve more customers (fine)</text>
+<path d="M 90 200 C 150 175, 210 120, 300 82" fill="none" stroke="#DC2626" stroke-width="2.4"/>
+<circle cx="300" cy="80" r="9" fill="#FFFFFF" stroke="#DC2626" stroke-width="1.5"/><line x1="296.5" y1="76.5" x2="303.5" y2="83.5" stroke="#DC2626" stroke-width="1.75"/><line x1="296.5" y1="83.5" x2="303.5" y2="76.5" stroke="#DC2626" stroke-width="1.75"/>
+<text x="300" y="60" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">one customer's shard</text>
+<text x="46" y="130" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#DC2626" font-weight="700" transform="rotate(-90 46 130)" text-anchor="middle">TENANT SIZE: one customer grows</text>
+</svg>

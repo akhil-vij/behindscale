@@ -2169,3 +2169,128 @@ window (clockMs) and failed-write math are untouched, so the numbers stay faithf
 **Frozen fields:** all P27 non-stats byte-identical to the upload; existing stats unchanged;
 one owner-requested stat appended. Deliverables: corrected .json, patched .jsx, rebuilt
 preview .html, three .svg figures, this log.
+
+---
+
+## slack-vitess-datastores - Review + produce (2026-08-11)
+
+Full review then produced on owner "Go". Verdict SHIP WITH FIXES. Live page was
+byte-for-byte the upload (no drift); grounded clean against the Slack Engineering post
+(Ganguli, Iaquinti, Zhou, Chacon, 2020). This was the heaviest readability load of any
+article so far: it is the first to fire all five recurring systemic defects at once.
+
+**Correctness.** No hard factual error. One minor number fix: the crux and tradeoff[1]
+said the locality assumption was load-bearing in "thousands of places" / "thousands of
+query sites". The source says "many places" assumed locality; its "thousands" figure is
+about distinct queries (the reason to stay on MySQL), a different count. Changed to "many".
+Everything else ground clean: three cluster families, active-active pairs, the bolded
+"doesn't fit our largest shard" question, the fall-2016 state, the five disadvantages, the
+app-layer prototype-and-reject with both coupling examples, RSS-first, backfill plus
+double-write plus double-read diffing, the three-year 99% migration (2.3M QPS, 2M/300K
+read-write split, 2ms median, 11ms p99), reshard-by-channel-id, the +50% COVID week, and
+the six-region data-residency and Slack Connect payoffs.
+
+**Bands - two fields over, trimmed.** summary 1,261 -> 957 (over-stuffed, the systemic
+defect); crux 1,207 -> 1,097. problem 2,375, solution 3,541, cruxSummary 12w all in band.
+
+**Em-dash overrun - swept: 61 (40 JSON + 21 JSX) -> 0.**
+
+**Sentence length - 19 sentences over 40 words, several egregious (93, 86, 71, 68).** All
+now <= 40; longest is 40. Three of the worst were fixed for free by list conversions.
+
+**List conversions (also the sentence fix).** Three prose-lists became real bulleted lists
+(they render as <ul> on the site): the three cluster families (was a 68-word sentence), the
+five fall-2016 disadvantages, and Vitess's four requirements (MySQL Core / Sharding /
+Operability / Extensibility - was the 93-word sentence). All three are bulleted in the
+source too.
+
+**Plain-language pass (owner preference).** Glossed the load-bearing jargon: active-active
+-> "both sides take reads and writes, copying to each other in the background"; keyspace ->
+"Vitess's name for a logical group of data that shards together"; QPS spelled out; p99 ->
+"the slowest 1%"; monolith -> "single big application"; NoSQL/NewSQL -> "non-relational
+stores like DynamoDB or Cassandra and newer distributed-SQL systems like Spanner or
+CockroachDB"; lock server/topology -> "a lock server tracks the layout so the application
+can ignore where anything lives"; ETL -> "data-warehouse export"; double-write and
+double-read diffing spelled out inline; Enterprise Grid and Slack Connect each glossed;
+Vitess -> "a system that shards MySQL for you".
+
+**Taxonomy-first crux - fixed.** The crux now opens on Slack's concrete situation (sharded
+by workspace, biggest customer's shard hit the largest hardware) and makes the "same
+ceiling as GitHub and Airbnb, one level down" point after the hook, not before it.
+
+**Registry jargon in notes - de-registered.** Removed "Minted from the decision", "Sibling
+boundary with ID-Encoded Placement", "the two poles", "Second company, arriving as a
+retirement story", and "the pattern at datastore scale". The Pinterest contrast is kept in
+plain reader-voice ("who is allowed to know where data lives, the application or the
+datastore").
+
+**Artifact - off-state toggle contrast fixed.** btn off-state border #2a2a3a on the
+#08090D/#0c0d13 background raised to #4a4f60; 5 remaining #2a2a3a are root/panel/chart/
+footer chrome. Dashes swept (21 -> 0). Logic proven byte-identical: the code skeleton
+differs only by the em-dash-to-hyphen swaps in the context text and that one border value;
+esbuild parses clean. The simulation was traced headless across every fork and is faithful
+- whale on shard 2 diverging from the idle tail, buy-hardware relief to tier 3, split
+refused by the scheme, app-layer dropping the whale to 41% yet flagged "same wall one layer
+up", the migration ladder gated in order, the whale dissolving only at the channel-id
+reshard, and the counterfactual surge on the old scheme hitting 306% ("unable to scale at
+all"). One faithful subtlety kept: at stages 1-2 the whale is still hot because the data
+has not moved yet, and the verdict text talks about migration mechanics rather than
+claiming relief.
+
+**Recurring-defect scorecard - first article to fire all five:** em-dash overrun (61, fixed);
+invisible off-state toggles (fixed); taxonomy-first crux (fixed); registry jargon in notes
+(fixed); over-stuffed summary (trimmed).
+
+**Frozen fields:** P27 non-label fields byte-identical to the upload; stats values and
+placements unchanged; the two dash-bearing stat labels dash-swept only. Deliverables:
+corrected .json, patched .jsx, rebuilt preview .html, this entry. NO svg - text round;
+figures are the separate step after text approval. If we do figures later, the natural
+candidates are the two-axis divergence (tenant count scales, tenant size hits a wall), the
+whale-on-one-shard-beside-idle-tail shape before and after the channel-id reshard, and the
+migration ladder as a staged timeline.
+
+### slack-vitess-datastores - Produce round 2 (2026-08-11): deeper plain language, artifact feedback, image pass
+
+Owner reviewed round 1 (called it much better than the previous article), flagged more terms
+to gloss, gave three artifact notes, and asked for an image pass in parallel.
+
+**Deeper plain-language pass.** Glossed the flagged terms: workspace -> "one team's Slack";
+channel -> "a single Slack channel"; channel id named explicitly as the finer shard key
+(instead of the whole workspace); topology management -> "tracking which servers hold what";
+tenant -> "one customer per slice of the fleet"; bespoke -> custom; topology-ignorant
+application -> "an application that no longer knows where its data lives"; "the post prints
+in bold" -> "puts in bold"; dropped "for you" from "shards MySQL". Removed the
+"availability trick of 2014 became the operational ceiling of 2016" line (it referenced a
+2014 detail the reader never has) and replaced it with a self-contained sentence. Clarified
+the confusing single-writer note opener "Here the pattern shows up as a retirement" ->
+"In this story the pattern is restored by retiring its opposite" (the dual-writer setup is
+retired, single-writer per shard restored).
+
+**Artifact - three fixes, simulation still faithful.** Subtitle reworded to gloss tenant as
+customer ("Add shards and you serve more customers. But one customer's size still aims at a
+wall."). Context line "topology-ignorant query layer" -> "a query layer that hides where
+data lives". Whale growth slowed for perception: increment +3 -> +2 and tick 700 -> 900 ms.
+And the owner's main note: stages 1-2 (prototype, backfill) showed no visual change because
+the data has not resharded yet. Added a MIGRATION TO VITESS progress tracker (three rungs
+that light up as you climb) plus a caption that states plainly the whale is still hot until
+the reshard - so the stages now have visible feedback without falsely implying relief. The
+core simulation (utils / step thresholds / verdict cascade) is unchanged except the
+increment; re-traced across every fork and still faithful.
+
+**Image pass - 3 figures, chosen NOT to duplicate the live artifact.** The interactive
+artifact already shows the fleet chart, the whale, the ladder, and the dissolve, so the
+figures teach concepts it does not show. (1) three-cluster-origin (problem): the original
+layout - webapp routing through the metadata cluster to a workspace shard (an active-active
+db A / db B pair), with the kitchen-sink cluster as a peer; kitchen-sink arrow rerouted to
+originate from the webapp, not the shard. (2) two-axis-ceiling (problem): the thesis as a
+chart - the tenant-count axis scales freely (green, add shards) while the tenant-size curve
+(red) climbs into the "largest hardware money could buy" ceiling. (3) workspace-to-channel-key
+(solution): the changed key, before and after - three channels of one team all landing on
+one hot shard, versus the same three spread across s2/s7/s5. House light palette, each with
+eyebrow/caption/ariaLabel, rendered and eyeballed, all three data-URIs decode clean in the
+preview.
+
+**Bands after:** summary 995, crux 1097, problem 2375, solution 3680; cruxSummary 12w;
+longest sentence 40; dashes 0. P27 frozen fields byte-identical to the upload; stats values
+and placements unchanged. Deliverables: corrected .json, patched .jsx, rebuilt preview
+.html, three .svg figures, this entry.
