@@ -1,0 +1,32 @@
+<svg viewBox="0 0 700 248" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Before, a main database holding the inbox tables with a message-master live copy and a message-replica copy-of-the-copy chained from it; after promotion, the message database is independent and separate from the smaller main database"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">BUILD THE CHAIN, THEN PROMOTE</text>
+<rect x="12" y="34" width="326" height="200" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="700">BEFORE - THE REPLICA CHAIN</text>
+<rect x="40" y="70" width="150" height="66" rx="7" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="115" y="92" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle" font-weight="700">main database</text>
+<text x="115" y="108" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">everything, incl.</text>
+<text x="115" y="122" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#B45309" text-anchor="middle" font-weight="700">inbox tables</text>
+<rect x="210" y="72" width="110" height="40" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.25"/>
+<text x="265" y="90" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="middle" font-weight="700">message-master</text>
+<text x="265" y="104" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">live copy</text>
+<rect x="210" y="150" width="110" height="40" rx="6" fill="#FCFCFD" stroke="#8A8A94" stroke-width="1.25"/>
+<text x="265" y="168" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="700">message-replica</text>
+<text x="265" y="182" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">copy of the copy</text>
+<line x1="190" y1="100" x2="210" y2="96" stroke="#2563EB" stroke-width="1.5" marker-end="url(#bah)"/>
+<text x="200" y="118" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">replicates</text>
+<line x1="265" y1="112" x2="265" y2="150" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<line x1="344" y1="134" x2="372" y2="134" stroke="#1A1A1F" stroke-width="2" marker-end="url(#fah)"/>
+<text x="358" y="124" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">promote</text>
+<rect x="378" y="34" width="310" height="200" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="394" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#52525B" text-anchor="start" font-weight="700">AFTER - AN INDEPENDENT DATABASE</text>
+<rect x="400" y="84" width="120" height="58" rx="7" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="460" y="106" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB" text-anchor="middle" font-weight="700">main database</text>
+<text x="460" y="124" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">20% smaller</text>
+<rect x="560" y="84" width="116" height="58" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.75"/>
+<text x="618" y="106" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">message DB</text>
+<text x="618" y="124" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="700">now independent</text>
+<text x="538" y="116" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="15" fill="#8A8A94" text-anchor="middle" font-weight="700">|</text>
+<text x="538" y="138" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">split</text>
+<text x="460" y="170" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">writes -33%</text>
+<text x="538" y="210" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">chain link broken - two separate databases</text>
+</svg>

@@ -1,0 +1,13 @@
+<svg viewBox="0 0 700 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A chart of latency during a backup against database load; the curve stays low as load rises, then climbs steeply past a threshold into a red danger band labeled risk of full downtime"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">THE DAILY BACKUP THAT GREW TEETH</text>
+<line x1="90" y1="196" x2="650" y2="196" stroke="#52525B" stroke-width="1.5"/>
+<line x1="90" y1="196" x2="90" y2="44" stroke="#52525B" stroke-width="1.5"/>
+<rect x="90" y="52" width="560" height="30" rx="0" fill="#FEECEC" stroke="#FEECEC" stroke-width="0"/>
+<text x="644" y="70" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="end" font-weight="700">risk of full downtime</text>
+<line x1="90" y1="82" x2="650" y2="82" stroke="#DC2626" stroke-width="1.2" stroke-dasharray="5 4"/>
+<path d="M 90 180 C 230 176, 330 168, 420 150 C 480 138, 520 110, 560 66" fill="none" stroke="#DC2626" stroke-width="2.6"/>
+<text x="210" y="168" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="start" font-weight="400">backups cost a little latency</text>
+<text x="560" y="54" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="end" font-weight="700">...then it climbs out of proportion</text>
+<text x="360" y="230" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#52525B" text-anchor="middle" font-weight="700">DATABASE LOAD -> busier</text>
+<text x="46" y="120" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#52525B" font-weight="700" transform="rotate(-90 46 120)" text-anchor="middle">LATENCY DURING BACKUP</text>
+</svg>

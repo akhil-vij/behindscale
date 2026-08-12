@@ -2294,3 +2294,116 @@ preview.
 longest sentence 40; dashes 0. P27 frozen fields byte-identical to the upload; stats values
 and placements unchanged. Deliverables: corrected .json, patched .jsx, rebuilt preview
 .html, three .svg figures, this entry.
+
+---
+
+## airbnb-partitioning-main-database - Review + produce (2026-08-11)
+
+Full review then produced on owner "Go". Verdict SHIP WITH FIXES. Live page byte-for-byte
+the upload (no drift); grounded clean against Willie Yao's Airbnb post (Oct 2015). No
+factual error - every number and mechanism checked (3.5x traffic, inbox as 1/3 of writes,
+the 50% projection, the message-master/message-replica chain, all eight operation steps
+with their ~30s-read / ~4min-write timings, the abort-path data loss, the Multi-AZ snapshot
+surprise, 7.5 min / -33% / -20% / two weeks). Bands all passed on arrival - no over-stuffed
+summary this time - so the work was the dash sweep, one enormous sentence, the plain-language
+pass, and the recurring defects.
+
+**Em-dash overrun - swept: 64 (35 JSON + 29 JSX) -> 0.**
+
+**The 177-word sentence.** The entire operation was written as one semicolon chain - the
+single worst sentence across every article reviewed. Converted to an 8-step numbered runbook
+(the source itself numbers these steps 1-8): communicate the window, deploy grants, swap
+writes to the unpromoted master, kill main's connections, verify three ways, promote, enable
+Multi-AZ, drop leftover tables. Eight other >40-word sentences split as well; longest is now
+39.
+
+**Plain-language pass (owner preference).** Glossed the RDS/replication vocabulary: RDS ->
+"Amazon's hosted MySQL/database"; read replicas -> "live copies of a database"; vertical
+partitioning -> "moving a feature's tables onto their own database"; horizontal sharding ->
+"splitting one table's rows across many databases"; monolith -> "one big Rails application";
+Multi-AZ -> "the setup where the backup is taken from a standby copy instead of the live one";
+RDS snapshot -> "a routine daily backup"; Zookeeper -> "a service that tracks where each
+database lives"; quiesce -> "stop the writes"; in-app joins -> "join in the application";
+permission grants -> "database permissions".
+
+**Taxonomy-first crux - softened.** The crux now opens on the concrete hook (much of the core
+data still in the monolith, one feature driving a third of writes) and names the class ("This
+is the classic single-cluster ceiling") after it, not before.
+
+**Registry jargon in notes - de-registered.** "Third company." became "This is the same
+pattern a third company reached from a different direction." The replica-promotion note was
+already clean; split its 55-word sentence and glossed "quiesce".
+
+**Artifact - toggle, dashes, and the downtime counter.** Off-state toggle border #2a2a3a on
+the dark background raised to #4a4f60; dashes swept (29 -> 0). Fixed the counter nit from the
+review: it read a frozen "0.0 min" through QUIESCE/VERIFY even though the stage-2 verdict says
+the clock starts. It now shows "clock running" (red) from the write-swap through promotion,
+the realized "7.5 min" at the promote outcomes, and "restored" on abort. This is a display
+change keyed on existing state; the stage machine, promote/abort branches, and verdict cascade
+are byte-identical (confirmed by parse, grep, and re-trace). All four terminal paths still
+resolve correctly: promoted-ok, skipped-joins -> cross-database joins, skipped-verify -> lost
+data, abort -> service restored with diverged writes forfeit.
+
+**Bands after:** summary 1043 (trimmed from 1066), crux 799, problem 2058, solution 3746;
+cruxSummary 16w; longest sentence 39; dashes 0. P27 frozen fields byte-identical to the upload;
+stats values and placements unchanged; the one dash-bearing stat label dash-swept.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed); invisible off-state toggles (fixed);
+registry jargon in notes (one of two notes, fixed); taxonomy-first crux (mild, softened);
+over-stuffed summary (absent). Deliverables: corrected .json, patched .jsx, rebuilt preview
+.html, this entry. NO svg - text round; figures are the separate step after text approval.
+Natural candidates if we do them: the replica-chain topology (main-master -> message-master ->
+message-replica) and the promotion timeline with the read-only / write-down window.
+
+### airbnb-partitioning-main-database - Produce round 2 (2026-08-11): full plain-language pass, artifact redesign, images
+
+Owner reviewed round 1 and asked for a full correction pass with an artifact redesign (more
+interactive) and images.
+
+**Plain-language pass.** Simplified every flagged line: "stood up a copy" -> "created a live
+copy"; "the ceiling could only be relieved" -> "the only way to ease the load"; Asana and
+Percona glossed ("peers at Asana and the MySQL experts at Percona"); "philosophy lagged
+history" -> "that was the goal, not yet the reality"; Multi-AZ and standby copy spelled out
+plainly ("a spare copy of the database in another data center... the backup is taken from
+that spare instead of the live one"); "the routine daily backups were destabilizing the site
+in proportion to how busy the database was" -> "the busier the database got, the more its own
+daily backups threatened to take the whole site down"; phase one clarified ("took most of the
+two weeks... making the split real in the application's code before splitting the actual
+database"); "the trade only prices out this way" -> "the trade is only worth it";
+"replication-as-migration outsources exactly the hard part" -> "using replication to do the
+migration hands the hardest part, keeping the data consistent"; "when the mechanism forecloses
+rollback" -> "when the tool makes rollback impossible"; "vertical partitioning by application
+function spends a nonrenewable resource: independent functions with eliminable joins" ->
+"splitting the database feature by feature uses up a limited supply: features self-contained
+enough to move, whose cross-table joins can actually be removed"; "undercounts by omission
+what it deliberately includes" -> "hides how much work it actually held"; "architectural
+tenet" -> "design principle". Two problem sentences that the glosses pushed over 40 words were
+split; longest sentence now 39.
+
+**Artifact redesign - more interactive.** Rebuilt from a linear button-clicker into a
+live-topology simulation with a real ticking clock. New pieces: a MESSAGING DOWNTIME clock
+(useEffect + setInterval) that starts the moment writes swap and ticks up in real time, so the
+downtime is felt, not just reported; a LIVE TOPOLOGY of the three databases (main ->
+message-master -> message-replica) that changes state as you progress and resolves to the
+final split - or to the break, the data loss, or the discarded copy on the failure paths; an
+interactive "run a backup under load" demo that shows the snapshot-surprise latency spike; and
+the runbook as a stepper with the two decision gates (eliminate joins, verify) and
+promote/abort. Removed the word "quiesce" (now "stop the writes"). Off-state toggle border at
+#4a4f60. All four faithful terminal states preserved - promoted-ok, skipped-joins ->
+cross-database joins, skipped-verify -> lost data, abort -> diverged writes forfeit - and every
+sourced number is unchanged (7.5 min total, ~30s reads / ~4 min writes, -33% writes, -20%
+size). artifact.path unchanged. Parses clean; no dashes.
+
+**Images - 3 figures.** snapshot-surprise (problem): latency during a backup stays low as load
+rises, then hockey-sticks into a "risk of full downtime" band - the mid-project discovery.
+replica-chain-split (solution): the before/after topology, main -> message-master ->
+message-replica, then message-master promoted to an independent database with main left 20%
+smaller. operation-timeline (solution): the eight steps with the write-downtime band sitting on
+steps 3-6 (~7.5 min) and reads down ~30s at promote - this answers the owner's question, the
+rehearsed sequence was indeed a good image candidate. House light palette, rendered and
+eyeballed, all three data-URIs decode clean in the preview.
+
+**Bands after:** summary 1049, crux 818, problem 2128, solution 3768; cruxSummary 16w; longest
+sentence 39; dashes 0. P27 frozen fields byte-identical to the upload; stats and artifact.path
+unchanged. Deliverables: corrected .json, redesigned .jsx, rebuilt preview .html, three .svg
+figures, this entry.
