@@ -1,0 +1,32 @@
+<svg viewBox="0 0 700 228" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Many file operations funnel into a single metadata service that has a hard ceiling and cannot grow; below it sit rows of disks and file servers that stay unreachable once that one layer is capped, so adding hardware does not help"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">EVERY OPERATION PASSES THROUGH ONE LAYER</text>
+<text x="350" y="40" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="400">file operations: create - open - find the pieces</text>
+<line x1="270" y1="46" x2="350" y2="72" stroke="#52525B" stroke-width="1.2" marker-end="url(#fah)"/>
+<line x1="350" y1="46" x2="350" y2="72" stroke="#52525B" stroke-width="1.2" marker-end="url(#fah)"/>
+<line x1="430" y1="46" x2="350" y2="72" stroke="#52525B" stroke-width="1.2" marker-end="url(#fah)"/>
+<rect x="210" y="78" width="280" height="46" rx="7" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.6"/>
+<text x="350" y="100" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="13" fill="#2563EB" text-anchor="middle" font-weight="700">METADATA SERVICE</text>
+<text x="350" y="116" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">knows where every file's pieces live</text>
+<line x1="210" y1="72" x2="490" y2="72" stroke="#DC2626" stroke-width="2.4"/>
+<text x="486" y="66" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="end" font-weight="700">HARD CEILING: cannot grow</text>
+<line x1="350" y1="124" x2="350" y2="150" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="120" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="141" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="172" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="193" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="224" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="245" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="276" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="297" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="328" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="349" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="380" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="401" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="432" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="453" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="484" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="505" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<rect x="536" y="158" width="42" height="34" rx="4" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1"/>
+<text x="557" y="179" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">disk</text>
+<text x="350" y="212" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="400">disks and file servers: adding more does nothing once the metadata service is capped</text>
+</svg>

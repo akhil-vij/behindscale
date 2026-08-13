@@ -1,0 +1,26 @@
+<svg viewBox="0 0 700 216" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A data-flow diagram: an application with the client library sends metadata operations to Curators which store metadata in Bigtable, while file data flows directly both ways between the application and the D servers that hold the disks; Custodians do background repair on the D servers"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">WHO TALKS TO WHOM</text>
+<rect x="20" y="96" width="150" height="80" rx="8" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.5"/>
+<text x="95" y="128" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#2563EB" text-anchor="middle" font-weight="700">application</text>
+<text x="95" y="145" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">(e.g. Gmail, Drive)</text>
+<text x="95" y="161" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">+ client library</text>
+<rect x="300" y="54" width="150" height="44" rx="7" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="375" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle" font-weight="700">Curators</text>
+<text x="375" y="89" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">handle metadata ops</text>
+<rect x="500" y="54" width="180" height="44" rx="7" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="590" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle" font-weight="700">Bigtable</text>
+<text x="590" y="89" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">stores the metadata, scales out</text>
+<line x1="170" y1="110" x2="300" y2="80" stroke="#2563EB" stroke-width="1.6" marker-end="url(#bah)"/>
+<text x="210" y="84" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#2563EB" text-anchor="middle" font-weight="700">metadata: create/open/find</text>
+<line x1="450" y1="76" x2="500" y2="76" stroke="#2563EB" stroke-width="1.6" marker-end="url(#bah)"/>
+<rect x="300" y="150" width="220" height="50" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="410" y="172" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2E7D46" text-anchor="middle" font-weight="700">D servers</text>
+<text x="410" y="188" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">the machines that hold the disks</text>
+<line x1="170" y1="158" x2="300" y2="168" stroke="#2E7D46" stroke-width="2" marker-end="url(#gah)"/>
+<line x1="300" y1="182" x2="170" y2="172" stroke="#2E7D46" stroke-width="2" marker-end="url(#gah)"/>
+<text x="238" y="150" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#2E7D46" text-anchor="middle" font-weight="700">file data - direct, never through metadata</text>
+<rect x="560" y="150" width="120" height="50" rx="7" fill="#FCFCFD" stroke="#8A8A94" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="620" y="172" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">Custodians</text>
+<text x="620" y="188" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">background repair</text>
+<line x1="560" y1="175" x2="520" y2="175" stroke="#52525B" stroke-width="1.3" marker-end="url(#fah)"/>
+</svg>

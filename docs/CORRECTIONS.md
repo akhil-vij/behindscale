@@ -2407,3 +2407,121 @@ eyeballed, all three data-URIs decode clean in the preview.
 sentence 39; dashes 0. P27 frozen fields byte-identical to the upload; stats and artifact.path
 unchanged. Deliverables: corrected .json, redesigned .jsx, rebuilt preview .html, three .svg
 figures, this entry.
+
+---
+
+## google-colossus - Review + produce (2026-08-11)
+
+Full review then produced on owner "Go". Verdict SHIP WITH FIXES. Live page byte-for-byte
+the upload (no drift); grounded clean against Hildebrand and Serenyi's 2021 Google Cloud post.
+No factual error - the three building blocks (Colossus/Spanner/Borg, Borg to Kubernetes), the
+GFS-metadata origin (verbatim quote), Curators plus Bigtable, 100x, the client library as the
+most complex part, direct client-to-D-server flow, Custodians, exabytes across tens of
+thousands of machines, the shared pool and isolation illusion, peak-provision plus batch
+backfill, and the just-enough-flash doctrine all check out.
+
+**The defining fix - de-meta.** This was the most inward-facing article in the library: the
+crux was mostly catalog voice, both notes opened "Minted", and the meta-commentary bled into
+the tradeoffs. All of it stripped so the prose teaches Colossus instead of behindscale's own
+taxonomy.
+- Crux rewritten to lead with Colossus's concrete story (GFS's metadata ceiling, the quoted
+  origin sentence, Curators plus Bigtable, 100x). Removed "the fifth company in this class",
+  "classmate", "the manifestation caveat for the class", "the class's fifth distinct answer",
+  and cut the cross-article tail entirely.
+- Both notes de-registered: "Minted on the post's own coinage" and "Minted from the
+  disaggregation chapter" became "This pattern comes straight from the post's own phrase" and
+  "This pattern comes from the disaggregation part of the post"; "Declared two-chip round: no
+  existing registry pattern honestly applies" became "It was a new pattern for the catalog; no
+  existing one fit".
+- Tradeoffs de-meta'd: dropped "(Analysis on top of the post's facts)" and "the class's most
+  general escape"; rewrote tradeoff 6 from "the thinnest source in this library / classmates'
+  war stories / a solved-side telling" into a plain caveat (a short, after-the-fact overview
+  that shows the design but omits the migration and the failures).
+
+**Bands - both over, trimmed:** summary 1,273 -> 1,047; crux 1,353 -> 1,058. problem 1,857,
+solution 2,730 (glosses moved it off its floor).
+
+**Em-dash overrun - swept: 55 (41 JSON + 14 JSX) -> 0.**
+
+**Sentence length - 12 over 40 words -> all <= 40 (longest now 40).** The 57-word
+Colossus/Spanner/Borg sentence became a three-item list (bulleted in the source), and the
+66-word shared-pool note was split.
+
+**Plain-language pass.** metadata plane -> "the bookkeeping layer that tracks what files exist
+and where their pieces live"; Curators -> "parallel servers"; Bigtable -> "a database built to
+grow / scale out"; software RAID -> "spreading data across drives so it survives a failure";
+'D' file servers -> "network-attached disks"; Custodians -> "background workers"; disaggregation
+-> "the freedom to pool everything instead of siloing it"; the isolation illusion -> "each
+workload feeling like it has its own private file system"; Spanner and Borg glossed; MapReduce
+-> "batch jobs"; I/O density -> "demand per gigabyte"; horizontally scalable -> "add more of
+them to handle more load".
+
+**Artifact.** Dashes swept; off-state toggle border #2a2a3a -> #4a4f60. Addressed the
+opening-lede note from the review: added a metadata-primer verdict so the opening state, and
+every master-stage state before the wall, leads with the metadata story ("the metadata plane is
+the floor everything stands on... turn on FILE GROWTH to push it toward the wall") instead of
+the flash side-quest, and set the initial flash to the ideal so the opening meters are neutral.
+Re-traced: primer at rest, GFS WALL when walled, and the 100x / pooling / flash verdicts all
+fire on the curators side as before. The efficiency verdicts now belong to the post-curators
+phase, which also matches the intro's "move it, then run the efficiency doctrine" and reduces
+the verdict-masking the review flagged. Sim math otherwise unchanged; still faithful. Parses
+clean, no dashes.
+
+**Recurring-defect scorecard - all five fired, all fixed:** em-dash overrun; invisible
+off-state toggles; taxonomy-first crux (severe here); registry jargon in notes (severe -
+"Minted", "two-chip round"); over-stuffed summary; plus an over-long crux. P27 frozen fields
+byte-identical to the upload; stats values/placements unchanged; the two dash-bearing stat
+labels dash-swept. Deliverables: corrected .json, patched .jsx, rebuilt preview .html, this
+entry. NO svg - text round; figures after text approval. Candidates: the control-plane topology
+(client -> Curators -> Bigtable, data direct to D servers) and the metadata-ceiling before/after.
+
+### google-colossus - Produce round 2 (2026-08-11): full plain-language pass, the missing "why Bigtable scales" explanation, terminology, images
+
+Owner read round 1 and flagged many plain-language gaps, one real content gap, an inconsistent
+vocabulary, and asked for images (the data flow especially). The owner's summary was telling:
+the only concept that came through clearly was "GFS to Bigtable plus distributed metadata."
+
+**The content gap - why Bigtable scales where GFS could not.** The article never actually
+explained this, and the owner asked directly. Added it plainly in the crux and the solution:
+GFS kept its metadata in a single service bounded by one machine, so once Search outgrew it
+there was nowhere to go; Bigtable spreads the same metadata across many machines and grows by
+adding more. This is also the subject of one of the new figures.
+
+**Plain-language pass.** Glossed the terms the owner couldn't parse: flash -> "fast
+solid-state storage, like an SSD" (and disk -> "slower, cheaper spinning drives"); disaggregation
+-> "instead of giving each workload its own separate storage, everything shares one big pool";
+silo -> "separate, per-workload storage"; idle valleys -> "the quiet stretches when interactive
+demand is low"; the client library -> "the Colossus code each application (say, the servers
+behind Gmail or Drive) links in"; D servers -> "the machines that actually hold the disks";
+control plane -> "the metadata service, the part that coordinates the file system rather than
+storing the data"; the isolation illusion and "tenant" spelled out. Clarified the one the owner
+actively misread: the "cross-cutting jobs a middleman would handle" are traffic control (rate
+limits, accounting, admission), not metadata operations - now says so explicitly. Cut the
+confusing crux caveat sentence entirely and simplified "far side of the wall" to "after the
+problem was already solved."
+
+**Terminology unified.** Settled on one vocabulary - "metadata", "the metadata service", and
+"metadata operations" - and removed every "metadata plane", "control plane", "control
+operations", and "bookkeeping operations" from the prose, the stat label, and the artifact.
+"Bookkeeping" survives only as the one-time gloss of what metadata is.
+
+**Artifact wording.** "watch creates throttle" -> "new files start failing, even with disk space
+to spare"; "ONE SHARED SUBSTRATE" -> "ONE SHARED POOL"; "POOL THE SILOS" -> "POOL THE SEPARATE
+STORAGE"; button subtexts rewritten in plain terms; flash glossed right in the label ("FLASH TIER
+(fast storage)"); the GFS-wall, pooling, and silo verdicts reworded to gloss flash, silos, and
+the private-file-system illusion. The metadata primer, the sim math, and the failure paths from
+round 1 are unchanged.
+
+**Images - 3 figures.** metadata-ceiling (problem): every operation funnels through one metadata
+service with a hard ceiling, so the disks behind it are unreachable once it caps - adding hardware
+does nothing. gfs-vs-colossus-scaling (solution): GFS's metadata on one bounded master hitting a
+wall, versus Colossus's metadata spread across many machines in Bigtable, growing by adding more -
+the direct answer to the owner's question. colossus-data-flow (solution): the who-talks-to-whom -
+an application with the client library sends metadata operations to Curators (backed by Bigtable),
+while file data flows straight between the application and the D servers, with Custodians repairing
+in the background. House light palette, rendered and eyeballed, all three data-URIs decode clean.
+
+**Bands after:** summary 1,041, crux 1,013, problem 1,862, solution 3,619; longest sentence 37;
+dashes 0. P27 frozen fields byte-identical (stat value and placement unchanged; the one control-plane
+stat label reworded). Deliverables: corrected .json, patched .jsx, rebuilt preview .html, three .svg
+figures, this entry.

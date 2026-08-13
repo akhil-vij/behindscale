@@ -4,7 +4,7 @@ const ACCENT = "#4285F4";
 const RED = "#ef4444"; const AMBER = "#eab308"; const GREEN = "#22c55e"; const VIOLET = "#9b8cf0";
 
 const MASTER_CAP = 50; const IDEAL_FLASH = 12;
-const initial = () => ({ t: 0, files: 30, growth: false, meta: "master", pooled: false, flash: 4 });
+const initial = () => ({ t: 0, files: 30, growth: false, meta: "master", pooled: false, flash: 12 });
 
 function step(w) {
   const n = { ...w };
@@ -39,13 +39,14 @@ export default function Colossus() {
   const d = derive(w);
 
   const verdict = (() => {
-    if (d.walled) return { c: RED, code: "THE GFS WALL", t: `The metadata plane is a single bounded master: ${d.metaLoad} control-plane units of load against a hard cap of ${d.metaCap}. File creates and lookups are throttling — and racking more disks changes nothing, because the layer that knows where everything lives cannot grow. This is the ceiling that motivated Colossus: 'scaling limits… trying to accommodate metadata related to Search.' Switch the metadata plane.` };
-    if (w.meta === "curators" && w.files > 300) return { c: GREEN, code: "THE CEILING MOVED — 100x", t: `${w.files}M files and climbing; Curators scale horizontally and the metadata lives in Bigtable, a database built to scale out. The post's number for this move: over 100x the largest GFS clusters. The ceiling isn't gone — it's inherited from the substrate — but it's far away and someone else's full-time job. ${w.pooled ? "" : "Now look at the economics: POOL THE SILOS."}` };
-    if (d.diskOver > 20) return { c: RED, code: "THE DISKS ARE DOING FLASH'S JOB", t: `Flash at ${w.flash}% is below the workload's needs: hot-data I/O density is landing on spinning disks, which cannot serve it — latency climbs and IOPS are the bottleneck while capacity sits unused. The doctrine: buy just enough flash to pull I/O density per gigabyte into what disks natively provide. Add flash.` };
-    if (d.flashWaste > 0) return { c: AMBER, code: "FLASH YOU'RE NOT USING", t: `Flash at ${w.flash}% absorbs the hot set with room to spare — the extra points are expensive devices doing a cheap device's work. Efficiency is a two-sided target: too little drowns the disks, too much burns money. Walk it back toward 'just enough' (~${IDEAL_FLASH}%).` };
-    if (w.pooled) return { c: GREEN, code: "BATCH FILLS THE VALLEYS", t: `One pool, one control plane: interactive serving is at ${d.I} units of its 75-unit peak, and batch analytics is filling the slack — utilization ${d.util}% with ${d.wasted} units idle. The isolation between tenants is now an actively enforced illusion, not a physical fact: that is the price of the efficiency. Tune the flash mix to finish the doctrine.` };
-    if (w.flash >= IDEAL_FLASH - 2 && w.flash <= IDEAL_FLASH + 6) return { c: GREEN, code: "JUST ENOUGH FLASH", t: `Flash at ${w.flash}%: hot data served at flash latency, disks kept full and busy at disk-native I/O density, nothing overprovisioned. New (hottest) data spreads across all drives; as it cools it rebalances to larger-capacity drives — the same doctrine, inside the disk tier.` };
-    return { c: AMBER, code: "TWO SILOS, TWO PEAKS, PAID TWICE", t: `Interactive serving and batch analytics each own dedicated storage sized for their own peak: utilization ${d.util}%, with ${d.wasted} units bought and idle at this moment of the wave. Every valley in every silo is wasted capacity. Turn on FILE GROWTH to find the metadata wall, or POOL THE SILOS to see what disaggregation buys.` };
+    if (d.walled) return { c: RED, code: "THE GFS WALL", t: `The metadata service is a single bounded master: ${d.metaLoad} units of load against a hard cap of ${d.metaCap}. New files are starting to fail, and racking more disks changes nothing, because the one layer that knows where everything lives cannot grow. This is the ceiling that motivated Colossus: 'scaling limits… trying to accommodate metadata related to Search.' Switch to distributed Curators.` };
+    if (w.meta === "master") return { c: AMBER, code: "THE METADATA PLANE IS THE FLOOR EVERYTHING STANDS ON", t: `Every file operation (create, open, find which servers hold the pieces) has to ask the metadata service where things live. Right now that service is a single bounded master: ${d.metaLoad} of ${d.metaCap} units of load. Racking more disks or file servers changes nothing if this one layer cannot grow - this is exactly where GFS topped out. Turn on FILE GROWTH to push it toward the wall.` };
+    if (w.meta === "curators" && w.files > 300) return { c: GREEN, code: "THE CEILING MOVED - 100x", t: `${w.files}M files and climbing; Curators scale horizontally and the metadata lives in Bigtable, a database built to scale out. The post's number for this move: over 100x the largest GFS clusters. The ceiling isn't gone (it's now Bigtable's ceiling) but it's far away. ${w.pooled ? "" : "Now the economics: pool each workload's separate storage into one shared pool."}` };
+    if (d.diskOver > 20) return { c: RED, code: "THE DISKS ARE DOING FLASH'S JOB", t: `Flash at ${w.flash}% is below the workload's needs: hot-data I/O density is landing on spinning disks, which cannot serve it - latency climbs and IOPS are the bottleneck while capacity sits unused. The doctrine: buy just enough flash to pull I/O density per gigabyte into what disks natively provide. Add flash.` };
+    if (d.flashWaste > 0) return { c: AMBER, code: "FLASH YOU'RE NOT USING", t: `Flash at ${w.flash}% absorbs the hot set with room to spare - the extra points are expensive devices doing a cheap device's work. Efficiency is a two-sided target: too little drowns the disks, too much burns money. Walk it back toward 'just enough' (~${IDEAL_FLASH}%).` };
+    if (w.pooled) return { c: GREEN, code: "BATCH FILLS THE VALLEYS", t: `One shared pool: live serving is at ${d.I} units of its 75-unit peak, and batch analytics fills the slack - utilization ${d.util}% with ${d.wasted} units idle. Each workload still feels like it has its own private file system, but that separation is now an illusion Colossus actively maintains, not a physical fact: that is the price of the efficiency. Now tune the flash mix.` };
+    if (w.flash >= IDEAL_FLASH - 2 && w.flash <= IDEAL_FLASH + 6) return { c: GREEN, code: "JUST ENOUGH FLASH", t: `Flash at ${w.flash}%: hot data served at flash latency, disks kept full and busy at disk-native I/O density, nothing overprovisioned. New (hottest) data spreads across all drives; as it cools it rebalances to larger-capacity drives - the same doctrine, inside the disk tier.` };
+    return { c: AMBER, code: "TWO SILOS, TWO PEAKS, PAID TWICE", t: `Live serving and batch analytics each own separate storage (a silo) sized for its own busy peak: utilization ${d.util}%, with ${d.wasted} units bought and sitting idle right now. Every quiet stretch in every silo is wasted capacity. Turn on FILE GROWTH to find the metadata wall, or POOL THE SEPARATE STORAGE to share one pool instead.` };
   })();
 
   const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
@@ -53,13 +54,13 @@ export default function Colossus() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.35 : 1, border: `1px solid ${on ? (col || ACCENT) : "#2a2a3a"}`, color: on ? "#cfe0ff" : "#8b90a0", background: on ? "rgba(66,133,244,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.35 : 1, border: `1px solid ${on ? (col || ACCENT) : "#4a4f60"}`, color: on ? "#cfe0ff" : "#8b90a0", background: on ? "rgba(66,133,244,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
   };
   const bar = (v, max, col) => <div style={{ height: 10, background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 4, overflow: "hidden" }}><div style={{ width: Math.min(100, (v / max) * 100) + "%", height: "100%", background: col }} /></div>;
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>GOOGLE · COLOSSUS UNDER THE HOOD — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>GOOGLE · COLOSSUS UNDER THE HOOD - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>The ceiling was metadata</div>
       <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>You run a cluster-scale file system. Find the wall that stopped GFS, move it, then run the efficiency doctrine: pool the silos, size the flash.</p>
       <ContextBlock />
@@ -67,10 +68,10 @@ export default function Colossus() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           <div style={S.label}>THE CLUSTER</div>
-          <button style={S.btn(w.growth, false, AMBER)} onClick={() => setW(x => ({ ...x, growth: !x.growth }))}>FILE GROWTH: {w.growth ? "ON (Search-era)" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>metadata load grows with object count, not bytes</div></button>
-          <button style={S.btn(w.meta === "curators", w.meta === "curators", GREEN)} disabled={w.meta === "curators"} onClick={() => setW(x => ({ ...x, meta: "curators" }))}>SWITCH TO DISTRIBUTED CURATORS<div style={{ color: "#6b7080", fontSize: 10 }}>control plane scales out; metadata rehosted on Bigtable</div></button>
-          <button style={S.btn(w.pooled, false, VIOLET)} onClick={() => setW(x => ({ ...x, pooled: !x.pooled }))}>{w.pooled ? "POOLED: ONE SHARED SUBSTRATE" : "POOL THE SILOS"}<div style={{ color: "#6b7080", fontSize: 10 }}>provision for interactive peaks; batch fills the valleys</div></button>
-          <div style={{ ...S.label, marginTop: 12 }}>FLASH TIER: {w.flash}%</div>
+          <button style={S.btn(w.growth, false, AMBER)} onClick={() => setW(x => ({ ...x, growth: !x.growth }))}>FILE GROWTH: {w.growth ? "ON (Search-era)" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>the metadata service's load grows with the number of files, not their size</div></button>
+          <button style={S.btn(w.meta === "curators", w.meta === "curators", GREEN)} disabled={w.meta === "curators"} onClick={() => setW(x => ({ ...x, meta: "curators" }))}>SWITCH TO DISTRIBUTED CURATORS<div style={{ color: "#6b7080", fontSize: 10 }}>the metadata service scales out; metadata moves to Bigtable</div></button>
+          <button style={S.btn(w.pooled, false, VIOLET)} onClick={() => setW(x => ({ ...x, pooled: !x.pooled }))}>{w.pooled ? "POOLED: ONE SHARED POOL" : "POOL THE SEPARATE STORAGE"}<div style={{ color: "#6b7080", fontSize: 10 }}>one pool for all workloads: size it for the busy peaks, let batch work fill the quiet times</div></button>
+          <div style={{ ...S.label, marginTop: 12 }}>FLASH TIER (fast storage): {w.flash}%</div>
           <div style={{ display: "flex", gap: 6 }}>
             <button style={{ ...S.btn(false, w.flash <= 4), flex: 1 }} disabled={w.flash <= 4} onClick={() => setW(x => ({ ...x, flash: x.flash - 4 }))}>− LESS FLASH</button>
             <button style={{ ...S.btn(false, w.flash >= 28), flex: 1 }} disabled={w.flash >= 28} onClick={() => setW(x => ({ ...x, flash: x.flash + 4 }))}>+ MORE FLASH</button>
@@ -120,12 +121,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Google's original file system, GFS, hit a ceiling that wasn't disks or bandwidth — it was the metadata plane, the bookkeeping layer that tracks what files exist and where their pieces live. Every operation consults it, and when it can't grow, the whole cluster can't, no matter how much hardware you add.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Colossus rebuilt the bookkeeping as a distributed service — scalable front-ends storing metadata in Bigtable, a database built to scale out — buying 100x the scale. Then it made one exabyte-scale pool serve everything at once: provision for the latency-critical peaks, let batch work fill the valleys, and buy just enough flash to keep disks doing what disks are good at.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Grow the file count into the single-master wall and watch creates throttle while capacity sits useless. Switch to distributed curators and grow 10x past it. Pool the silos and read the utilization delta. Then size the flash tier — both failure modes are one button away.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Google's original file system, GFS, hit a ceiling that wasn't disks or bandwidth - it was the metadata service, the bookkeeping layer that tracks what files exist and where their pieces live. Every operation consults it, and when it can't grow, the whole cluster can't, no matter how much hardware you add.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Colossus rebuilt the metadata as a distributed service: many Curators storing metadata in Bigtable, a database built to scale out, buying 100x the scale. Then it made one giant pool serve everything at once: size it for the latency-critical peaks, let batch work fill the quiet times, and buy just enough fast flash storage to keep the disks doing what disks are good at.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Grow the file count until the single metadata master can't keep up and new files start failing, even with disk space to spare. Switch to distributed Curators and grow far past it. Pool each workload's separate storage into one shared pool and see how much less sits idle. Then size the flash (fast storage) tier: both mistakes are one button away.</div>
     </div>
   );
 }
