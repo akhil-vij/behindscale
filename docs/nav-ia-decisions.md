@@ -162,8 +162,9 @@ A heavy authored content type: `whatTheyreTesting` / `answerShape` /
 article→question chip derives from a `questionsByArticle` reverse index (never
 an authored article field); `FAQPage` + `BreadcrumbList` JSON-LD per page.
 
-**The realising sub-spec is `spec-interview-pages.md`** (received 2026-08-14),
-incorporated by reference and folded into the unified plan at **step 4**. It
+**The realising sub-spec is `docs/spec-interview-pages.md`** (received
+2026-08-14), incorporated by reference and folded into the unified plan at
+**step 4**. It
 is consistent with this doc (frozen article schema, question-owns-the-lens
 authorship, reverse index mirroring `patternStats`, both-indexer requirement,
 `FAQPage`, `@id` assertion extension). Reconciliation against repo truth on
@@ -264,6 +265,6 @@ No other new fields anywhere.
 - **v1.0 (2026-08-13)** — decision ledger consolidated to settled positions.
 - **2026-08-14** — `spec-interview-pages.md` received and reconciled against
   repo truth. Verdict: consistent; incorporated by reference as the D5
-  step-4 sub-spec. Three carry-forwards recorded in D5 (the /catalog→/problems
+  step-4 sub-spec (preserved at `docs/spec-interview-pages.md`). Three carry-forwards recorded in D5 (the /catalog→/problems
   rewrite, the `followUps ≥ 2` amendment, and the non-purple `QuestionChip`
   finding), plus one minor validator note (require `artifactCta` teaser).
