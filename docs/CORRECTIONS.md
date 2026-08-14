@@ -2525,3 +2525,112 @@ in the background. House light palette, rendered and eyeballed, all three data-U
 dashes 0. P27 frozen fields byte-identical (stat value and placement unchanged; the one control-plane
 stat label reworded). Deliverables: corrected .json, patched .jsx, rebuilt preview .html, three .svg
 figures, this entry.
+
+---
+
+## figma-postgres-sharding - Review + produce (2026-08-11)
+
+Full review then produced on owner "Go". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift); grounded clean against Sammy Steele's Figma post. No factual error - every
+number and mechanism checked (100x since 2020, the dozen vertical partitions, vacuums and RDS
+max IOPS as the ceilings, the four NewSQL candidates and the NoSQL rejection, UserID/FileID/OrgID
+keys and colos, hash routing, the DBProxy parser/logical/physical pipeline, scatter-gather equals
+unsharded load, shadow planning to Snowflake, the 90% query language, views with under-10%
+overhead validated by shadow reads, sub-second backwards-compatible topology, full-not-filtered
+replication, 9 months / 10 seconds / September 2023, and the whole future-work backlog plus the
+18-month NewSQL reassessment). The crux was already concrete (not taxonomy-first) and the summary
+already in band - unusually clean on those axes. The work was length, dashes, and sentences.
+
+**The headline: the most out-of-band article in the set.** solution 7,843 against a 4,500 cap,
+nearly double; problem 3,737; crux 397, a hair under the 400 floor.
+- solution 7,843 -> 4,489. A ~43% cut - a compress-hard job, not a trim. Three list conversions
+  carried most of it: the goals list (5 bullets), the DBProxy query-engine pipeline (parser ->
+  logical planner -> physical planner, 3 bullets), and the future-work backlog (6 bullets). Some
+  secondary detail was moved out to hit band: the range-scan-cost sentence (it is already in
+  tradeoff 3), the topology non-production dividend, and the shadow "readiness map" aside. Worth
+  an eyeball given the size of the cut.
+- problem 3,737 -> 2,736; crux 397 -> 463 (glossing vacuums and IOPS also carried it over the
+  floor).
+
+**Em-dash overrun - swept: 91 (48 JSON + 43 JSX) -> 0. The most of any article.**
+
+**Sentence length - 30 over 40 words (including an 81-word monster, two at 67, one at 65) ->
+all <= 40.** The list conversions and splits did it together; longest is now 40.
+
+**Light plain-language pass.** vacuums -> "Postgres's essential background cleanup"; IOPS ->
+"the maximum operations per second RDS allows"; AST -> "a tree"; PgBouncer -> "the connection
+pooler"; OLTP -> "transactional store". The article was already fairly plain, so this was light.
+
+**Registry jargon in notes - de-registered (one instance).** The shard-key-colocation note's
+"Figma's 'colos' are this pattern by another name" became "are exactly this pattern".
+
+**Artifact - dashes and the toggle only; sim left alone.** This is the best-realized artifact in
+the collection and it traced clean (four-stage door machine unsharded -> logical -> physical ->
+sharded, ten distinct verdicts, a load meter that correctly reads 1x while a keyless scatter-gather
+is rehearsed on views and 4x once physically sharded, and a physical blast that flips to "10
+seconds" only at failover), so the sim was not touched. Only the dashes were swept (43 -> 0) and
+the off-state toggle border raised #2a2a3a -> #4a4f60. Skeleton diff confirmed the only non-string
+changes were that one border color and the em-dash-to-hyphen swaps in JSX text; the stage machine,
+verdictOf, router, and animation loop are byte-identical.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed, the worst yet); invisible off-state toggles
+(fixed); over-long solution and problem (fixed, the hardest compression yet); crux under floor
+(fixed); registry jargon in notes (mild, one note, fixed). Taxonomy-first crux was absent - the
+crux already opened on Figma's concrete ceiling. P27 frozen fields byte-identical to the upload;
+stats and artifact.path unchanged. Deliverables: corrected .json, patched .jsx, rebuilt preview
+.html, this entry. NO svg - text round; figures after text approval. Candidates: the
+logical-versus-physical split (views on one host, then real shards) and the DBProxy routing path
+(keyed -> one shard versus keyless -> scatter-gather).
+
+### figma-postgres-sharding - Produce round 2 (2026-08-11): full plain-language pass, terminology, images, artifact redesign
+
+Owner did a heavy accessibility round: simplify a long list of phrases, use "limit" not "ceiling",
+add explanatory images, and redesign the artifact (it "feels very jargon heavy").
+
+**Plain-language pass.** Simplified every flagged phrase: per-instance ceilings -> "the limits of
+a single database server"; RDS -> "their managed database service (Amazon RDS)"; IOPS/write rate
+-> "write speed"; vacuums glossed as "the routine cleanup Postgres needs"; "off-the-shelf exit"
+-> "ready-made alternative"; "one-way failover / migration" -> "hard-to-reverse move"; "partial
+availability" -> "about 10 seconds where some writes failed"; "de-risking" -> "proving safe";
+"connection pooler" -> "the layer that hands out database connections"; "shadow planning
+framework" -> "a test harness that tried possible schemes against real traffic without affecting
+it"; "live topology" -> "an always-current map of which rows live on which database"; ORM ->
+"a data-access library (ORM)"; scatter-gather glossed as "must ask every shard and combine the
+answers"; "build against database vendors" -> "build itself, competing with companies that make
+databases"; "the destination is provisional" -> "this whole in-house approach may not be
+permanent"; "substrate" -> "storage underneath"; timestamp-prefixed / hot-spotted spelled out.
+Also named the earlier post (scaling to multiple databases), and clarified the "destination"
+(horizontal sharding is the goal; vertical partitioning was the stepping stone).
+
+**Terminology.** Swept "ceiling" -> "limit" throughout the prose (the frozen cruxTag
+single-table-scaling-ceiling is left as is; it only renders as the catalog link).
+
+**Images - 3 figures.** vertical-vs-horizontal (problem): whole tables onto separate servers
+versus one table's rows spread across servers, so only horizontal relieves one oversized table.
+logical-vs-physical (solution): views make one server look like four shards, undone by a flag in
+seconds, versus the real move onto four servers, hard to undo, with "prove it, then" between.
+dbproxy-routing (solution): a query with a shard key goes to one database (fast) while a query
+without one fans out to every database (a scatter-gather, as slow as unsharded). These carry much
+of the conceptual load, which is what kept the solution in band.
+
+**Band management.** The solution was already at the 4,500 cap, so the glosses would have
+overflowed it. The two solution figures let the prose they illustrate be trimmed (the views
+mechanics, the keyed-vs-scatter explanation), so the net landed back in band at 4,452.
+
+**Artifact redesign - plainer and more intuitive.** Rebuilt around one question, "Can you still
+go back?", with a visible four-segment undo meter that goes green -> amber -> red across the walk,
+making the one-way-door thesis the intuitive centerpiece instead of a buried idea. Plain language
+throughout: the jargon verdicts ("BLAST RADIUS", "ROLLBACK COST", "OLTP", "topology") became
+"WHO'S AFFECTED" and "CAN YOU UNDO IT"; stages are now "One big table -> Faked with views ->
+Moving the data -> Truly split"; break and query buttons read in plain words ("Query with an ID
+-> goes to one server"). All faithful failure modes are preserved and were traced: ten distinct
+verdicts, the hot-table limit with no undo, the flagged-percent bug undone by a flag, the
+unsupported query caught early, the half-failed move, the post-split wrong-route as the mistake
+that can't be tolerated, and the cross-shard write. Off-state toggle border #4a4f60; a
+switch-default bug (the cross-shard verdict) was found and fixed during tracing.
+
+**Bands after:** summary 1,037, crux 544, problem 2,998, solution 4,452; longest sentence 40;
+dashes 0. P27 frozen fields byte-identical (stats and artifact.path unchanged). Deliverables:
+corrected .json, redesigned .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+**Follow-up (context block).** Restored the standard artifact context structure - the CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE header with THE PROBLEM / THE MOVE / TRY sections - in place of the one-off "NEW HERE? THE ONE IDEA" block, to match the other artifacts. Wording kept in the plain redesign tone.

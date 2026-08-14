@@ -1,437 +1,237 @@
 import { useState, useEffect, useRef } from "react";
 
-// ---------- deterministic PRNG (mulberry32) ----------
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// ---------- constants (illustrative — labeled on screen) ----------
-const SHARDS = 4;                       // illustrative shard count
-const RAMP_STEPS = [1, 10, 50, 100];    // illustrative flag ramp; the post says "gradually behind feature flags"
-const COPY_MS = 4000;                   // animation time for the full copy
 const ACCENT = "#A259FF";
-const RED = "#EF4444";
-const AMBER = "#F59E0B";
+const RED = "#EF4444"; const AMBER = "#F59E0B"; const GREEN = "#22C55E"; const OFF = "#4a4f60";
+const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
 
 const STAGES = [
-  { key: "unsharded", label: "UNSHARDED" },
-  { key: "logical", label: "LOGICALLY SHARDED" },
-  { key: "physical", label: "PHYSICAL SPLIT" },
-  { key: "sharded", label: "SHARDED" },
+  { key: "big",     label: "One big table",  undo: 0 },
+  { key: "fake",    label: "Faked with views", undo: 1 },
+  { key: "moving",  label: "Moving the data", undo: 2 },
+  { key: "split",   label: "Truly split",    undo: 3 },
+];
+const CAPTIONS = [
+  "One table on one server. This is the table that outgrew its server, and vertical partitioning can't help: the smallest thing it can move is a whole table.",
+  "Views (saved queries) make the app treat this one table as if it were already split, while every row still sits on one server. Ramp the flag to send more traffic through them.",
+  "Now the data actually moves: the whole dataset is copied to each new server, then traffic is switched over.",
+  "Four real servers, each owning a slice of the rows. From here, a query sent to the wrong server is the one mistake the team can't tolerate.",
+];
+// how reversible each stage is (the heart of the story)
+const UNDO = [
+  { c: "#8b90a0", txt: "Nothing done yet" },
+  { c: GREEN,     txt: "Easy to undo: flip the flag off, seconds" },
+  { c: AMBER,     txt: "Harder: a careful data operation, not a flag" },
+  { c: RED,       txt: "Hard to undo: the data really moved" },
 ];
 
-const STAGE_CAPTIONS = [
-  "One table, one Postgres host. Vertical partitioning cannot cut any finer than this — its smallest unit is a whole table.",
-  "Views over the unsharded table make every read and write behave as if sharded. The data has not moved. Ramp the flag.",
-  "Now the data moves: the entire dataset is copied to each new shard, then a failover cuts traffic across.",
-  "Four physical shards. Routing is now authoritative topology, and a wrong route is the failure that cannot be tolerated.",
-];
-
-// Failure injections available per stage.
-const INJECTIONS = {
-  unsharded: [
-    {
-      id: "ceiling", label: "INJECT: HOT-TABLE WRITE SPIKE",
-      hint: "traffic grows ~3x annually; this table is the biggest",
-    },
-  ],
-  logical: [
-    { id: "badroute-l", label: "INJECT: BAD ROUTING", hint: "a view predicate routes rows to the wrong logical shard" },
-    { id: "unsupported", label: "INJECT: UNSUPPORTED QUERY", hint: "no shard key, join outside the colo" },
-  ],
-  physical: [
-    { id: "partial", label: "INJECT: PARTIAL FAILOVER FAILURE", hint: "the operation succeeds on only a subset of databases" },
-  ],
-  sharded: [
-    { id: "badroute-p", label: "INJECT: BAD ROUTING", hint: "stale topology sends a query to the wrong shard" },
-    { id: "xshard", label: "INJECT: CROSS-SHARD TRANSACTION", hint: "a write spans two shard keys" },
-  ],
+const BREAKS = {
+  big:   [{ id: "limit", label: "The table hits its limit" }],
+  fake:  [{ id: "badroute-l", label: "A routing bug appears" }, { id: "unsupported", label: "An unsupported query runs" }],
+  moving:[{ id: "partial", label: "The move half-fails" }],
+  split: [{ id: "badroute-p", label: "A routing bug appears now" }, { id: "xshard", label: "A write spans two shards" }],
 };
 
-function verdictOf(stageKey, injection, flagPct, copyPhase) {
-  // Default (no injection): describe the state of the door.
-  if (!injection) {
-    if (stageKey === "unsharded") return {
-      color: "#8b90a0", code: "DOOR: NOT YET BUILT",
-      blast: null, rollback: null,
-      note: "A single host holds the table. Vacuum reliability and max IOPS are per-instance ceilings, and this instance is already the largest RDS offers.",
-    };
-    if (stageKey === "logical") return {
-      color: ACCENT, code: "DOOR: TWO-WAY",
-      blast: `${flagPct}% of this table's traffic runs sharded semantics`,
-      rollback: "config flip — traffic reroutes to the main table within seconds",
-      note: "Reliability, latency, and consistency all behave as if sharded, while every row still sits on one host. Risk is being taken where it is cheap to un-take.",
-    };
-    if (stageKey === "physical") return {
-      color: AMBER, code: "DOOR: SWINGING",
-      blast: copyPhase === "failover" ? "about 10 seconds of partial availability on primaries; none on replicas" : "none yet — the copy runs alongside live traffic",
-      rollback: "still possible — an explicit design goal — but now a coordinated data operation, not a flag",
-      note: "The semantics were proven at the logical stage; only the physics is changing. That ordering is the post's signature move.",
-    };
-    return {
-      color: ACCENT, code: "DOOR: PASSED",
-      blast: null,
-      rollback: "retained by design even after the split completes — at data-operation cost",
-      note: "Each shard holds a full copy but restricts reads and writes to its owned subset. Topology updates propagate in under a second.",
-    };
+function verdict(stageKey, brk, flagPct, phase) {
+  if (!brk) {
+    const u = UNDO[STAGES.findIndex(s => s.key === stageKey)];
+    if (stageKey === "big")   return { c: "#8b90a0", title: "Nothing built yet", who: null, undo: null, note: "This table is close to what one server can do. The only real fix is to split it across servers, and that is what the next steps do." };
+    if (stageKey === "fake")  return { c: GREEN, title: "The safe rehearsal", who: `${flagPct}% of this table's traffic is running the sharded way`, undo: "Flip the flag off and traffic goes back to the one table in seconds", note: "The app behaves as if the table were split, but every row still sits on one server. You are taking the risk where it is cheap to take back." };
+    if (stageKey === "moving")return { c: AMBER, title: "The real move", who: phase === "failover" ? "About 10 seconds where some writes fail on the main servers" : "None yet: the copy runs alongside live traffic", undo: "Still possible, but now a careful data operation, not a flag", note: "The behaviour was already proven in the rehearsal. Only the data is moving now. That ordering is the whole point." };
+    return { c: ACCENT, title: "Done: truly split", who: null, undo: "Still possible by design, but it is now a data operation", note: "Each server holds a full copy but only answers for its own slice of rows. The map of which rows live where updates in under a second." };
   }
-  // Injections.
-  switch (injection) {
-    case "ceiling": return {
-      color: RED, code: "BLAST RADIUS: THE WHOLE PRODUCT",
-      blast: "every feature backed by this table degrades together — unpredictable latencies as utilization climbs",
-      rollback: "none — there is no flag to flip and no bigger instance to buy; the only exit is the migration itself",
-      note: "This is the crux: the smallest unit vertical partitioning can move is a whole table, and the hottest single tables are each approaching per-instance ceilings.",
-    };
-    case "badroute-l": return {
-      color: AMBER, code: `BLAST RADIUS: ${flagPct}% OF TRAFFIC`,
-      blast: `only the flagged ${flagPct}% reads through the bad predicate — the other ${100 - flagPct}% never left the main table`,
-      rollback: "flip the flag to 0% — seconds. No data moved, so no data is wrong at rest",
-      note: "This is why the ramp exists: bugs surface against live traffic while rollback is still a configuration change.",
-    };
-    case "unsupported": return {
-      color: AMBER, code: "CAUGHT AT PLANNING",
-      blast: "this query errors at the query engine — it never reaches Postgres",
-      rollback: "not needed — rewrite the query or move the table's colo plan",
-      note: "DBProxy deliberately supports the most common 90% of queries. Joins pass only between two tables in the same colo, on the sharding key. Shadow planning surfaced exactly these call-sites before any data moved.",
-    };
-    case "partial": return {
-      color: AMBER, code: "FAILOVER SUCCEEDS ON A SUBSET",
-      blast: "bounded to this table's cutover window — the failover was engineered to be resilient to exactly this new failure mode",
-      rollback: "abort and re-point at the intact source — a data operation, rehearsed, but no longer a flag",
-      note: "Going 1-to-N created failure modes 1-to-1 never had. Watch shard 2: it stalls, retries, and rejoins without restarting the copy.",
-    };
-    case "badroute-p": return {
-      color: RED, code: "THE FAILURE THAT CANNOT BE TOLERATED",
-      blast: "a query lands on a shard that does not own the rows — and returns an answer that is silently wrong (missing data)",
-      rollback: "not a rollback problem — a prevention problem: real-time topology updates in under a second, backwards-compatible changes, and an enforced invariant that every shard ID maps to exactly one physical database",
-      note: "Before the split, a routing bug was a performance bug. After it, a routing bug is a correctness bug. That asymmetry is what the whole logical rehearsal existed to de-risk.",
-    };
-    case "xshard": return {
-      color: AMBER, code: "ATOMICITY IS NO LONGER FREE",
-      blast: "a transaction spanning two shard keys can partially fail — one shard commits, the other does not",
-      rollback: "n/a — the mitigation is structural: colos keep related tables on identical layouts so single-key transactions and joins never leave one shard",
-      note: "Atomic cross-shard transactions sit on the post's named backlog. Until then, the data model — not the database — carries the guarantee.",
-    };
-    default: return null;
+  switch (brk) {
+    case "limit": return { c: RED, title: "The whole product feels it", who: "Every feature that uses this table slows down together", undo: "Nothing to undo: there is no flag and no bigger server to buy. The only way out is to split the table.", note: "This is the reason for the whole project: one table has outgrown one server, and vertical partitioning can't cut a table any finer." };
+    case "badroute-l": return { c: AMBER, title: `Only ${flagPct}% of traffic sees it`, who: `Just the ${flagPct}% running the new way; the other ${100 - flagPct}% never left the one table`, undo: "Flip the flag to 0%: seconds. No data has moved, so nothing is wrong at rest.", note: "This is exactly why you rehearse: bugs show up on real traffic while undoing is still just a switch." };
+    case "unsupported": return { c: AMBER, title: "Caught before it runs", who: "This one query is rejected by the router; it never reaches the database", undo: "Nothing to undo: rewrite the query, or adjust the table's plan", note: "The router supports the most common 90% of queries on purpose. The test harness found these odd queries before any data moved." };
+    case "partial": return { c: AMBER, title: "The move succeeds on only some servers", who: "Bounded to this table's switchover; the process was built to expect exactly this", undo: "Stop and point back at the untouched original: a rehearsed data operation, not a flag", note: "Going from one server to many creates failure modes one-to-one never had. Watch server 2 stall, retry, and rejoin without restarting the copy." };
+    case "badroute-p": return { c: RED, title: "The mistake that can't be tolerated", who: "A query lands on a server that doesn't own those rows and quietly returns a wrong answer (missing data)", undo: "This isn't about undo, it's about prevention: an always-current map, updated in under a second, and one enforced rule: every shard lives on exactly one server", note: "Before the split, a wrong route was just slow. After it, a wrong route is wrong data. That flip is what the whole rehearsal existed to make safe." };
+    default: return { c: AMBER, title: "All-or-nothing is gone", who: "A write touching two shards can half-succeed: one server saves it, the other doesn't", undo: "No undo: the fix is structural, colos keep related tables together so normal writes never span two shards", note: "All-or-nothing writes across shards are on the team's to-build list. Until then, careful product code carries the guarantee the database used to." };
   }
 }
 
-// ---------- component ----------
 export default function OneWayDoors() {
-  const [stage, setStage] = useState(0);          // index into STAGES
-  const [flagPct, setFlagPct] = useState(0);      // logical ramp
-  const [copyProg, setCopyProg] = useState(0);    // 0..100
-  const [copyPhase, setCopyPhase] = useState("idle"); // idle|copying|failover
-  const [injection, setInjection] = useState(null);
-  const [failShardUntil, setFailShardUntil] = useState(0); // ms timestamp for shard-3 stall visual
-  const [route, setRoute] = useState(null);       // { kind, shards:[bool], until }
-  const [ctxOpen, setCtxOpen] = useState(true);   // context block, expanded by default for the cold visitor
+  const [stage, setStage] = useState(0);
+  const [flagPct, setFlagPct] = useState(0);
+  const [copyProg, setCopyProg] = useState(0);
+  const [phase, setPhase] = useState("idle");   // idle|copying|failover
+  const [brk, setBrk] = useState(null);
+  const [failUntil, setFailUntil] = useState(0);
+  const [route, setRoute] = useState(null);
+  const [ctx, setCtx] = useState(true);
   const [, force] = useState(0);
-  const rngRef = useRef(mulberry32(42));
-  const timerRef = useRef(null);
+  const rng = useRef(() => (Math.sin((rng.n = (rng.n || 1) + 1) * 99.13) + 1) / 2);
+  const progRef = useRef(0); const stallRef = useRef(0); const timer = useRef(null);
+  useEffect(() => { stallRef.current = failUntil; }, [failUntil]);
 
-  const stageKey = STAGES[stage].key;
-
-  // copy/failover animation loop
-  const progRef = useRef(0);
-  const stallRef = useRef(0);
-  useEffect(() => { stallRef.current = failShardUntil; }, [failShardUntil]);
   useEffect(() => {
-    if (copyPhase === "copying") {
+    if (phase === "copying") {
       let last = Date.now();
-      timerRef.current = setInterval(() => {
-        const now = Date.now();
-        const dt = now - last; last = now;
+      timer.current = setInterval(() => {
+        const now = Date.now(); const dt = now - last; last = now;
         const stalled = now < stallRef.current;
-        progRef.current = Math.min(100, progRef.current + (dt / COPY_MS) * 100 * (stalled ? 0.25 : 1));
+        progRef.current = Math.min(100, progRef.current + (dt / 4000) * 100 * (stalled ? 0.25 : 1));
         setCopyProg(progRef.current);
-        if (progRef.current >= 100) setCopyPhase("failover");
-        force((x) => x + 1);
+        if (progRef.current >= 100) setPhase("failover");
+        force(x => x + 1);
       }, 80);
-      return () => clearInterval(timerRef.current);
+      return () => clearInterval(timer.current);
     }
-    if (copyPhase === "failover") {
-      const id = setTimeout(() => {
-        setCopyPhase("idle");
-        setStage(3);
-        setInjection(null);
-      }, 900);
+    if (phase === "failover") {
+      const id = setTimeout(() => { setPhase("idle"); setStage(3); setBrk(null); }, 1000);
       return () => clearTimeout(id);
     }
-    return undefined;
-  }, [copyPhase]); // eslint-disable-line
+  }, [phase]);
+  useEffect(() => { if (!route) return; const id = setTimeout(() => setRoute(null), 1500); return () => clearTimeout(id); }, [route]);
 
-  // route highlight expiry
-  useEffect(() => {
-    if (!route) return undefined;
-    const id = setTimeout(() => setRoute(null), 1400);
-    return () => clearTimeout(id);
-  }, [route]);
+  const stageKey = STAGES[stage].key;
+  const v = verdict(stageKey, brk, flagPct, phase);
 
-  const v = verdictOf(stageKey, injection, flagPct, copyPhase);
-
-  const doInject = (id) => {
-    setInjection(id);
-    if (id === "partial" && copyPhase === "copying") setFailShardUntil(Date.now() + 1400);
-  };
-  // if the failure was armed before the copy started, stall shard 2 early in the copy
-  const armStallOnStart = () => {
-    if (injection === "partial") setFailShardUntil(Date.now() + 2200);
-  };
-
+  const doBreak = (id) => { setBrk(id); if (id === "partial" && phase === "copying") setFailUntil(Date.now() + 1400); };
   const advance = () => {
-    setInjection(null);
-    setRoute(null);
+    setBrk(null); setRoute(null);
     if (stage === 0) { setStage(1); setFlagPct(0); }
-    else if (stage === 1 && flagPct >= 100) { setStage(2); setCopyProg(0); progRef.current = 0; setCopyPhase("idle"); }
+    else if (stage === 1 && flagPct >= 100) { setStage(2); setCopyProg(0); progRef.current = 0; setPhase("idle"); }
   };
-  const ramp = () => {
-    const next = RAMP_STEPS.find((s) => s > flagPct);
-    if (next) setFlagPct(next);
-  };
-  const runCopy = () => { if (copyPhase === "idle" && copyProg < 100) { armStallOnStart(); setCopyPhase("copying"); } };
-  const reset = () => {
-    setStage(0); setFlagPct(0); setCopyProg(0); progRef.current = 0; setFailShardUntil(0); setCopyPhase("idle");
-    setInjection(null); setRoute(null); rngRef.current = mulberry32(42);
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
+  const ramp = () => { const n = [1, 10, 50, 100].find(s => s > flagPct); if (n) setFlagPct(n); };
+  const runMove = () => { if (phase === "idle" && copyProg < 100) { if (brk === "partial") setFailUntil(Date.now() + 2200); setPhase("copying"); } };
+  const reset = () => { setStage(0); setFlagPct(0); setCopyProg(0); progRef.current = 0; setFailUntil(0); setPhase("idle"); setBrk(null); setRoute(null); if (timer.current) clearInterval(timer.current); };
 
-  const routerEnabled = stage === 1 || stage === 3;
-  const sendQuery = (kind) => {
-    if (!routerEnabled) return;
-    const hits = Array(SHARDS).fill(false);
-    if (kind === "keyless") hits.fill(true);
-    else hits[Math.floor(rngRef.current() * SHARDS)] = true;
-    setRoute({ kind, shards: hits });
-  };
+  const routerOn = stage === 1 || stage === 3;
+  const send = (kind) => { if (!routerOn) return; const hits = Array(4).fill(false); if (kind === "all") hits.fill(true); else hits[Math.floor(rng.current() * 4)] = true; setRoute({ kind, hits }); };
 
-  // ---------- styles ----------
-  const mono = "'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace";
   const S = {
     root: { background: "#08090D", color: "#C8CDD8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
-    eyebrow: { color: ACCENT, fontSize: 10, letterSpacing: 2 },
-    h1: { color: "#EDEFF3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 },
-    sub: { color: "#8b90a0", fontSize: 11, margin: 0 },
-    rail: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "14px 0 6px" },
-    stageChip: (i) => ({
-      padding: "6px 10px", borderRadius: 6, fontSize: 11,
-      border: `1px solid ${i === stage ? ACCENT : i < stage ? "#3d2b5e" : "#2a2a3a"}`,
-      color: i === stage ? ACCENT : i < stage ? "#8b90a0" : "#4a4f5e",
-      background: i === stage ? "rgba(162,89,255,0.08)" : "#111118",
-    }),
-    arrow: { color: "#4a4f5e", fontSize: 11 },
-    caption: { color: "#8b90a0", fontSize: 11, minHeight: 30, margin: "2px 0 10px" },
-    row: { display: "flex", flexWrap: "wrap", gap: 12 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, disabled) => ({
-      display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6,
-      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.4 : 1,
-      border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#DCC6FF" : "#8b90a0",
-      background: on ? "rgba(162,89,255,0.08)" : "#0c0d13", fontFamily: mono, fontSize: 11,
-    }),
-    verdict: { padding: "10px 12px", borderRadius: 8, border: `1px solid ${v.color}`, background: `${v.color}14`, marginBottom: 12 },
-    dbBox: (lit, dead) => ({
-      flex: "1 1 90px", minWidth: 90, borderRadius: 8, padding: 10,
-      border: `1px solid ${dead ? RED : lit ? ACCENT : "#2a2a3a"}`,
-      background: lit ? "rgba(162,89,255,0.10)" : "#0c0d13",
-      transition: "border-color 200ms, background 200ms",
-    }),
+    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : OFF}`, color: on ? "#DCC6FF" : "#c3c8d2", background: on ? "rgba(162,89,255,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    chip: (i) => ({ padding: "6px 9px", borderRadius: 6, fontSize: 11, border: `1px solid ${i === stage ? ACCENT : i < stage ? "#3d2b5e" : "#2a2a3a"}`, color: i === stage ? ACCENT : i < stage ? "#8b90a0" : "#4a4f5e", background: i === stage ? "rgba(162,89,255,0.08)" : "#111118" }),
     bar: { height: 8, borderRadius: 4, background: "#1a1b24", marginTop: 6, overflow: "hidden", position: "relative" },
-    foot: { color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8 },
   };
 
-  // ---------- DB visualization pieces ----------
-  const shardBoxes = () => {
-    const stalled = Date.now() < failShardUntil;
+  // the intuitive centerpiece: can you still go back?
+  const undoMeter = () => (
+    <div style={{ ...S.panel, marginTop: 10, borderColor: UNDO[stage].c }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div style={S.label}>CAN YOU STILL GO BACK?</div>
+        <div style={{ fontSize: 11, color: UNDO[stage].c, fontWeight: 700 }}>{UNDO[stage].txt}</div>
+      </div>
+      <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+        {["one big table", "faked (views)", "moving data", "truly split"].map((lbl, i) => (
+          <div key={i} style={{ flex: 1, textAlign: "center" }}>
+            <div style={{ height: 8, borderRadius: 3, background: i <= stage ? UNDO[i].c : "#1a1b24" }} />
+            <div style={{ fontSize: 8.5, color: i === stage ? UNDO[i].c : "#4a4f5e", marginTop: 3 }}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 9.5, color: "#6b7080", marginTop: 6 }}>Each step to the right is harder to reverse. Figma spent its effort making the easy-to-undo step do the proving.</div>
+    </div>
+  );
+
+  const shards = () => {
+    const stalled = Date.now() < failUntil;
     return (
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-        {Array.from({ length: SHARDS }, (_, i) => {
-          const lit = route ? route.shards[i] : false;
-          const isStall = stalled && i === 2 && stage === 2;
-          const fill = stage === 2 ? copyProg * (isStall ? 0.92 : 1) : 100;
+        {Array.from({ length: 4 }, (_, i) => {
+          const lit = route ? route.hits[i] : false;
+          const isStall = stalled && i === 1 && stage === 2;
+          const fill = stage === 2 ? copyProg * (isStall ? 0.9 : 1) : 100;
           return (
-            <div key={i} style={S.dbBox(lit, isStall)}>
-              <div style={{ color: lit ? ACCENT : "#8b90a0", fontSize: 10 }}>shard {i} {isStall ? "· RETRYING" : ""}</div>
-              <div style={S.bar}>
-                {/* full copy (dim) */}
-                <div style={{ position: "absolute", inset: 0, width: `${Math.min(fill, 100)}%`, background: "#3d2b5e" }} />
-                {/* owned subset (bright) — reads/writes restricted here after cutover */}
-                {stage === 3 && (
-                  <div style={{ position: "absolute", top: 0, bottom: 0, left: `${(i * 100) / SHARDS}%`, width: `${100 / SHARDS}%`, background: ACCENT }} />
-                )}
-              </div>
-              <div style={{ color: "#4a4f5e", fontSize: 9, marginTop: 4 }}>
-                {stage === 2 ? `full copy ${Math.floor(fill)}%` : `owns hash range ${i}/${SHARDS} — full copy retained`}
-              </div>
+            <div key={i} style={{ flex: "1 1 90px", minWidth: 90, borderRadius: 8, padding: 10, border: `1px solid ${isStall ? RED : lit ? ACCENT : "#2a2a3a"}`, background: lit ? "rgba(162,89,255,0.10)" : "#0c0d13" }}>
+              <div style={{ color: lit ? ACCENT : "#8b90a0", fontSize: 10 }}>server {i + 1}{isStall ? " · retrying" : ""}</div>
+              <div style={S.bar}><div style={{ position: "absolute", inset: 0, width: `${Math.min(fill, 100)}%`, background: "#3d2b5e" }} />{stage === 3 && <div style={{ position: "absolute", top: 0, bottom: 0, left: `${i * 25}%`, width: "25%", background: ACCENT }} />}</div>
+              <div style={{ color: "#4a4f5e", fontSize: 9, marginTop: 4 }}>{stage === 2 ? `copying ${Math.floor(fill)}%` : `owns rows ${i + 1} of 4`}</div>
             </div>
           );
         })}
       </div>
     );
   };
-
-  const mainBox = () => (
-    <div style={{ ...S.dbBox(route && stage === 1 ? route.shards.some(Boolean) : false, false), maxWidth: stage >= 2 ? 220 : undefined }}>
-      <div style={{ color: "#8b90a0", fontSize: 10 }}>db01 — the unsharded host {stage === 2 ? "· SOURCE (intact until cutover)" : ""}</div>
+  const oneTable = () => (
+    <div style={{ borderRadius: 8, padding: 10, border: `1px solid ${route && stage === 1 && route.hits.some(Boolean) ? ACCENT : "#2a2a3a"}`, background: "#0c0d13", maxWidth: stage >= 2 ? 220 : undefined }}>
+      <div style={{ color: "#8b90a0", fontSize: 10 }}>one server{stage === 2 ? " · original, untouched until switchover" : ""}</div>
       <div style={S.bar}><div style={{ position: "absolute", inset: 0, width: "100%", background: stage >= 2 ? "#2a2a3a" : "#3d2b5e" }} /></div>
       {stage === 1 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-          {Array.from({ length: SHARDS }, (_, i) => {
-            const lit = route ? route.shards[i] : false;
-            return (
-              <div key={i} style={{ flex: "1 1 80px", border: `1px dashed ${lit ? ACCENT : "#3d2b5e"}`, borderRadius: 6, padding: "5px 7px", color: lit ? ACCENT : "#6b7080", fontSize: 9 }}>
-                VIEW shard{i} · hash range {i}/{SHARDS}
-              </div>
-            );
-          })}
-          <div style={{ flexBasis: "100%", color: "#4a4f5e", fontSize: 9 }}>
-            views over the same table, each behind its own sharded connection pooler — semantics sharded, physics unchanged
-          </div>
+          {Array.from({ length: 4 }, (_, i) => { const lit = route ? route.hits[i] : false; return (
+            <div key={i} style={{ flex: "1 1 80px", border: `1px dashed ${lit ? ACCENT : "#3d2b5e"}`, borderRadius: 6, padding: "5px 7px", color: lit ? ACCENT : "#6b7080", fontSize: 9 }}>view: shard {i + 1}</div>); })}
+          <div style={{ flexBasis: "100%", color: "#4a4f5e", fontSize: 9 }}>four views over the same table: it looks split, the data hasn't moved</div>
         </div>
       )}
-    </div>
-  );
-
-  const flagBar = stage === 1 && (
-    <div style={{ ...S.panel, marginTop: 8 }}>
-      <div style={S.label}>FEATURE FLAG — {flagPct}% OF TRAFFIC THROUGH SHARDED VIEWS</div>
-      <div style={S.bar}>
-        <div style={{ position: "absolute", inset: 0, width: `${flagPct}%`, background: ACCENT }} />
-      </div>
-    </div>
-  );
-
-  const loadMeter = route && (
-    <div style={{ marginTop: 8, color: route.kind === "keyless" ? AMBER : "#8b90a0", fontSize: 10 }}>
-      {route.kind === "keyless"
-        ? stage === 3
-          ? `LOAD: ${SHARDS}x — a scatter-gather touches every database, contributing the same load as if the fleet were unsharded`
-          : "LOAD: 1x — the scatter-gather plan is exercised against the views, but every view still lives on db01; the pattern is rehearsed, the cost is not yet real"
-        : route.kind === "colo"
-          ? "LOAD: 1x — join permitted: both tables share the colo and the join is on the sharding key"
-          : "LOAD: 1x — the logical planner extracts the shard ID; the physical planner routes to one database"}
-      {stage === 1 && " · (at this stage every route lands on db01 — the semantics are being rehearsed, not the physics)"}
     </div>
   );
 
   return (
     <div style={S.root}>
-      <div style={S.eyebrow}>FIGMA · POSTGRES SHARDING — INTERACTIVE</div>
-      <div style={S.h1}>One-way doors</div>
-      <p style={S.sub}>Walk one hot table through Figma's migration. At every stage, break something — and watch what rollback costs.</p>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>FIGMA · SHARDING ONE TABLE, STEP BY STEP</div>
+      <div style={{ color: "#EDEFF3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>Can you still go back?</div>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Walk one table from a single server to truly split. At each step, break something and see who it hits and whether you can undo it.</p>
 
-      {ctxOpen ? (
+      {ctx ? (
         <div style={{ ...S.panel, marginTop: 12, borderColor: "#3d2b5e" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-            <div style={S.label}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
-            <button style={{ background: "none", border: "none", color: "#6b7080", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: 0 }} onClick={() => setCtxOpen(false)}>HIDE ✕</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <div style={S.label}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+            <button style={{ background: "none", border: "none", color: "#6b7080", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: 0 }} onClick={() => setCtx(false)}>HIDE</button>
           </div>
-          <div style={{ marginTop: 8 }}>
-            <span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>THE PROBLEM · </span>
-            Figma's database stack grew almost 100x since 2020. Vertical partitioning ran out of road: its smallest unit is a whole table, and the hottest single tables were each approaching per-instance ceilings.
-          </div>
-          <div style={{ marginTop: 6 }}>
-            <span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>THE MOVE · </span>
-            Shard in the application layer, staying on Postgres RDS — and rehearse the entire sharded topology with views and a feature flag before moving a single row.
-          </div>
-          <div style={{ marginTop: 6 }}>
-            <span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>TRY · </span>
-            Walk the stages left to right. At each one, break something and read what rollback costs.
-          </div>
+          <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.6 }}><span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>THE PROBLEM · </span>One table grew too big for a single server, and vertical partitioning can't help: the smallest thing it can move is a whole table.</div>
+          <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.6 }}><span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>THE MOVE · </span>Split the table across servers from inside the app, and, the clever part, make it act split with views (saved queries) first, prove that works, then move the data for real.</div>
+          <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.6 }}><span style={{ color: ACCENT, fontSize: 10, letterSpacing: 1.2 }}>TRY · </span>Walk the four steps. At each one, break something and see who it hits and whether you can still undo it.</div>
         </div>
-      ) : (
-        <button style={{ background: "none", border: "none", color: "#6b7080", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: 0, marginTop: 10, display: "block" }} onClick={() => setCtxOpen(true)}>SHOW CONTEXT ▾</button>
-      )}
+      ) : (<button style={{ background: "none", border: "none", color: "#6b7080", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: 0, marginTop: 10, display: "block" }} onClick={() => setCtx(true)}>SHOW CONTEXT</button>)}
 
-      <div style={S.rail}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "14px 0 4px" }}>
         {STAGES.map((st, i) => (
           <span key={st.key} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={S.stageChip(i)}>{st.label}</span>
-            {i < STAGES.length - 1 && <span style={S.arrow}>→</span>}
+            <span style={S.chip(i)}>{i + 1}. {st.label}</span>
+            {i < 3 && <span style={{ color: "#4a4f5e" }}>{"\u2192"}</span>}
           </span>
         ))}
-        <button style={{ ...S.btn(false, false), display: "inline", width: "auto", marginTop: 0, marginLeft: "auto" }} onClick={reset}>↺ RESET</button>
+        <button style={{ ...S.btn(false, false), display: "inline", width: "auto", marginTop: 0, marginLeft: "auto" }} onClick={reset}>RESET</button>
       </div>
-      <p style={S.caption}>{STAGE_CAPTIONS[stage]}</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, minHeight: 30, margin: "2px 0 8px" }}>{CAPTIONS[stage]}</p>
 
-      <div style={S.row}>
-        {/* left: controls */}
+      {undoMeter()}
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 230px", minWidth: 230 }}>
-          <div style={S.label}>ADVANCE</div>
-          {stage === 0 && <button style={S.btn(true, false)} onClick={advance}>CREATE VIEWS → GO LOGICAL<div style={{ color: "#6b7080", fontSize: 10 }}>load-tested first: under 10% overhead in the worst cases</div></button>}
-          {stage === 1 && (
-            <>
-              <button style={S.btn(flagPct < 100, flagPct >= 100)} onClick={ramp}>
-                RAMP FLAG {flagPct}% → {RAMP_STEPS.find((s) => s > flagPct) ?? 100}%
-                <div style={{ color: "#6b7080", fontSize: 10 }}>shadow reads compare view vs non-view on live traffic as you ramp</div>
-              </button>
-              <button style={S.btn(flagPct >= 100, flagPct < 100)} onClick={advance} disabled={flagPct < 100}>
-                BEGIN PHYSICAL SPLIT
-                <div style={{ color: "#6b7080", fontSize: 10 }}>{flagPct < 100 ? "ramp to 100% first — prove the semantics before moving bytes" : "the sharded topology has already been running in production"}</div>
-              </button>
-            </>
-          )}
-          {stage === 2 && (
-            <button style={S.btn(copyPhase === "idle" && copyProg < 100, copyPhase !== "idle")} onClick={runCopy}>
-              {copyPhase === "failover" ? "FAILING OVER…" : copyPhase === "copying" ? `COPYING… ${Math.floor(copyProg)}%` : "RUN COPY + FAILOVER"}
-              <div style={{ color: "#6b7080", fontSize: 10 }}>full logical replication: the entire dataset goes to each shard — no filtered subsets</div>
-            </button>
-          )}
-          {stage === 3 && <div style={{ color: "#6b7080", fontSize: 10, marginTop: 6 }}>Arrived. First table: ~9 months end to end, live September 2023, 10 seconds of partial availability on primaries.</div>}
+          <div style={S.label}>NEXT STEP</div>
+          {stage === 0 && <button style={S.btn(true, false)} onClick={advance}>Build the views {"\u2192"}<div style={{ color: "#6b7080", fontSize: 10 }}>load-tested first: under 10% slower in the worst case</div></button>}
+          {stage === 1 && (<>
+            <button style={S.btn(flagPct < 100, flagPct >= 100)} onClick={ramp}>Send more traffic through the views: {flagPct}% {"\u2192"} {[1, 10, 50, 100].find(s => s > flagPct) ?? 100}%<div style={{ color: "#6b7080", fontSize: 10 }}>the team compares results with and without views as it ramps</div></button>
+            <button style={S.btn(flagPct >= 100, flagPct < 100)} onClick={advance} disabled={flagPct < 100}>Move the data for real<div style={{ color: "#6b7080", fontSize: 10 }}>{flagPct < 100 ? "get to 100% first: prove it works before moving anything" : "the sharded setup has already been running in production"}</div></button>
+          </>)}
+          {stage === 2 && <button style={S.btn(phase === "idle" && copyProg < 100, phase !== "idle")} onClick={runMove}>{phase === "failover" ? "Switching over…" : phase === "copying" ? `Copying… ${Math.floor(copyProg)}%` : "Copy the data + switch over"}<div style={{ color: "#6b7080", fontSize: 10 }}>the whole table is copied to each server, then each is limited to its slice</div></button>}
+          {stage === 3 && <div style={{ color: "#6b7080", fontSize: 10, marginTop: 6 }}>Done. First table: about 9 months of work, live September 2023, ~10 seconds where some writes failed.</div>}
 
           <div style={{ ...S.label, marginTop: 14 }}>BREAK SOMETHING</div>
-          {INJECTIONS[stageKey].map((inj) => (
-            <button key={inj.id} style={S.btn(injection === inj.id, false)} onClick={() => doInject(inj.id)}>
-              {inj.label}
-              <div style={{ color: "#6b7080", fontSize: 10 }}>{inj.hint}</div>
-            </button>
-          ))}
+          {BREAKS[stageKey].map(x => <button key={x.id} style={S.btn(brk === x.id, false)} onClick={() => doBreak(x.id)}>{x.label}</button>)}
 
-          <div style={{ ...S.label, marginTop: 14 }}>DBPROXY ROUTER {routerEnabled ? "" : "— OFFLINE DURING THIS STAGE"}</div>
-          <button style={S.btn(false, !routerEnabled)} onClick={() => sendQuery("keyed")} disabled={!routerEnabled}>
-            SEND KEYED QUERY<div style={{ color: "#6b7080", fontSize: 10 }}>WHERE file_id = … — hash routes to one shard</div>
-          </button>
-          <button style={S.btn(false, !routerEnabled)} onClick={() => sendQuery("colo")} disabled={!routerEnabled}>
-            SEND COLO JOIN<div style={{ color: "#6b7080", fontSize: 10 }}>two tables, same colo, joined on the shard key</div>
-          </button>
-          <button style={S.btn(false, !routerEnabled)} onClick={() => sendQuery("keyless")} disabled={!routerEnabled}>
-            SEND KEYLESS QUERY<div style={{ color: "#6b7080", fontSize: 10 }}>no shard key — scatter-gather to every shard</div>
-          </button>
+          <div style={{ ...S.label, marginTop: 14 }}>SEND A QUERY {routerOn ? "" : "(only works once views exist)"}</div>
+          <button style={S.btn(false, !routerOn)} onClick={() => send("one")} disabled={!routerOn}>Query with an ID<div style={{ color: "#6b7080", fontSize: 10 }}>has a shard key {"\u2192"} goes to one server</div></button>
+          <button style={S.btn(false, !routerOn)} onClick={() => send("all")} disabled={!routerOn}>Query with no ID<div style={{ color: "#6b7080", fontSize: 10 }}>no shard key {"\u2192"} must ask every server</div></button>
         </div>
 
-        {/* right: verdict + database picture */}
         <div style={{ flex: "2 1 380px", minWidth: 300 }}>
-          <div style={S.verdict}>
-            <div style={{ color: v.color, fontWeight: 700 }}>{v.code}</div>
-            {v.blast && <div style={{ marginTop: 4 }}><span style={S.label}>BLAST RADIUS · </span>{v.blast}</div>}
-            {v.rollback && <div style={{ marginTop: 4 }}><span style={S.label}>ROLLBACK COST · </span>{v.rollback}</div>}
+          <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${v.c}`, background: `${v.c}14`, marginBottom: 12 }}>
+            <div style={{ color: v.c, fontWeight: 700 }}>{v.title}</div>
+            {v.who && <div style={{ marginTop: 5 }}><span style={S.label}>WHO'S AFFECTED · </span>{v.who}</div>}
+            {v.undo && <div style={{ marginTop: 4 }}><span style={S.label}>CAN YOU UNDO IT · </span>{v.undo}</div>}
             <div style={{ color: "#8b90a0", marginTop: 6, fontSize: 11 }}>{v.note}</div>
           </div>
-
           <div style={S.panel}>
             <div style={S.label}>THE TABLE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-              {stage <= 2 && mainBox()}
-              {stage >= 2 && <div style={{ flexBasis: "100%" }}>{shardBoxes()}</div>}
+              {stage <= 2 && oneTable()}
+              {stage >= 2 && <div style={{ flexBasis: "100%" }}>{shards()}</div>}
             </div>
-            {flagBar}
-            {loadMeter}
+            {stage === 1 && (<div style={{ ...S.panel, marginTop: 8 }}><div style={S.label}>FLAG: {flagPct}% OF TRAFFIC THROUGH VIEWS</div><div style={S.bar}><div style={{ position: "absolute", inset: 0, width: `${flagPct}%`, background: ACCENT }} /></div></div>)}
+            {route && (<div style={{ marginTop: 8, color: route.kind === "all" ? AMBER : "#8b90a0", fontSize: 10 }}>{route.kind === "all" ? (stage === 3 ? "Asked all 4 servers (scatter-gather): as slow as if nothing were sharded" : "Asked all 4 views, but they all live on one server: the pattern is rehearsed, the cost isn't real yet") : "Routed to one server by the ID's hash"}</div>)}
           </div>
         </div>
       </div>
 
-      <div style={S.foot}>
-        Shard count, ramp percentages, and animation timing are illustrative. The sourced mechanisms: views over the unsharded table (under 10% worst-case overhead, validated by shadow reads on live traffic), feature-flag rollout with seconds-scale rollback, full — not filtered — logical replication with reads and writes restricted to each shard's owned subset, a query engine covering the most common 90% of queries with joins only inside a colo on the shard key, scatter-gathers costing as much as an unsharded fleet, sub-second topology propagation, and a first failover with 10 seconds of partial availability on primaries. Rollback after physical sharding was a stated design goal — the door is engineered to stay two-way, at rising cost.
-        {" "}
-        <a href="https://behindscale.com/articles/figma-postgres-sharding" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+      <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
+        Server count, ramp percentages, and timing are illustrative. The real mechanisms: views make one table look split (under 10% slower, checked on live traffic), an on/off flag rolls out with seconds-scale undo, the whole table is copied to each server (not filtered) then limited to its slice, a query with no shard key must ask every server and costs as much as if nothing were sharded, the row-to-server map updates in under a second, and the first real switchover took about 10 seconds where some writes failed. Undo stays possible after the real move, by design, at rising cost.
+        {" "}<a href="https://behindscale.com/articles/figma-postgres-sharding" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com {"\u2192"}</a>
       </div>
     </div>
   );

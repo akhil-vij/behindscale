@@ -1,0 +1,33 @@
+<svg viewBox="0 0 700 214" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A query with a shard key routes through DBProxy to one database and is fast; a query with no shard key fans out from DBProxy to every database and gathers results, a scatter-gather as slow as if nothing were sharded"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="aah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B45309"/></marker><marker id="vah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7C3AED"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">WHY A QUERY NEEDS A SHARD KEY</text>
+<rect x="30" y="96" width="120" height="52" rx="8" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.5"/>
+<text x="90" y="120" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#7C3AED" text-anchor="middle" font-weight="700">DBProxy</text>
+<text x="90" y="136" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">reads each query</text>
+<line x1="150" y1="110" x2="196" y2="84" stroke="#2E7D46" stroke-width="1.6" marker-end="url(#gah)"/>
+<line x1="150" y1="134" x2="196" y2="168" stroke="#B45309" stroke-width="1.6" marker-end="url(#aah)"/>
+<rect x="200" y="58" width="180" height="44" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="210" y="78" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="start" font-weight="700">HAS a shard key</text>
+<text x="210" y="93" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="start" font-weight="400">hash points to one database</text>
+<line x1="380" y1="80" x2="430" y2="80" stroke="#2E7D46" stroke-width="1.6" marker-end="url(#gah)"/>
+<rect x="438" y="60" width="120" height="40" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="498" y="84" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">1 database</text>
+<text x="498" y="116" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">fast</text>
+<rect x="200" y="150" width="180" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="210" y="170" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="start" font-weight="700">NO shard key</text>
+<text x="210" y="185" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="start" font-weight="400">must ask every database</text>
+<line x1="380" y1="172" x2="430" y2="150" stroke="#B45309" stroke-width="1.2" marker-end="url(#aah)"/>
+<rect x="438" y="137" width="86" height="12" rx="3" fill="#FDF3E7" stroke="#B45309" stroke-width="1"/>
+<text x="481" y="146" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="7.5" fill="#B45309" text-anchor="middle" font-weight="700">db 1</text>
+<line x1="380" y1="172" x2="430" y2="164" stroke="#B45309" stroke-width="1.2" marker-end="url(#aah)"/>
+<rect x="438" y="151" width="86" height="12" rx="3" fill="#FDF3E7" stroke="#B45309" stroke-width="1"/>
+<text x="481" y="160" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="7.5" fill="#B45309" text-anchor="middle" font-weight="700">db 2</text>
+<line x1="380" y1="172" x2="430" y2="178" stroke="#B45309" stroke-width="1.2" marker-end="url(#aah)"/>
+<rect x="438" y="165" width="86" height="12" rx="3" fill="#FDF3E7" stroke="#B45309" stroke-width="1"/>
+<text x="481" y="174" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="7.5" fill="#B45309" text-anchor="middle" font-weight="700">db 3</text>
+<line x1="380" y1="172" x2="430" y2="192" stroke="#B45309" stroke-width="1.2" marker-end="url(#aah)"/>
+<rect x="438" y="179" width="86" height="12" rx="3" fill="#FDF3E7" stroke="#B45309" stroke-width="1"/>
+<text x="481" y="188" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="7.5" fill="#B45309" text-anchor="middle" font-weight="700">db 4</text>
+<text x="600" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#B45309" text-anchor="middle" font-weight="700">scatter-gather:</text>
+<text x="600" y="164" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">as slow as if nothing</text>
+<text x="600" y="177" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">were sharded</text>
+</svg>
