@@ -1,0 +1,30 @@
+<svg viewBox="0 0 700 246" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="As media grows toward a billion, five hard limits light at once: two are MySQL's own (six-week schema changes, a replication cap) and three belong to the rented host (storage volume cap, restart downtime, a 2TB table-file limit)"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="aah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B45309"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">THE WALLS ARRIVED IN FORMATION</text>
+<text x="70" y="52" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">media growing</text>
+<rect x="40" y="180" width="60" height="16" rx="3" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<rect x="40" y="158" width="60" height="16" rx="3" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<rect x="40" y="136" width="60" height="16" rx="3" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<rect x="40" y="114" width="60" height="16" rx="3" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<rect x="40" y="92" width="60" height="16" rx="3" fill="#EEF3FE" stroke="#2563EB" stroke-width="1"/>
+<line x1="70" y1="60" x2="70" y2="72" stroke="#2563EB" stroke-width="1.4" marker-end="url(#bah)"/>
+<text x="70" y="206" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">~1B, doubling</text>
+<line x1="112" y1="120" x2="150" y2="120" stroke="#1A1A1F" stroke-width="2" marker-end="url(#fah)"/>
+<rect x="160" y="40" width="528" height="180" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="176" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#DC2626" text-anchor="start" font-weight="700">EVERY CEILING AT ONCE</text>
+<rect x="176" y="74" width="496" height="22" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.2"/>
+<text x="186" y="89" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#B45309" text-anchor="start" font-weight="700">schema changes stretch to 6 weeks</text>
+<text x="662" y="89" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">MySQL</text>
+<rect x="176" y="102" width="496" height="22" rx="5" fill="#FDF3E7" stroke="#B45309" stroke-width="1.2"/>
+<text x="186" y="117" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#B45309" text-anchor="start" font-weight="700">replication rate cap on writes</text>
+<text x="662" y="117" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">MySQL</text>
+<rect x="176" y="130" width="496" height="22" rx="5" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="186" y="145" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="start" font-weight="700">storage volume nearing 16TB cap</text>
+<text x="662" y="145" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">rented host</text>
+<rect x="176" y="158" width="496" height="22" rx="5" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="186" y="173" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="start" font-weight="700">restarts / upgrades = downtime</text>
+<text x="662" y="173" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">rented host</text>
+<rect x="176" y="186" width="496" height="22" rx="5" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="186" y="201" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="start" font-weight="700">2TB table-file limit (disk format)</text>
+<text x="662" y="201" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">rented host</text>
+<text x="420" y="232" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="400">two are MySQL's own; three belong to the rented host it runs on</text>
+</svg>

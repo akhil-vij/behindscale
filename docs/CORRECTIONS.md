@@ -2634,3 +2634,110 @@ dashes 0. P27 frozen fields byte-identical (stats and artifact.path unchanged). 
 corrected .json, redesigned .jsx, rebuilt preview .html, three .svg figures, this entry.
 
 **Follow-up (context block).** Restored the standard artifact context structure - the CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE header with THE PROBLEM / THE MOVE / TRY sections - in place of the one-off "NEW HERE? THE ONE IDEA" block, to match the other artifacts. Wording kept in the plain redesign tone.
+
+---
+
+## canva-media-dynamodb - Review + full produce (2026-08-11): de-meta, plain-language, lists, figures, artifact sweep (ceiling kept)
+
+Full review then produced on owner "Go", full treatment, keeping "ceiling" as the deliberate
+metaphor (the title is "Every Ceiling at Once"). Verdict SHIP WITH FIXES. Live page byte-for-byte
+the upload (no drift); grounded clean against Chen and Sharp's Canva post. No factual error - the
+media-service shape, the six growing pains, gh-ost, ~1B media mid-2017, the stopgaps, content-free
+SQS with re-read from the primary, the two priority queues, the backpressured newest-first scan,
+dual-read, the cutover apparatus, 25B+/50M, and the NewSQL candor all check out.
+
+**De-meta (as in Colossus).** The crux was taxonomy-first and two notes opened on "Minted".
+- Crux de-taxonomized: dropped "Same class as Figma, Notion, and Pinterest", "the class's fourth
+  pole", "fourth member", "answer taxonomy", and the point-by-point classmate rundown. It now
+  leads with Canva's own story (not one ceiling but a whole stack at once, several belonging to
+  the rented host) with a single light cross-ref at the close.
+- Both notes de-registered: "Minted from the migration's quiet masterpiece" -> "This is the
+  migration's quiet masterpiece"; "The in-source boundary is the options list the post rejects"
+  -> "The post is explicit about the options it rejected"; "Third recurrence, and the second
+  consecutive datastore migration (after Slack's Vitess journey)" -> "another migration in this
+  collection where nothing cut over on faith". The tradeoff tag-line "the fourth pole of the
+  class's answer taxonomy comes with a date on it" -> "This answer was right for 2017's
+  constraints, not right forever".
+
+**Bands.** summary 1,316 -> 1,047; crux 1,155 -> 1,096. problem 1,981, solution 3,513.
+
+**Em-dash overrun - swept: 72 (42 JSON + 30 JSX) -> 0.**
+
+**Sentence length - 14 over 40 words, including a 121-word monster (the worst single sentence in
+the whole library) -> all <= 39.** The 121-word sentence, which crammed all six growing pains into
+one breath, became a 5-bullet list; the stopgaps became a 3-bullet list.
+
+**Plain-language pass (full).** RDS -> "Amazon's managed database service"; DDL -> "MySQL's
+built-in way of altering tables"; gh-ost -> "an open-source migration tool"; EBS -> "the RDS
+storage volume"; ext3 -> "the older ext3 disk format" / "from the disk format"; buffer pool -> "a
+hot cache in memory"; I/O tail latency -> "slow user requests"; SQS -> "tiny messages on a queue";
+DMS -> "AWS's migration service"; binlog parser -> "a fragile log parser"; scatter-gather ->
+"asking every server"; eventually consistent -> "slightly-stale"; transactional writes ->
+"all-or-nothing writes"; p95 -> "the slow-request measure"; MAU -> "monthly active users"; CDC ->
+"a change-feed into the data warehouse"; GSIs -> "the composite indexes DynamoDB needs, stitched
+together by hand"; denormalized -> "related data folded together". NewSQL kept (named in context).
+
+**Ceiling kept.** Per the owner, "ceiling" stays as the article's central image - in the title,
+the prose (the stack of ceilings arriving in formation), and the artifact. It is a deliberate
+metaphor here, not the incidental synonym it was in Figma, so it was not swept to "limit".
+
+**Images - 3 figures.** every-ceiling-at-once (problem): five walls lighting at once as media
+grows, two labelled MySQL's own and three the rented host's. content-free-change-events (solution):
+the loop - a message saying only "media 42 changed" goes to a worker that re-reads the truth from
+the MySQL primary and writes DynamoDB, so reorder and retry are free. hot-first-scan (solution):
+creates/updates on a high-priority queue and reads on a low one, workers draining high before low,
+a newest-first scan feeding the low queue under backpressure so hot data replicates first.
+
+**Artifact - wording sweep, ceiling kept.** Plain-language glosses in the verdicts and context
+(DDL, SQS, idempotent, scatter-gather, GSIs, CDC, p95, eventually-consistent, EBS, ext3); dashes
+swept (30 -> 0); off-state toggle border #2a2a3a -> #4a4f60; the retro verdict's "fourth pole of
+the class's answer taxonomy has a date on it" de-meta'd to "This answer was right for 2017, not
+for all time". The stage machine, walls, and verdict cascade are untouched (skeleton diff confirmed
+only strings and the one border color changed; the context block was verified intact). The
+component name EveryCeilingAtOnce and the wall panel keep "ceiling".
+
+**Recurring-defect scorecard - all fired, all fixed:** over-stuffed summary; over-long crux;
+taxonomy-first crux (severe); registry jargon in notes (severe); em-dash overrun (worst yet, tied
+with the 121-word sentence); invisible off-state toggles. P27 frozen fields byte-identical (stats,
+title, cruxTag, artifact.path unchanged; two dash-bearing stat labels swept). Deliverables:
+corrected .json, swept .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+### canva-media-dynamodb - Produce round 2 (2026-08-11): deeper plain-language pass, migration figure, artifact wording
+
+Owner did a second, heavier plain-language pass on the prose and artifact, and asked for one more
+figure (the migration itself).
+
+**Plain-language pass (round 2).** Simplified every flagged phrase, notably: replaced "stopgaps"
+everywhere with "temporary fixes" (the owner didn't know the word); "scaled up and then with" ->
+"scaled up, with"; "six-week schema changes" -> "schema changes that took six weeks";
+"storage-size caps" -> "storage size limits"; clarified the migration in the summary ("a tiny
+'this media changed' message let a worker copy that media's latest version from MySQL into
+DynamoDB"); "for less than the RDS it replaced" -> "it costs less to run than the RDS it replaced";
+"The second distinctive mark is the answer" -> "The second thing that stands out is what Canva did
+about it"; dropped "refreshingly", "the post credits by name", and the Instapaper reference; "fed
+straight into slow user requests" -> "led to slow user requests"; "That was pending proof" -> "It
+still had to be proven"; "writing to both stores at once" -> "writing every change to both MySQL
+and DynamoDB at once"; rewrote the scan/backpressure and the ID-less-queries sentences plainly;
+glossed "all-or-nothing writes (either the whole change is saved or none of it is)". The dense
+tradeoffs were rewritten in plain language, including tying "content-free change events" back to
+the article ("those tiny 'X changed' messages from the migration, which behindscale calls
+content-free change events") and glossing candor, parallel-scan migration code ("special migration
+code"), CDC ("streaming changes into a separate data warehouse"), and composite GSIs
+("multi-column indexes built by hand").
+
+**One more figure - migration-overview.** A left-to-right flow of the whole migration: replicate
+hot data first, dual-read compare to catch bugs, read from DynamoDB with a MySQL fallback, then
+switch writes over, with a rollback-flag band spanning the flow to show each step was reversible in
+seconds. Now four figures.
+
+**Artifact wording.** Simplified the intro ("light the walls, spend the stopgaps" -> "watch the
+limits get hit one by one, apply the temporary fixes, then move off the relational database
+without any user noticing"); swept "stopgap(s)" -> "temporary fixes" / "TEMP FIX", "substrate" ->
+"rented host", "run book" -> "checklist"; clarified "the number of media approaching a billion";
+and reworded the cutover, list-by-user, wall-panel, and itemized-bill lines in the context and
+verdicts. "Ceiling" kept throughout. The stage machine, walls, and verdict cascade are unchanged;
+parses clean, dashes 0.
+
+**Bands after:** summary 1,036, crux 1,099, problem 1,898, solution 3,728; longest sentence 39;
+dashes 0. P27 frozen fields byte-identical. Deliverables: corrected .json, swept .jsx, rebuilt
+preview .html, four .svg figures, this entry.
