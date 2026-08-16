@@ -109,14 +109,14 @@ export default function ArticleDetail() {
         )}
 
         <Section title="Problem">
-          <Prose articleSlug={article.slug} figures={article.figures}>
+          <Prose slug={article.slug} figures={article.figures}>
             {article.problem}
           </Prose>
           <StatsRow stats={statsByPlacement('problem')} />
         </Section>
 
         <Section title="Solution">
-          <Prose articleSlug={article.slug} figures={article.figures}>
+          <Prose slug={article.slug} figures={article.figures}>
             {article.solution}
           </Prose>
           <StatsRow stats={statsByPlacement('solution')} />

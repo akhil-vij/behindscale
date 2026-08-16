@@ -4,6 +4,30 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Figures extended to pattern pages (2026-08-16).**
+  The article-only figures feature now also renders on
+  pattern definition pages, via a "figure host"
+  generalisation (docs/figures-design.md §8). Cleanest
+  minimal change: `PatternDefinition` gains optional
+  `figures?: Figure[]` (article schema untouched);
+  storage stays flat and host-agnostic at
+  `content/figures/<host-slug>/<figure-slug>.svg`
+  (article slug OR pattern slug), so no migration of
+  the 43 existing article SVGs. New `scripts/figure-
+  hosts.ts` (`figureHosts(content)`) is the single
+  place the article/pattern difference lives; all eight
+  figure validators, the SVG loader, and copy-figures
+  iterate hosts. `Prose`/`Figure` prop renamed
+  `articleSlug` → `slug`; `PatternDetail` passes
+  `slug` + `figures`. A build guard errors if an
+  article and pattern share a slug while both declare
+  figures. Verified end-to-end (a throwaway pattern
+  figure prerendered an `<img>` on the pattern page,
+  then reverted). Tests 217 → 231; build 0 errors.
+  No production behavior change today: no pattern
+  declares figures yet, so every pattern page renders
+  byte-identically.
+
 - **Figures feature LANDED (2026-08-10).** A new
   static-diagram content type — the reading-shell
   counterpart to the interactive artifact — is live

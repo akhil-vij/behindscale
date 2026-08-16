@@ -1,7 +1,9 @@
 #!/usr/bin/env tsx
-// Mirror content/figures/<article>/<slug>.svg into public/figures/,
-// so Vite's build ships each SVG as a static asset at
-// /figures/<article>/<slug>.svg. That URL is what:
+// Mirror content/figures/<host>/<slug>.svg into public/figures/, so
+// Vite's build ships each SVG as a static asset at
+// /figures/<host>/<slug>.svg. <host> is an article slug OR a pattern
+// slug -- this script walks the filesystem host-agnostically. That URL
+// is what:
 //   - <img src=".../figures/..."> in Prose.tsx resolves (reader page)
 //   - TechArticle.image JSON-LD points at (SEO / Google image
 //     discovery)
@@ -37,7 +39,7 @@ const SRC_ROOT = 'content/figures'
 const DST_ROOT = 'public/figures'
 
 interface SvgRef {
-  articleSlug: string
+  hostSlug: string
   figureSlug: string
   srcPath: string
   dstPath: string
@@ -46,17 +48,17 @@ interface SvgRef {
 function walkSourceSvgs(): SvgRef[] {
   const out: SvgRef[] = []
   if (!existsSync(SRC_ROOT)) return out
-  for (const articleSlug of readdirSync(SRC_ROOT).sort()) {
-    const articleDir = join(SRC_ROOT, articleSlug)
-    if (!statSync(articleDir).isDirectory()) continue
-    for (const name of readdirSync(articleDir).sort()) {
+  for (const hostSlug of readdirSync(SRC_ROOT).sort()) {
+    const hostDir = join(SRC_ROOT, hostSlug)
+    if (!statSync(hostDir).isDirectory()) continue
+    for (const name of readdirSync(hostDir).sort()) {
       if (!name.endsWith('.svg')) continue
       const figureSlug = name.slice(0, -'.svg'.length)
       out.push({
-        articleSlug,
+        hostSlug,
         figureSlug,
-        srcPath: join(articleDir, name),
-        dstPath: join(DST_ROOT, articleSlug, name),
+        srcPath: join(hostDir, name),
+        dstPath: join(DST_ROOT, hostSlug, name),
       })
     }
   }
@@ -71,13 +73,13 @@ function walkExistingDst(): Map<string, string> {
   // key: dstPath, value: dstPath (used as a set with fast has())
   const out = new Map<string, string>()
   if (!existsSync(DST_ROOT)) return out
-  for (const articleSlug of readdirSync(DST_ROOT)) {
-    if (articleSlug.startsWith('.')) continue // preserves .gitkeep
-    const articleDir = join(DST_ROOT, articleSlug)
-    if (!statSync(articleDir).isDirectory()) continue
-    for (const name of readdirSync(articleDir)) {
+  for (const hostSlug of readdirSync(DST_ROOT)) {
+    if (hostSlug.startsWith('.')) continue // preserves .gitkeep
+    const hostDir = join(DST_ROOT, hostSlug)
+    if (!statSync(hostDir).isDirectory()) continue
+    for (const name of readdirSync(hostDir)) {
       if (!name.endsWith('.svg')) continue
-      const p = join(articleDir, name)
+      const p = join(hostDir, name)
       out.set(p, p)
     }
   }
@@ -92,7 +94,7 @@ function main() {
   let copied = 0
   let unchanged = 0
   for (const ref of sources) {
-    ensureDir(join(DST_ROOT, ref.articleSlug))
+    ensureDir(join(DST_ROOT, ref.hostSlug))
     const src = readFileSync(ref.srcPath, 'utf8')
     if (
       existsSync(ref.dstPath) &&

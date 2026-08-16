@@ -11,6 +11,7 @@
 // bands, not fuzzy content-drift signals.
 
 import type { Check, CheckError } from '../types'
+import { figureHosts } from '../figure-hosts'
 
 const EYEBROW_MIN = 2
 const EYEBROW_MAX = 6
@@ -37,13 +38,12 @@ export const figureFieldsNonempty: Check = {
   run: (content) => {
     const errors: CheckError[] = []
 
-    for (const article of content.articles) {
-      if (article.figures === undefined) continue
-      for (const fig of article.figures) {
+    for (const host of figureHosts(content)) {
+      for (const fig of host.figures) {
         const ew = wordCount(fig.eyebrow)
         if (ew < EYEBROW_MIN || ew > EYEBROW_MAX) {
           errors.push({
-            articleSlug: article.slug,
+            ...host.ref,
             message: `figure "${fig.slug}" eyebrow is ${ew} words (band: ${EYEBROW_MIN}-${EYEBROW_MAX})`,
             fix: [
               `rewrite eyebrow to sit inside ${EYEBROW_MIN}-${EYEBROW_MAX} words (uppercase mono label)`,
@@ -52,7 +52,7 @@ export const figureFieldsNonempty: Check = {
         }
         if (!isAllUppercase(fig.eyebrow)) {
           errors.push({
-            articleSlug: article.slug,
+            ...host.ref,
             message: `figure "${fig.slug}" eyebrow "${fig.eyebrow}" is not all-uppercase`,
             fix: [
               'uppercase the eyebrow (mono label convention, per docs/figures-design.md Q10)',
@@ -62,7 +62,7 @@ export const figureFieldsNonempty: Check = {
         const cw = wordCount(fig.caption)
         if (cw < CAPTION_MIN || cw > CAPTION_MAX) {
           errors.push({
-            articleSlug: article.slug,
+            ...host.ref,
             message: `figure "${fig.slug}" caption is ${cw} words (band: ${CAPTION_MIN}-${CAPTION_MAX})`,
             fix: [
               `rewrite caption to sit inside ${CAPTION_MIN}-${CAPTION_MAX} words (plain-English sentence rendered below the SVG)`,
@@ -72,7 +72,7 @@ export const figureFieldsNonempty: Check = {
         const aw = wordCount(fig.ariaLabel)
         if (aw < ARIA_MIN || aw > ARIA_MAX) {
           errors.push({
-            articleSlug: article.slug,
+            ...host.ref,
             message: `figure "${fig.slug}" ariaLabel is ${aw} words (band: ${ARIA_MIN}-${ARIA_MAX})`,
             fix: [
               `rewrite ariaLabel to sit inside ${ARIA_MIN}-${ARIA_MAX} words (screen-reader label; often shorter/tighter than the caption)`,

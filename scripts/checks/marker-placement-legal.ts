@@ -2,9 +2,10 @@
 // markers may appear.
 //
 // Rules (docs/figures-design.md §0.1 Q3, Q4, §3.5):
-//   - Markers may appear ONLY inside `problem` or `solution` prose
-//     -- never in summary, crux, cruxSummary, tradeoffs[],
-//     patterns[].note, or any other field.
+//   - Markers may appear ONLY inside a figure host's marker-bearing
+//     fields: an article's `problem`/`solution`, or a pattern's
+//     `definition` -- never in any other field (summary, crux,
+//     tradeoffs[], whenItApplies[], patterns[].note, etc.).
 //   - Each marker must be on its OWN LINE (blank-line delimited),
 //     i.e. it splits cleanly on the paragraph delimiter. A marker
 //     embedded inside a paragraph is illegal.
@@ -19,6 +20,7 @@
 // confusing "orphan" report.
 
 import type { Check, CheckError } from '../types'
+import { figureHosts } from '../figure-hosts'
 
 // Any {{...}} construct that starts with `figure:` -- broader than
 // the kebab-case slug regex used by proseText/extractFigureMarkers.
@@ -111,16 +113,14 @@ export const markerPlacementLegal: Check = {
   run: (content) => {
     const errors: CheckError[] = []
 
-    for (const article of content.articles) {
+    for (const host of figureHosts(content)) {
+      const allowedNames = host.markerFields.map(([name]) => name).join('/')
+
       // Fields where markers are ALLOWED.
-      const allowed: Array<[string, string]> = [
-        ['problem', article.problem],
-        ['solution', article.solution],
-      ]
-      for (const [name, field] of allowed) {
+      for (const [name, field] of host.markerFields) {
         for (const v of scanField(field, name)) {
           errors.push({
-            articleSlug: article.slug,
+            ...host.ref,
             message: `[${v.fieldName}] ${v.reason}`,
             fix: [
               'place each figure marker on its own line with blank lines above and below, e.g.:\n\n{{figure:slug}}\n\n',
@@ -130,31 +130,20 @@ export const markerPlacementLegal: Check = {
       }
 
       // Fields where markers are FORBIDDEN. Any occurrence errors.
-      const forbidden: Array<[string, string]> = [
-        ['summary', article.summary],
-        ['crux', article.crux],
-        ['cruxSummary', article.cruxSummary],
-      ]
-      for (const tradeoff of article.tradeoffs) {
-        forbidden.push(['tradeoffs[]', tradeoff])
-      }
-      for (const patternRef of article.patterns) {
-        forbidden.push([`patterns["${patternRef.slug}"].note`, patternRef.note])
-      }
-      for (const [name, field] of forbidden) {
+      for (const [name, field] of host.forbiddenFields) {
         if (LOOSE_MARKER_ANY.test(field)) {
           errors.push({
-            articleSlug: article.slug,
-            message: `[${name}] contains a {{figure:...}} marker -- markers are allowed ONLY in problem/solution`,
+            ...host.ref,
+            message: `[${name}] contains a {{figure:...}} marker -- markers are allowed ONLY in ${allowedNames}`,
             fix: [
-              `remove the marker from ${name}; if the figure is genuinely relevant here, decide whether it belongs in problem or solution instead`,
+              `remove the marker from ${name}; if the figure is genuinely relevant here, decide whether it belongs in ${allowedNames} instead`,
             ],
           })
         }
       }
 
       // Duplicate slugs: same {{figure:X}} referenced more than once
-      // across the article's problem+solution.
+      // across the host's marker-bearing fields.
       const seen = new Map<string, number>()
       const scan = (s: string) => {
         const re = /\{\{figure:([a-z0-9]+(?:-[a-z0-9]+)*)\}\}/g
@@ -164,13 +153,12 @@ export const markerPlacementLegal: Check = {
           seen.set(slug, (seen.get(slug) ?? 0) + 1)
         }
       }
-      scan(article.problem)
-      scan(article.solution)
+      for (const [, field] of host.markerFields) scan(field)
       for (const [slug, count] of seen) {
         if (count > 1) {
           errors.push({
-            articleSlug: article.slug,
-            message: `{{figure:${slug}}} appears ${count} times across problem+solution (each figure is placed at exactly one position)`,
+            ...host.ref,
+            message: `{{figure:${slug}}} appears ${count} times across ${allowedNames} (each figure is placed at exactly one position)`,
             fix: [
               `remove ${count - 1} of the {{figure:${slug}}} references, keeping only the one at the intended position`,
             ],

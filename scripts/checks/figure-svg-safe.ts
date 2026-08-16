@@ -25,6 +25,7 @@
 // exists's job).
 
 import type { Check, CheckError } from '../types'
+import { figureHosts } from '../figure-hosts'
 
 interface Violation {
   message: string
@@ -108,10 +109,9 @@ export const figureSvgSafe: Check = {
   run: (content) => {
     const errors: CheckError[] = []
 
-    for (const article of content.articles) {
-      if (article.figures === undefined) continue
-      for (const fig of article.figures) {
-        const key = `${article.slug}/${fig.slug}`
+    for (const host of figureHosts(content)) {
+      for (const fig of host.figures) {
+        const key = `${host.slug}/${fig.slug}`
         const entry = content.figureSvgs.get(key)
         if (entry === undefined || entry.contents === null) continue
         const src = entry.contents
@@ -120,7 +120,7 @@ export const figureSvgSafe: Check = {
           if (rule.test(src)) {
             errors.push({
               file: entry.path,
-              articleSlug: article.slug,
+              ...host.ref,
               message: `figure "${fig.slug}" ${rule.message}`,
               fix: [
                 'remove the disallowed construct; see docs/figures-design.md §0.4 / Q11 for the allowlist',
@@ -132,7 +132,7 @@ export const figureSvgSafe: Check = {
         for (const v of findOffRepoRefs(src)) {
           errors.push({
             file: entry.path,
-            articleSlug: article.slug,
+            ...host.ref,
             message: `figure "${fig.slug}" ${v.message}`,
             fix: [
               'inline the referenced asset into the SVG, or replace with a "#"-prefixed in-document fragment reference',

@@ -61,4 +61,40 @@ describe('PatternDefinition', () => {
   it('rejects when category is the wrong type', () => {
     expect(isPatternDefinition({ ...validDefinition, category: 42 })).toBe(false)
   })
+
+  const validFigure = {
+    slug: 'diagram',
+    eyebrow: 'THE SHAPE',
+    caption:
+      'A plain-English sentence describing the diagram in twelve to forty words so the caption band is satisfied for this figure fixture.',
+    ariaLabel: 'A concise screen-reader label for the diagram',
+  }
+
+  it('accepts a definition with valid figures[] (the figure-host extension)', () => {
+    expect(
+      isPatternDefinition({ ...validDefinition, figures: [validFigure] }),
+    ).toBe(true)
+  })
+
+  it('accepts a definition without figures (optional field)', () => {
+    expect(isPatternDefinition(validDefinition)).toBe(true)
+  })
+
+  it('rejects a definition whose figures[] entry is malformed', () => {
+    expect(
+      isPatternDefinition({
+        ...validDefinition,
+        figures: [{ ...validFigure, slug: 'Not_Kebab' }],
+      }),
+    ).toBe(false)
+  })
+
+  it('rejects duplicate figure slugs within a pattern', () => {
+    expect(
+      isPatternDefinition({
+        ...validDefinition,
+        figures: [validFigure, validFigure],
+      }),
+    ).toBe(false)
+  })
 })

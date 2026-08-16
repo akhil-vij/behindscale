@@ -23,6 +23,7 @@
 // regex-extract reliably.
 
 import type { Check, CheckError } from '../types'
+import { figureHosts } from '../figure-hosts'
 
 // Matches <text ...>...</text> and captures the inner text. Handles
 // attributes on the opening tag. Not nested (SVG does not nest
@@ -81,10 +82,9 @@ export const figureTextVocabulary: Check = {
   run: (content) => {
     const errors: CheckError[] = []
 
-    for (const article of content.articles) {
-      if (article.figures === undefined) continue
-      for (const fig of article.figures) {
-        const key = `${article.slug}/${fig.slug}`
+    for (const host of figureHosts(content)) {
+      for (const fig of host.figures) {
+        const key = `${host.slug}/${fig.slug}`
         const entry = content.figureSvgs.get(key)
         if (entry === undefined || entry.contents === null) continue
 
@@ -95,7 +95,7 @@ export const figureTextVocabulary: Check = {
             if (violation !== null) {
               errors.push({
                 file: entry.path,
-                articleSlug: article.slug,
+                ...host.ref,
                 message: `figure "${fig.slug}" text "${text}": ${violation}`,
                 fix: [
                   `edit the in-SVG <text> content to satisfy the ${rule.id} rule`,

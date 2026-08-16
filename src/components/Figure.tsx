@@ -23,12 +23,14 @@
 import type { Figure as FigureType } from '../types'
 
 interface FigureProps {
-  articleSlug: string
+  // The figure host's slug (article slug OR pattern slug). Drives the
+  // public SVG URL, host-agnostic: /figures/<slug>/<figure-slug>.svg.
+  slug: string
   figure: FigureType
 }
 
-export default function Figure({ articleSlug, figure }: FigureProps) {
-  const svgUrl = `/figures/${articleSlug}/${figure.slug}.svg`
+export default function Figure({ slug, figure }: FigureProps) {
+  const svgUrl = `/figures/${slug}/${figure.slug}.svg`
   return (
     <figure className="my-6 rounded-xl border border-border-default bg-bg-surface px-5 py-4">
       <div className="mb-1.5 font-mono text-xs uppercase tracking-widest text-text-muted">

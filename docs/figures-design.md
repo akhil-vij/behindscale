@@ -727,3 +727,45 @@ commit under the standard build/test/push discipline.
   recommendation.
 - **Figure translations / i18n.** No.
 - **Figure comments / discussions / social features.** No.
+
+---
+
+## 8. Figure hosts — extension to patterns (2026-08-16)
+
+The figures feature shipped article-only. It now also renders on
+**pattern definition pages**, via a small "figure host" generalisation
+(the cleanest minimal change — no storage migration, no schema churn on
+articles).
+
+**A figure host** is any content entity that carries inline figures:
+- an **article** — markers in `problem` / `solution`;
+- a **pattern** — markers in `definition`.
+
+`PatternDefinition` gains an optional `figures?: Figure[]` (same `Figure`
+shape, same word bands, same count ceiling). Nothing on `Article`
+changed.
+
+**Storage is unchanged and host-agnostic** (this supersedes the §7
+non-goal's guess of a separate `content/pattern-figures/` directory):
+```
+content/figures/<host-slug>/<figure-slug>.svg  ->  /figures/<host-slug>/<figure-slug>.svg
+```
+`<host-slug>` is the article slug OR the pattern slug. A build-time guard
+(`figure-svg-exists`) errors if an article and a pattern ever share a
+slug while both declare figures, so the flat namespace can't silently
+mis-serve.
+
+**One concept, one place.** `scripts/figure-hosts.ts` exposes
+`figureHosts(content)` → `{ slug, kind, figures, markerFields,
+forbiddenFields, ref }` for every article and pattern. All eight figure
+validators, the SVG loader, and `copy-figures` iterate hosts instead of
+articles; the article/pattern difference (which fields carry markers)
+lives only in that helper.
+
+**Renderer.** `Prose`/`Figure` took a prop rename `articleSlug` → `slug`
+(the host's slug). `ArticleDetail` and `PatternDetail` both pass
+`slug` + `figures`.
+
+**Not changed:** the `<img>`-sandbox security model (§0.2), the Q10 word
+bands, the count ceiling, the SVG safety allowlist — all apply to
+pattern figures identically.

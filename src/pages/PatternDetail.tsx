@@ -51,7 +51,9 @@ export default function PatternDetail() {
       )}
 
       <Section title="Definition">
-        <Prose>{pattern.definition}</Prose>
+        <Prose slug={pattern.slug} figures={pattern.figures}>
+          {pattern.definition}
+        </Prose>
       </Section>
 
       {pattern.whenItApplies.length > 0 && (

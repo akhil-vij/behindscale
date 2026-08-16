@@ -151,19 +151,24 @@ export function loadContent(): LoadResult {
     })
   }
 
-  // Preload figure SVGs for every declared figure on every article.
-  // Missing files are stored with `contents: null` so figure-svg-
-  // exists can report them consistently; present files are read once
-  // and made available to figure-svg-safe + figure-text-vocabulary.
+  // Preload figure SVGs for every declared figure on every figure host
+  // (articles AND patterns -- both store figures at
+  // content/figures/<host-slug>/<figure-slug>.svg). Missing files are
+  // stored with `contents: null` so figure-svg-exists can report them
+  // consistently; present files are read once and made available to
+  // figure-svg-safe + figure-text-vocabulary.
   const figureSvgs = new Map<
     string,
     { path: string; contents: string | null }
   >()
-  for (const article of articles) {
-    if (article.figures === undefined) continue
-    for (const figure of article.figures) {
-      const key = `${article.slug}/${figure.slug}`
-      const path = join(FIGURES_DIR, article.slug, `${figure.slug}.svg`)
+  const figureHostList: Array<{ slug: string; figures: { slug: string }[] }> = [
+    ...articles.map((a) => ({ slug: a.slug, figures: a.figures ?? [] })),
+    ...patterns.map((p) => ({ slug: p.slug, figures: p.figures ?? [] })),
+  ]
+  for (const host of figureHostList) {
+    for (const figure of host.figures) {
+      const key = `${host.slug}/${figure.slug}`
+      const path = join(FIGURES_DIR, host.slug, `${figure.slug}.svg`)
       if (!existsSync(path)) {
         figureSvgs.set(key, { path, contents: null })
         continue

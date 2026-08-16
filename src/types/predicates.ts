@@ -75,6 +75,24 @@ export function checkFigure(value: unknown): Result {
   return ok
 }
 
+// Shared validation for an optional `figures` array on any figure host
+// (article or pattern): each entry is a valid Figure and slugs are
+// unique within the host. `noun` tunes the duplicate-slug message.
+export function checkFiguresField(figures: unknown, noun: string): Result {
+  if (!Array.isArray(figures)) return fail('`figures` expected array when present')
+  const seenSlugs = new Set<string>()
+  for (let i = 0; i < figures.length; i++) {
+    const figureResult = checkFigure(figures[i])
+    if (!figureResult.ok) return fail(`\`figures[${i}]\`: ` + figureResult.reason)
+    const slug = (figures[i] as { slug: string }).slug
+    if (seenSlugs.has(slug)) {
+      return fail(`\`figures[${i}]\`: duplicate slug "${slug}" (figure slugs must be unique within this ${noun})`)
+    }
+    seenSlugs.add(slug)
+  }
+  return ok
+}
+
 export function checkPatternDefinition(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   if (typeof value.slug !== 'string') return fail('`slug` expected string')
@@ -84,6 +102,10 @@ export function checkPatternDefinition(value: unknown): Result {
   if (!isStringArray(value.tradeoffs)) return fail('`tradeoffs` expected string[]')
   if (value.category !== undefined && typeof value.category !== 'string') {
     return fail('`category` expected string when present')
+  }
+  if (value.figures !== undefined) {
+    const figuresResult = checkFiguresField(value.figures, 'pattern')
+    if (!figuresResult.ok) return figuresResult
   }
   return ok
 }
@@ -145,17 +167,8 @@ export function checkArticle(value: unknown): Result {
     }
   }
   if (value.figures !== undefined) {
-    if (!Array.isArray(value.figures)) return fail('`figures` expected array when present')
-    const seenSlugs = new Set<string>()
-    for (let i = 0; i < value.figures.length; i++) {
-      const figureResult = checkFigure(value.figures[i])
-      if (!figureResult.ok) return fail(`\`figures[${i}]\`: ` + figureResult.reason)
-      const slug = (value.figures[i] as { slug: string }).slug
-      if (seenSlugs.has(slug)) {
-        return fail(`\`figures[${i}]\`: duplicate slug "${slug}" (figure slugs must be unique within the article)`)
-      }
-      seenSlugs.add(slug)
-    }
+    const figuresResult = checkFiguresField(value.figures, 'article')
+    if (!figuresResult.ok) return figuresResult
   }
   return ok
 }
