@@ -212,8 +212,49 @@ crawler-orphan risk for companies with a footer-linked, sitemap'd index (D4).
 **Decision.** `cruxtags.json` entries gain `urlSlug` (plain-words page
 address). `cruxTag` remains the registry slug, the foreign key in 41 article
 files, and the anchor id — never renamed, never displayed. Page URL =
-`urlSlug`. **OWNER-PENDING: the 14 urlSlug values** (blocks build step 3, not
-steps 1-2).
+`urlSlug`.
+
+**STAMPED (2026-08-16).** All 14 `urlSlug` values ruled and written to
+`content/cruxtags.json`; the `cruxtag-urlslug` validator enforces present +
+kebab-case + unique. Style rule: **term of art where one exists, plain symptom
+where it doesn't**, and the governing principle — **problem pages get problem
+vocabulary; solution words belong to /patterns and /interview; a broad
+single-word slug is a namespace claim, spent only on true terms of art.**
+
+| `cruxTag` (frozen key) | `urlSlug` (page address) |
+|---|---|
+| `priority-blind-load-shedding` | `blind-load-shedding` |
+| `partial-completion-under-crashes` | `interrupted-operations` |
+| `single-table-scaling-ceiling` | `outgrowing-one-table` |
+| `ambiguous-failure-under-retry` | `ambiguous-timeouts` |
+| `single-cluster-scaling-ceiling` | `outgrowing-one-cluster` |
+| `blast-radius-scales-with-cluster-size` | `cluster-blast-radius` |
+| `buffer-degrades-under-backlog` | `queue-backlog` |
+| `gray-failure-defeats-automatic-detection` | `gray-failure` |
+| `observer-shares-fate-with-observed` | `blind-during-outages` |
+| `retry-amplified-overload` | `retry-storms` |
+| `mitigation-scoped-narrower-than-failure` | `mitigation-gaps` |
+| `degraded-state-outlives-its-trigger` | `metastable-failure` |
+| `unrecorded-config-outlives-its-authors` | `undocumented-config` |
+| `placement-precedes-the-access-pattern` | `blind-data-placement` |
+
+Notes on the four that moved off the first draft: **#1** `blind-load-shedding`
+(not `load-shedding` — that solution word competes with
+`/interview/design-a-rate-limiter` for one query family, and load-shedding is a
+solution term on a problem page); **#2** `interrupted-operations` (not
+`partial-failures` — "partial failure" is an established term for a *different*
+concept, so the slug would mislabel the class); **#5** `outgrowing-one-cluster`
+(not `outgrowing-one-database` — verified from the article files that one member,
+`google-colossus`, is a *storage* cluster, not a database, so the database
+wording would mislabel it); **#9** `blind-during-outages` and **#14**
+`blind-data-placement` form a deliberate "blind-" house motif with #1.
+
+Three values are stamped as defaults still open to an owner veto (trivial to
+flip — no route consumes them yet): **#6** `cluster-blast-radius` (bare
+`blast-radius` is defensible on search grounds; taste-flagged), **#9**
+`blind-during-outages` (fallback `monitoring-shares-fate` if the motif is
+disliked), **#11** `mitigation-gaps` (lowest-confidence; `partial-mitigation`
+considered and rejected — "gap" names the problem, "partial" only a property).
 
 **Why.** The join key carries no display duty; a plain-words URL is an
 editorial/marketing concern that should not reach into the data layer.
@@ -358,6 +399,19 @@ strip, counts) derives. The key is a **company slug**, default
 `source.slug`s; a registry entry may carry an explicit override. A modest
 `/companies` index ships footer-linked and sitemap'd. **OWNER-PENDING: index
 in v1 vs v1.1** (recommendation: v1).
+
+**Company-slug enumeration (2026-08-16).** All 23 distinct `source.company`
+values in the repo slugify cleanly **except one**: `"Amazon (AWS)"` →
+`slugify` yields `amazon-aws`; **RULED override → `aws`** (the registry entry
+for Amazon carries the explicit slug). No other value misfires. The
+Google/Google-Cloud merge question is **not-applicable today**: the repo has
+exactly one company `"Google"` (→ `/companies/google`); `google-cloud` is only
+a `source.slug`, not a distinct `source.company`, and D4 keys on company, so
+there is nothing to merge. If a future article sets
+`source.company: "Google Cloud"`, rule then (recommend merging under
+`/companies/google` if it's Google infra). Every company today has exactly one
+`source.slug`, so multi-source aggregation is dormant until the docdb round
+(Stripe's second blog) publishes.
 
 **Why a thin registry + derivation.** The company page mirrors the pattern
 page's article-declares / page-derives model (`patternStats`): walls, patterns,
@@ -600,7 +654,7 @@ coherence and no file-collisions bought at the cost of a longer critical path.
 
 | # | Item | Blocks | Status |
 |---|------|--------|--------|
-| 1 | 14 urlSlug values (D1) + company-slug edge cases (D4, e.g. AWS) | step 3 (and company URLs at step 5) | drafting next, from cruxtags.json |
+| 1 | 14 urlSlug values (D1) + company-slug edge cases (D4, e.g. AWS) | — | **CLOSED 2026-08-16** — stamped in cruxtags.json + validator; `aws` override recorded in D4. #6/#9/#11 stamped as owner-vetoable defaults. |
 | 2 | /companies index v1 vs v1.1 (D4) | step 5 scope only | recommendation: v1 |
 | 3 | Hero artifact on the landing (A) | nothing | separate track |
 
@@ -618,3 +672,12 @@ coherence and no file-collisions bought at the cost of a longer critical path.
   distilled" section capturing the ten review findings that shaped the
   decisions. Added a plain-language "In plain terms" worked example to each
   invariant and abstract decision (P0, D1–D6). No settled decision changed.
+- **2026-08-16** — OWNER-PENDING #1 CLOSED. All 14 `urlSlug` values ruled and
+  stamped into `content/cruxtags.json`; `cruxtag-urlslug` validator added
+  (present + kebab + unique; the 16th check). #5 flipped to
+  `outgrowing-one-cluster` after verifying `google-colossus` is a storage, not
+  database, member. D4 gained the company-slug enumeration (only `aws` needs an
+  override; Google-Cloud merge not-applicable today). Publish-queue note: repo
+  has `retry-amplified-overload`=1 and `observer-shares-fate`=3 vs the ledger's
+  2 and 4 — confirming editorial rounds 34–37 are delivered-but-unpublished (a
+  four-round queue). Derive-or-die makes each publish a free multi-page upgrade.

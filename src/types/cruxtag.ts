@@ -9,6 +9,12 @@
 //   exactly; do not humanize the slug.
 // - `definition` — one sentence naming the bottleneck *class*, not any
 //   one company's incident. Company-neutral, sentence-case, ~12-20 words.
+// - `urlSlug` — the plain-words page address for this class's future
+//   /problems/<urlSlug> page (docs/nav-ia-decisions.md D1). Distinct
+//   from the registry key (the `cruxTag`), which stays the frozen join
+//   key + anchor id and is never displayed. Optional in the type; the
+//   `cruxtag-urlslug` validator requires it on every real entry
+//   (present, kebab-case, unique across the registry).
 //
 // Consumed by the catalog group headers, the article-page lateral chip
 // linking to `/catalog#term-<slug>`, and the `DefinedTermSet` JSON-LD
@@ -20,6 +26,7 @@
 export interface CruxTagEntry {
   label: string
   definition: string
+  urlSlug?: string
 }
 
 export type CruxTagRegistry = Record<string, CruxTagEntry>

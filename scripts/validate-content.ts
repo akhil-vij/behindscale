@@ -26,6 +26,7 @@ import { unusedFigureDefs } from './checks/unused-figure-defs'
 import { markerPlacementLegal } from './checks/marker-placement-legal'
 import { figureCountCeiling } from './checks/figure-count-ceiling'
 import { listBlockWellFormed } from './checks/list-block-well-formed'
+import { cruxtagUrlslug } from './checks/cruxtag-urlslug'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -47,6 +48,7 @@ const CHECKS: readonly Check[] = [
   markerPlacementLegal,
   figureCountCeiling,
   listBlockWellFormed,
+  cruxtagUrlslug,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

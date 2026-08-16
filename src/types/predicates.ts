@@ -240,6 +240,15 @@ export function checkCruxTagEntry(value: unknown): Result {
   if (value.label.trim().length === 0) return fail('`label` expected non-empty string')
   if (typeof value.definition !== 'string') return fail('`definition` expected string')
   if (value.definition.trim().length === 0) return fail('`definition` expected non-empty string')
+  // urlSlug is optional at the schema level; the `cruxtag-urlslug`
+  // validator enforces presence + uniqueness across the registry. Here
+  // we only validate its format when present.
+  if (value.urlSlug !== undefined) {
+    if (typeof value.urlSlug !== 'string') return fail('`urlSlug` expected string when present')
+    if (!KEBAB_CASE.test(value.urlSlug)) {
+      return fail(`\`urlSlug\` expected lowercase-kebab-case (got "${value.urlSlug}"; pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
+    }
+  }
   return ok
 }
 
