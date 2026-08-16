@@ -2741,3 +2741,115 @@ parses clean, dashes 0.
 **Bands after:** summary 1,036, crux 1,099, problem 1,898, solution 3,728; longest sentence 39;
 dashes 0. P27 frozen fields byte-identical. Deliverables: corrected .json, swept .jsx, rebuilt
 preview .html, four .svg figures, this entry.
+
+---
+
+## pinterest-sharding-mysql - Review + full produce (2026-08-11): the cleanest of the class
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift); grounded SPOTLESS against Marty Weiner's 2015 post. No factual error, and the ID
+arithmetic is exact in both the prose and the artifact: decoding the post's real Pin
+241294492511762325 gives shard 3429, type Pin, row 7075733, and it round-trips. Everything else
+checks too (Sept-2011 over-capacity, NoSQL breaking catastrophically, read-replica lag bugs,
+early-2012 launch still core 3.5 years on, 4,096 shards db00000-db04095 on master-master pairs, the
+ZooKeeper range config, the 16/10/36 + 2-reserve-bit ID, placement-permanence, JSON object tables
+with ~1 ALTER in three years, mapping tables on the from-shard, the memcache/Redis app-layer join,
+the three capacity paths, the mod shard, the repeat-until-zero-drift migration, no auto-failover,
+"the thing just works").
+
+**This was the cleanest article in the single-table-ceiling class going in.** Every band was
+already in range (summary 899, crux 1023, problem 1564, solution 2758), the first in the class that
+needed no compression. And the crux already opened concretely on Pinterest's own situation, not on
+the taxonomy, so there was no taxonomy-first opener to rewrite; only one mild mid-crux phrase, "the
+class's honest move", which was softened to "the honest move" (all "class" removed from the crux).
+
+**De-registered both notes.** application-layer-sharding: "Fourth company, and the ancestral
+instance" -> "This is the earliest instance of the pattern". master-only-reads: "Second company,
+minted here with Airbnb's Orpheus as the classmate" -> "The other system in this collection with
+the same rule is Airbnb's Orpheus".
+
+**Lists.** The rebuild requirements became a 4-bullet list (problem); capacity-grows-three-ways
+became a 3-bullet list (solution), which also retired the 51-word sentence.
+
+**Em-dash overrun - swept: 69 (42 JSON + 27 JSX) -> 0.**
+
+**Sentence length - 9 over 40 words, including a 70-word monster in the summary -> all <= 39.**
+The 70-word "rebuild" sentence was split; the migration sentence, the capacity sentence (now a
+list), the board-join sentence, and the rest were split or listed.
+
+**Full plain-language pass.** master-master replication -> "a standby twin kept in sync"; ZooKeeper
+-> "a shared config"; EC2 -> "rented Amazon servers"; auto-increment -> "MySQL's built-in counter";
+UUID -> "globally unique IDs"; JSON blob -> "a bag of fields stored as text"; ALTER -> "a schema
+change (an ALTER)"; atomicity/isolation/consistency -> "no all-or-nothing writes, no isolation, no
+guaranteed consistency"; slave -> standby/replica; bit arithmetic -> "simple bit math"; idempotent
+-> "safe-to-repeat"; referential integrity -> "keep references valid"; monotonic -> "always-
+increasing"; the mod shard glossed. "Ceiling" appears only lightly here (the title is "Shard or Do
+Not Shard") and was left as is.
+
+**Images - 3 figures.** id-as-address: the 64-bit ID split into 16/10/36 (+2 spare), decoding the
+real Pin to shard 3429. virtual-shards-over-pairs: shard-database ranges packed onto machine pairs
+with standby twins and a config, plus the range split onto a new pair. application-layer-join:
+reading a board in two steps (mapping on the board's shard -> pin IDs in Redis; then pin objects in
+memcache), the join in the app, never across shards.
+
+**Artifact - full plain-language sweep, sim untouched.** master-master -> machine pairs / standby
+twin; ZooKeeper -> shared config; slave -> standby/primary-only; the shift notation (shard << 46 |
+...) -> "packed into one 64-bit ID"; "two shifts and a mask" -> "a couple of bit shifts"; ALTER ->
+schema change. Dashes swept (21 -> 0); off-state toggle border #2a2a3a -> #4a4f60. Skeleton diff
+confirmed only strings and the one border color changed; the stage machine, dec(), split(), and
+verdict cascade are byte-identical, and the ID arithmetic was re-verified (shard 3429). "Ceiling"
+kept lightly.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed); invisible off-state toggles (fixed);
+registry jargon in notes (fixed, two notes). Taxonomy-first crux and over-stuffed summary/crux were
+both ABSENT - the cleanest article of the class on structure. P27 frozen fields byte-identical
+(stats, title, cruxTag, artifact.path unchanged; one dash-bearing stat label swept). Deliverables:
+corrected .json, swept .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+With Figma, Canva, and Pinterest fully produced, the single-table scaling-ceiling class is complete
+here except for Notion, which has not yet been reviewed in these sessions.
+
+### pinterest-sharding-mysql - Produce round 2 (2026-08-11): deeper plain-language pass + a problem-section figure
+
+Owner did a second plain-language pass on the prose and artifact, and asked for one figure in the
+problem section.
+
+**Plain-language pass (round 2).** Simplified every flagged phrase, including: dropped "by some
+estimates"; "a boatload of read replicas bred lag bugs" -> "a large fleet of read replicas caused
+bugs whenever they lagged behind"; "manual sharding at its most readable" -> "hand-sharding in its
+clearest form" (sentence restructured); "splitting a machine's shard range onto a new pair" ->
+"moving some of a busy machine's shards onto a new machine"; "Placement became arithmetic" ->
+"Finding any object became a matter of simple math"; dropped "(the post says it plainly)"; "single-
+box solution" -> "runs on a single machine"; "irritating, lag-shaped bugs" -> "bugs whenever those
+copies fell behind"; "traded a hard problem for an immature one" -> "swapped a hard problem for an
+unreliable, still-maturing one"; "The price is symmetrical" -> "The upside has a matching
+downside"; "the post's companion essay distills the era into its most-quoted advice" -> "the team's
+best-known advice from that era"; "the conventional MySQL escape valve" -> "the usual MySQL
+workaround"; "cheerfully leaving eventual consistency to 'additional toys on top'" -> "eventual
+consistency left as extra machinery to add on top later"; "designed inside that boundary rather
+than pretending past it" -> "built within those limits instead of pretending they weren't there";
+"New fields ship by teaching services to read them with defaults" rephrased; "the from-object's
+shard" -> "the shard of the object the mapping starts from (here, the board)"; "script the copy,
+then run it again and again" -> "a script copies the data, and you run it again and again";
+"Boring technology inverts the usual complexity trade" -> "Choosing boring, proven technology flips
+the usual trade-off"; the "'scars' aside" line spelled out; "settled law" -> "a firm rule"; "The
+mirror-image cost is stated as a design decision" -> "The flip-side cost is a deliberate design
+decision".
+
+**One problem-section figure - one-box-two-exits.** An overloaded MySQL machine holding 50B Pins,
+with both usual escapes failing (read replicas that lag; auto-scaling NoSQL that broke), leaving
+"shard by hand on MySQL". It renders inside the Problem section, before the three solution figures.
+Now four figures.
+
+**Artifact.** Simplified the intro ("Ride the 2011 curve... meet both doors out... make placement
+arithmetic" -> "Grow through 2011 until one MySQL machine runs out of room, try both usual ways
+out, then shard by hand so finding any object is just simple math"); the cluster-crash verdict
+("The automation you rented came with failure modes you can't see into. The scars aside writes
+itself" -> "The automatic system you relied on failed in ways you couldn't see inside. The lesson
+writes itself"); swept "doors" -> "ways out" throughout; and renamed the placement verdict headline
+("PLACEMENT IS ARITHMETIC, NOT A LOOKUP" -> "FINDING DATA IS JUST MATH, NOT A LOOKUP"). The stage
+machine is untouched and the ID arithmetic was re-verified (shard 3429). Dashes 0, toggle #4a4f60.
+
+**Bands after:** summary 946, crux 1,097, problem 1,534, solution 3,216; longest sentence 39;
+dashes 0. P27 frozen fields byte-identical. Deliverables: corrected .json, swept .jsx, rebuilt
+preview .html, four .svg figures, this entry.

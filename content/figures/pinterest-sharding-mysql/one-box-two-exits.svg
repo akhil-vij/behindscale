@@ -1,0 +1,23 @@
+<svg viewBox="0 0 700 244" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="One overloaded MySQL machine holding 50 billion Pins; two failed escape routes, adding read replicas which lag and auto-scaling NoSQL stores which broke, leaving the option to shard by hand on MySQL"><defs><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B45309"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.4">ONE MACHINE MAXED OUT, BOTH EASY EXITS FAILED</text>
+<rect x="20" y="86" width="168" height="74" rx="9" fill="#FEECEC" stroke="#DC2626" stroke-width="1.5"/>
+<text x="104" y="110" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#DC2626" text-anchor="middle" font-weight="700">one MySQL machine</text>
+<text x="104" y="127" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#1A1A1F" text-anchor="middle" font-weight="700">50B Pins</text>
+<text x="104" y="145" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#DC2626" text-anchor="middle" font-weight="700">OVER CAPACITY</text>
+<line x1="188" y1="110" x2="236" y2="66" stroke="#B45309" stroke-width="1.6" marker-end="url(#rah)"/>
+<rect x="240" y="44" width="200" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="250" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#B45309" text-anchor="start" font-weight="700">Escape 1: more read replicas</text>
+<text x="250" y="79" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">the usual MySQL workaround</text>
+<text x="452" y="60" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DC2626" text-anchor="start" font-weight="700">✗ they lag behind, causing</text>
+<text x="452" y="74" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">occasional bugs no one can reproduce</text>
+<line x1="188" y1="140" x2="236" y2="150" stroke="#B45309" stroke-width="1.6" marker-end="url(#rah)"/>
+<rect x="240" y="130" width="200" height="46" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="250" y="148" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#B45309" text-anchor="start" font-weight="700">Escape 2: auto-scaling NoSQL</text>
+<text x="250" y="165" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">MongoDB · Cassandra · Membase</text>
+<text x="452" y="148" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DC2626" text-anchor="start" font-weight="700">✗ broke catastrophically</text>
+<text x="452" y="162" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">in production</text>
+<rect x="150" y="196" width="400" height="34" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.5"/>
+<text x="350" y="217" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">what's left: shard by hand on boring, proven MySQL</text>
+<line x1="104" y1="160" x2="104" y2="213" stroke="#2E7D46" stroke-width="1.4" marker-end="url(#gah)"/>
+<line x1="104" y1="213" x2="150" y2="213" stroke="#2E7D46" stroke-width="1.4" marker-end="url(#gah)"/>
+</svg>

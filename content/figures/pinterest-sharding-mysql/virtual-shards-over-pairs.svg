@@ -1,0 +1,36 @@
+<svg viewBox="0 0 700 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Left, shard-database ranges packed onto machine pairs each with a standby twin, mapped by a config; right, a hot machine's range is copied to a new pair and split so each machine owns half the shards"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="bah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563EB"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.4">MANY SMALL DATABASES, PACKED ONTO MACHINE PAIRS</text>
+<rect x="12" y="34" width="330" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2563EB" text-anchor="start" font-weight="700">THE FLEET</text>
+<rect x="28" y="66" width="180" height="36" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="38" y="82" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="start" font-weight="700">MySQL001A</text>
+<text x="38" y="95" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">shards 0 - 511</text>
+<rect x="216" y="70" width="110" height="28" rx="5" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="271" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">standby twin</text>
+<rect x="28" y="110" width="180" height="36" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="38" y="126" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="start" font-weight="700">MySQL002A</text>
+<text x="38" y="139" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">shards 512 - 1023</text>
+<rect x="216" y="114" width="110" height="28" rx="5" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="271" y="131" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">standby twin</text>
+<rect x="28" y="154" width="180" height="36" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="38" y="170" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="start" font-weight="700">MySQL003A</text>
+<text x="38" y="183" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="start" font-weight="400">shards 1024 - 2047</text>
+<rect x="216" y="158" width="110" height="28" rx="5" fill="#F2F2F4" stroke="#8A8A94" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="271" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">standby twin</text>
+<text x="175" y="214" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">4,096 shards = db00000 .. db04095, several per machine</text>
+<text x="175" y="230" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">a config maps each range to its machine</text>
+<rect x="354" y="34" width="334" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="370" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#B45309" text-anchor="start" font-weight="700">ADD CAPACITY: SPLIT A HOT RANGE</text>
+<rect x="378" y="74" width="150" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.4"/>
+<text x="453" y="94" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">MySQL001A</text>
+<text x="453" y="109" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">shards 0 - 511 (hot)</text>
+<line x1="453" y1="120" x2="453" y2="140" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<text x="560" y="134" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">copy to a new pair, split</text>
+<rect x="374" y="150" width="150" height="40" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="449" y="167" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">MySQL001A</text>
+<text x="449" y="181" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">shards 0 - 255</text>
+<rect x="534" y="150" width="148" height="40" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="608" y="167" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">MySQL009A</text>
+<text x="608" y="181" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">shards 256 - 511</text>
+<text x="528" y="214" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="700">each machine now owns half - data never moved, shards did</text>
+</svg>
