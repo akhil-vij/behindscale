@@ -672,6 +672,9 @@ coherence and no file-collisions bought at the cost of a longer critical path.
   distilled" section capturing the ten review findings that shaped the
   decisions. Added a plain-language "In plain terms" worked example to each
   invariant and abstract decision (P0, D1–D6). No settled decision changed.
+- **2026-08-16** — phase-by-phase implementation plan written against this doc:
+  `docs/nav-ia-implementation-plan.md` (6 phases per Addition C, exact file
+  touchpoints / validators / derivations / SEO per phase; no code).
 - **2026-08-16** — OWNER-PENDING #1 CLOSED. All 14 `urlSlug` values ruled and
   stamped into `content/cruxtags.json`; `cruxtag-urlslug` validator added
   (present + kebab + unique; the 16th check). #5 flipped to
