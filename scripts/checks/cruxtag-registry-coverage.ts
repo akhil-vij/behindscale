@@ -2,8 +2,8 @@
 // used by any article must have a matching entry in
 // `content/cruxtags.json` (the cruxTag registry). Missing entries fail
 // the build -- an unlabeled group would render a raw kebab slug on the
-// catalog page and break the `DefinedTermSet` structured data emitted
-// on /catalog.
+// problems workbench and break the `DefinedTermSet` structured data
+// emitted on /problems.
 //
 // There is deliberately NO orphan rule the other direction: a registry
 // entry with zero articles is allowed (supports future article

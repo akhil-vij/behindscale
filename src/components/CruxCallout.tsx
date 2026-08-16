@@ -16,11 +16,11 @@ import { Link } from 'react-router-dom'
 //
 // Landing/navigation phase (2026-07-08): the cruxTag now renders as
 // a lateral chip at the bottom of the callout, linking to
-// /catalog#term-<slug>. This is the article-page's entry into the
+// /problems#term-<slug>. This is the article-page's entry into the
 // bottleneck taxonomy -- click it and land on the same problem-class
 // group other members of the class live in. The @id in JSON-LD's
 // `about` and this chip href both target the same DOM anchor on the
-// catalog (id="term-<slug>" on the group header).
+// problems workbench (id="term-<slug>" on the group header).
 
 interface CruxCalloutProps {
   crux: string
@@ -44,7 +44,7 @@ export default function CruxCallout({
       <p className="mt-2 leading-relaxed text-text-primary">{crux}</p>
       <div className="mt-3">
         <Link
-          to={`/catalog#term-${cruxTag}`}
+          to={`/problems#term-${cruxTag}`}
           className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-bg-base px-2.5 py-1 font-mono text-xs text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
         >
           <span

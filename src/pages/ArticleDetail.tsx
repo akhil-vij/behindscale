@@ -204,7 +204,7 @@ function AlsoSolvingThis({ article }: { article: Article }) {
       <p className="mt-3 text-sm text-text-secondary">
         Other systems in behindscale's{' '}
         <Link
-          to={`/catalog#term-${article.cruxTag}`}
+          to={`/problems#term-${article.cruxTag}`}
           className="font-medium text-text-primary underline decoration-brand-gold underline-offset-4 hover:decoration-2"
         >
           {cruxTagLabel}

@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 // Scroll behavior on route change. Two cases:
 //
 //   1. `#hash` present (e.g. clicking a landing preview row that
-//      navigates to /catalog#term-single-table-scaling-ceiling, or
+//      navigates to /problems#term-single-table-scaling-ceiling, or
 //      the article-page cruxTag chip's lateral link).
 //      Scrolls to the element with the matching id, respecting the
 //      `scroll-margin-top` the target sets so the anchor lands below
@@ -18,7 +18,7 @@ import { useLocation } from 'react-router-dom'
 //
 // The hash-scroll path retries once after the next paint. Reason:
 // when the navigation *also* swaps the component (/  ->
-// /catalog#term-X), the target element isn't in the DOM at the
+// /problems#term-X), the target element isn't in the DOM at the
 // moment the effect first fires. React Router runs sibling
 // component effects in mount order, and the target component's
 // tree may not have committed yet. `requestAnimationFrame` waits

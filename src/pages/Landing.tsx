@@ -14,14 +14,14 @@ import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 //         above and hint below
 //   Trust band (#F4F2EE) — DISSECTED FROM FIRST-PARTY BLOGS + 12
 //     canonical company wordmarks
-//   Catalog preview — top-3 multi-company problem-classes, each row
-//     linking to /catalog#term-<slug>
+//   Problems preview — top-3 multi-company problem-classes, each row
+//     linking to /problems#term-<slug>
 //   CTA — "Browse all N breakdowns →" (N derived at build time)
-//   Footer — wordmark + Catalog / Patterns / Sources + FIRST-PARTY
+//   Footer — wordmark + Problems / Patterns / Sources + FIRST-PARTY
 //
 // No <input> element anywhere on this page (acceptance criterion #2).
-// The Navbar Search button navigates to /catalog and focuses the
-// catalog's #catalog-search input.
+// The Navbar Search button navigates to /problems and focuses the
+// workbench's #problems-search input.
 //
 // Isolation: an ErrorBoundary wraps the iframe. A boundary failure
 // renders the caption + a muted "unavailable" message so the landing
@@ -237,7 +237,7 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
         {preview.map((g) => (
           <li key={g.slug}>
             <Link
-              to={`/catalog#term-${g.slug}`}
+              to={`/problems#term-${g.slug}`}
               className="group block border-t-2 border-text-primary pt-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -263,7 +263,7 @@ function CtaSection({ articleCount }: { articleCount: number }) {
   return (
     <section className="mx-auto max-w-[1080px] px-6 pb-20 text-center">
       <Link
-        to="/catalog"
+        to="/problems"
         className="inline-block rounded-md bg-text-primary px-7 py-3.5 font-mono text-sm text-bg-base transition-colors hover:bg-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2"
       >
         Browse all {articleCount} breakdowns →
@@ -287,8 +287,8 @@ function Footer() {
           behindscale
         </Link>
         <div className="flex flex-wrap gap-5">
-          <Link to="/catalog" className="text-sm text-text-secondary hover:text-text-primary">
-            Catalog
+          <Link to="/problems" className="text-sm text-text-secondary hover:text-text-primary">
+            Problems
           </Link>
           <Link to="/patterns" className="text-sm text-text-secondary hover:text-text-primary">
             Patterns

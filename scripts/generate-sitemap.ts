@@ -56,15 +56,16 @@ interface SitemapEntry {
 
 const entries: SitemapEntry[] = [
   { url: `${SITE_URL}/` },
-  // /catalog has no content-modeled timestamp -- it's a browse
+  // /problems has no content-modeled timestamp -- it's a browse
   // surface derived from article state, not itself dated. A
   // fabricated `lastmod` is worse than none (it lies to crawlers
   // about freshness), so this entry ships without one deliberately.
-  // Landed 2026-07-08 with the landing/navigation phase.
-  { url: `${SITE_URL}/catalog` },
+  // Landed 2026-07-08 with the landing/navigation phase; renamed
+  // from /catalog in the 2026-08 navigation-IA phase (D2).
+  { url: `${SITE_URL}/problems` },
   { url: `${SITE_URL}/patterns` },
   // /sources: same "derived surface, no content-modeled timestamp"
-  // reasoning as /catalog. Landed 2026-07-09 as a trust artifact
+  // reasoning as /problems. Landed 2026-07-09 as a trust artifact
   // (the visible enumeration of invariant 7's official-blogs-only
   // policy).
   { url: `${SITE_URL}/sources` },

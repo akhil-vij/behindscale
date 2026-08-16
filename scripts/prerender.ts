@@ -143,9 +143,9 @@ function landingMeta(): Meta {
     logo: `${SITE_URL}/og-default.png`,
   }
 
-  // WebSite with a SearchAction pointing at /catalog?q=... so Google
+  // WebSite with a SearchAction pointing at /problems?q=... so Google
   // can offer a sitelinks searchbox that lands the query on the
-  // catalog's search field. `{search_term_string}` is Google's
+  // problems workbench's search field. `{search_term_string}` is Google's
   // placeholder token -- the required literal shape for the query
   // input pattern.
   const website = {
@@ -161,7 +161,7 @@ function landingMeta(): Meta {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${SITE_URL}/catalog?q={search_term_string}`,
+        urlTemplate: `${SITE_URL}/problems?q={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },
@@ -178,23 +178,24 @@ function landingMeta(): Meta {
 
 // URL helpers for the cross-page JSON-LD @id contract. Every article's
 // TechArticle.about references a cruxTag DefinedTerm by its
-// `/catalog#term-<slug>` anchor (emitted by src/pages/Catalog.tsx's
-// group header wrappers); article-page TechArticle.mentions references
-// a pattern DefinedTerm by its `/patterns/<slug>#term` anchor (Commit
-// 6). Assertion pass in Commit 6 will verify every referenced @id
-// resolves to a real emitted DefinedTerm.
+// `/problems#term-<slug>` anchor (emitted by src/pages/Catalog.tsx's
+// group header wrappers; the workbench route was renamed /catalog ->
+// /problems in the 2026-08 navigation-IA phase, D2); article-page
+// TechArticle.mentions references a pattern DefinedTerm by its
+// `/patterns/<slug>#term` anchor. The assertion pass below verifies
+// every referenced @id resolves to a real emitted DefinedTerm.
 function cruxTagTermId(slug: string): string {
-  return `${SITE_URL}/catalog#term-${slug}`
+  return `${SITE_URL}/problems#term-${slug}`
 }
 
 function patternTermId(slug: string): string {
   return `${SITE_URL}/patterns#term-${slug}`
 }
 
-function catalogMeta(): Meta {
+function problemsMeta(): Meta {
   // Build the taxonomy DefinedTermSet from the registry -- one
   // DefinedTerm per cruxTag entry. The @id is the same in-page anchor
-  // (`/catalog#term-<slug>`) that Catalog.tsx emits on each group
+  // (`/problems#term-<slug>`) that Catalog.tsx emits on each group
   // header wrapper; the design decision locks this correspondence so
   // structured-data cross-references from article pages land on a
   // real DOM target (spec §8.3 refinement / plan-level guardrail).
@@ -213,10 +214,10 @@ function catalogMeta(): Meta {
   const definedTermSet = {
     '@context': 'https://schema.org',
     '@type': 'DefinedTermSet',
-    '@id': `${SITE_URL}/catalog#taxonomy`,
+    '@id': `${SITE_URL}/problems#taxonomy`,
     name: 'behindscale bottleneck taxonomy',
     description:
-      'The classes of system-design bottlenecks (crux tags) used across the behindscale catalog to group articles by the underlying problem they solve.',
+      'The classes of system-design bottlenecks (crux tags) used across the behindscale problems workbench to group articles by the underlying problem they solve.',
     inLanguage: 'en',
     hasDefinedTerm: cruxtagTerms,
   }
@@ -248,9 +249,9 @@ function catalogMeta(): Meta {
   const collectionPage = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    '@id': `${SITE_URL}/catalog`,
-    url: `${SITE_URL}/catalog`,
-    name: `Catalog — ${SITE_NAME}`,
+    '@id': `${SITE_URL}/problems`,
+    url: `${SITE_URL}/problems`,
+    name: `Problems — ${SITE_NAME}`,
     description:
       'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
@@ -262,10 +263,10 @@ function catalogMeta(): Meta {
   }
 
   return {
-    title: `Catalog — ${SITE_NAME}`,
+    title: `Problems — ${SITE_NAME}`,
     description:
       'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
-    canonical: `${SITE_URL}/catalog`,
+    canonical: `${SITE_URL}/problems`,
     ogType: 'website',
     jsonLd: [collectionPage, definedTermSet],
   }
@@ -278,7 +279,7 @@ function patternsIndexMeta(): Meta {
   // id="term-<slug>" so the @id target resolves to a real anchor.
   //
   // Sorted alphabetically inside the set to match the DOM order and
-  // the cruxTag DefinedTermSet on /catalog.
+  // the cruxTag DefinedTermSet on /problems.
   const orderedPatterns = patterns
     .slice()
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -327,7 +328,7 @@ function articleMeta(article: Article): Meta {
   // navigation/SEO phase. isBasedOn keeps the same shape it had on
   // the Article node so source attribution stays canonical -- see
   // architecture.md JSON-LD field map. `about` references the
-  // cruxTag DefinedTerm on /catalog by @id (locked correspondence
+  // cruxTag DefinedTerm on /problems by @id (locked correspondence
   // with the id="term-<slug>" DOM anchor emitted by
   // src/pages/Catalog.tsx group headers). `mentions` references
   // each pattern DefinedTerm on /patterns by @id.
@@ -380,8 +381,8 @@ function articleMeta(article: Article): Meta {
     keywords: [cruxTagLabel, ...patternNames].join(', '),
   }
 
-  // BreadcrumbList: Home → Catalog → [problem-class label] → Article.
-  // The problem-class breadcrumb points at /catalog#term-<slug> so
+  // BreadcrumbList: Home → Problems → [problem-class label] → Article.
+  // The problem-class breadcrumb points at /problems#term-<slug> so
   // clicking that crumb (in a rich-results display) lands the reader
   // on the same DOM anchor everything else does.
   const breadcrumbs = {
@@ -397,8 +398,8 @@ function articleMeta(article: Article): Meta {
       {
         '@type': 'ListItem',
         position: 2,
-        name: 'Catalog',
-        item: `${SITE_URL}/catalog`,
+        name: 'Problems',
+        item: `${SITE_URL}/problems`,
       },
       {
         '@type': 'ListItem',
@@ -585,7 +586,7 @@ interface RouteEntry {
 
 const routes: RouteEntry[] = [
   { path: '/', outPath: 'index.html', meta: landingMeta() },
-  { path: '/catalog', outPath: 'catalog.html', meta: catalogMeta() },
+  { path: '/problems', outPath: 'problems.html', meta: problemsMeta() },
   { path: '/patterns', outPath: 'patterns.html', meta: patternsIndexMeta() },
   { path: '/sources', outPath: 'sources.html', meta: sourcesMeta() },
   ...articles.map(

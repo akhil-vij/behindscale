@@ -3,9 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 // Client-side redirect for legacy /?source=<slug> URLs. Landed with the
 // 2026-07-08 landing/navigation phase when the article feed moved from
-// / to /catalog. Vercel-level 301 was explicitly skipped (low traffic;
-// spec §5 "do it if cheap"), so this component handles it in the
-// browser via useEffect.
+// / to the workbench (then /catalog, renamed /problems in the 2026-08
+// navigation-IA phase). Vercel-level 301 was explicitly skipped (low
+// traffic; spec §5 "do it if cheap"), so this component handles it in
+// the browser via useEffect.
 //
 // Rendered above <Landing /> inside the / route so it fires on hydration
 // for the narrow case (a user landing on / with a stale source query
@@ -24,7 +25,7 @@ export default function CatalogRedirect() {
 
   useEffect(() => {
     const source = searchParams.get('source')
-    if (source) navigate(`/catalog?source=${source}`, { replace: true })
+    if (source) navigate(`/problems?source=${source}`, { replace: true })
   }, [navigate, searchParams])
 
   return null

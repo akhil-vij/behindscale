@@ -20,9 +20,10 @@ import Sources from './pages/Sources'
 //
 // Landing/navigation phase (2026-07-08): `/` is now the conversion
 // landing page (hero + trust band + top-3 problem-class preview + one
-// CTA). The old article-feed behavior moved to `/catalog`.
+// CTA). The old article-feed behavior moved to `/problems` (renamed
+// from `/catalog` in the 2026-08 navigation-IA phase; 301 in vercel.json).
 // CatalogRedirect rendered above <Landing /> rewrites legacy
-// /?source=<slug> arrivals into /catalog?source=<slug>.
+// /?source=<slug> arrivals into /problems?source=<slug>.
 export default function AppRoutes() {
   return (
     <>
@@ -39,7 +40,7 @@ export default function AppRoutes() {
               </>
             }
           />
-          <Route path="/catalog" element={<Catalog />} />
+          <Route path="/problems" element={<Catalog />} />
           <Route path="/articles/:slug" element={<ArticleDetail />} />
           <Route path="/patterns" element={<PatternIndex />} />
           <Route path="/patterns/:slug" element={<PatternDetail />} />

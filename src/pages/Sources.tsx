@@ -115,7 +115,7 @@ function ArticleCountBadge({ count, slug }: { count: number; slug: string }) {
     count === 1 ? '1 dissection' : `${count} dissections`
   return (
     <Link
-      to={`/catalog?source=${slug}`}
+      to={`/problems?source=${slug}`}
       className="font-mono text-xs text-text-secondary underline decoration-border-default underline-offset-4 transition-colors hover:decoration-accent-primary hover:text-accent-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
     >
       {label} →

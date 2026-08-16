@@ -165,7 +165,7 @@ export default function Catalog() {
         <div className="mb-3 flex items-center gap-3">
           <span className="inline-block h-[2px] w-6 bg-brand-gold" />
           <span className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
-            The catalog
+            Problems
           </span>
         </div>
         <h1 className="mb-3 font-serif text-[clamp(1.9rem,3.6vw,2.6rem)] font-medium leading-tight tracking-tight text-text-primary">
@@ -182,7 +182,7 @@ export default function Catalog() {
           <span className="sr-only">Search systems, companies, patterns</span>
           <SearchIcon />
           <input
-            id="catalog-search"
+            id="problems-search"
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -195,7 +195,7 @@ export default function Catalog() {
           <span className="mr-1 font-mono text-xs uppercase tracking-[0.10em] text-text-muted">
             Company
           </span>
-          <FilterChip label="All" href="/catalog" active={!sourceFilter} />
+          <FilterChip label="All" href="/problems" active={!sourceFilter} />
           {companies.map((company) => {
             const slug = companySlug.get(company)
             if (!slug) return null
@@ -203,7 +203,7 @@ export default function Catalog() {
               <FilterChip
                 key={slug}
                 label={company}
-                href={`/catalog?source=${slug}`}
+                href={`/problems?source=${slug}`}
                 active={sourceFilter === slug}
               />
             )

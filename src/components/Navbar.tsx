@@ -1,14 +1,15 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
-// Navbar reframed in the 2026-07-08 landing/navigation phase: Catalog +
+// Navbar reframed in the 2026-07-08 landing/navigation phase: Problems +
 // Patterns + Search (was Articles + Patterns). Wordmark links to the
-// landing page.
+// landing page. The workbench route was renamed /catalog -> /problems in
+// the 2026-08 navigation-IA phase (D2); a 301 in vercel.json covers the
+// old path.
 //
 // Search behavior:
-// - On /catalog, "Search" focuses the #catalog-search input directly
-//   (the catalog's search field, id assigned in Catalog.tsx via
-//   Commit 4).
-// - On any other route, "Search" navigates to /catalog first, then
+// - On /problems, "Search" focuses the #problems-search input directly
+//   (the workbench's search field, id assigned in Catalog.tsx).
+// - On any other route, "Search" navigates to /problems first, then
 //   focuses the input after mount. The setTimeout guard is a minimal
 //   safety net -- React Router's navigate + hydration happen in the
 //   same tick usually, but the input isn't guaranteed rendered at the
@@ -18,8 +19,8 @@ export default function Navbar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
 
-  const catalogActive =
-    pathname === '/catalog' || pathname.startsWith('/articles')
+  const problemsActive =
+    pathname === '/problems' || pathname.startsWith('/articles')
   const patternsActive = pathname.startsWith('/patterns')
 
   const linkClass = (active: boolean) =>
@@ -29,18 +30,18 @@ export default function Navbar() {
         : 'text-text-secondary hover:text-text-primary'
     }`
 
-  const focusCatalogSearch = () => {
+  const focusProblemsSearch = () => {
     const focus = () => {
       const el = document.getElementById(
-        'catalog-search',
+        'problems-search',
       ) as HTMLInputElement | null
       el?.focus()
     }
-    if (pathname === '/catalog') {
+    if (pathname === '/problems') {
       focus()
     } else {
-      navigate('/catalog')
-      // Wait for hydration + first paint of the catalog before focusing.
+      navigate('/problems')
+      // Wait for hydration + first paint of the workbench before focusing.
       setTimeout(focus, 30)
     }
   }
@@ -60,15 +61,15 @@ export default function Navbar() {
           behindscale
         </Link>
         <div className="flex items-center gap-6">
-          <Link to="/catalog" className={linkClass(catalogActive)}>
-            Catalog
+          <Link to="/problems" className={linkClass(problemsActive)}>
+            Problems
           </Link>
           <Link to="/patterns" className={linkClass(patternsActive)}>
             Patterns
           </Link>
           <button
             type="button"
-            onClick={focusCatalogSearch}
+            onClick={focusProblemsSearch}
             className="rounded-md border border-border-default bg-bg-surface px-3 py-1.5 font-mono text-xs text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           >
             Search

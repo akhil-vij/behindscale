@@ -68,10 +68,10 @@ const feedsModules = import.meta.glob<Source[]>('/content/feeds.json', {
 export const feeds: readonly Source[] = Object.values(feedsModules)[0] ?? []
 
 // The cruxTag registry (invariant-level content from the 2026-07-08
-// landing/navigation phase). Consumed by the catalog page's group
+// landing/navigation phase). Consumed by the problems workbench's group
 // headers, the landing preview, and the article-page lateral chip;
 // serves as the source for the `DefinedTermSet` JSON-LD emitted on
-// /catalog. Same glob shape as `feeds` -- one literal path, one entry.
+// /problems. Same glob shape as `feeds` -- one literal path, one entry.
 const cruxtagsModules = import.meta.glob<CruxTagRegistry>(
   '/content/cruxtags.json',
   { eager: true, import: 'default' },

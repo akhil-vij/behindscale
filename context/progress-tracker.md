@@ -4,6 +4,31 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Nav-IA Phase 2 — `/catalog` → `/problems` rename LANDED
+  (2026-08-16).** The workbench route is renamed atomically per
+  D2 (`docs/nav-ia-implementation-plan.md` Phase 2). One commit
+  repoints every internal reference so the cross-page `@id`
+  assertion never sees `@id`s and DOM anchors drift apart:
+  `vercel.json` 301 (`/catalog`→`/problems`), the route in
+  `AppRoutes.tsx`, `cruxTagTermId` (the `@id` builder — its
+  change auto-repoints article `about`, breadcrumb `item`, and
+  the assertion that consumes it), `problemsMeta` (was
+  `catalogMeta`: CollectionPage/DefinedTermSet `@id`s, canonical,
+  title), SearchAction, breadcrumb label, sitemap, and the nav
+  active-state + `#problems-search` id (nav standardization B).
+  **Scope note:** the plan's 9-row touchpoint table undercounted
+  the live surface — `SourceAttribution`, `Sources`, `CruxCallout`
+  and three `Landing` links also emitted `/catalog` URLs; all were
+  repointed (16 files total) to satisfy acceptance #3 (zero
+  `/catalog` in `dist/`) and the atomic invariant. Interview nav
+  link deliberately NOT added (its page is Phase 4; a link to a
+  404 is worse than absence). Verified: build green (`@id`
+  assertion passes with the new anchor form), `dist/problems.html`
+  emitted, `catalog.html` gone, `grep /catalog dist/` = 0, sitemap
+  + article JSON-LD on `/problems`. Tests 235 (unchanged; no test
+  referenced the path). Owner review of the plan APPROVED and all
+  program decisions closed (plan v1.1); Phases 3–6 cleared.
+
 - **Figures extended to pattern pages (2026-08-16).**
   The article-only figures feature now also renders on
   pattern definition pages, via a "figure host"

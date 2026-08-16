@@ -16,9 +16,10 @@
 //   `cruxtag-urlslug` validator requires it on every real entry
 //   (present, kebab-case, unique across the registry).
 //
-// Consumed by the catalog group headers, the article-page lateral chip
-// linking to `/catalog#term-<slug>`, and the `DefinedTermSet` JSON-LD
-// on `/catalog`. Validator (Commit 1): every distinct `cruxTag` used by
+// Consumed by the problems-workbench group headers, the article-page
+// lateral chip linking to `/problems#term-<slug>`, and the
+// `DefinedTermSet` JSON-LD on `/problems`. Validator: every distinct
+// `cruxTag` used by
 // any article must have a registry entry; label + definition must be
 // non-empty. No orphan rule the other direction — a registry entry with
 // zero articles is allowed (supports future article removals).
