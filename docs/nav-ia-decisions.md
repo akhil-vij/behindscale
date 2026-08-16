@@ -655,8 +655,8 @@ coherence and no file-collisions bought at the cost of a longer critical path.
 | # | Item | Blocks | Status |
 |---|------|--------|--------|
 | 1 | 14 urlSlug values (D1) + company-slug edge cases (D4, e.g. AWS) | — | **CLOSED 2026-08-16** — stamped in cruxtags.json + validator; `aws` override recorded in D4. #6/#9/#11 stamped as owner-vetoable defaults. |
-| 2 | /companies index v1 vs v1.1 (D4) | step 5 scope only | recommendation: v1 |
-| 3 | Hero artifact on the landing (A) | nothing | separate track |
+| 2 | /companies index v1 vs v1.1 (D4) | step 5 scope only | **CLOSED 2026-08-16** — ship **v1**; roster derived from `articlesByCompany`, registry decorates only. Company registry ruled **OPTIONAL** (derived-only pages valid; Stripe/Figma carry entries by Phase 5). |
+| 3 | Hero artifact on the landing (A) | nothing | separate track (parked) |
 
 ---
 
@@ -675,6 +675,14 @@ coherence and no file-collisions bought at the cost of a longer critical path.
 - **2026-08-16** — phase-by-phase implementation plan written against this doc:
   `docs/nav-ia-implementation-plan.md` (6 phases per Addition C, exact file
   touchpoints / validators / derivations / SEO per phase; no code).
+- **2026-08-16** — owner review of the plan: **APPROVED**, Phases 2–6 cleared.
+  Closures folded here and into the plan (v1.1): OWNER-PENDING #2 → v1 + registry
+  optional; urlSlug vetoes #6/#9/#11 confirmed; `#5` slug verified
+  (`outgrowing-one-cluster`, correct — non-database class members). Plan-side
+  amendments: Phase-5b essay↔membership **drift seam** (derived "Also in this
+  class" strip + build warning) and essay **provenance fields** (`edition`,
+  `firstSentAt`) feeding Phase 6's editions list; Phase-4 question chip
+  disambiguated **structurally** (not brand-gold).
 - **2026-08-16** — OWNER-PENDING #1 CLOSED. All 14 `urlSlug` values ruled and
   stamped into `content/cruxtags.json`; `cruxtag-urlslug` validator added
   (present + kebab + unique; the 16th check). #5 flipped to

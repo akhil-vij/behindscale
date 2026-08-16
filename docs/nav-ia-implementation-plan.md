@@ -245,6 +245,13 @@ spec; implement it verbatim **except the three reconciliation carry-forwards
 - **`QuestionChip`** component (non-purple; sub-spec §5); placed on
   `ArticleDetail` only (**article delta ③** — "This article answers …"),
   derived from `questionsByArticle`. Article **cards untouched** in v1.
+  **Chip disambiguation (owner ruling).** `cat-purple` already means
+  *consistency = idempotency-keys*, and the launch question anchors on that
+  very article — so a purple question chip would collide on-page. The fix is
+  **structural, not a new color**: an `"Answers:"` label prefix / `Q` glyph
+  that reads as "question," NOT brand-gold. Rationale: gold already carries a
+  meaning; a second one starts a color-vocabulary problem that compounds every
+  future chip. Structure disambiguates without spending a hue.
 - **Nav:** add the `Interview` link to `Navbar` now (its page exists);
   `interviewActive = pathname.startsWith('/interview')`. Nav order Problems ·
   Patterns · Interview.
@@ -302,19 +309,24 @@ page from starter to full.
 - Indexers: glob `/content/companies/*.json` + `companyBySlug` + a
   **`companySlug` derivation** from `source.company` (one place); reverse
   aggregation `articlesByCompany`. Loader + `ContentSet`.
-- **Validator** `scripts/checks/company-registry.ts`: every registry `slug` is
-  reachable from some article's `slugify(source.company)` (or override); no two
-  companies collide on a slug; `blogUrls` non-empty; every company that has
-  articles either has a registry entry or renders with a derived-only header
-  (decide: registry optional → derived blurb absent is allowed, or required →
-  flag). Recommend **registry optional** (a company with no blurb still renders
-  a valid derived page).
+- **Registry is OPTIONAL (owner ruling, confirmed).** A company with articles
+  but no registry entry renders a valid derived-only page — which also
+  guarantees a brand-new source never 404s. Two binding conditions:
+  1. **The `/companies` index derives from `articlesByCompany`** (every company
+     with ≥1 published article) — **never from the registry.** The registry
+     only supplies blurbs/links to pages the index already lists.
+  2. **Stripe and Figma carry registry entries by Phase 5 close**, so the two
+     showcase pages have blurbs.
+- **Validator** `scripts/checks/company-registry.ts`: **when an entry exists** —
+  its `slug` is reachable from some article's `slugify(source.company)` (or
+  override); no two entries collide on a slug; `blogUrls` non-empty. A company
+  with articles and no entry is *not* flagged (renders derived-only).
 
 **Route + component.**
 - `/companies/:companySlug` → `CompanyDetail`. **`/companies` index (OWNER-
-  PENDING #2, rec v1):** footer-linked list page; **decision needed before this
-  phase closes** — if v1.1, ship leaf pages only + footer links straight to the
-  two built companies (prototype behavior).
+  PENDING #2 — CLOSED: ship v1):** footer-linked list page **deriving its roster
+  from `articlesByCompany`** (every company with ≥1 published article), not the
+  registry (§5a rule 1). Registry entries only decorate the rows that exist.
 - `CompanyDetail` derivations (P0): walls = distinct `cruxTag` across the
   company's articles (link `/problems/<urlSlug>`); patterns = union
   `patterns[]`; breakdowns = the articles; "asked about their systems" =
@@ -339,6 +351,12 @@ the docdb publish upgrades Stripe with zero touch (P0).
   blocks** (NOT markdown; repo has no md runtime): `lede`, `metricGrid[]`,
   `vantageRows[]`, `deepDive`, `numbers[]`, `whatToSteal[]`, `simulatorRef`,
   `patterns[]`. Prose inside blocks uses the existing `Prose` string format.
+- **Provenance fields (owner amendment).** Add `edition` (integer) and
+  `firstSentAt` (date) to the essay record. Two surfaces need them and neither
+  is derivable: the full page's provenance line ("First sent as Edition 1,
+  <date>") and Phase 6's editions list (numbers, dates, ordering). Making them
+  first-class fields turns Phase 6's list into a proper derivation instead of a
+  quiet impossibility.
 - `src/types/problemEssay.ts` + `checkProblemEssay`. **The block set is a
   schema, not a per-edition invention** (D3 rule 1) — adding a block type is a
   reviewed schema change.
@@ -346,25 +364,48 @@ the docdb publish upgrades Stripe with zero touch (P0).
   registry slug). Loader + `ContentSet`.
 - **Validator** `scripts/checks/problem-essay.ts`: block shapes valid; any
   article-referencing block (`vantageRows`, `simulatorRef`) resolves to real
-  article slugs; the essay's registry-slug key exists in `cruxtags.json`.
+  article slugs; the essay's registry-slug key exists in `cruxtags.json`;
+  **`edition` and `firstSentAt` both present, `edition` unique across essays.**
+  **Drift warning (WARN, never fail):** warn when a class's **derived** member
+  count exceeds its `vantageRows` count — so essay/membership drift is visible
+  at build time. It must NOT block a publish: an essay one revision behind a new
+  member is a normal, non-blocking state.
 - **Renderer:** `ProblemDetail` full-state branch — dedicated block components
   (metric grid, colored vantage rows, collapsibles, takeaway cards, dark
   simulator CTA). Gate: `problemEssayBySlug.has(cruxTag)` → full (D3).
+- **Essay↔membership drift seam (owner amendment).** The full state is where
+  derive-or-die meets authored content: `vantageRows` are hand-written and
+  frozen at N companies, but membership is derived — so the day a new member
+  publishes (the queued docdb case), the derived count says N+1 while the essay
+  shows N rows, and the newest member is invisible on the page meant to
+  showcase it. Fix: the full-state `ProblemDetail` **also derives an "Also in
+  this class" strip** listing member articles NOT covered by `vantageRows`
+  (each rendered from `cruxSummary` + `SourceAttribution`, exactly like a
+  starter row). **Renders only when non-empty** (render-when-present), so the
+  common no-drift case shows nothing. The starter state can't have this bug;
+  only the full state can, and this closes it in the renderer while the
+  validator warning surfaces it at build time.
 - Author the **`ambiguous-failure-under-retry.json`** essay (transcribed from
   edition-01; the prototype's full page is the reference layout). This flips
   `/problems/ambiguous-timeouts` from starter to full — **zero touch** to the
   Phase-3 renderer beyond the branch.
 - **D3 rule 2 (email derived from JSON)** is a *pipeline* concern (email
   generation from the block record); **out of scope for the website build** —
-  note it as a follow-up so `edition-NN.md` doesn't drift back into being a
-  maintained source.
+  a follow-up. **But the D3-rule-2 discipline starts at the first essay, not at
+  the pipeline:** until that generator exists, edition emails are hand-sent and
+  `edition-NN.md` files are **OUTPUTS of the essay JSON, never edited directly.**
+  The JSON is the one source; the markdown is a rendering of it.
 
 **Acceptance.**
 1. `/companies/stripe` (2 walls), `/companies/figma` (thin) render with fully
    derived counts; article source eyebrows link to them.
-2. `/problems/ambiguous-timeouts` renders full-state; the other 13 stay starter.
+2. `/problems/ambiguous-timeouts` renders full-state (with its "First sent as
+   Edition N, <date>" line); the other 13 stay starter.
 3. `@id` assertion green with the article→company edge; sitemaps updated.
-4. OWNER-PENDING #2 resolved (index in or out).
+4. `/companies` index derives its roster from `articlesByCompany` (v1, closed).
+5. **Drift:** removing a `vantageRow` for a still-member article makes the "Also
+   in this class" strip render that article AND raises the build WARNING (test
+   once, restore); with all members covered, the strip is absent and no warning.
 
 **Rollback.** Company: remove type/route/registry. Essay: delete the one JSON →
 the class page falls back to starter (the gate). Both independently revertible.
@@ -383,8 +424,12 @@ so the Edition-1 card links `/problems/ambiguous-timeouts`).
   input that is **non-functional in v1**, per the prototype/out-of-scope).
 - Footer: add the Newsletter link (secondary noun — footer-reachable, no nav
   slot, per the nav rule).
-- "Editions so far": derived from `problemEssayBySlug` (each essay = a
-  permanent edition at its problem page). Until more essays exist, one entry.
+- "Editions so far": derived from `problemEssayBySlug` **sorted by `edition`**,
+  each row showing `edition` number + `firstSentAt` date + linking to its
+  problem page (each essay = a permanent edition). Proper derivation off the
+  Phase-5b provenance fields, not a hand-list. Until more essays exist, one
+  entry. (The full problem page's "First sent as Edition N, <date>" provenance
+  line reads the same two fields.)
 - **SEO:** `newsletterMeta()` (title/description/canonical, og:type `website`;
   optional `WebPage` JSON-LD). Sitemap: `/newsletter` (no `lastmod`).
 
@@ -414,13 +459,15 @@ problem page; footer link present; sitemap includes it.
   no code beyond leaving the layout room (they signal the accounts/practice
   roadmap, out of scope).
 
-## Owner decisions still open (do not block until noted)
+## Owner decisions — all closed for this program (2026-08-16 review)
 
-| Item | Needed by | Recommendation |
-|---|---|---|
-| `/companies` index v1 vs v1.1 (OWNER-PENDING #2) | Phase 5 close | v1 (trivial once registry exists) |
-| `#6`/`#9`/`#11` urlSlug vetoes (D1) | **before Phase 3** (routes freeze the slugs) | keep stamped defaults unless vetoed |
-| Hero artifact on landing (A) | never blocks | separate track |
+| Item | Resolution |
+|---|---|
+| `/companies` index v1 vs v1.1 (OWNER-PENDING #2) | **CLOSED — ship v1**, footer-linked, roster derived from `articlesByCompany` (§5a). |
+| `#6`/`#9`/`#11` urlSlug vetoes (D1) | **CLOSED — stamped defaults CONFIRMED:** `cluster-blast-radius`, `blind-during-outages`, `mitigation-gaps`. Phase 3 unblocked; slugs may freeze. |
+| `#5` slug (`single-cluster-scaling-ceiling`) verification | **CLOSED — fallback `outgrowing-one-cluster` is correct:** the class spans non-database members (Colossus is a file system), so a `…-database` slug would mislabel it. Confirmed in `cruxtags.json`. |
+| Company registry required vs optional | **CLOSED — OPTIONAL** (§5a): derived-only pages are valid; index derives from articles, not registry; Stripe + Figma carry entries by Phase 5 close. |
+| Hero artifact on landing (A) | Parked — separate track, never blocks. |
 
 ## Out of scope for this program (ratified)
 
@@ -447,3 +494,17 @@ Email-from-essay generation (D3 rule 2) is a pipeline follow-up, not website.
 
 - **v1.0 (2026-08-16)** — initial plan against `nav-ia-decisions.md` v1.1.
   Phase 1's urlSlug portion already shipped (`00f4136`).
+- **v1.1 (2026-08-16)** — folded the owner review (APPROVED). §1: verified the
+  `#5` slug — `single-cluster-scaling-ceiling` carries `outgrowing-one-cluster`
+  in `cruxtags.json`, correct because the class spans non-database members
+  (Colossus is a file system); the `…-database` fallback would have mislabeled
+  it. §2: added the essay↔membership **drift seam** to Phase 5b — derived "Also
+  in this class" strip (render-when-present) + a build **WARNING** when derived
+  members exceed `vantageRows` (never fails a publish). §3: added `edition` +
+  `firstSentAt` provenance fields to the problem-essay schema; Phase 6's
+  editions list now derives from them. §4: company **registry confirmed
+  OPTIONAL** (index derives from `articlesByCompany`; Stripe/Figma entries by
+  Phase 5). §5: owner closures — `/companies` v1, urlSlug vetoes #6/#9/#11
+  confirmed, hero parked. Phase-4 chip: fix is **structural** (`"Answers:"` /
+  `Q` glyph), not brand-gold. All owner decisions for this program now closed;
+  Phases 2–6 cleared to execute in order with per-phase check-ins.
