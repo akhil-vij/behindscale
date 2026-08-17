@@ -7,6 +7,7 @@ import type {
   CruxTagRegistry,
   Figure,
   PatternDefinition,
+  ProblemEssay,
 } from '../../../src/types'
 import type { ContentSet } from '../../types'
 
@@ -74,10 +75,23 @@ export function figure(
   }
 }
 
+// A problem essay fixture. `paths` in makeContent default filename = cruxTag
+// (the valid case); tests exercising the filename-mismatch rule pass an
+// explicit path override via `problemEssayPaths`.
+export function problemEssay(
+  cruxTag: string,
+  overrides: Partial<ProblemEssay> = {},
+): ProblemEssay {
+  return { cruxTag, ...overrides }
+}
+
 export function makeContent(input: {
   articles: readonly Article[]
   patterns: readonly PatternDefinition[]
   cruxTagRegistry?: CruxTagRegistry
+  problemEssays?: readonly ProblemEssay[]
+  // Override cruxTag -> path (defaults to content/problems/<cruxTag>.json).
+  problemEssayPaths?: ReadonlyMap<string, string>
   // Preloaded figure SVGs, keyed by `<article-slug>/<figure-slug>`.
   // Missing key => figure-svg-exists reports a missing file.
   // Present with contents === null => same (loader gave up).
@@ -87,9 +101,19 @@ export function makeContent(input: {
     { readonly path: string; readonly contents: string | null }
   >
 }): ContentSet {
+  const problemEssays = input.problemEssays ?? []
   return {
     articles: input.articles,
     patterns: input.patterns,
+    problemEssays,
+    problemEssayPaths:
+      input.problemEssayPaths ??
+      new Map(
+        problemEssays.map((e) => [
+          e.cruxTag,
+          `content/problems/${e.cruxTag}.json`,
+        ]),
+      ),
     cruxTagRegistry: input.cruxTagRegistry ?? DEFAULT_REGISTRY,
     articlePaths: new Map(
       input.articles.map((a) => [a.slug, `content/articles/${a.slug}.json`]),

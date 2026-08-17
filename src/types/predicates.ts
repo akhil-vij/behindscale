@@ -28,6 +28,7 @@ import type {
 } from './pattern-library'
 import type { CruxTagEntry, CruxTagRegistry } from './cruxtag'
 import type { Figure } from './figure'
+import type { ProblemEssay } from './problemEssay'
 
 export type Result = { ok: true } | { ok: false; reason: string }
 
@@ -173,6 +174,66 @@ export function checkArticle(value: unknown): Result {
   return ok
 }
 
+// Problem-essay schema (docs/problem-page-design.md §5/§9). Every field
+// except `cruxTag` is optional -- an absent field means "render the derived
+// placeholder". This predicate validates SHAPE only; cross-references
+// (cruxTag resolves to a registry entry, filename match, uniqueness) live in
+// the `problem-essay` check. Only the LIVE fields are validated here; richer
+// blocks (metricGrid, vantageRows, deepDive, ...) gain their rules when their
+// renderers land. `extraSections` is validated shallowly (field stub).
+export function checkProblemEssay(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (typeof value.cruxTag !== 'string') {
+    return fail('`cruxTag` expected string (the frozen cruxTag this essay authors)')
+  }
+  if (!KEBAB_CASE.test(value.cruxTag)) {
+    return fail(`\`cruxTag\` expected lowercase-kebab-case (got "${value.cruxTag}")`)
+  }
+  if (value.headline !== undefined) {
+    if (typeof value.headline !== 'string' || value.headline.trim().length === 0) {
+      return fail('`headline` expected non-empty string when present')
+    }
+  }
+  if (value.lede !== undefined) {
+    if (typeof value.lede !== 'string' || value.lede.trim().length === 0) {
+      return fail('`lede` expected non-empty string when present')
+    }
+  }
+  if (value.intro !== undefined) {
+    if (!isStringArray(value.intro) || value.intro.some((p) => p.trim().length === 0)) {
+      return fail('`intro` expected array of non-empty strings when present')
+    }
+  }
+  if (value.edition !== undefined) {
+    if (
+      typeof value.edition !== 'number' ||
+      !Number.isInteger(value.edition) ||
+      value.edition < 1
+    ) {
+      return fail('`edition` expected positive integer when present')
+    }
+  }
+  if (value.firstSentAt !== undefined && typeof value.firstSentAt !== 'string') {
+    return fail('`firstSentAt` expected string (ISO date) when present')
+  }
+  if (value.extraSections !== undefined) {
+    if (!Array.isArray(value.extraSections)) {
+      return fail('`extraSections` expected array when present')
+    }
+    for (let i = 0; i < value.extraSections.length; i++) {
+      const section = value.extraSections[i]
+      if (!isObject(section)) return fail(`\`extraSections[${i}]\` expected object`)
+      if (typeof section.title !== 'string' || section.title.trim().length === 0) {
+        return fail(`\`extraSections[${i}].title\` expected non-empty string`)
+      }
+      if (!Array.isArray(section.blocks)) {
+        return fail(`\`extraSections[${i}].blocks\` expected array`)
+      }
+    }
+  }
+  return ok
+}
+
 const STAT_PLACEMENTS = new Set(['problem', 'solution', 'tradeoffs'])
 
 // Article.cruxTag normalization contract (Taste Doc §3.5 / architecture.md
@@ -281,3 +342,5 @@ export const isPatternLibrary = (v: unknown): v is PatternLibrary => checkPatter
 export const isCruxTagEntry = (v: unknown): v is CruxTagEntry => checkCruxTagEntry(v).ok
 export const isCruxTagRegistry = (v: unknown): v is CruxTagRegistry => checkCruxTagRegistry(v).ok
 export const isFigure = (v: unknown): v is Figure => checkFigure(v).ok
+export const isProblemEssay = (v: unknown): v is ProblemEssay =>
+  checkProblemEssay(v).ok

@@ -4,6 +4,34 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-essay contract v1.1 + header validator LANDED (2026-08-17).**
+  Owner reviewed & APPROVED `docs/problem-page-design.md` (now v1.1):
+  the per-section continuum formally supersedes the plan's binary D3
+  `problemEssayBySlug.has()` gate ("file presence enables authored
+  sections"), and the Phase-5b "Also in this class" strip is RETIRED
+  (per-row `vantageRows` fallback dissolves the drift seam; the
+  non-blocking drift warning stays). Rulings folded: D-1 accent → a
+  future token-name field on the *company* registry (never per-row,
+  never hex); D-2 interview corner question-owned (`interviewNote` an
+  override); D-3 `cruxTag`-keyed filenames; D-4 no synthetic ledes.
+  Additions: `extraSections` escape valve (field stub), per-block
+  **email degradation** rule, and a **config-gated subscribe** surface.
+  Built **§10 step 1** (header + validator): `checkProblemEssay`
+  predicate (cruxTag/headline/lede/intro/edition/firstSentAt/
+  extraSections shapes); `content/problems/*.json` loaded into
+  `ContentSet` (`load-content`, optional dir); new `problem-essay` check
+  (cruxTag resolves to registry · filename==cruxTag · one-per-class) —
+  validator now **17 checks**; `problemMeta` description fallback
+  widened to `lede ?? intro[0] ?? definition`; config-gated
+  `SubscribeCard` in `ProblemDetail` (`src/config/site.ts`
+  `newsletterSignupUrl`, empty now → hidden). Smoke-tested end to end
+  (a throwaway essay rendered headline→H1/title, label→eyebrow, lede
+  italic; then removed). Tests 237 → 248 (+5 check, +6 predicate).
+  **Owner content next:** 14 `{cruxTag, lede}` files — the first real
+  exercise of this validator. **Fast-follow when a block lands:** its
+  renderer + validator rule + (figure wiring) + email degradation,
+  together.
+
 - **Problem pages reconciled to the design handoff + progressive-
   authoring model (2026-08-17).** The owner shared
   `Behindscale_nav_design.zip` (prototype-handoff). Two problem-page

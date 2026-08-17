@@ -29,4 +29,19 @@ export interface ProblemEssay {
   // Opening prose paragraphs shown above "The wall". Plain paragraphs for
   // now (no figure markers until essay figures land).
   intro?: string[]
+  // The flexibility escape valve (docs/problem-page-design.md §5a). A list of
+  // authored generic sections rendered at one fixed insertion point (between
+  // "what to steal" and the pattern chips), so the closed slot set can never
+  // say "no" to an editor. Incubator, not destination: a recurring shape gets
+  // PROMOTED to a first-class block. Shipped now as a FIELD STUB -- validated
+  // (title non-empty, blocks is an array) but not yet rendered; `blocks` is
+  // typed loosely until the shared ProseBlock renderer lands.
+  extraSections?: ProblemExtraSection[]
+}
+
+export interface ProblemExtraSection {
+  title: string
+  // ProseBlock union (prose / steps / stat / chart) once the renderer exists;
+  // `unknown[]` for now so the stub commits to no premature block shape.
+  blocks: unknown[]
 }

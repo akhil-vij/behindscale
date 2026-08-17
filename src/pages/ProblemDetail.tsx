@@ -7,6 +7,7 @@ import {
   patternBySlug,
   problemEssayByCruxTag,
 } from '../content'
+import { newsletterSignupUrl } from '../config/site'
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -209,7 +210,46 @@ export default function ProblemDetail() {
           </div>
         </Section>
       )}
+
+      <SubscribeCard />
     </main>
+  )
+}
+
+// The "The weekly" subscribe card. Config-gated (design §5b): renders only when
+// a newsletter signup URL is set -- external hosted page now, /newsletter at
+// Phase 6. Empty config => nothing renders, so this page never links to a 404.
+function SubscribeCard() {
+  if (!newsletterSignupUrl) return null
+  const external = /^https?:\/\//.test(newsletterSignupUrl)
+  const ctaClass =
+    'shrink-0 rounded-md bg-accent-primary px-4 py-2 font-mono text-xs font-semibold text-bg-surface transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary'
+  return (
+    <section className="mt-9 rounded-xl border border-border-default bg-bg-surface px-5 py-[18px]">
+      <div className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
+        The weekly
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <span className="flex-1 text-sm text-text-secondary">
+          This wall&rsquo;s essay lands in an upcoming edition — one problem
+          class per edition, every claim linked to the company&rsquo;s own post.
+        </span>
+        {external ? (
+          <a
+            href={newsletterSignupUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={ctaClass}
+          >
+            Subscribe
+          </a>
+        ) : (
+          <Link to={newsletterSignupUrl} className={ctaClass}>
+            Subscribe
+          </Link>
+        )}
+      </div>
+    </section>
   )
 }
 

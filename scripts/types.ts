@@ -3,11 +3,21 @@
 // under scripts/checks/ that exports a Check, plus one line in
 // scripts/validate-content.ts's CHECKS array.
 
-import type { Article, CruxTagRegistry, PatternDefinition } from '../src/types'
+import type {
+  Article,
+  CruxTagRegistry,
+  PatternDefinition,
+  ProblemEssay,
+} from '../src/types'
 
 export interface ContentSet {
   readonly articles: readonly Article[]
   readonly patterns: readonly PatternDefinition[]
+  // Per-class authored problem essays (content/problems/*.json). Optional
+  // content: an empty array is the normal state (every class renders derived).
+  // Keyed by the frozen cruxTag in `problemEssayPaths`.
+  readonly problemEssays: readonly ProblemEssay[]
+  readonly problemEssayPaths: ReadonlyMap<string, string>
   // The cruxTag registry (`content/cruxtags.json`). Empty object when
   // the file is missing or fails to parse -- the schema loader logs
   // that failure separately, so downstream checks see the same empty

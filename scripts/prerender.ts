@@ -300,7 +300,12 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   // term identity is the class, not the essay's hook line.
   const essay = problemEssayByCruxTag.get(group.slug)
   const pageName = essay?.headline ?? group.label
-  const pageDescription = truncateForMeta(essay?.lede ?? group.definition)
+  // Description prefers the authored lede, then an authored intro's first
+  // sentence (usually a better hook than the registry definition), then the
+  // definition (docs/problem-page-design.md §7).
+  const pageDescription = truncateForMeta(
+    essay?.lede ?? essay?.intro?.[0] ?? group.definition,
+  )
 
   const memberItems = group.articles.map((article, idx) => ({
     '@type': 'ListItem',

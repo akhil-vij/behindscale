@@ -16,17 +16,20 @@ import {
   checkArticle,
   checkCruxTagRegistry,
   checkPatternDefinition,
+  checkProblemEssay,
 } from '../src/types/predicates'
 import type {
   Article,
   CruxTagRegistry,
   PatternDefinition,
+  ProblemEssay,
 } from '../src/types'
 import type { CheckError, ContentSet } from './types'
 
 const ARTICLES_DIR = 'content/articles'
 const PATTERNS_DIR = 'content/patterns'
 const CRUXTAGS_PATH = 'content/cruxtags.json'
+const PROBLEMS_DIR = 'content/problems'
 const FIGURES_DIR = 'content/figures'
 
 // The [schema] section label is owned here so a future renamer can
@@ -57,9 +60,11 @@ export function loadContent(): LoadResult {
   let skippedFileCount = 0
   const articles: Article[] = []
   const patterns: PatternDefinition[] = []
+  const problemEssays: ProblemEssay[] = []
   let cruxTagRegistry: CruxTagRegistry = {}
   const articlePaths = new Map<string, string>()
   const patternPaths = new Map<string, string>()
+  const problemEssayPaths = new Map<string, string>()
 
   // Articles
   const articleFiles = readdirSync(ARTICLES_DIR)
@@ -151,6 +156,39 @@ export function loadContent(): LoadResult {
     })
   }
 
+  // Problem essays -- OPTIONAL per-class authored content
+  // (content/problems/<cruxTag>.json). The directory need not exist (the
+  // normal state today: every class renders fully derived). Schema failures
+  // are reported and the file skipped, like articles/patterns. Cross-
+  // references (cruxTag resolves, filename match, uniqueness) are the
+  // problem-essay check's job.
+  if (existsSync(PROBLEMS_DIR)) {
+    const problemFiles = readdirSync(PROBLEMS_DIR)
+      .filter((name) => name.endsWith('.json'))
+      .sort()
+    for (const name of problemFiles) {
+      const path = join(PROBLEMS_DIR, name)
+      const parsed = readJson(path, schemaErrors)
+      if (parsed === undefined) {
+        skippedFileCount += 1
+        continue
+      }
+      const result = checkProblemEssay(parsed)
+      if (!result.ok) {
+        schemaErrors.push({
+          file: path,
+          message: result.reason,
+          fix: ['shape file as ProblemEssay (see src/types/problemEssay.ts)'],
+        })
+        skippedFileCount += 1
+        continue
+      }
+      const essay = parsed as ProblemEssay
+      problemEssays.push(essay)
+      problemEssayPaths.set(essay.cruxTag, path)
+    }
+  }
+
   // Preload figure SVGs for every declared figure on every figure host
   // (articles AND patterns -- both store figures at
   // content/figures/<host-slug>/<figure-slug>.svg). Missing files are
@@ -190,6 +228,8 @@ export function loadContent(): LoadResult {
     content: {
       articles,
       patterns,
+      problemEssays,
+      problemEssayPaths,
       cruxTagRegistry,
       articlePaths,
       patternPaths,
