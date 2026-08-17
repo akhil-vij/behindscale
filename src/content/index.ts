@@ -79,6 +79,27 @@ const cruxtagsModules = import.meta.glob<CruxTagRegistry>(
 export const cruxtags: CruxTagRegistry =
   Object.values(cruxtagsModules)[0] ?? {}
 
+// urlSlug resolvers for the `/problems/<urlSlug>` class pages (nav-IA
+// Phase 3, D2/D3). The registry's `urlSlug` is the public, human-facing
+// slug for a problem class; `cruxTag` stays the frozen join key. These
+// two maps are the single place the key<->urlSlug correspondence lives:
+// `cruxTagByUrlSlug` powers ProblemDetail (route param -> cruxTag) and
+// `urlSlugByCruxTag` powers the article crux links (cruxTag -> class-page
+// href). Only entries carrying a urlSlug are mapped; the
+// `cruxtag-urlslug` validator guarantees every real entry has one, so the
+// maps are total over every cruxTag an article uses (asserted by
+// src/content/__tests__/problem-routes.test.ts). An unmapped cruxTag
+// degrades to the workbench anchor rather than crashing (invariant 6).
+export const urlSlugByCruxTag: ReadonlyMap<string, string> = new Map(
+  Object.entries(cruxtags)
+    .filter(([, entry]) => typeof entry.urlSlug === 'string')
+    .map(([key, entry]) => [key, entry.urlSlug as string]),
+)
+
+export const cruxTagByUrlSlug: ReadonlyMap<string, string> = new Map(
+  Array.from(urlSlugByCruxTag, ([key, urlSlug]) => [urlSlug, key]),
+)
+
 // patternStats is the aggregated counts surface that the pattern library
 // renders (frequency, articles, companies). Consumers (PatternCard,
 // PatternIndex, PatternDetail) read by slug and never know how the stats

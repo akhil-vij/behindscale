@@ -14,24 +14,28 @@ import { Link } from 'react-router-dom'
 // block's PROBLEM line compresses this same crux, keeping reader
 // and cold-visitor entry points in sync by construction.
 //
-// Landing/navigation phase (2026-07-08): the cruxTag now renders as
-// a lateral chip at the bottom of the callout, linking to
-// /problems#term-<slug>. This is the article-page's entry into the
-// bottleneck taxonomy -- click it and land on the same problem-class
-// group other members of the class live in. The @id in JSON-LD's
-// `about` and this chip href both target the same DOM anchor on the
-// problems workbench (id="term-<slug>" on the group header).
+// Landing/navigation phase (2026-07-08): the cruxTag renders as a
+// lateral chip at the bottom of the callout -- the article-page's entry
+// into the bottleneck taxonomy. Nav-IA Phase 3 (D2 delta ②) repointed it
+// from the workbench anchor (/problems#term-<slug>) to the class's own
+// page (/problems/<urlSlug>), now that every class has a rich page. When
+// no urlSlug resolves (never for a real class -- the cruxtag-urlslug
+// validator guarantees one) it degrades to the workbench anchor rather
+// than dead-linking. The JSON-LD `about` @id still targets the workbench
+// DefinedTerm anchor; only this human-facing href moved.
 
 interface CruxCalloutProps {
   crux: string
   cruxTag: string
   cruxTagLabel: string
+  urlSlug?: string
 }
 
 export default function CruxCallout({
   crux,
   cruxTag,
   cruxTagLabel,
+  urlSlug,
 }: CruxCalloutProps) {
   return (
     <aside
@@ -44,7 +48,7 @@ export default function CruxCallout({
       <p className="mt-2 leading-relaxed text-text-primary">{crux}</p>
       <div className="mt-3">
         <Link
-          to={`/problems#term-${cruxTag}`}
+          to={urlSlug ? `/problems/${urlSlug}` : `/problems#term-${cruxTag}`}
           className="inline-flex items-center gap-1.5 rounded-md border border-border-default bg-bg-base px-2.5 py-1 font-mono text-xs text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
         >
           <span

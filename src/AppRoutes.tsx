@@ -8,6 +8,7 @@ import CatalogRedirect from './pages/CatalogRedirect'
 import Landing from './pages/Landing'
 import PatternDetail from './pages/PatternDetail'
 import PatternIndex from './pages/PatternIndex'
+import ProblemDetail from './pages/ProblemDetail'
 import Sources from './pages/Sources'
 
 // Router-agnostic route tree. Wrapped at the two entry points:
@@ -41,6 +42,8 @@ export default function AppRoutes() {
             }
           />
           <Route path="/problems" element={<Catalog />} />
+          {/* Ordered after /problems so the index isn't shadowed. */}
+          <Route path="/problems/:urlSlug" element={<ProblemDetail />} />
           <Route path="/articles/:slug" element={<ArticleDetail />} />
           <Route path="/patterns" element={<PatternIndex />} />
           <Route path="/patterns/:slug" element={<PatternDetail />} />

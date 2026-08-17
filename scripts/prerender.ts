@@ -19,7 +19,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { catalogGroups } from '../src/lib/catalogGroups'
+import { catalogGroups, type CatalogGroup } from '../src/lib/catalogGroups'
 import type {
   Article,
   CruxTagRegistry,
@@ -48,10 +48,13 @@ const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
   render: (url: string) => string
   articles: Article[]
   cruxtags: CruxTagRegistry
+  cruxTagByUrlSlug: ReadonlyMap<string, string>
+  urlSlugByCruxTag: ReadonlyMap<string, string>
   feeds: readonly Source[]
   patterns: PatternDefinition[]
 }
-const { render, articles, cruxtags, feeds, patterns } = ssrModule
+const { render, articles, cruxtags, urlSlugByCruxTag, feeds, patterns } =
+  ssrModule
 
 // --- Load the client template emitted by `vite build` ---
 
@@ -269,6 +272,83 @@ function problemsMeta(): Meta {
     canonical: `${SITE_URL}/problems`,
     ogType: 'website',
     jsonLd: [collectionPage, definedTermSet],
+  }
+}
+
+// Per-class problem page (nav-IA Phase 3, D3/D6). Starter-state pages
+// are pure derivation; the meta mirrors the workbench's structure at
+// single-class scope. Emits a CollectionPage (mainEntity = ItemList of
+// member articles) plus a DefinedTerm whose @id is the SAME workbench
+// anchor the article `about` references (cruxTagTermId) -- the D2
+// refinement adds `subjectOf: /problems/<urlSlug>`, connecting the
+// frozen taxonomy term to its rich page without minting a new @id, so
+// the cross-page @id assertion still holds.
+function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
+  const pageUrl = `${SITE_URL}/problems/${urlSlug}`
+
+  const memberItems = group.articles.map((article, idx) => ({
+    '@type': 'ListItem',
+    position: idx + 1,
+    url: `${SITE_URL}/articles/${article.slug}`,
+    name: article.title,
+  }))
+
+  const collectionPage = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': pageUrl,
+    url: pageUrl,
+    name: `${group.label} — ${SITE_NAME}`,
+    description: truncateForMeta(group.definition),
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: group.articles.length,
+      itemListElement: memberItems,
+    },
+  }
+
+  const definedTerm = {
+    '@context': 'https://schema.org',
+    '@type': 'DefinedTerm',
+    '@id': cruxTagTermId(group.slug),
+    name: group.label,
+    description: group.definition,
+    termCode: group.slug,
+    subjectOf: pageUrl,
+  }
+
+  const breadcrumbs = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: `${SITE_URL}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Problems',
+        item: `${SITE_URL}/problems`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: group.label,
+        item: pageUrl,
+      },
+    ],
+  }
+
+  return {
+    title: `${group.label} — ${SITE_NAME}`,
+    description: truncateForMeta(group.definition),
+    canonical: pageUrl,
+    ogType: 'website',
+    jsonLd: [collectionPage, definedTerm, breadcrumbs],
   }
 }
 
@@ -602,6 +682,28 @@ const routes: RouteEntry[] = [
       outPath: `patterns/${p.slug}.html`,
       meta: patternMeta(p),
     }),
+  ),
+  // Problem class pages (nav-IA Phase 3). One per cruxTag that has
+  // articles (catalogGroups only buckets realised content). urlSlug is
+  // guaranteed by cruxtag-urlslug; skip-and-flag rather than emit a dead
+  // route if it were ever absent (invariant 6).
+  ...catalogGroups({ articles, registry: cruxtags }).flatMap(
+    (group): RouteEntry[] => {
+      const urlSlug = urlSlugByCruxTag.get(group.slug)
+      if (!urlSlug) {
+        console.warn(
+          `prerender: cruxTag "${group.slug}" has no urlSlug; skipping its /problems page.`,
+        )
+        return []
+      }
+      return [
+        {
+          path: `/problems/${urlSlug}`,
+          outPath: `problems/${urlSlug}.html`,
+          meta: problemMeta(group, urlSlug),
+        },
+      ]
+    },
   ),
   { path: '/404', outPath: '404.html', meta: notFoundMeta() },
 ]

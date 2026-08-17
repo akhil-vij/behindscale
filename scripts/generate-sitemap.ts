@@ -26,9 +26,24 @@ const ssrEntryPath = join(
   'dist-ssr',
   'ssr-entry.js',
 )
-const { articles, patterns } = (await import(
+const { articles, patterns, urlSlugByCruxTag } = (await import(
   pathToFileURL(ssrEntryPath).href
-)) as { articles: Article[]; patterns: PatternDefinition[] }
+)) as {
+  articles: Article[]
+  patterns: PatternDefinition[]
+  urlSlugByCruxTag: ReadonlyMap<string, string>
+}
+
+// The distinct problem classes that have at least one article -- the
+// same "realised content only" rule the workbench and prerender routes
+// use. Each maps to a /problems/<urlSlug> class page (nav-IA Phase 3).
+const problemUrlSlugs = Array.from(
+  new Set(
+    Array.from(new Set(articles.map((a) => a.cruxTag)))
+      .map((cruxTag) => urlSlugByCruxTag.get(cruxTag))
+      .filter((s): s is string => typeof s === 'string'),
+  ),
+).sort((a, b) => a.localeCompare(b))
 
 const ROOT = join(dirname(__filename_sitemap), '..')
 const DIST = join(ROOT, 'dist')
@@ -63,6 +78,11 @@ const entries: SitemapEntry[] = [
   // Landed 2026-07-08 with the landing/navigation phase; renamed
   // from /catalog in the 2026-08 navigation-IA phase (D2).
   { url: `${SITE_URL}/problems` },
+  // Per-class problem pages (nav-IA Phase 3). Derived surfaces like
+  // /problems itself -- no content-modeled timestamp, so no lastmod.
+  ...problemUrlSlugs.map((urlSlug) => ({
+    url: `${SITE_URL}/problems/${urlSlug}`,
+  })),
   { url: `${SITE_URL}/patterns` },
   // /sources: same "derived surface, no content-modeled timestamp"
   // reasoning as /problems. Landed 2026-07-09 as a trust artifact

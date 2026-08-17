@@ -1,7 +1,13 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type { Article, ArticleStat } from '../types'
-import { articleBySlug, articles, cruxtags, patternBySlug } from '../content'
+import {
+  articleBySlug,
+  articles,
+  cruxtags,
+  patternBySlug,
+  urlSlugByCruxTag,
+} from '../content'
 import ArtifactEmbed from '../components/ArtifactEmbed'
 import ArtifactTeaser from '../components/ArtifactTeaser'
 import CruxCallout from '../components/CruxCallout'
@@ -100,6 +106,7 @@ export default function ArticleDetail() {
           crux={article.crux}
           cruxTag={article.cruxTag}
           cruxTagLabel={cruxtags[article.cruxTag]?.label ?? article.cruxTag}
+          urlSlug={urlSlugByCruxTag.get(article.cruxTag)}
         />
 
         {/* Artifact teaser (Unit 10): renders only when teaser is
@@ -198,13 +205,18 @@ function AlsoSolvingThis({ article }: { article: Article }) {
 
   const cruxTagLabel =
     cruxtags[article.cruxTag]?.label ?? article.cruxTag
+  const classUrlSlug = urlSlugByCruxTag.get(article.cruxTag)
 
   return (
     <Section title="Also solving this">
       <p className="mt-3 text-sm text-text-secondary">
         Other systems in behindscale's{' '}
         <Link
-          to={`/problems#term-${article.cruxTag}`}
+          to={
+            classUrlSlug
+              ? `/problems/${classUrlSlug}`
+              : `/problems#term-${article.cruxTag}`
+          }
           className="font-medium text-text-primary underline decoration-brand-gold underline-offset-4 hover:decoration-2"
         >
           {cruxTagLabel}

@@ -4,6 +4,35 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Nav-IA Phase 3 — problem class pages (STARTER) LANDED
+  (2026-08-17).** All 14 `/problems/<urlSlug>` class pages render,
+  fully derived (D3 starter state; the full-state essay branch is
+  Phase 5). New surfaces, all pure derivation — no new content type:
+  resolver maps `urlSlugByCruxTag` / `cruxTagByUrlSlug` in
+  `src/content/index.ts` (the single place the key↔urlSlug
+  correspondence lives, re-exported through `ssr-entry` for prerender
+  + sitemap); `ProblemDetail.tsx` (members + "Seen at N companies" +
+  embodied-patterns, mirroring `PatternDetail`, skip-and-flag on
+  unknown slug); route `/problems/:urlSlug` ordered after `/problems`;
+  `problemMeta()` in prerender emitting `CollectionPage` +
+  `DefinedTerm` (`@id: cruxTagTermId(key)` reused, `subjectOf:
+  /problems/<urlSlug>` — the D2 refinement, no new @id so the
+  cross-page assertion still holds) + breadcrumb; 14 sitemap URLs.
+  **Article delta ② (floor-not-ceiling applied):** the plan named one
+  "Part of:" line, but the article page has TWO class references —
+  `CruxCallout` (the crux chip) AND `AlsoSolvingThis`; both repointed
+  from the workbench anchor `/problems#term-` to the class page
+  `/problems/<urlSlug>`, each degrading to the anchor if a urlSlug is
+  ever absent (invariant 6). **Deliberately left:** the Landing
+  preview rows still point at the workbench anchor (different intent —
+  a browse-the-workbench teaser, not a canonical class link); flagged
+  for owner call. Routing guard: fs-based totality test asserts every
+  article `cruxTag` resolves to a unique registry urlSlug (237 tests).
+  Verified: build green, `@id` assertion passes, 14 pages prerender,
+  `ambiguous-timeouts` = 5 companies, `outgrowing-one-cluster` = 5,
+  no interview corner renders yet (correct — Phase 4). Interview nav
+  link still deferred.
+
 - **Nav-IA Phase 2 — `/catalog` → `/problems` rename LANDED
   (2026-08-16).** The workbench route is renamed atomically per
   D2 (`docs/nav-ia-implementation-plan.md` Phase 2). One commit
