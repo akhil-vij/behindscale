@@ -23,10 +23,14 @@ Update this file after every meaningful implementation change.
   `CruxCallout` (the crux chip) AND `AlsoSolvingThis`; both repointed
   from the workbench anchor `/problems#term-` to the class page
   `/problems/<urlSlug>`, each degrading to the anchor if a urlSlug is
-  ever absent (invariant 6). **Deliberately left:** the Landing
-  preview rows still point at the workbench anchor (different intent —
-  a browse-the-workbench teaser, not a canonical class link); flagged
-  for owner call. Routing guard: fs-based totality test asserts every
+  ever absent (invariant 6). **Landing preview rows** were also
+  repointed to the class page (owner ruling, 2026-08-17): they had
+  been left on the workbench anchor `/problems#term-<cruxTag>`, which
+  exposed the raw frozen join key in the URL — owner clicked through
+  from the landing page and asked why the URLs said `term-`. Now all
+  three crux-reference surfaces (CruxCallout, AlsoSolvingThis, Landing
+  preview) resolve to `/problems/<urlSlug>`. Routing guard: fs-based
+  totality test asserts every
   article `cruxTag` resolves to a unique registry urlSlug (237 tests).
   Verified: build green, `@id` assertion passes, 14 pages prerender,
   `ambiguous-timeouts` = 5 companies, `outgrowing-one-cluster` = 5,

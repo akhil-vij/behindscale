@@ -1,7 +1,7 @@
 import { Component } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { articles, cruxtags } from '../content'
+import { articles, cruxtags, urlSlugByCruxTag } from '../content'
 import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 
 // Landing page: the conversion billboard. Structure (design-spec §3):
@@ -15,7 +15,7 @@ import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 //   Trust band (#F4F2EE) — DISSECTED FROM FIRST-PARTY BLOGS + 12
 //     canonical company wordmarks
 //   Problems preview — top-3 multi-company problem-classes, each row
-//     linking to /problems#term-<slug>
+//     linking to its class page /problems/<urlSlug>
 //   CTA — "Browse all N breakdowns →" (N derived at build time)
 //   Footer — wordmark + Problems / Patterns / Sources + FIRST-PARTY
 //
@@ -234,10 +234,17 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
         Bottlenecks that show up more than once.
       </h2>
       <ul className="flex flex-col gap-6">
-        {preview.map((g) => (
+        {preview.map((g) => {
+          // Prefer the class page; fall back to the workbench anchor
+          // only if a urlSlug is somehow absent (invariant 6).
+          const urlSlug = urlSlugByCruxTag.get(g.slug)
+          const href = urlSlug
+            ? `/problems/${urlSlug}`
+            : `/problems#term-${g.slug}`
+          return (
           <li key={g.slug}>
             <Link
-              to={`/problems#term-${g.slug}`}
+              to={href}
               className="group block border-t-2 border-text-primary pt-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-4">
@@ -253,7 +260,8 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
               </div>
             </Link>
           </li>
-        ))}
+          )
+        })}
       </ul>
     </section>
   )
