@@ -19,6 +19,7 @@ export {
   cruxtags,
   cruxTagByUrlSlug,
   urlSlugByCruxTag,
+  problemEssayByCruxTag,
   feeds,
   patterns,
 } from './content'

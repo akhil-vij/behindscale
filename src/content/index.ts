@@ -12,6 +12,7 @@ import type {
   Article,
   CruxTagRegistry,
   PatternDefinition,
+  ProblemEssay,
   Source,
 } from '../types'
 
@@ -98,6 +99,20 @@ export const urlSlugByCruxTag: ReadonlyMap<string, string> = new Map(
 
 export const cruxTagByUrlSlug: ReadonlyMap<string, string> = new Map(
   Array.from(urlSlugByCruxTag, ([key, urlSlug]) => [urlSlug, key]),
+)
+
+// Per-class authored problem essays (nav-IA progressive-authoring model).
+// OPTIONAL and keyed by the frozen `cruxTag`: a class with no file renders
+// fully derived (minimal state); a file's present blocks replace their
+// derived placeholders on ProblemDetail. Same glob shape as articles;
+// zero files today, so every class is minimal until authored. See
+// src/types/problemEssay.ts.
+const problemEssayModules = import.meta.glob<ProblemEssay>(
+  '/content/problems/*.json',
+  { eager: true, import: 'default' },
+)
+export const problemEssayByCruxTag: ReadonlyMap<string, ProblemEssay> = new Map(
+  Object.values(problemEssayModules).map((essay) => [essay.cruxTag, essay]),
 )
 
 // patternStats is the aggregated counts surface that the pattern library

@@ -4,6 +4,42 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem pages reconciled to the design handoff + progressive-
+  authoring model (2026-08-17).** The owner shared
+  `Behindscale_nav_design.zip` (prototype-handoff). Two problem-page
+  comps: `problem-queue-backlog` (MINIMAL, all-derived) and
+  `problem-ambiguous-timeouts` (FULL, hand-authored). Owner direction:
+  **every class ships minimal now, and the page must expand per-class
+  into the full design over time** — one template, no binary
+  starter/full gate (this refines the plan's D3 gate). My original
+  Phase-3 `ProblemDetail` was far thinner than even the minimal comp;
+  rebuilt to it faithfully (comp uses our exact light-shell tokens —
+  `#FBFAF8`=`bg-base`, `#2563EB`=`accent-primary`, etc. — so a 1:1 token
+  map, no invented hex). Minimal sections, all derived: eyebrow
+  `Problem · seen at N companies`, label H1, "The wall" (registry
+  definition + generic "N teams hit this wall" synthesis), "Same wall,
+  N systems" (two-column rows: company/source + `cruxSummary` +
+  breakdown link), "Patterns in this class" (neutral chips), "Every
+  breakdown" (source·date + title cards). **Progressive-authoring hook
+  (schema wiring):** new optional content type `ProblemEssay`
+  (`src/types/problemEssay.ts`) keyed by frozen `cruxTag`, glob'd into
+  `problemEssayByCruxTag` (`src/content`), re-exported via `ssr-entry`.
+  Every field optional; a present block replaces its derived
+  placeholder. Renderers land incrementally — today `headline` (→ H1,
+  label moves to eyebrow), `lede` (italic), `intro` (prose); the rich
+  full-design blocks (metric grid, wall diagram, hand vantage rows,
+  deep dive, number charts, what-to-steal, simulator) are added as the
+  first class authoring each lands. `prerender` `problemMeta` uses
+  authored `headline`/`lede` for title/description when present.
+  **Owner decisions (this round):** newsletter furniture (essay-status
+  strip + "The weekly" subscribe card) **deferred** to Phase-6
+  `/newsletter` (render-when-present, no link to a 404); build scope =
+  **minimal page + schema hooks now**, rich renderers incremental.
+  **Fast-follow owed:** the `ProblemEssay` build-time validator +
+  `load-content`/ContentSet integration (deferred while zero essay
+  files exist; add with the first authored class). Build green; the
+  live-shaped `queue-backlog` page matches the comp.
+
 - **Nav-IA Phase 3 — problem class pages (STARTER) LANDED
   (2026-08-17).** All 14 `/problems/<urlSlug>` class pages render,
   fully derived (D3 starter state; the full-state essay branch is

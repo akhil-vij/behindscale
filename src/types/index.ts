@@ -8,3 +8,4 @@ export type {
 } from './pattern-library'
 export type { CruxTagEntry, CruxTagRegistry } from './cruxtag'
 export type { Figure } from './figure'
+export type { ProblemEssay } from './problemEssay'

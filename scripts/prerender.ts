@@ -24,6 +24,7 @@ import type {
   Article,
   CruxTagRegistry,
   PatternDefinition,
+  ProblemEssay,
   Source,
 } from '../src/types'
 
@@ -50,11 +51,19 @@ const ssrModule = (await import(pathToFileURL(ssrEntryPath).href)) as {
   cruxtags: CruxTagRegistry
   cruxTagByUrlSlug: ReadonlyMap<string, string>
   urlSlugByCruxTag: ReadonlyMap<string, string>
+  problemEssayByCruxTag: ReadonlyMap<string, ProblemEssay>
   feeds: readonly Source[]
   patterns: PatternDefinition[]
 }
-const { render, articles, cruxtags, urlSlugByCruxTag, feeds, patterns } =
-  ssrModule
+const {
+  render,
+  articles,
+  cruxtags,
+  urlSlugByCruxTag,
+  problemEssayByCruxTag,
+  feeds,
+  patterns,
+} = ssrModule
 
 // --- Load the client template emitted by `vite build` ---
 
@@ -285,6 +294,13 @@ function problemsMeta(): Meta {
 // the cross-page @id assertion still holds.
 function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   const pageUrl = `${SITE_URL}/problems/${urlSlug}`
+  // Authored headline/lede (when a class is authored) drive the page title
+  // and description; otherwise the registry label/definition do. The
+  // DefinedTerm node stays keyed to the class label + definition -- the
+  // term identity is the class, not the essay's hook line.
+  const essay = problemEssayByCruxTag.get(group.slug)
+  const pageName = essay?.headline ?? group.label
+  const pageDescription = truncateForMeta(essay?.lede ?? group.definition)
 
   const memberItems = group.articles.map((article, idx) => ({
     '@type': 'ListItem',
@@ -298,8 +314,8 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
     '@type': 'CollectionPage',
     '@id': pageUrl,
     url: pageUrl,
-    name: `${group.label} — ${SITE_NAME}`,
-    description: truncateForMeta(group.definition),
+    name: `${pageName} — ${SITE_NAME}`,
+    description: pageDescription,
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
       '@type': 'ItemList',
@@ -344,8 +360,8 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   }
 
   return {
-    title: `${group.label} — ${SITE_NAME}`,
-    description: truncateForMeta(group.definition),
+    title: `${pageName} — ${SITE_NAME}`,
+    description: pageDescription,
     canonical: pageUrl,
     ogType: 'website',
     jsonLd: [collectionPage, definedTerm, breadcrumbs],

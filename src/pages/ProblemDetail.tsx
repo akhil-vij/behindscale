@@ -5,24 +5,42 @@ import {
   cruxtags,
   cruxTagByUrlSlug,
   patternBySlug,
+  problemEssayByCruxTag,
 } from '../content'
-import SourceAttribution from '../components/SourceAttribution'
 
-// Problem-class page (nav-IA Phase 3, D3). Renders one bottleneck class
-// at `/problems/<urlSlug>` in STARTER state: everything is derived from
-// article content (members, company count, embodied patterns) with no
-// stored prose. The full-state essay branch (D3) lands in Phase 5, gated
-// on `problemEssayBySlug.has(cruxTag)` -- until then every class is
-// starter. Mirrors PatternDetail's structure and skip-and-flag posture
-// (invariant 6: an unknown urlSlug renders an inline not-found, never
-// throws).
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+// Problem-class page (nav-IA). ONE template that renders every class:
+// fully derived by default (the "minimal" state, matching the
+// problem-queue-backlog design handoff), with each authored block from a
+// per-class ProblemEssay REPLACING its derived placeholder as the owner
+// authors it over time. The full state (problem-ambiguous-timeouts) is
+// this same page with every optional block filled in -- no separate
+// template, no binary starter/full gate.
+//
+// Newsletter furniture from the design (the "essay upcoming" strip and the
+// "The weekly" subscribe card) is intentionally deferred to the Phase-6
+// /newsletter surface -- it renders-when-present once that route exists, so
+// this page never links to a 404.
+//
+// Rich authored blocks (metric grid, "the wall" diagram, hand-written
+// vantage rows, deep dive, number charts, what-to-steal, simulator) land
+// incrementally; today the authored hooks are headline / lede / intro.
 export default function ProblemDetail() {
   const { urlSlug } = useParams<{ urlSlug: string }>()
   const cruxTag = urlSlug ? cruxTagByUrlSlug.get(urlSlug) : undefined
 
   if (!cruxTag) {
     return (
-      <main className="max-w-[720px] mx-auto px-6 py-12">
+      <main className="max-w-[680px] mx-auto px-5 py-12">
         <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
           Problem class not found
         </h1>
@@ -48,16 +66,29 @@ export default function ProblemDetail() {
   const entry = cruxtags[cruxTag]
   const label = entry?.label ?? cruxTag
   const definition = entry?.definition ?? ''
+  const essay = problemEssayByCruxTag.get(cruxTag)
 
-  // Members are already sorted publishedAt-desc (src/content/index.ts).
+  // Members are already sorted publishedAt-desc (src/content/index.ts),
+  // which matches the design's row/card order.
   const members = articles.filter((a) => a.cruxTag === cruxTag)
   const companyCount = new Set(members.map((a) => a.source.company)).size
-  const companyLabel =
-    companyCount === 1 ? '1 company' : `${companyCount} companies`
+  const companyLabel = `${companyCount} ${companyCount === 1 ? 'company' : 'companies'}`
+  const systemLabel = `${members.length} ${members.length === 1 ? 'system' : 'systems'}`
+  const intro = Array.isArray(essay?.intro) ? essay?.intro : undefined
+
+  // Authored headline (when present) becomes the H1 and the class label
+  // moves into the eyebrow; otherwise the label is the H1.
+  const headline = essay?.headline ?? label
+  const eyebrow = [
+    'Problem',
+    essay?.headline ? label : null,
+    `seen at ${companyLabel}`,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   // Patterns embodied by this class's members: union of members'
   // patterns[], deduped, resolved against the library, alphabetised.
-  // Skip any slug without a definition (invariant 6).
   const classPatterns = Array.from(
     new Set(members.flatMap((a) => a.patterns.map((p) => p.slug))),
   )
@@ -66,62 +97,89 @@ export default function ProblemDetail() {
     .sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <article className="max-w-[720px] mx-auto px-6 py-12">
-      <p className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
-        Problem class
+    <main className="max-w-[680px] mx-auto px-5 pt-10 pb-[72px]">
+      <p className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
+        {eyebrow}
       </p>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-text-primary">
-        {label}
+      <h1 className="mt-2.5 text-3xl font-bold leading-tight tracking-tight text-text-primary">
+        {headline}
       </h1>
-      {definition && (
-        <p className="mt-4 leading-relaxed text-text-secondary">{definition}</p>
+      {essay?.lede && (
+        <p className="mt-3 text-[17px] italic text-text-secondary">
+          {essay.lede}
+        </p>
       )}
-      <p className="mt-4 font-mono text-xs text-text-muted">
-        Seen at {companyLabel}
-      </p>
 
-      <Section title="Systems that hit this wall">
+      {intro && intro.length > 0 && (
+        <div className="mt-4 flex flex-col gap-4">
+          {intro.map((para, i) => (
+            <p key={i} className="leading-relaxed text-text-primary">
+              {para}
+            </p>
+          ))}
+        </div>
+      )}
+
+      <Section title="The wall">
+        <p className="mt-3 leading-relaxed text-text-primary">
+          {definition}
+          {companyCount > 1 && (
+            <>
+              {' '}
+              {companyCount} teams hit this wall; the breakdowns below are the
+              evidence.
+            </>
+          )}
+        </p>
+      </Section>
+
+      <Section title={`Same wall, ${systemLabel}`}>
         {members.length === 0 ? (
-          <p className="mt-4 text-text-secondary">
+          <p className="mt-3 text-text-secondary">
             No systems in this class yet.
           </p>
         ) : (
-          <ul className="mt-4 flex list-none flex-col gap-4">
-            {members.map((article) => (
-              <li
+          <div className="mt-3 overflow-hidden rounded-xl border border-border-default bg-bg-surface">
+            {members.map((article, i) => (
+              <div
                 key={article.slug}
-                className="rounded-xl border border-border-default bg-bg-surface p-5"
+                className={`grid grid-cols-[150px_1fr] ${
+                  i < members.length - 1
+                    ? 'border-b border-border-default'
+                    : ''
+                }`}
               >
-                <SourceAttribution
-                  source={article.source}
-                  publishedAt={article.publishedAt}
-                  variant="card"
-                />
-                <h3 className="mt-3 text-lg font-semibold tracking-tight">
+                <div className="border-r border-border-default bg-bg-subtle p-[15px]">
+                  <div className="text-[15px] font-semibold text-text-primary">
+                    {article.source.company}
+                  </div>
+                  <div className="mt-[3px] font-mono text-[10px] uppercase leading-relaxed tracking-wide text-text-muted">
+                    {article.source.name}
+                  </div>
+                </div>
+                <div className="p-[15px] text-[14.5px] leading-relaxed text-text-primary">
+                  {article.cruxSummary}{' '}
                   <Link
                     to={`/articles/${article.slug}`}
-                    className="text-text-primary hover:text-accent-primary transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded-sm"
+                    className="whitespace-nowrap text-[13px] text-accent-primary hover:text-accent-hover"
                   >
-                    {article.title}
+                    Read the breakdown →
                   </Link>
-                </h3>
-                <p className="mt-2 leading-relaxed text-text-secondary">
-                  {article.cruxSummary}
-                </p>
-              </li>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </Section>
 
       {classPatterns.length > 0 && (
         <Section title="Patterns in this class">
-          <ul className="mt-4 flex flex-wrap gap-2">
+          <ul className="mt-3 flex flex-wrap gap-[7px]">
             {classPatterns.map((pattern) => (
               <li key={pattern.slug}>
                 <Link
                   to={`/patterns/${pattern.slug}`}
-                  className="inline-flex items-center rounded-md border border-border-default bg-bg-surface px-3 py-1.5 font-mono text-xs text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  className="inline-flex items-center rounded-md border border-border-strong px-2.5 py-[3px] font-mono text-xs text-text-secondary transition-colors hover:bg-bg-subtle hover:text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                 >
                   {pattern.name}
                 </Link>
@@ -130,14 +188,35 @@ export default function ProblemDetail() {
           </ul>
         </Section>
       )}
-    </article>
+
+      {members.length > 0 && (
+        <Section title="Every breakdown">
+          <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3">
+            {members.map((article) => (
+              <Link
+                key={article.slug}
+                to={`/articles/${article.slug}`}
+                className="flex flex-col gap-[7px] rounded-xl border border-border-default bg-bg-surface p-[15px] text-text-primary no-underline transition-colors hover:border-border-strong hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              >
+                <span className="font-mono text-[10.5px] uppercase tracking-[0.06em] text-text-muted">
+                  {article.source.name} · {formatDate(article.publishedAt)}
+                </span>
+                <span className="text-[15.5px] font-semibold leading-snug text-text-primary">
+                  {article.title}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Section>
+      )}
+    </main>
   )
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="mt-10">
-      <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
+    <section className="mt-9">
+      <h2 className="text-xl font-semibold tracking-tight text-text-primary">
         {title}
       </h2>
       {children}
