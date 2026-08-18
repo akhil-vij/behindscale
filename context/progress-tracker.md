@@ -4,6 +4,41 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **/patterns listing page rebuilt + schema addition #2 (aliases)
+  LANDED (2026-08-18).** Category-grouped browsing with evidence,
+  client-side search + single-select category filter over the full
+  52-pattern set, per the accepted `patterns-implementation-handoff`.
+  Design-doc **v1.2**: frozen-schema invariant now sanctions two
+  registry additions — `urlSlug` (cruxtag) and **`aliases`** (pattern) —
+  same arrival→house vocabulary rationale; `content/patterns/*.json`
+  gains optional `aliases: string[]` (validated: lowercase, non-empty,
+  no dups), shipped with **zero aliases** (owner authors incrementally;
+  never generated). Derivations reuse existing machinery: `patternStats`
+  extended with distinct `companies`; evidence (breakdown count +
+  companies) from the FULL article↔pattern relations, never a chip cap;
+  category from the **registry** (prototype mapping discarded); slugs
+  from the registry slug (never name-derived). Category display metadata
+  (labels, verbatim glosses, colours→existing `cat-*` tokens) in
+  `src/lib/patternCategories.ts`. New `pattern-category` guard check
+  (every pattern has a known category → no silent drops); validator now
+  **18 checks**. Three-layer search corpus (name+oneLine · label+gloss ·
+  companies+aliases), `matches:` line only on alias-not-name hits.
+  Empty-state hands off to `/problems?q=<encoded>`; **added the
+  read-on-load `?q=` hook to Catalog** (`/problems`) — it only read
+  `?source=` before. URL state (`?q=`, `?category=`) on `/patterns`.
+  Full grouped list prerenders (52 cards, counts from full relations —
+  fault-isolation shows 14, not the 3-chip floor); quality floor
+  (focus rings, 44px chips, amber size floor) + a **global
+  prefers-reduced-motion** rule added to `index.css`. `PatternCard.tsx`
+  retired (new cards carry the `id="term-<slug>"` @id anchor). Tests
+  248 → **254**. **Repo-truth flag:** the handoff's "sharding reaches
+  Replica-Promotion Split" assumed the prototype's throughput category;
+  the registry has it (and Shard-Key Colocation) as **consistency**, so
+  "sharding" reaches 17 patterns incl. Shard-Key Colocation (via its
+  oneLine) + ID-Encoded Placement (throughput gloss) but NOT
+  Replica-Promotion Split until its aliases land — correct under real
+  categories, surfaced for the owner.
+
 - **Problem-essay contract v1.1 + header validator LANDED (2026-08-17).**
   Owner reviewed & APPROVED `docs/problem-page-design.md` (now v1.1):
   the per-section continuum formally supersedes the plan's binary D3

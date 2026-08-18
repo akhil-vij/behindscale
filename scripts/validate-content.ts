@@ -28,6 +28,7 @@ import { figureCountCeiling } from './checks/figure-count-ceiling'
 import { listBlockWellFormed } from './checks/list-block-well-formed'
 import { cruxtagUrlslug } from './checks/cruxtag-urlslug'
 import { problemEssay } from './checks/problem-essay'
+import { patternCategory } from './checks/pattern-category'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -51,6 +52,7 @@ const CHECKS: readonly Check[] = [
   listBlockWellFormed,
   cruxtagUrlslug,
   problemEssay,
+  patternCategory,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

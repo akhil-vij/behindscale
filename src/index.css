@@ -73,3 +73,17 @@ body {
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Accessibility: honour reduced-motion globally (quality floor, /patterns
+   rebuild and every animated surface). Near-zeroes transitions/animations
+   instead of removing them so no reveal-on-transition content is stranded. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

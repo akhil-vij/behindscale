@@ -104,6 +104,24 @@ export function checkPatternDefinition(value: unknown): Result {
   if (value.category !== undefined && typeof value.category !== 'string') {
     return fail('`category` expected string when present')
   }
+  if (value.aliases !== undefined) {
+    // Optional (nav-IA v1.2). When present: array of non-empty lowercase
+    // strings, no duplicates within the pattern. Display-free search data.
+    if (!isStringArray(value.aliases)) {
+      return fail('`aliases` expected string[] when present')
+    }
+    for (const alias of value.aliases) {
+      if (alias.trim().length === 0) {
+        return fail('`aliases` entries must be non-empty')
+      }
+      if (alias !== alias.toLowerCase()) {
+        return fail(`\`aliases\` entries must be lowercase (got "${alias}")`)
+      }
+    }
+    if (new Set(value.aliases).size !== value.aliases.length) {
+      return fail('`aliases` must not contain duplicates')
+    }
+  }
   if (value.figures !== undefined) {
     const figuresResult = checkFiguresField(value.figures, 'pattern')
     if (!figuresResult.ok) return figuresResult

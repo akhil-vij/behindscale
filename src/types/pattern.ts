@@ -12,6 +12,12 @@ export interface PatternDefinition {
   whenItApplies: string[]
   tradeoffs: string[]
   category?: string
+  // Optional search aliases (nav-IA v1.2): 1-3 lowercase industry-vocabulary
+  // terms that bridge a reader's arrival vocabulary to the house-coined name
+  // (e.g. "partitioning" -> Application-Layer Sharding). Search data only,
+  // surfaced on the /patterns card's `matches:` line when an alias hits.
+  // Authored incrementally via the owner's per-pattern review; never generated.
+  aliases?: string[]
   // Optional inline figures, placed in `definition` via {{figure:<slug>}}
   // markers -- the same mechanism as Article.figures. Zero-to-many;
   // same word bands and count ceiling. Stored at

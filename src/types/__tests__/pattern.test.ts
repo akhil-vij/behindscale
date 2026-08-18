@@ -97,4 +97,33 @@ describe('PatternDefinition', () => {
       }),
     ).toBe(false)
   })
+
+  // aliases (nav-IA v1.2): optional lowercase search terms, no dups.
+  it('accepts a definition without aliases (optional field)', () => {
+    expect(isPatternDefinition(validDefinition)).toBe(true)
+  })
+
+  it('accepts valid lowercase aliases', () => {
+    expect(
+      isPatternDefinition({
+        ...validDefinition,
+        aliases: ['transactions', 'all-or-nothing'],
+      }),
+    ).toBe(true)
+  })
+
+  it('rejects non-lowercase, empty, or duplicate aliases', () => {
+    expect(
+      isPatternDefinition({ ...validDefinition, aliases: ['Transactions'] }),
+    ).toBe(false)
+    expect(
+      isPatternDefinition({ ...validDefinition, aliases: ['ok', '  '] }),
+    ).toBe(false)
+    expect(
+      isPatternDefinition({ ...validDefinition, aliases: ['dup', 'dup'] }),
+    ).toBe(false)
+    expect(
+      isPatternDefinition({ ...validDefinition, aliases: 'not-an-array' }),
+    ).toBe(false)
+  })
 })

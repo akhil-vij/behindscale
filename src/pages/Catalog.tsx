@@ -92,6 +92,12 @@ export default function Catalog() {
 
   useEffect(() => {
     setSourceFilter(searchParams.get('source'))
+    // Read-on-load ?q= (nav-IA): the SearchAction JSON-LD advertises
+    // /problems?q=, and the /patterns empty state hands off here with the
+    // encoded query. Only set when present so a ?source= navigation (which
+    // drops ?q=) doesn't wipe an in-progress search.
+    const q = searchParams.get('q')
+    if (q !== null) setQuery(q)
   }, [searchParams])
 
   const companies = useMemo(() => canonicalCompanies(articles), [])

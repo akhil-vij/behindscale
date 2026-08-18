@@ -135,8 +135,21 @@ zero-touch upgrades.
 
 **Decision.** The article JSON schema does not change. All new edges derive
 from existing fields (`source.company`, `cruxTag`, `patterns[]`) or from
-reverse indexes over new content types. The only schema addition anywhere is
-`urlSlug` on the cruxtag registry.
+reverse indexes over new content types. The only schema additions anywhere are
+`urlSlug` (on the cruxtag registry) and `aliases` (on the pattern registry).
+
+**Schema-addition amendment (v1.2, 2026-08-18).** The `/patterns` listing
+rebuild adds an optional `aliases: string[]` to `content/patterns/*.json`
+(1–3 lowercase industry-vocabulary search terms per pattern). Same sanction as
+`urlSlug`: it is a *public-surface bridge from arrival vocabulary to house
+vocabulary* — a reader searching "partitioning" or "backpressure" reaches the
+house-coined pattern name they'd never have guessed. Both live on **registries**
+(cruxtag, pattern), never on article files, so the frozen-article invariant is
+untouched. `aliases` is display-free search data (except the card's
+`matches: <alias>` line). It ships with the schema + validator + search wiring
+and **zero aliases present** — the field is optional, recall comes from the
+definition + category-gloss corpus layers on day one, and aliases land
+incrementally through the owner's per-pattern review (never generated).
 
 | New edge | Derives from | New article field? |
 |---|---|---|

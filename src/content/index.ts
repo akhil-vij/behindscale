@@ -131,22 +131,31 @@ export interface PatternStatsEntry {
   frequency: number
   articleSlugs: string[]
   sourceSlugs: string[]
+  // Distinct `source.company` names across the pattern's articles (the
+  // canonical company, so Amazon/AWS collapse to one). Feeds the /patterns
+  // card evidence row ("SEEN AT …") and the distinct-company count. Derived
+  // from the FULL article<->pattern relations, never a display cap.
+  companies: string[]
 }
 
 function buildPatternStats(): Map<string, PatternStatsEntry> {
   const stats = new Map<string, PatternStatsEntry>()
   for (const article of articles) {
     const sourceSlug = article.source.slug
+    const company = article.source.company
     for (const ref of article.patterns) {
       let entry = stats.get(ref.slug)
       if (!entry) {
-        entry = { frequency: 0, articleSlugs: [], sourceSlugs: [] }
+        entry = { frequency: 0, articleSlugs: [], sourceSlugs: [], companies: [] }
         stats.set(ref.slug, entry)
       }
       entry.frequency += 1
       entry.articleSlugs.push(article.slug)
       if (!entry.sourceSlugs.includes(sourceSlug)) {
         entry.sourceSlugs.push(sourceSlug)
+      }
+      if (!entry.companies.includes(company)) {
+        entry.companies.push(company)
       }
     }
   }
