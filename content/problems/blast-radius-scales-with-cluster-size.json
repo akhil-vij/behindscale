@@ -1,0 +1,4 @@
+{
+  "cruxTag": "blast-radius-scales-with-cluster-size",
+  "lede": "The bigger you build the shared cluster, the more a single dead node takes down with it."
+}

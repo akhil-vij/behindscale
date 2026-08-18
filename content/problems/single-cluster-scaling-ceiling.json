@@ -1,0 +1,4 @@
+{
+  "cruxTag": "single-cluster-scaling-ceiling",
+  "lede": "Everything runs on one cluster, so it can only grow so far — and when it stumbles, everything stumbles with it."
+}

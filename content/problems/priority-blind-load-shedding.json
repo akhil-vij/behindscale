@@ -1,0 +1,4 @@
+{
+  "cruxTag": "priority-blind-load-shedding",
+  "lede": "You start dropping requests to survive the overload — and throw out your most important traffic along with the noise."
+}

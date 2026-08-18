@@ -1,0 +1,4 @@
+{
+  "cruxTag": "ambiguous-failure-under-retry",
+  "lede": "The request timed out, which tells you it didn't answer — not whether it actually happened."
+}

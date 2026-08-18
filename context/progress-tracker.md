@@ -4,6 +4,20 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **14 problem-class ledes authored — first essay content LANDED
+  (2026-08-18).** Owner-approved final set; created 14 lede-only
+  `content/problems/<cruxTag>.json` files (`{cruxTag, lede}`), the first
+  real exercise of the problem-essay validator + the progressive-
+  authoring model. Every page now carries a punchy italic lede under the
+  title, and each lede becomes that page's meta description via
+  `lede ?? intro[0] ?? definition` (spot-checked queue-backlog +
+  blind-load-shedding). Dash convention: spaced em-dashes, matching the
+  existing cruxtags-definition convention; ProblemDetail renders the lede
+  raw so no normalization needed. Validator 18 checks / 0 errors; build
+  green. Closes the ledes commitment from the problem-page design review
+  (D-4). Registry definitions untouched (still the "The wall" text +
+  fallback).
+
 - **/patterns verbatim copy (§2b) + search normalization
   (2026-08-18).** Owner supplied approved final copy that supersedes the
   handoff: H1 "System Design Patterns, grouped by the job they do.",

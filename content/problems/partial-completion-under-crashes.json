@@ -1,0 +1,4 @@
+{
+  "cruxTag": "partial-completion-under-crashes",
+  "lede": "The process died halfway through, and now nothing can tell you which half actually happened."
+}
