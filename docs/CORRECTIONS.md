@@ -2853,3 +2853,68 @@ machine is untouched and the ID arithmetic was re-verified (shard 3429). Dashes 
 **Bands after:** summary 946, crux 1,097, problem 1,534, solution 3,216; longest sentence 39;
 dashes 0. P27 frozen fields byte-identical. Deliverables: corrected .json, swept .jsx, rebuilt
 preview .html, four .svg figures, this entry.
+
+---
+
+## discord-trillions-message-search - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift); grounded clean against Vicki Niu's April-2025 Discord post. No factual error,
+and the artifact's blast-radius arithmetic is exact: one dead node fails 40.1% of 2017 batches
+(a batch fanning across 10 nodes, matching the post's ~40%), while the 2025 batch-by-destination
+router confines it to that node. This is a different article family from the sharding class - the
+"blast radius scales with cluster size" class (with AWS shuffle-sharding and Shopify pods) - so the
+taxonomy-first crux and "Nth company / minted" note voice do not appear here; the crux already
+opened concretely.
+
+**Bands - only the problem was over (+236), fixed by a list.** The five failure modes were five
+prose paragraphs; converting them to a five-bullet list brought problem 3,236 -> 2,370 and clarified
+them. summary 704, crux 458, solution 3,690 were already in range.
+
+**De-editorialize (one note).** The cell-architecture note rated the example ("one of the cleanest
+published examples", "a textbook implementation"); rewritten to describe what the cells are. Per
+the review, the queue note's aphorism ("if your queue's failure mode is losing data, you don't
+have a queue, you have a buffer. Real queues persist.") was kept - it's a clear principle, not
+catalog voice.
+
+**Lists.** The five failure modes (problem); the zonal topology as a 3-bullet list and the BFG
+reindex flow as a 4-bullet list (solution).
+
+**Em-dash overrun - swept: 66 (26 JSON + 40 JSX) -> 0**, including one in the cruxSummary (swept
+to a colon).
+
+**Sentence length - 5 over 40 words (no monster) -> all <= 39.** The crux's 55-word opening list
+of failure modes was split into four sentences; the summary, solution results line, and one
+tradeoff were split too.
+
+**Full plain-language pass.** Lucene -> "the search engine underneath Elasticsearch"; OOM -> "ran
+out of memory"; log4shell -> "the log4shell security bug"; ECK operator -> "a tool that automates
+cluster operations"; guild -> glossed as "Discord servers"; guild_id / user_id -> "by guild" /
+"by user"; query fanout -> "querying every DM separately"; tokio task -> "a separate lightweight
+worker"; Destination -> "a cluster-and-index pair"; p99 -> "the slowest 1% of queries (p99)";
+MAX_DOC -> "the two-billion limit"; shard allocation awareness -> "primary copy and backup copy in
+different zones"; master-eligible / ingest nodes glossed. PubSub and Elasticsearch kept (named).
+
+**Images - 3 figures.** blast-radius-2017-vs-2025: one dead node fails ~40% of batches via fan-out
+in 2017 versus only that node's batch under the 2025 destination-batched router. cell-architecture:
+two oversized clusters (master OOM, the 2B wall) versus ~40 small clusters grouped into guild /
+user-dm / BFG cells. bfg-multi-shard: a normal single-primary-shard index (capped at ~2B) versus a
+BFG multi-primary-shard index that scales past it.
+
+**Artifact - full plain-language sweep, sim untouched.** MAX_DOC -> two-billion limit; guild_id /
+user_id glossed; shard allocation -> "spare copies"; OOM -> "ran out of memory"; "the cell
+abstraction, paying rent" -> "the cell design paying off". Dashes swept (39 -> 0); off-state toggle
+border #2a2a3a -> #4a4f60. The skeleton diff was noisy but prose-only (heavy context-block and
+footer edits); verified directly that the constants (NODES 20, SPREAD 10, and the rest), the
+blast-radius loop, and all nine verdict codes are intact, and the 40.1% math still holds.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed); invisible off-state toggles (fixed);
+over-band problem (fixed via list); editorializing in one note (fixed). Taxonomy-first crux and
+registry "Nth company" notes were ABSENT (different article family). P27 frozen fields byte-
+identical (title, cruxTag, stats values/placements, relatedArticles, artifact.path unchanged).
+Deliverables: corrected .json, swept .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+This is the first article of the "blast radius scales with cluster size" class produced in these
+sessions (siblings: airbnb-monitoring, meta-foqs, aws-shuffle-sharding, shopify-pods).
+
+**Follow-up (plain-language, round 2).** Defined "bulk indexing" where it first matters and simplified the terms around it: "bulk indexing" is now "adding messages to the search index in batches", introduced plainly in the second failure mode ("Messages were indexed in batches... workers send 50 messages to Elasticsearch in a single batch"); the crux and cruxSummary avoid the unglossed term ("~40% of indexing batches"). Also: "the indexing queue" -> "the queue of messages waiting to be indexed"; "backed up" -> "filled up faster than it could drain"; "buffer" -> "holding area"; "failed all-or-nothing" spelled out; the spam-guild stopgap, the PubSub-generalized line ("Tellingly... the choice generalized" -> "the team liked PubSub enough to start using it for other jobs"), the "all-or-nothing bulk-indexing problem" reference ("That whole-batch-fails problem"), and the dense BFG tradeoff all rephrased in plain language. Bands hold; figures and artifact unchanged.

@@ -1,0 +1,43 @@
+<svg viewBox="0 0 700 252" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Left 2017: one batch fans out to many nodes and one dead node fails about 40 percent of batches, dropping messages from the Redis queue; right 2025: each batch goes to one node, only the dead node's batch retries, and PubSub holds the backlog"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="aah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B45309"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">ONE DEAD NODE, TWO ERAS</text>
+<rect x="12" y="34" width="330" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#DC2626" text-anchor="start" font-weight="700">2017: ONE BATCH FANS OUT</text>
+<rect x="28" y="74" width="66" height="30" rx="5" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="61" y="93" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">batch</text>
+<circle cx="150" cy="80" r="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="140" y2="80" stroke="#8A8A94" stroke-width="1.2" marker-end="url(#fah)"/>
+<circle cx="200" cy="72" r="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="190" y2="72" stroke="#8A8A94" stroke-width="1.2" marker-end="url(#fah)"/>
+<circle cx="250" cy="80" r="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="240" y2="80" stroke="#8A8A94" stroke-width="1.2" marker-end="url(#fah)"/>
+<circle cx="300" cy="74" r="10" fill="#FEECEC" stroke="#DC2626" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="290" y2="74" stroke="#DC2626" stroke-width="1.2" marker-end="url(#rah)"/>
+<text x="300" y="77" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">✗</text>
+<circle cx="180" cy="120" r="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="170" y2="120" stroke="#8A8A94" stroke-width="1.2" marker-end="url(#fah)"/>
+<circle cx="270" cy="120" r="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<line x1="94" y1="90" x2="260" y2="120" stroke="#8A8A94" stroke-width="1.2" marker-end="url(#fah)"/>
+<text x="185" y="150" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DC2626" text-anchor="middle" font-weight="700">one dead node fails the WHOLE batch</text>
+<rect x="28" y="166" width="300" height="24" rx="5" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="178" y="182" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#DC2626" text-anchor="middle" font-weight="700">≈ 40% of batches fail → Redis queue drops messages</text>
+<text x="178" y="212" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">one node's death becomes a fleet-wide slowdown</text>
+<rect x="358" y="34" width="330" height="206" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="374" y="54" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="start" font-weight="700">2025: BATCH BY DESTINATION</text>
+<rect x="374" y="74" width="66" height="30" rx="5" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="407" y="93" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">batch</text>
+<rect x="456" y="74" width="60" height="30" rx="5" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="486" y="93" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="700">router</text>
+<line x1="440" y1="90" x2="456" y2="90" stroke="#52525B" stroke-width="1.2" marker-end="url(#fah)"/>
+<line x1="516" y1="90" x2="530" y2="72" stroke="#2E7D46" stroke-width="1.3" marker-end="url(#gah)"/>
+<circle cx="560" cy="72" r="10" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="578" y="75" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#2E7D46" text-anchor="start" font-weight="400">✓ one node</text>
+<line x1="516" y1="90" x2="530" y2="104" stroke="#B45309" stroke-width="1.3" marker-end="url(#aah)"/>
+<circle cx="560" cy="104" r="10" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="578" y="107" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#B45309" text-anchor="start" font-weight="700">retries (only this one)</text>
+<line x1="516" y1="90" x2="530" y2="136" stroke="#2E7D46" stroke-width="1.3" marker-end="url(#gah)"/>
+<circle cx="560" cy="136" r="10" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="578" y="139" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#2E7D46" text-anchor="start" font-weight="400">✓ one node</text>
+<rect x="374" y="176" width="300" height="24" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.2"/>
+<text x="524" y="192" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">only the dead node's batch retries</text>
+<text x="524" y="220" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">PubSub holds the backlog: nothing is lost</text>
+</svg>

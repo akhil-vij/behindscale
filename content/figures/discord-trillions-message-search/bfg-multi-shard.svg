@@ -1,0 +1,23 @@
+<svg viewBox="0 0 700 198" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A normal index with one primary shard on one node, capped at about 2 billion documents, versus a BFG index with several primary shards spread across several nodes to scale past the limit"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="aah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#B45309"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">SPLITTING THE GIANTS ACROSS SHARDS</text>
+<rect x="12" y="36" width="330" height="150" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="28" y="56" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="start" font-weight="700">NORMAL INDEX: 1 PRIMARY SHARD</text>
+<rect x="90" y="74" width="180" height="54" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="180" y="96" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">one node</text>
+<text x="180" y="113" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">all the index's messages</text>
+<text x="177" y="152" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="400">fast to query, but capped at Lucene's ≈ 2 billion</text>
+<text x="177" y="170" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">(fine for almost every guild)</text>
+<rect x="358" y="36" width="330" height="150" rx="10" fill="#FCFCFD" stroke="#E4E4E7" stroke-width="1"/>
+<text x="374" y="56" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#7C3AED" text-anchor="start" font-weight="700">BFG INDEX: SEVERAL PRIMARY SHARDS</text>
+<rect x="378" y="74" width="92" height="44" rx="7" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="424" y="92" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="700">node 1</text>
+<text x="424" y="108" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">shard 1</text>
+<rect x="480" y="74" width="92" height="44" rx="7" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="526" y="92" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="700">node 2</text>
+<text x="526" y="108" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">shard 2</text>
+<rect x="582" y="74" width="92" height="44" rx="7" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="628" y="92" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#7C3AED" text-anchor="middle" font-weight="700">node 3</text>
+<text x="628" y="108" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="middle" font-weight="400">shard 3</text>
+<text x="523" y="152" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#7C3AED" text-anchor="middle" font-weight="700">spread across nodes: some query coordination,</text>
+<text x="523" y="170" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">but scales far past the single-index limit</text>
+</svg>
