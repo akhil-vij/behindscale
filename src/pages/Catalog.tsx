@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { articles, cruxtags, patternBySlug } from '../content'
+import { articles, cruxtags, patternBySlug, urlSlugByCruxTag } from '../content'
 import PatternChip from '../components/PatternChip'
 import SourceAttribution from '../components/SourceAttribution'
 import {
@@ -289,6 +289,10 @@ interface GroupSectionProps {
 
 function GroupSection({ group }: GroupSectionProps) {
   const anchorId = `term-${group.slug}`
+  // The workbench group title links to the class's own page, mirroring the
+  // landing preview rows. Falls back to plain text if a urlSlug is ever
+  // absent (invariant 6).
+  const urlSlug = urlSlugByCruxTag.get(group.slug)
   return (
     <section aria-labelledby={`${anchorId}-heading`}>
       <div
@@ -301,7 +305,16 @@ function GroupSection({ group }: GroupSectionProps) {
             id={`${anchorId}-heading`}
             className="font-serif text-[clamp(1.4rem,2.6vw,1.75rem)] font-semibold leading-tight tracking-[-0.015em] text-text-primary"
           >
-            {group.label}
+            {urlSlug ? (
+              <Link
+                to={`/problems/${urlSlug}`}
+                className="text-text-primary no-underline transition-colors hover:text-accent-primary hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded-sm"
+              >
+                {group.label}
+              </Link>
+            ) : (
+              group.label
+            )}
           </h2>
           <span className="whitespace-nowrap font-mono text-xs text-text-muted">
             {group.count} {group.count === 1 ? 'system' : 'systems'}
