@@ -406,9 +406,11 @@ function patternsIndexMeta(): Meta {
   }
 
   return {
-    title: `Patterns — ${SITE_NAME}`,
+    // Lead with "System Design Patterns" to match the page H1's exact-match
+    // query (the one permitted SEO touch, /patterns rebuild §2b).
+    title: `System Design Patterns — ${SITE_NAME}`,
     description:
-      'Reusable system-design patterns identified across engineering blog dissections on behindscale.',
+      'System Design Patterns grouped by the job they do — each shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
     ogType: 'website',
     jsonLd: [definedTermSet],

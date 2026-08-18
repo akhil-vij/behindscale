@@ -30,20 +30,21 @@ export const PATTERN_CATEGORIES: readonly PatternCategoryMeta[] = [
     id: 'throughput',
     label: 'Throughput',
     gloss:
-      'Getting past a ceiling — sharding, splitting, migrating, and multiplexing capacity.',
+      "Getting past a limit — sharding data and splitting work so that one machine's limit doesn't define the system's limit.",
     dotClass: 'bg-cat-orange',
   },
   {
     id: 'consistency',
     label: 'Consistency',
     gloss:
-      'Making outcomes agree — exactly-once effects, single owners, one source of truth.',
+      'Making things happen exactly once — and keeping every copy of the truth in agreement.',
     dotClass: 'bg-cat-purple',
   },
   {
     id: 'observability',
     label: 'Observability',
-    gloss: 'Seeing the system — independently of the thing being watched.',
+    gloss:
+      "Knowing what's happening — even while the thing you're watching is failing.",
     dotClass: 'bg-cat-cyan',
   },
   {

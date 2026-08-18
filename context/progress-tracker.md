@@ -4,6 +4,23 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **/patterns verbatim copy (§2b) + search normalization
+  (2026-08-18).** Owner supplied approved final copy that supersedes the
+  handoff: H1 "System Design Patterns, grouped by the job they do.",
+  new intro, and rewritten throughput/consistency/observability glosses
+  (resilience/performance unchanged) — shipped exactly, and since the
+  glosses ARE search-corpus layer 2, the final strings feed the corpus.
+  Permitted SEO touch: `/patterns` `<title>` + meta description now lead
+  with "System Design Patterns" (matches the H1 exact-match query).
+  **Repo-truth catch:** the new consistency gloss writes "exactly once"
+  (space) but the must-pass query is "exactly-once" (hyphen) — pure
+  substring returned 0. Added **punctuation-folding normalization** to
+  the matcher (fold non-alphanumerics to spaces on both corpus + query),
+  so "exactly-once" ⇔ "exactly once" and hyphenation never costs recall.
+  Re-verified: sharding→17, exactly-once→9 (was 0), alias wiring intact;
+  alias-layer queries (partitioning/backpressure/rate limiting) still 0
+  until aliases land, as designed. Build green; 254 tests.
+
 - **/patterns listing page rebuilt + schema addition #2 (aliases)
   LANDED (2026-08-18).** Category-grouped browsing with evidence,
   client-side search + single-select category filter over the full

@@ -28,6 +28,17 @@ interface PatternView {
   corpus: string // precomputed lowercase search haystack
 }
 
+// Search normalization: lowercase and fold every run of non-alphanumerics to a
+// single space, applied to BOTH corpus and query. Keeps the "substring is
+// sufficient" model but makes it punctuation-insensitive, so "exactly-once"
+// and "exactly once" are the same query. This is required to reconcile the
+// approved verbatim glosses (which write "exactly once") with the must-pass
+// hyphenated queries ("exactly-once") — and it makes recall robust to how a
+// reader hyphenates ("rate-limiting" vs "rate limiting", "at-least-once", ...).
+function normalize(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
 // First sentence of the definition (strip any figure markers first). The card's
 // one-line definition and search corpus layer 1.
 function oneLineOf(definition: string): string {
@@ -50,16 +61,11 @@ function buildViews(): PatternView[] {
     const cat = patternCategoryById.get(p.category ?? '')
     // Three-layer corpus (case-insensitive substring):
     //   1 name + one-line definition · 2 category label + gloss · 3 companies + aliases
-    const corpus = [
-      p.name,
-      oneLine,
-      cat?.label ?? '',
-      cat?.gloss ?? '',
-      ...companies,
-      ...aliases,
-    ]
-      .join(' ')
-      .toLowerCase()
+    const corpus = normalize(
+      [p.name, oneLine, cat?.label ?? '', cat?.gloss ?? '', ...companies, ...aliases].join(
+        ' ',
+      ),
+    )
     return {
       slug: p.slug,
       name: p.name,
@@ -98,7 +104,7 @@ export default function PatternIndex() {
     return totals
   }, [views])
 
-  const q = query.trim().toLowerCase()
+  const q = normalize(query)
 
   const groups = useMemo(() => {
     const built = PATTERN_CATEGORIES.map((meta, order) => {
@@ -149,13 +155,12 @@ export default function PatternIndex() {
         Patterns
       </p>
       <h1 className="mt-2.5 text-3xl font-bold leading-tight tracking-tight text-text-primary">
-        Browse by what a pattern buys you.
+        System Design Patterns, grouped by the job they do.
       </h1>
       <p className="mt-2.5 max-w-2xl text-text-secondary">
-        Five categories — the guarantee adopting the pattern purchases. Every
-        pattern carries its evidence: the breakdowns it appears in and the
-        companies that use it. No pattern is listed without a real system behind
-        it.
+        Five groups, one per job. Every pattern shows where it&apos;s actually
+        used - the breakdowns it appears in and the companies running it.
+        Nothing is listed without a real system behind it.
       </p>
 
       {/* Controls */}
@@ -261,9 +266,10 @@ export default function PatternIndex() {
 
 function PatternListCard({ view, query }: { view: PatternView; query: string }) {
   // Matched-alias line: only when the query hit an alias but NOT the name.
+  // `query` here is already normalized; fold the name/aliases the same way.
   const aliasHit =
-    query && !view.name.toLowerCase().includes(query)
-      ? view.aliases.find((a) => a.includes(query))
+    query && !normalize(view.name).includes(query)
+      ? view.aliases.find((a) => normalize(a).includes(query))
       : undefined
 
   const shown = view.companies.slice(0, 4).map((c) => c.toUpperCase())
