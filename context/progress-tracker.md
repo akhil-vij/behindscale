@@ -7439,6 +7439,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-19: `/patterns/:slug` detail rebuild — **minimal-floor tier**
+  (owner-scoped: derived template for all patterns now; artifact
+  mechanism section + PALS hero port + landing switch deferred to a
+  per-pattern enrich pass, the ProblemDetail progressive model). Added
+  optional `oneLineDefinition` (nav-IA v1.4, render-when-present, zero
+  authored, SEO description fallback); pattern-detail derivations in
+  `src/content/index.ts` (`patternDetail`: members date-desc, breakdown/
+  company counts, co-occurrence ≥2 desc, problems-door by company-count
+  desc — all from full `patternStats` relations); rebuilt
+  `PatternDetail.tsx` (header, Definition+figures, numbered
+  when-it-applies, tradeoffs bold-lead render rule, same-move-N-ways strip
+  with client 4+SHOW-ALL over full prerender, co-occurrence chips,
+  problems door; interview door absent — no questions yet). **Repo-truth
+  divergence surfaced:** fault-isolation derives **14 breakdowns / 13
+  companies**, not the handoff snapshot's 13/12 — `discord-trillions-
+  message-search` now cites fault-isolation. The acceptance's real intent
+  holds (reads full relations, not 3-chip cards: `segment-centrifuge` is a
+  member and the count exceeds the chip-derived count). Prompt's
+  "warn-not-fail on missing note" is moot — repo hard-requires `note` on
+  every `patterns[]` entry (frozen article schema), left unchanged. Build
+  + 254 tests green.
 - 2026-08-19: Owner APPROVED the design (v1.3 amendment). Ratified
   Approach A (flat + `artifact-slug-unique` guard), artifact mounts
   above Definition (redesign ruling, supersedes §7.2), prop rename now,

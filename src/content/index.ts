@@ -164,3 +164,123 @@ function buildPatternStats(): Map<string, PatternStatsEntry> {
 
 export const patternStats: ReadonlyMap<string, PatternStatsEntry> =
   buildPatternStats()
+
+// patternDetail is the per-pattern derived surface the /patterns/:slug page
+// renders — everything below the registry prose. Like patternStats it derives
+// from the FULL article<->pattern relations (article.patterns[]), never from
+// catalog-card chips (the 3-chip cap). This is the single place the detail
+// derivations live so the page component stays declarative. See
+// docs/nav-ia-decisions.md (v1.4) and the pattern-detail handoff.
+//
+// - members: one row per breakdown (article embodying the pattern), date desc.
+// - breakdownCount / companyCount: the eyebrow counts (distinct companies).
+// - coOccurrences: other patterns sharing >=2 breakdowns, count desc.
+// - problemsDoor: each problem class holding >=1 breakdown, with THIS
+//   pattern's companies in that class, company-count desc.
+export interface PatternMember {
+  articleSlug: string
+  title: string
+  company: string
+  sourceName: string
+  year: string
+  note: string
+}
+
+export interface PatternCoOccurrence {
+  slug: string
+  count: number
+}
+
+export interface PatternProblemDoor {
+  cruxTag: string
+  label: string
+  // Present when the class has a live /problems/<urlSlug> page; absent →
+  // the page falls back to the workbench anchor (/problems#term-<cruxTag>).
+  urlSlug?: string
+  // THIS pattern's distinct companies in that class, sorted A→Z.
+  companies: string[]
+}
+
+export interface PatternDetailData {
+  breakdownCount: number
+  companyCount: number
+  members: PatternMember[]
+  coOccurrences: PatternCoOccurrence[]
+  problemsDoor: PatternProblemDoor[]
+}
+
+const CO_OCCURRENCE_MIN_SHARED = 2
+
+function buildPatternDetail(): Map<string, PatternDetailData> {
+  const detail = new Map<string, PatternDetailData>()
+
+  for (const [slug, stats] of patternStats) {
+    const memberArticles = stats.articleSlugs
+      .map((s) => articleBySlug.get(s))
+      .filter((a): a is Article => a !== undefined)
+      // Date descending; slug as a stable tie-break for same-day articles.
+      .sort(
+        (a, b) =>
+          b.publishedAt.localeCompare(a.publishedAt) ||
+          a.slug.localeCompare(b.slug),
+      )
+
+    const members: PatternMember[] = memberArticles.map((a) => ({
+      articleSlug: a.slug,
+      title: a.title,
+      company: a.source.company,
+      sourceName: a.source.name,
+      year: a.publishedAt.slice(0, 4),
+      note: a.patterns.find((p) => p.slug === slug)?.note ?? '',
+    }))
+
+    // Co-occurrence: walk each member's OTHER patterns.
+    const shared = new Map<string, number>()
+    for (const a of memberArticles) {
+      for (const ref of a.patterns) {
+        if (ref.slug === slug) continue
+        shared.set(ref.slug, (shared.get(ref.slug) ?? 0) + 1)
+      }
+    }
+    const coOccurrences: PatternCoOccurrence[] = Array.from(shared, ([s, count]) => ({
+      slug: s,
+      count,
+    }))
+      .filter((c) => c.count >= CO_OCCURRENCE_MIN_SHARED)
+      .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug))
+
+    // Problems door: group members by their (single) cruxTag class.
+    const byClass = new Map<string, Set<string>>()
+    for (const a of memberArticles) {
+      const tag = a.cruxTag
+      if (!tag) continue
+      let companies = byClass.get(tag)
+      if (!companies) {
+        companies = new Set<string>()
+        byClass.set(tag, companies)
+      }
+      companies.add(a.source.company)
+    }
+    const problemsDoor: PatternProblemDoor[] = Array.from(byClass, ([cruxTag, companies]) => ({
+      cruxTag,
+      label: cruxtags[cruxTag]?.label ?? cruxTag,
+      urlSlug: urlSlugByCruxTag.get(cruxTag),
+      companies: Array.from(companies).sort((a, b) => a.localeCompare(b)),
+    })).sort(
+      (a, b) => b.companies.length - a.companies.length || a.label.localeCompare(b.label),
+    )
+
+    detail.set(slug, {
+      breakdownCount: stats.frequency,
+      companyCount: stats.companies.length,
+      members,
+      coOccurrences,
+      problemsDoor,
+    })
+  }
+
+  return detail
+}
+
+export const patternDetail: ReadonlyMap<string, PatternDetailData> =
+  buildPatternDetail()

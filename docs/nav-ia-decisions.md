@@ -169,6 +169,20 @@ shipped figures model). Ships with the schema + four validators
 authored** — the field is optional; authoring is additive (the first, the
 PALS hero port, lands in the pattern-detail page rebuild).
 
+**Schema-addition amendment (v1.4, 2026-08-19).** The `/patterns/:slug`
+detail rebuild adds an optional `oneLineDefinition: string` to
+`content/patterns/*.json` — a single plain sentence rendered as the page's
+lede and, when present, the SEO meta description. Same sanction as
+`aliases`/`artifact`: it lives on the **pattern registry**, never on an
+article file, so the frozen-article invariant is untouched. Render-when-present
+with **zero authored today** — the header collapses with no reserved gap and
+SEO falls back to its derivation until the owner authors ledes per-pattern
+(never generated). The detail page is otherwise pure derivation over the
+existing `patternStats` relations (breakdown/company counts, the strip,
+co-occurrence, the problems door); the artifact *mechanism section* is
+deferred to a later per-pattern enrich pass (progressive authoring, the
+ProblemDetail model).
+
 | New edge | Derives from | New article field? |
 |---|---|---|
 | article → company (delta ①) | `source.company` | none |

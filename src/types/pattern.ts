@@ -12,6 +12,14 @@ export interface PatternDefinition {
   whenItApplies: string[]
   tradeoffs: string[]
   category?: string
+  // Optional one-line definition (nav-IA v1.4): a single plain sentence that
+  // renders as the pattern-detail lede and, when present, the SEO meta
+  // description. Authored incrementally via the owner's per-pattern review;
+  // absent → the detail header collapses with no reserved gap and SEO falls
+  // back to its derivation. Zero authored today (progressive authoring, same
+  // as `aliases`/`figures`/`artifact`). See docs/pattern-detail-design or the
+  // nav-ia-decisions sanctioned-additions ledger.
+  oneLineDefinition?: string
   // Optional search aliases (nav-IA v1.2): 1-3 lowercase industry-vocabulary
   // terms that bridge a reader's arrival vocabulary to the house-coined name
   // (e.g. "partitioning" -> Application-Layer Sharding). Search data only,

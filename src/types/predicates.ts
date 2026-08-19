@@ -124,6 +124,16 @@ export function checkPatternDefinition(value: unknown): Result {
   if (value.category !== undefined && typeof value.category !== 'string') {
     return fail('`category` expected string when present')
   }
+  if (value.oneLineDefinition !== undefined) {
+    // Optional (nav-IA v1.4). When present: a non-empty string (a
+    // present-yet-empty lede is worse than none). Render-when-present.
+    if (typeof value.oneLineDefinition !== 'string') {
+      return fail('`oneLineDefinition` expected string when present')
+    }
+    if (value.oneLineDefinition.trim().length === 0) {
+      return fail('`oneLineDefinition` must be non-empty when present')
+    }
+  }
   if (value.aliases !== undefined) {
     // Optional (nav-IA v1.2). When present: array of non-empty lowercase
     // strings, no duplicates within the pattern. Display-free search data.

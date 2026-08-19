@@ -576,7 +576,11 @@ function patternMeta(pattern: PatternDefinition): Meta {
 
   return {
     title: `${pattern.name} — patterns — ${SITE_NAME}`,
-    description: truncateForMeta(firstParagraph),
+    // Permitted SEO touch (nav-IA v1.4): the authored one-line definition is
+    // the meta description when present; otherwise the first definition
+    // paragraph (current derivation). The DefinedTerm node above keeps the
+    // full definition as its `description` regardless.
+    description: truncateForMeta(pattern.oneLineDefinition ?? firstParagraph),
     canonical: `${SITE_URL}/patterns/${pattern.slug}`,
     ogType: 'article',
     jsonLd: [definedTerm, breadcrumbs],
