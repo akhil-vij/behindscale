@@ -22,6 +22,14 @@ export interface PatternDefinition {
   // markers -- the same mechanism as Article.figures. Zero-to-many;
   // same word bands and count ceiling. Stored at
   // content/figures/<pattern-slug>/<figure-slug>.svg. See
-  // docs/figures-design.md and scripts/figure-hosts.ts.
+  // docs/figures-design.md and scripts/content-hosts.ts.
   figures?: Figure[]
+  // Optional interactive artifact -- the same contract as Article.artifact.
+  // When present (non-null), `path` resolves to the compiled bundle at
+  // /artifacts/<pattern-slug>/index.html and `teaser` (if given) is a
+  // non-empty one-line hook. Absent/null ⇒ the pattern page renders no
+  // artifact section. Source lives at content/artifacts/<pattern-slug>.jsx
+  // under the flat namespace (Approach A). See
+  // docs/pattern-artifacts-design.md and scripts/content-hosts.ts.
+  artifact?: { path: string; teaser?: string } | null
 }

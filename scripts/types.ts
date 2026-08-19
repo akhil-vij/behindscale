@@ -38,6 +38,13 @@ export interface ContentSet {
     string,
     { readonly path: string; readonly contents: string | null }
   >
+  // Slugs of every artifact SOURCE on disk (content/artifacts/<slug>.jsx,
+  // filename minus extension), incl. the `_`-prefixed site convention.
+  // The loader scans this because `validate` runs before compile, so
+  // artifact-bundle-exists must check the source, not the compiled bundle.
+  // See scripts/content-hosts.ts (artifactHosts) and
+  // docs/pattern-artifacts-design.md §6.
+  readonly artifactSourceSlugs: ReadonlySet<string>
 }
 
 export interface CheckError {

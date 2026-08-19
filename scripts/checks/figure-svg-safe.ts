@@ -25,7 +25,7 @@
 // exists's job).
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 interface Violation {
   message: string

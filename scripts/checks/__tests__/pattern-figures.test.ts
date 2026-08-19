@@ -1,6 +1,6 @@
 // Figures on pattern definitions (the figure-host extension). Proves
 // each figure validator now covers patterns as well as articles, via
-// the shared figureHosts() abstraction. See scripts/figure-hosts.ts.
+// the shared figureHosts() abstraction. See scripts/content-hosts.ts.
 
 import { describe, it, expect } from 'vitest'
 import { article, figure, makeContent, pattern } from './fixtures'

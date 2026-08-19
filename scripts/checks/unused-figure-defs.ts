@@ -7,7 +7,7 @@
 
 import type { Check, CheckError } from '../types'
 import { extractFigureMarkers } from '../../src/lib/proseText'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 export const unusedFigureDefs: Check = {
   name: 'unused-figure-defs',

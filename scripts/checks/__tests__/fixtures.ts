@@ -100,6 +100,11 @@ export function makeContent(input: {
     string,
     { readonly path: string; readonly contents: string | null }
   >
+  // Artifact source slugs on disk (content/artifacts/<slug>.jsx). Defaults
+  // to the slug of every article/pattern that declares a non-null artifact,
+  // so artifact-bundle-exists passes unless a test overrides to simulate a
+  // missing source.
+  artifactSourceSlugs?: ReadonlySet<string>
 }): ContentSet {
   const problemEssays = input.problemEssays ?? []
   return {
@@ -122,5 +127,12 @@ export function makeContent(input: {
       input.patterns.map((p) => [p.slug, `content/patterns/${p.slug}.json`]),
     ),
     figureSvgs: input.figureSvgs ?? new Map(),
+    artifactSourceSlugs:
+      input.artifactSourceSlugs ??
+      new Set(
+        [...input.articles, ...input.patterns]
+          .filter((h) => h.artifact != null)
+          .map((h) => h.slug),
+      ),
   }
 }

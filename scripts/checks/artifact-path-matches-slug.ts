@@ -1,11 +1,16 @@
-// Enforces the slug-equals-path convention from Units 5/5b/5c: every
-// article with `artifact !== null` must have
-// `artifact.path === '/artifacts/' + slug + '/index.html'`. This is
-// what the compile-artifacts script writes; this check makes it
-// impossible to drift from that contract in hand-authored Article
-// JSON without failing the build.
+// Enforces the slug-equals-path convention from Units 5/5b/5c, now
+// generalized to every artifact host (article OR pattern -- the
+// ContentHost convergence, docs/pattern-artifacts-design.md §6). Any host
+// with a non-null artifact must have
+// `artifact.path === '/artifacts/' + host.slug + '/index.html'`. This is
+// what compile-artifacts writes; the check makes it impossible to drift
+// from that contract in hand-authored JSON without failing the build.
+//
+// Under the flat namespace (Approach A) the served slug IS the host slug,
+// regardless of kind; expectedPath encodes that single point of change.
 
 import type { Check, CheckError } from '../types'
+import { artifactHosts } from '../content-hosts'
 
 function expectedPath(slug: string): string {
   return `/artifacts/${slug}/index.html`
@@ -16,18 +21,16 @@ export const artifactPathMatchesSlug: Check = {
   run: (content) => {
     const errors: CheckError[] = []
 
-    for (const article of content.articles) {
-      if (article.artifact === null) continue
-
-      const expected = expectedPath(article.slug)
-      if (article.artifact.path === expected) continue
+    for (const host of artifactHosts(content)) {
+      const expected = expectedPath(host.slug)
+      if (host.artifact.path === expected) continue
 
       errors.push({
-        articleSlug: article.slug,
-        message: `artifact.path is \`${article.artifact.path}\`, expected \`${expected}\``,
+        ...host.ref,
+        message: `artifact.path is \`${host.artifact.path}\`, expected \`${expected}\``,
         fix: [
-          `set "artifact": { "path": "${expected}" } in this article`,
-          `or set "artifact": null if this article has no interactive visualization`,
+          `set "artifact": { "path": "${expected}" } in this ${host.kind}`,
+          `or set "artifact": null if this ${host.kind} has no interactive visualization`,
         ],
       })
     }

@@ -20,7 +20,7 @@
 // confusing "orphan" report.
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 // Any {{...}} construct that starts with `figure:` -- broader than
 // the kebab-case slug regex used by proseText/extractFigureMarkers.

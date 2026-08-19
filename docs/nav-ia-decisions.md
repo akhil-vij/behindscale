@@ -151,6 +151,24 @@ and **zero aliases present** — the field is optional, recall comes from the
 definition + category-gloss corpus layers on day one, and aliases land
 incrementally through the owner's per-pattern review (never generated).
 
+**Schema-addition amendment (v1.3, 2026-08-19).** Pattern detail pages gain
+interactive artifacts. `content/patterns/*.json` gains an optional
+`artifact: { path: string; teaser?: string } | null` — the identical shape
+to `Article.artifact`. Same sanction as `aliases`/`urlSlug`: it lives on a
+**registry** (the pattern file), never on an article file, so the
+frozen-article invariant is untouched. This is the technical body of
+`docs/pattern-artifacts-design.md` (APPROVED 2026-08-19). Both capabilities
+(figures + artifacts) now read one host registry
+(`scripts/content-hosts.ts`, generalizing the shipped `figure-hosts.ts`),
+capability-gated, so future category/company/question hosts join as data.
+Collision handling ratified as **Approach A** (flat `/artifacts/<slug>/`
+namespace + global `artifact-slug-unique` guard — symmetric with the
+shipped figures model). Ships with the schema + four validators
+(`artifact-path-matches-slug` generalized, `artifact-slug-unique`,
+`artifact-bundle-exists`, `orphan-artifacts`) and **zero pattern artifacts
+authored** — the field is optional; authoring is additive (the first, the
+PALS hero port, lands in the pattern-detail page rebuild).
+
 | New edge | Derives from | New article field? |
 |---|---|---|
 | article → company (delta ①) | `source.company` | none |

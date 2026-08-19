@@ -23,7 +23,7 @@
 // regex-extract reliably.
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 // Matches <text ...>...</text> and captures the inner text. Handles
 // attributes on the opening tag. Not nested (SVG does not nest

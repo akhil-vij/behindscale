@@ -138,8 +138,8 @@ export default function ArticleDetail() {
         <div id="artifact" className="max-w-[960px] mx-auto px-6 mt-12">
           <ArtifactEmbed
             artifactPath={article.artifact.path}
-            articleSlug={article.slug}
-            articleTitle={article.title}
+            hostSlug={article.slug}
+            hostTitle={article.title}
           />
         </div>
       )}

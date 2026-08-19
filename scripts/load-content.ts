@@ -31,6 +31,7 @@ const PATTERNS_DIR = 'content/patterns'
 const CRUXTAGS_PATH = 'content/cruxtags.json'
 const PROBLEMS_DIR = 'content/problems'
 const FIGURES_DIR = 'content/figures'
+const ARTIFACTS_DIR = 'content/artifacts'
 
 // The [schema] section label is owned here so a future renamer can
 // grep this constant for the producer + every consumer in one shot.
@@ -224,6 +225,19 @@ export function loadContent(): LoadResult {
     }
   }
 
+  // Artifact source scan. `validate` runs BEFORE `compile-artifacts`, so
+  // artifact existence is checked against the hand-authored .jsx SOURCE
+  // (content/artifacts/<slug>.jsx), not the compiled output. Keeping the
+  // IO here preserves the checks-do-no-IO invariant. Slug = filename
+  // without the .jsx extension; the `_`-prefix site convention (e.g.
+  // `_hero`) is preserved here and filtered in orphan-artifacts.
+  const artifactSourceSlugs = new Set<string>()
+  if (existsSync(ARTIFACTS_DIR)) {
+    for (const name of readdirSync(ARTIFACTS_DIR)) {
+      if (name.endsWith('.jsx')) artifactSourceSlugs.add(name.slice(0, -'.jsx'.length))
+    }
+  }
+
   return {
     content: {
       articles,
@@ -234,6 +248,7 @@ export function loadContent(): LoadResult {
       articlePaths,
       patternPaths,
       figureSvgs,
+      artifactSourceSlugs,
     },
     schemaErrors,
     skippedFileCount,

@@ -7427,6 +7427,35 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-08-19: Drafted `docs/pattern-artifacts-design.md` — artifact
+  support for pattern detail pages, converged with figures onto a
+  single `ContentHost` abstraction (`scripts/content-hosts.ts`
+  generalizing `figure-hosts.ts`) so future category/company hosts
+  plug in as data. Confirmed repo truth: pattern *figures* already
+  ship end-to-end; pattern *artifacts* do not (Pattern type has no
+  `artifact` field; `PatternDetail` renders no `ArtifactEmbed`;
+  `artifact-path-matches-slug` iterates articles only). Compile
+  pipeline + `ArtifactEmbed` are already host-agnostic; `_hero` is an
+  existing non-article artifact host. Four owner decisions surfaced to
+  `open-decisions.md` item 1 (collision A/B, placement, prop rename,
+  scope).
+- 2026-08-19: Owner APPROVED the design (v1.3 amendment). Ratified
+  Approach A (flat + `artifact-slug-unique` guard), artifact mounts
+  above Definition (redesign ruling, supersedes §7.2), prop rename now,
+  scope = patterns + registry only. Corrections: `_hero` reconciliation
+  (first pattern artifact is the PALS hero port; retires in the page
+  rebuild) and `question` host kind added. **Foundations commit landed
+  (green):** `scripts/content-hosts.ts` (`ContentHost` registry
+  generalizing the retired `figure-hosts.ts`; `figureHosts()`/`artifactHosts()`
+  views), optional `Pattern.artifact` schema + shared `checkArtifactShape`
+  predicate (teaser non-empty only when present), four artifact validators
+  (`artifact-path-matches-slug` generalized, `artifact-slug-unique`,
+  `artifact-bundle-exists`, `orphan-artifacts` soft-warn), loader
+  `artifactSourceSlugs` scan, `ArtifactEmbed` props → `hostSlug/hostTitle`.
+  Ships with zero pattern artifacts authored; does NOT render the artifact
+  on `PatternDetail` (that + the PALS hero port are page-rebuild work).
+  Build + 254 tests green. v1.3 recorded in `nav-ia-decisions.md` ledger.
+
 - Domain `behindscale.com` has been acquired by the owner; deployed to
   Vercel with the domain configured as a custom alias (DNS managed at the
   registrar). **Production URL: https://www.behindscale.com** (apex

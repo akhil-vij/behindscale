@@ -35,16 +35,19 @@ import { track } from '@vercel/analytics'
 
 interface ArtifactEmbedProps {
   artifactPath: string
-  articleSlug: string
-  articleTitle: string
+  // The host's slug/title (article OR pattern, etc. -- the ContentHost
+  // convergence, docs/pattern-artifacts-design.md §5). Analytics payload
+  // keeps the `{ slug }` shape unchanged.
+  hostSlug: string
+  hostTitle: string
 }
 
 const IFRAME_HEIGHT_PX = 600
 
 export default function ArtifactEmbed({
   artifactPath,
-  articleSlug,
-  articleTitle,
+  hostSlug,
+  hostTitle,
 }: ArtifactEmbedProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -82,7 +85,7 @@ export default function ArtifactEmbed({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          track('artifact_viewed', { slug: articleSlug })
+          track('artifact_viewed', { slug: hostSlug })
           observer.disconnect()
         }
       },
@@ -90,7 +93,7 @@ export default function ArtifactEmbed({
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [articleSlug])
+  }, [hostSlug])
 
   // artifact_interacted via postMessage from the sandboxed iframe.
   useEffect(() => {
@@ -102,12 +105,12 @@ export default function ArtifactEmbed({
       if (event.source !== iframeRef.current?.contentWindow) return
       const data = event.data as { type?: string } | null
       if (!data || data.type !== 'artifact:interacted') return
-      track('artifact_interacted', { slug: articleSlug })
+      track('artifact_interacted', { slug: hostSlug })
       window.removeEventListener('message', handleMessage)
     }
     window.addEventListener('message', handleMessage)
     return () => window.removeEventListener('message', handleMessage)
-  }, [articleSlug])
+  }, [hostSlug])
 
   if (loadFailed) {
     return <ErrorFrame />
@@ -122,7 +125,7 @@ export default function ArtifactEmbed({
         ref={iframeRef}
         src={artifactPath}
         sandbox="allow-scripts"
-        title={`Interactive visualization for "${articleTitle}"`}
+        title={`Interactive visualization for "${hostTitle}"`}
         className="block w-full border-0"
         style={{ height: `${IFRAME_HEIGHT_PX}px` }}
         onError={() => {

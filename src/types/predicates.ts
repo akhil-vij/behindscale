@@ -94,6 +94,26 @@ export function checkFiguresField(figures: unknown, noun: string): Result {
   return ok
 }
 
+// Shared shape check for a NON-null artifact object. Article.artifact and
+// PatternDefinition.artifact carry the identical shape (the ContentHost
+// convergence, docs/pattern-artifacts-design.md §2). `teaser`, when
+// present, must be a non-empty string -- optional, but a present-yet-empty
+// hook is worse than none (§3, supersedes the "teaser non-empty"
+// unconditional rule). Callers own the presence/null policy.
+export function checkArtifactShape(value: unknown): Result {
+  if (!isObject(value)) return fail('`artifact` expected object or null')
+  if (typeof value.path !== 'string') return fail('`artifact.path` expected string')
+  if (value.teaser !== undefined) {
+    if (typeof value.teaser !== 'string') {
+      return fail('`artifact.teaser` expected string when present')
+    }
+    if (value.teaser.trim().length === 0) {
+      return fail('`artifact.teaser` must be non-empty when present')
+    }
+  }
+  return ok
+}
+
 export function checkPatternDefinition(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   if (typeof value.slug !== 'string') return fail('`slug` expected string')
@@ -125,6 +145,11 @@ export function checkPatternDefinition(value: unknown): Result {
   if (value.figures !== undefined) {
     const figuresResult = checkFiguresField(value.figures, 'pattern')
     if (!figuresResult.ok) return figuresResult
+  }
+  // Optional artifact (nav-IA v1.3). Absent or null ⇒ no artifact section.
+  if (value.artifact !== undefined && value.artifact !== null) {
+    const artifactResult = checkArtifactShape(value.artifact)
+    if (!artifactResult.ok) return artifactResult
   }
   return ok
 }
@@ -169,14 +194,8 @@ export function checkArticle(value: unknown): Result {
     return fail('`artifact` is required (use null for summary-only articles)')
   }
   if (value.artifact !== null) {
-    if (!isObject(value.artifact)) return fail('`artifact` expected object or null')
-    if (typeof value.artifact.path !== 'string') return fail('`artifact.path` expected string')
-    if (
-      value.artifact.teaser !== undefined &&
-      typeof value.artifact.teaser !== 'string'
-    ) {
-      return fail('`artifact.teaser` expected string when present')
-    }
+    const artifactResult = checkArtifactShape(value.artifact)
+    if (!artifactResult.ok) return artifactResult
   }
   if (value.stats !== undefined) {
     if (!Array.isArray(value.stats)) return fail('`stats` expected array when present')

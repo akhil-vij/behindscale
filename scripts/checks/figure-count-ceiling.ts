@@ -6,7 +6,7 @@
 //   len >= 6   -> error (hard ceiling)
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 const SOFT_WARN_ABOVE = 3
 const HARD_ERROR_ABOVE = 5

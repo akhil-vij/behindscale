@@ -12,7 +12,7 @@
 // means the article page fails to render the figure).
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts, type HostKind } from '../content-hosts'
 
 export const figureSvgExists: Check = {
   name: 'figure-svg-exists',
@@ -23,7 +23,7 @@ export const figureSvgExists: Check = {
     // both resolve to content/figures/<slug>/, silently serving each
     // other's SVGs. Flag it rather than mis-serve. Only matters when
     // both hosts actually declare figures.
-    const figuredSlugKind = new Map<string, 'article' | 'pattern'>()
+    const figuredSlugKind = new Map<string, HostKind>()
 
     for (const host of figureHosts(content)) {
       if (host.figures.length === 0) continue

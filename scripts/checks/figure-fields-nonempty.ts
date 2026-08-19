@@ -11,7 +11,7 @@
 // bands, not fuzzy content-drift signals.
 
 import type { Check, CheckError } from '../types'
-import { figureHosts } from '../figure-hosts'
+import { figureHosts } from '../content-hosts'
 
 const EYEBROW_MIN = 2
 const EYEBROW_MAX = 6

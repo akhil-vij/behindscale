@@ -14,6 +14,9 @@ import { render, type CheckResult } from './render-output'
 import { orphanPatternSlugs } from './checks/orphan-pattern-slugs'
 import { minimumPatternCoverage } from './checks/minimum-pattern-coverage'
 import { artifactPathMatchesSlug } from './checks/artifact-path-matches-slug'
+import { artifactSlugUnique } from './checks/artifact-slug-unique'
+import { artifactBundleExists } from './checks/artifact-bundle-exists'
+import { orphanArtifacts } from './checks/orphan-artifacts'
 import { statsValueInProse } from './checks/stats-value-in-prose'
 import { cruxSummaryLength } from './checks/crux-summary-length'
 import { cruxTagRegistryCoverage } from './checks/cruxtag-registry-coverage'
@@ -38,6 +41,9 @@ const CHECKS: readonly Check[] = [
   orphanPatternSlugs,
   minimumPatternCoverage,
   artifactPathMatchesSlug,
+  artifactSlugUnique,
+  artifactBundleExists,
+  orphanArtifacts,
   statsValueInProse,
   cruxSummaryLength,
   cruxTagRegistryCoverage,
