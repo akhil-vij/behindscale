@@ -37,31 +37,6 @@ _None._
 
 ## Worth resolving
 
-### 1. Pattern artifacts: collision handling + placement (4 sub-decisions)
-
-- **Source:** 2026-08-19 session. Owner asked to design artifact
-  support for pattern detail pages, extensible to future
-  category/company hosts. Design drafted in
-  `docs/pattern-artifacts-design.md`.
-- **What's needed:** owner ratification of four items before code
-  (doc §11): (1) collision handling — Approach A (flat namespace +
-  global uniqueness guard, *recommended*, symmetric with shipped
-  figures) vs. Approach B (host-kind-namespaced subdirs; B1
-  grandfather articles / B2 migrate + redirects); (2) placement —
-  P1 after Definition (*recommended*), P2 after Tradeoffs, P3 inline
-  marker (not recommended); (3) `ArtifactEmbed` prop rename
-  `articleSlug/Title → hostSlug/Title` now vs. defer; (4) first-build
-  scope — patterns + generalized host registry only (*recommended*)
-  vs. also pre-wire inert category/company host branches.
-- **Cost of waiting:** none compounding yet — no pattern artifact is
-  authored. Becomes a blocker only once category/company detail pages
-  are scheduled, because their bare/word slugs (`stripe`,
-  `resilience`) are where the flat-namespace collision risk
-  concentrates; the guard-vs-namespace choice should be settled
-  before those hosts land, not after.
-- **Reply:** pick A/B (+B1/B2) and P1/P2/P3, plus yes/no on the rename
-  and scope — or "recommended" to take all four defaults.
-
 ### 2. Landing preview: show-all vs cap-and-signal
 
 - **Source:** flagged since round 10 (Cloudflare) when count crossed
@@ -454,7 +429,12 @@ same class of question.
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
-_None this round._
+- **Pattern-artifacts design: all 4 sub-decisions** (collision A,
+  placement above-Definition, prop rename now, scope patterns-only)
+  — surfaced and RESOLVED 2026-08-19; foundations landed as
+  `af2c138`. `_hero` reconciliation + `question` host kind folded.
+  Page-rebuild (PALS hero port, above-header mount) tracked
+  separately in `prompt-pattern-detail-build.md`.
 
 _(Older resolutions rolled off after their round: Idempotency
 5-company backlink symmetry 2026-07-23 as `89a3d98` (retired
