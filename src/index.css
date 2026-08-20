@@ -25,6 +25,10 @@
   --art-border: #1F2333;
   --art-text: #C8CDD8;
   --art-text-muted: #6B7280;
+  /* Artifact "live" indicator green (the caption-bar status dot). Distinct
+     from --state-success (a darker UI green); this is the artifact accent. */
+  --art-live: #30a46c;
+  --art-live-rgb: 48 164 108;
 
   /* Pattern / tag accent ramp. The hex tokens are the canonical names
      (referenced by ui-context.md). The -rgb triplet versions exist so

@@ -15,5 +15,15 @@
     "Priority tiers can create perverse incentives. If batch processing teams discover their work is shed first, they may artificially tag it higher to dodge the prioritization. Active governance of the priority taxonomy is required to prevent drift.",
     "Adding a new priority tier later is harder than it looks. Existing classification has to be re-examined against the new tier, and downstream consumers (alerting, SLO measurement, capacity planning) often depend on the existing tier set. Plan the tier hierarchy carefully upfront."
   ],
-  "category": "resilience"
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/priority-aware-load-shedding/index.html",
+    "teaser": "Drag TRAFFIC past capacity, then flip SHED SMART — the toggle is the pattern."
+  },
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern with everything situational removed — abstract traffic, one capacity line, one toggle that turns the pattern off.",
+    "idea": "Two classes of traffic flow toward a server with capacity for 50 req/s — gold payments, gray batch jobs. Priority-aware shedding decides in advance what matters least and drops it first.",
+    "whatToTry": "Drag TRAFFIC past 50 req/s. With SHED SMART on, payments hold at 100% while batch jobs absorb the loss; flip it off and payments fail with everything else."
+  }
 }

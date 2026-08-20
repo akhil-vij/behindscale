@@ -4,6 +4,7 @@ import { patternBySlug, patternDetail } from '../content'
 import type { PatternMember } from '../content'
 import { patternCategoryById } from '../lib/patternCategories'
 import Prose from '../components/Prose'
+import ArtifactEmbed from '../components/ArtifactEmbed'
 
 // The pattern detail page (/patterns/:slug). One template, progressive
 // authoring (the ProblemDetail model): registry prose + derived relations are
@@ -92,6 +93,18 @@ export default function PatternDetail() {
           </Link>
         )}
       </div>
+
+      {/* The mechanism — the artifact, mounted ABOVE the definition
+          (show-then-tell). Render-when-present: only patterns with an authored
+          artifact reach it. */}
+      {pattern.artifact && (
+        <MechanismSection
+          artifact={pattern.artifact}
+          mechanism={pattern.mechanism}
+          hostSlug={pattern.slug}
+          hostTitle={pattern.name}
+        />
+      )}
 
       {/* Definition — registry prose, verbatim; inline figures when authored. */}
       <Section title="Definition">
@@ -298,6 +311,119 @@ function SameMoveStrip({
             </button>
           )}
         </div>
+      )}
+    </section>
+  )
+}
+
+// The mechanism section: the artifact in a dark shell with a caption bar, a
+// collapsible context row, and a light hint line below. Every authored slot
+// (caption/blurb/idea/whatToTry/teaser) is render-when-present. The artifact
+// mounts via ArtifactEmbed in `bare` mode — the shell owns the frame + the
+// OPEN FULL SCREEN link, ArtifactEmbed keeps the HEAD-probe failure isolation
+// (invariant 2) and the view/interact analytics.
+function MechanismSection({
+  artifact,
+  mechanism,
+  hostSlug,
+  hostTitle,
+}: {
+  artifact: { path: string; teaser?: string }
+  mechanism?: {
+    caption?: string
+    blurb?: string
+    idea?: string
+    whatToTry?: string
+  }
+  hostSlug: string
+  hostTitle: string
+}) {
+  const [contextOpen, setContextOpen] = useState(false)
+  const hasContext = Boolean(mechanism?.idea || mechanism?.whatToTry)
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-1 text-xl font-semibold tracking-[-0.01em] text-text-primary">
+        The mechanism
+      </h2>
+      {mechanism?.blurb && (
+        <p className="mb-3 text-sm italic text-text-secondary">
+          {mechanism.blurb}
+        </p>
+      )}
+
+      <div className="rounded-xl border border-art-border bg-art-bg px-3.5 pb-4 pt-3.5">
+        {/* Caption bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-1 pb-3">
+          <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] text-art-text-muted">
+            <span className="inline-block h-[7px] w-[7px] rounded-full bg-art-live ring-[3px] ring-art-live/20" />
+            LIVE ARTIFACT
+            {mechanism?.caption && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{mechanism.caption}</span>
+              </>
+            )}
+          </span>
+          <a
+            href={artifact.path}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[11px] tracking-[0.05em] text-art-text-muted no-underline transition-colors hover:text-brand-gold hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          >
+            OPEN FULL SCREEN ↗
+          </a>
+        </div>
+
+        {/* Collapsible context row */}
+        {hasContext && (
+          <>
+            <button
+              type="button"
+              onClick={() => setContextOpen((o) => !o)}
+              aria-expanded={contextOpen}
+              className="mb-3 w-full cursor-pointer rounded-lg border border-art-border bg-art-surface-2 px-3 py-2.5 text-left font-mono text-[11px] tracking-[0.06em] text-art-text-muted transition-colors hover:text-art-text focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {contextOpen ? '▾' : '▸'} THE IDEA · WHAT TO TRY
+            </button>
+            {contextOpen && (
+              <div className="mb-3 flex flex-col gap-2 rounded-lg border border-art-border bg-art-surface-2 px-3.5 py-3">
+                {mechanism?.idea && (
+                  <div className="text-[13px] leading-[1.65] text-art-text">
+                    <span className="mr-2 font-mono text-[10px] tracking-[0.1em] text-art-text-muted">
+                      THE IDEA
+                    </span>
+                    {mechanism.idea}
+                  </div>
+                )}
+                {mechanism?.whatToTry && (
+                  <div className="text-[13px] leading-[1.65] text-art-text">
+                    <span className="mr-2 font-mono text-[10px] tracking-[0.1em] text-art-text-muted">
+                      WHAT TO TRY
+                    </span>
+                    {mechanism.whatToTry}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* The artifact itself */}
+        <ArtifactEmbed
+          artifactPath={artifact.path}
+          hostSlug={hostSlug}
+          hostTitle={hostTitle}
+          bare
+          heightPx={470}
+        />
+      </div>
+
+      {/* Light hint line below the shell */}
+      {artifact.teaser && (
+        <p className="mx-0.5 mt-2.5 text-[13px] leading-[1.5] text-text-secondary">
+          {artifact.teaser}
+        </p>
       )}
     </section>
   )

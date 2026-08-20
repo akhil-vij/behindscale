@@ -25,6 +25,7 @@ export default {
         'art-border': 'var(--art-border)',
         'art-text': 'var(--art-text)',
         'art-text-muted': 'var(--art-text-muted)',
+        'art-live': 'rgb(var(--art-live-rgb) / <alpha-value>)',
         // Pattern / tag accent ramp. Routed through the -rgb triplet
         // variants so Tailwind's <alpha-value> syntax composes opacity
         // modifiers (e.g. bg-cat-blue/10, border-cat-blue/30).

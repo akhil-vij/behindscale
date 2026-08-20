@@ -40,4 +40,18 @@ export interface PatternDefinition {
   // under the flat namespace (Approach A). See
   // docs/pattern-artifacts-design.md and scripts/content-hosts.ts.
   artifact?: { path: string; teaser?: string } | null
+  // Optional authored copy for the artifact's "mechanism" section on the
+  // detail page (nav-IA v1.5). Only meaningful alongside `artifact`; every
+  // field is render-when-present. `caption` is the tail after
+  // "LIVE ARTIFACT ·" in the shell's status bar; `blurb` is the italic line
+  // under the section heading; `idea`/`whatToTry` are the two lines of the
+  // collapsible context row. The hint line under the shell reuses
+  // `artifact.teaser`. See docs/pattern-artifacts-design.md §7 and the
+  // nav-ia-decisions sanctioned-additions ledger.
+  mechanism?: {
+    caption?: string
+    blurb?: string
+    idea?: string
+    whatToTry?: string
+  }
 }

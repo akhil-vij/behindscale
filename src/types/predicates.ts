@@ -161,6 +161,23 @@ export function checkPatternDefinition(value: unknown): Result {
     const artifactResult = checkArtifactShape(value.artifact)
     if (!artifactResult.ok) return artifactResult
   }
+  // Optional mechanism-section copy (nav-IA v1.5). Object of optional
+  // non-empty strings; render-when-present per field.
+  if (value.mechanism !== undefined) {
+    if (!isObject(value.mechanism)) {
+      return fail('`mechanism` expected object when present')
+    }
+    for (const key of ['caption', 'blurb', 'idea', 'whatToTry'] as const) {
+      const v = value.mechanism[key]
+      if (v === undefined) continue
+      if (typeof v !== 'string') {
+        return fail(`\`mechanism.${key}\` expected string when present`)
+      }
+      if (v.trim().length === 0) {
+        return fail(`\`mechanism.${key}\` must be non-empty when present`)
+      }
+    }
+  }
   return ok
 }
 

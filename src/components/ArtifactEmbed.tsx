@@ -40,6 +40,14 @@ interface ArtifactEmbedProps {
   // keeps the `{ slug }` shape unchanged.
   hostSlug: string
   hostTitle: string
+  // `bare` drops the component's own dark frame + "Open in full" footer so it
+  // can mount inside a caller-supplied shell (e.g. the pattern page's mechanism
+  // section, which provides its own border + "OPEN FULL SCREEN" link). The HEAD
+  // probe, error frame (invariant 2), and analytics are unchanged.
+  bare?: boolean
+  // Override the fixed iframe height (default 600). The mechanism-section
+  // mount runs shorter to match the artifact's content.
+  heightPx?: number
 }
 
 const IFRAME_HEIGHT_PX = 600
@@ -48,6 +56,8 @@ export default function ArtifactEmbed({
   artifactPath,
   hostSlug,
   hostTitle,
+  bare = false,
+  heightPx = IFRAME_HEIGHT_PX,
 }: ArtifactEmbedProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -116,23 +126,37 @@ export default function ArtifactEmbed({
     return <ErrorFrame />
   }
 
+  const frame = (
+    <iframe
+      ref={iframeRef}
+      src={artifactPath}
+      sandbox="allow-scripts"
+      title={`Interactive visualization for "${hostTitle}"`}
+      className="block w-full border-0"
+      style={{ height: `${heightPx}px` }}
+      onError={() => {
+        console.warn(`[artifact] iframe onerror for ${artifactPath}`)
+        setLoadFailed(true)
+      }}
+    />
+  )
+
+  // Bare: just the iframe (the caller's shell owns the frame + full-screen
+  // link). wrapperRef still hosts the IntersectionObserver for artifact_viewed.
+  if (bare) {
+    return (
+      <div ref={wrapperRef} className="overflow-hidden">
+        {frame}
+      </div>
+    )
+  }
+
   return (
     <div
       ref={wrapperRef}
       className="rounded-xl border border-art-border bg-art-bg overflow-hidden shadow-sm"
     >
-      <iframe
-        ref={iframeRef}
-        src={artifactPath}
-        sandbox="allow-scripts"
-        title={`Interactive visualization for "${hostTitle}"`}
-        className="block w-full border-0"
-        style={{ height: `${IFRAME_HEIGHT_PX}px` }}
-        onError={() => {
-          console.warn(`[artifact] iframe onerror for ${artifactPath}`)
-          setLoadFailed(true)
-        }}
-      />
+      {frame}
       <div className="flex justify-end border-t border-art-border px-4 py-2">
         <a
           href={artifactPath}

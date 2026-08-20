@@ -183,6 +183,17 @@ co-occurrence, the problems door); the artifact *mechanism section* is
 deferred to a later per-pattern enrich pass (progressive authoring, the
 ProblemDetail model).
 
+**Schema-addition amendment (v1.5, 2026-08-20).** The enrich-PALS pass adds
+an optional `mechanism: { caption?, blurb?, idea?, whatToTry? }` object to
+`content/patterns/*.json` — the authored presentation copy for the artifact's
+"mechanism" section (status-bar caption, the italic section blurb, and the two
+lines of the collapsible context row). The `artifact` shape itself stays
+**frozen at `{ path, teaser? }`** (foundations v1.3); the hint line under the
+shell reuses `artifact.teaser`. Same sanction as the others: pattern-registry
+only, render-when-present, only meaningful alongside an `artifact`. Authored on
+Priority-Aware Load Shedding (the landing hero's production home) in this pass;
+absent on every other pattern.
+
 | New edge | Derives from | New article field? |
 |---|---|---|
 | article → company (delta ①) | `source.company` | none |
