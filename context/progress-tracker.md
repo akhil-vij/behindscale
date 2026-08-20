@@ -7439,6 +7439,20 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-20: **enrich-PALS pass** (2 commits). (1) `5c0d534` — Priority-
+  Aware Load Shedding is the first rich pattern page: ported
+  `content/artifacts/priority-aware-load-shedding.jsx` from `_hero.jsx`
+  (sim logic verbatim + token-alignment pass, compiled bundle carries zero
+  near-miss grays), declared `artifact` + `mechanism` copy on the PALS
+  registry (nav-IA v1.5: optional `mechanism {caption,blurb,idea,whatToTry}`;
+  `artifact` shape stays frozen `{path,teaser?}`), added the mechanism
+  section to `PatternDetail` (dark shell, caption bar + OPEN FULL SCREEN →
+  flat path, collapsible THE IDEA · WHAT TO TRY, artifact, hint line — all
+  render-when-present, above the definition), `ArtifactEmbed` gained
+  `bare`/`heightPx`, added `--art-live` token. (2) `897e5c6` (isolated) —
+  landing hero switched to the same bundle (`HERO_IFRAME_PATH`), `_hero.jsx`
+  retired with a vercel 301, height 560→470 (also closes the empty band the
+  user flagged). Build + 254 tests green.
 - 2026-08-19: `/patterns/:slug` detail rebuild — **minimal-floor tier**
   (owner-scoped: derived template for all patterns now; artifact
   mechanism section + PALS hero port + landing switch deferred to a
