@@ -8,6 +8,16 @@
       "permanent": true
     },
     {
+      "source": "/artifacts/_hero/index.html",
+      "destination": "/artifacts/priority-aware-load-shedding/index.html",
+      "permanent": true
+    },
+    {
+      "source": "/artifacts/_hero",
+      "destination": "/artifacts/priority-aware-load-shedding",
+      "permanent": true
+    },
+    {
       "source": "/patterns/pid-controlled-adaptive-thresholds",
       "destination": "/patterns/feedback-controlled-load-management",
       "permanent": true

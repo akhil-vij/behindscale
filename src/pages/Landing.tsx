@@ -30,8 +30,14 @@ import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 // there doesn't reach the boundary) -- for that path we accept the
 // same "muted frame" outcome the article artifact embed uses.
 
-const HERO_IFRAME_PATH = '/artifacts/_hero/index.html'
-const HERO_IFRAME_HEIGHT_PX = 560
+// The hero embeds the Priority-Aware Load Shedding pattern artifact — one
+// source, two mounts (the pattern page's mechanism section is the other). The
+// former `_hero` bundle retired here; its old served path 301-redirects in
+// vercel.json. Height matches the artifact's design height (the mechanism
+// mount uses the same), which also closes the empty band the taller 560px
+// frame used to leave below the content.
+const HERO_IFRAME_PATH = '/artifacts/priority-aware-load-shedding/index.html'
+const HERO_IFRAME_HEIGHT_PX = 470
 
 export default function Landing() {
   const articleCount = articles.length
