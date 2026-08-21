@@ -338,7 +338,10 @@ function MechanismSection({
   hostSlug: string
   hostTitle: string
 }) {
-  const [contextOpen, setContextOpen] = useState(false)
+  // Open by default (owner request 2026-08-21): the idea/what-to-try lines
+  // frame the artifact, so lead with them. This also lands them in the
+  // prerendered HTML (they were behind the collapse before), a small SEO win.
+  const [contextOpen, setContextOpen] = useState(true)
   const hasContext = Boolean(mechanism?.idea || mechanism?.whatToTry)
 
   return (
