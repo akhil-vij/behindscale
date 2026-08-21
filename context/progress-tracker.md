@@ -7439,6 +7439,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-21: **Pattern review Round 1 — Priority-Aware Load Shedding**
+  (first post-review pattern update). Placed the round package: updated
+  `content/patterns/priority-aware-load-shedding.json` (authored
+  `oneLineDefinition` lede now ships → visible lede + meta description;
+  readability-passed `definition` with two ordered lists + a
+  `{{figure:priority-tier-ladder}}` marker; revised `whenItApplies`/
+  `tradeoffs`/`mechanism` copy; aliases revised to `protect critical
+  traffic under overload`/`prioritized load shedding`/`priority tiers`/
+  `brownout`), the artifact `content/artifacts/priority-aware-load-shedding.jsx`
+  (PP-39 readability pass — em-dash→spaced-hyphen sweep in 3 caption
+  strings; sim constants/logic byte-identical; zero near-miss grays), and
+  the figure `content/figures/priority-aware-load-shedding/priority-tier-ladder.svg`.
+  Added `docs/Corrections_pattern.md` (the pattern-review standards doc,
+  companion to CORRECTIONS.md). Repo-truth note: stripped the figure
+  entry's `file` field — the repo `Figure` schema is `{slug, eyebrow,
+  caption, ariaLabel}` and resolves the SVG by convention, so `file` is
+  unused (every existing figure omits it). Revision-preview HTML not
+  placed (PP-50: never live). Build + 254 tests green.
 - 2026-08-20: **enrich-PALS pass** (2 commits). (1) `5c0d534` — Priority-
   Aware Load Shedding is the first rich pattern page: ported
   `content/artifacts/priority-aware-load-shedding.jsx` from `_hero.jsx`

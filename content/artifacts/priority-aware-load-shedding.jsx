@@ -106,10 +106,10 @@ export default function PatternShedding() {
   const totalServed = Math.round(W.srvCrit + W.srvBulk);
 
   const caption = !over
-    ? { c: GREEN, t: "Traffic is under capacity — everything flows. Push it past the line." }
+    ? { c: GREEN, t: "Traffic is under capacity - everything flows. Push it past the line." }
     : smart
-      ? { c: GOLD, t: "Overwhelmed — yet payments hold at 100%. The system sheds batch jobs first." }
-      : { c: RED, t: `Overwhelmed and shedding blindly — ${100 - payPct}% of payments are failing with everything else.` };
+      ? { c: GOLD, t: "Overwhelmed - yet payments hold at 100%. The system sheds batch jobs first." }
+      : { c: RED, t: `Overwhelmed and shedding blindly - ${100 - payPct}% of payments are failing with everything else.` };
 
   const mono = "ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace";
   const H = 190;

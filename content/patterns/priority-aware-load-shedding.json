@@ -1,29 +1,44 @@
 {
   "slug": "priority-aware-load-shedding",
   "name": "Priority-Aware Load Shedding",
-  "definition": "Priority-aware load shedding is the practice of dropping the lowest-value traffic first when a system is overloaded, rather than shedding requests uniformly. Every request carries a priority tag (often a small integer tier like t0-t5), and when admission limits are tightened, the system walks up the tier ladder from lowest to highest priority — only sacrificing higher tiers if pressure persists after lower tiers are fully shed.\n\nThe motivating insight is that not all traffic is equally important to preserve. A storage system serving both ride pricing queries (where every dropped request directly damages user experience) and batch analytics jobs (where dropped requests just delay processing) should not shed them at the same rate. Without priority awareness, overload protection is fair but blind — it preserves system stability while damaging the value the system delivers.\n\nThe pattern requires three things to work: (1) accurate, system-wide priority classification on every request, (2) a control mechanism that shed by tier rather than by random rejection, and (3) organizational discipline to keep priority tagging honest as the system evolves. The third requirement is often underestimated — when teams realize their analytics jobs are getting shed, the temptation to tag them as 'user-facing' is real, and unchecked it dilutes the entire scheme.\n\nThe pattern is most valuable in mixed-workload systems where critical and best-effort traffic share infrastructure. It's less useful where all traffic is homogeneous (uniform shedding works fine) or where strict admission control already separates traffic classes (per-tier resource pools already enforce priority through allocation).",
+  "oneLineDefinition": "When a system is overloaded and has to turn work away, drop the least important requests first, so the critical ones keep flowing instead of failing along with everything else.",
+  "definition": "Priority-aware load shedding means dropping the least important traffic first when a system is overloaded, instead of dropping requests evenly. Every request carries a priority tag - a small tier number, often t0 through t5. As the system gets overloaded, it drops the lowest-tier requests first. It only moves up to higher tiers if the overload continues after the lower tiers are already gone.\n\n{{figure:priority-tier-ladder}}\n\nThe idea is simple: not all traffic is equally worth keeping. A storage system might serve both ride-pricing queries (where every dropped request hurts a real user) and batch analytics jobs (where a dropped request only delays processing). Those two should not be dropped at the same rate. Without priorities, the system protects itself by dropping requests evenly: it stays up, but it throws away important and unimportant work at the same rate, so it survives while still failing at what matters most.\n\nThe pattern needs three things to work:\n\n1. Accurate priority tags on every request, applied the same way across the whole system.\n2. A shedding mechanism that drops by tier, instead of rejecting requests at random.\n3. The discipline to keep those tags honest as the system grows.\n\nThat third one is the hardest to keep up. Once people see their own jobs getting dropped first, it is tempting to relabel them as 'user-facing' - and if nobody checks, the priorities slowly stop meaning anything.\n\nThe pattern is most valuable in mixed systems, where important traffic and lower-priority traffic (work that can wait or be retried) share the same infrastructure. It is less useful in two cases:\n\n1. When all traffic matters equally, so plain, even shedding already does the right thing.\n2. When each class already has its own reserved capacity, so that separation enforces priority and nothing needs to be shed by tier.",
   "whenItApplies": [
-    "Mixed-workload systems handling both critical user-facing traffic and best-effort or batch traffic on shared infrastructure",
-    "Multi-tenant platforms where some tenants pay for premium service while others use a free tier — priority tagging makes the SLA difference enforceable under overload",
-    "Storage and database systems where queries vary widely in importance and dropping any analytics queries is preferable to dropping a single payment query",
-    "Auto-scaling systems where shedding is the bridge between current capacity and new capacity arriving — preferentially shedding lower-priority traffic maintains user-visible service during the scale-up window",
-    "Systems with established failure-mode awareness where teams accept that some traffic will be dropped under overload, and the question is which traffic — not whether to shed at all"
+    "Important and low-priority work share one overloaded path: user-facing requests and background or batch jobs run through the same infrastructure, and only some of it is worth protecting when capacity runs short.",
+    "Some users pay for premium service and others are on a free tier: priority tags turn that promise into something the system can actually keep under overload, by shedding free-tier traffic before paid traffic.",
+    "Query importance varies widely inside one storage system: dropping any number of analytics queries is better than dropping a single payment query, so the store sheds by importance instead of evenly.",
+    "Shedding buys time while new capacity comes online: as machines spin up, dropping low-priority traffic first keeps the user-facing service healthy until they are ready.",
+    "The team has already accepted that some requests will be dropped under overload: the real question is which ones, not whether to drop any at all, and this pattern makes that choice deliberate."
   ],
   "tradeoffs": [
-    "Requires honest system-wide priority classification. Misclassification (analytics work tagged as user-facing because the team wants it protected) defeats the protection. Maintaining classification discipline is an editorial responsibility, not just an engineering one.",
-    "Lower-tier work must accept that it may be dropped frequently during overload. Systems consuming the shed traffic class need to be designed for at-least-once or retry-tolerant operation; transactional batch jobs without retry logic will fail in surprising ways.",
-    "Priority tiers can create perverse incentives. If batch processing teams discover their work is shed first, they may artificially tag it higher to dodge the prioritization. Active governance of the priority taxonomy is required to prevent drift.",
-    "Adding a new priority tier later is harder than it looks. Existing classification has to be re-examined against the new tier, and downstream consumers (alerting, SLO measurement, capacity planning) often depend on the existing tier set. Plan the tier hierarchy carefully upfront."
+    "The whole thing depends on honest priority tags: if low-priority work gets labeled 'user-facing' just because a team wants it protected, the protection quietly stops working. Keeping the tags honest is ongoing work, not a one-time fix.",
+    "Low-priority work must expect to be dropped, sometimes a lot: anything running at a low tier needs to retry or otherwise cope when its requests are dropped, or it will fail in confusing ways. A batch job with no retry logic will just lose the work that gets dropped.",
+    "Tiers tempt people to cheat: once teams see their work dropped first, some will label it higher than it really is to jump the queue. Someone has to keep watching and correcting the labels, or the priorities slowly stop meaning anything.",
+    "Adding a tier later is harder than it looks: you have to re-sort all the existing traffic against the new tier, and other systems that lean on the current tiers - alerting, reporting, capacity planning - usually have to change too. It is worth planning the tiers carefully up front."
+  ],
+  "aliases": [
+    "protect critical traffic under overload",
+    "prioritized load shedding",
+    "priority tiers",
+    "brownout"
   ],
   "category": "resilience",
   "artifact": {
     "path": "/artifacts/priority-aware-load-shedding/index.html",
-    "teaser": "Drag TRAFFIC past capacity, then flip SHED SMART — the toggle is the pattern."
+    "teaser": "Drag TRAFFIC past capacity, then flip SHED SMART - the toggle is the pattern."
   },
+  "figures": [
+    {
+      "slug": "priority-tier-ladder",
+      "eyebrow": "SHED FROM THE BOTTOM UP",
+      "caption": "Requests are tagged into priority tiers, t0 (most critical) down to t5. As load climbs past capacity, the system drops from the bottom up - t5 first, higher tiers only if pressure keeps rising.",
+      "ariaLabel": "Three panels of priority tiers t0 to t5; as load rises, dropped tiers grow from the bottom up"
+    }
+  ],
   "mechanism": {
     "caption": "THE PATTERN, GENERAL",
-    "blurb": "The pattern with everything situational removed — abstract traffic, one capacity line, one toggle that turns the pattern off.",
-    "idea": "Two classes of traffic flow toward a server with capacity for 50 req/s — gold payments, gray batch jobs. Priority-aware shedding decides in advance what matters least and drops it first.",
+    "blurb": "The pattern on its own, with the specifics of any real system stripped away: just plain traffic, one capacity limit, and a single toggle that turns priority shedding on or off.",
+    "idea": "Two classes of traffic flow toward a server that can serve 50 requests a second: gold payments and gray batch jobs. Priority-aware shedding decides in advance what matters least and drops it first.",
     "whatToTry": "Drag TRAFFIC past 50 req/s. With SHED SMART on, payments hold at 100% while batch jobs absorb the loss; flip it off and payments fail with everything else."
   }
 }
