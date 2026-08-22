@@ -7439,6 +7439,20 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-22: **Pattern review Round 2 — Fault Isolation**. Placed the
+  round package: updated `content/patterns/fault-isolation.json` (authored
+  `oneLineDefinition`, readability-passed `definition` with two figure
+  markers, `whenItApplies`/`tradeoffs`/`mechanism` copy, aliases: blast
+  radius · bulkhead · noisy neighbor · failure domains · cascading
+  failures), a **newly authored artifact**
+  `content/artifacts/fault-isolation.jsx` (PP-2 — the pattern had none;
+  zero near-miss grays, zero em-dashes, `export default` wrapper), and two
+  figures under `content/figures/fault-isolation/` (hidden-shared-
+  dependencies, isolation-at-every-layer). Fault Isolation is now a rich
+  page (mechanism section above the definition + 2 inline figures). The
+  review agent **dropped the figure `file` field** per the Round 1
+  feedback — no stripping needed this round. Revision-preview HTML not
+  placed. Build + 254 tests green.
 - 2026-08-21: **Pattern review Round 1 — Priority-Aware Load Shedding**
   (first post-review pattern update). Placed the round package: updated
   `content/patterns/priority-aware-load-shedding.json` (authored

@@ -1,19 +1,51 @@
 {
   "slug": "fault-isolation",
   "name": "Fault Isolation",
-  "definition": "Fault isolation is the architectural practice of containing failures so that one component's degradation doesn't cascade into others. The defining mechanism is making explicit the boundaries between components and ensuring those boundaries hold under failure — through dedicated resources, separate data paths, independent failure domains, or sandbox-style containment.\n\nThe core insight is that systems naturally develop shared dependencies as they grow, and those shared dependencies become the conduits through which localized failures become systemic outages. Fault isolation reverses the default: instead of sharing infrastructure for efficiency and discovering shared failure modes during incidents, you deliberately accept resource duplication or operational overhead in exchange for guaranteed containment.\n\nFault isolation can be applied at many layers: process isolation (each service in its own container), tenant isolation (each customer's data and resources separated), failure-domain isolation (across availability zones, regions, or providers), traffic isolation (separate network paths for different traffic classes), or capability isolation (sandboxed code with limited permissions). The same principle scales across these layers because the underlying logic — failure should not propagate beyond the boundary that contains it — is universal.",
+  "oneLineDefinition": "Fault isolation means putting boundaries between the parts of a system so that when one part fails, the damage stays contained instead of spreading to everything else.",
+  "definition": "Fault isolation is a way of building systems so that when one part fails, the damage is caught at a boundary and cannot spread to the rest. The boundary is the whole idea: you make the lines between components explicit and make sure they hold when something breaks - through dedicated resources, separate data paths, separate locations, or sandboxed code.\n\nSystems naturally grow shared dependencies over time, and a shared dependency is the path a small, local failure travels along to take down everything connected to it. Fault isolation makes the opposite trade on purpose: you spend a little more up front - duplicated resources, some extra work - so that when one part breaks, the breakage stays where it started instead of spreading.\n\n{{figure:hidden-shared-dependencies}}\n\nThe same move applies at many layers:\n\n- Process isolation: each service runs in its own container.\n- Customer isolation: each customer's data and resources are kept separate.\n- Location isolation: run the same work in more than one place - different data centers, regions, or providers - so losing one doesn't take the rest down.\n- Traffic isolation: different classes of traffic get separate network paths.\n- Capability isolation: risky code runs sandboxed, with limited permissions.\n\nThe logic is the same at every layer: a failure should not spread past the boundary that is meant to contain it.\n\n{{figure:isolation-at-every-layer}}",
   "whenItApplies": [
-    "Designing infrastructure where a failure in one component could cascade through shared dependencies into a broader outage",
-    "Multi-tenant systems where one tenant's behavior must not degrade service quality for others (noisy-neighbor protection)",
-    "Building safety or observability systems that must continue to function when the systems they oversee are failing",
-    "Running untrusted or auto-generated code where the host system must survive arbitrary behavior in the guest",
-    "Operating at scale where shared-resource utilization optimization has crossed into shared-failure-mode territory"
+    "One component's failure can cascade into a broad outage: shared dependencies give a local problem a path to spread system-wide, and cutting that path is the goal.",
+    "One customer must not drag down service for the others: on shared infrastructure a single heavy or misbehaving customer can starve everyone else unless the boundaries hold (noisy-neighbor protection).",
+    "A monitor has to keep working while the thing it watches fails: if it shares machines with what it watches, it fails at the same moment - so it needs its own separate resources.",
+    "You run untrusted or auto-generated code: the host has to survive whatever the guest does, so the guest runs sandboxed with limited reach.",
+    "Sharing resources for efficiency has started causing shared failures: at scale, the savings from sharing are now outweighed by the blast radius when the shared thing breaks."
   ],
   "tradeoffs": [
-    "Resource duplication is the cost: isolated systems use more compute, more network, more storage than a shared equivalent. The economics only work above a certain scale or stakes threshold.",
-    "Operational complexity increases: separate systems mean separate deployment, separate monitoring, separate runbooks. Each isolated boundary is also a coordination boundary that human teams must manage.",
-    "Boundaries can be subtle. A system can appear isolated while sharing hidden dependencies (DNS, control plane, identity, secrets infrastructure). Fault isolation requires actively mapping and severing every shared dependency that matters, not just the obvious ones.",
-    "Over-isolation creates its own problems: too many independent failure domains can fragment debugging, slow down legitimate cross-cutting changes, and concentrate complexity at the boundaries. The right granularity depends on what failure modes you're actually trying to contain."
+    "Isolation costs duplicated resources: separate boundaries use more compute, network, and storage than sharing would. It only pays off above a certain scale, or when the stakes are high enough.",
+    "It adds operational work: separate boundaries mean separate deploys, monitoring, and runbooks - and extra coordination across teams.",
+    "Isolation can be an illusion: a system can look separate while quietly sharing hidden dependencies like DNS, identity, or the control plane. You have to actually find and cut every shared dependency that matters, not just the obvious ones.",
+    "Too much isolation backfires: too many separate compartments scatter your debugging, slow down changes that legitimately cross boundaries, and pile complexity onto the boundaries themselves. The right number depends on which failures you are actually trying to contain."
   ],
-  "category": "resilience"
+  "aliases": [
+    "blast radius",
+    "bulkhead",
+    "noisy neighbor",
+    "failure domains",
+    "cascading failures"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/fault-isolation/index.html",
+    "teaser": "Break a service, then flip ISOLATE - the blast radius snaps from the whole system to one box."
+  },
+  "figures": [
+    {
+      "slug": "hidden-shared-dependencies",
+      "eyebrow": "ISOLATED ON PAPER, COUPLED UNDERNEATH",
+      "caption": "Service A and Service B each sit behind their own boundary, so they look isolated. But both still depend on the same DNS, identity, and control plane underneath, and a failure there crosses the boundary into both.",
+      "ariaLabel": "Two isolated services share hidden dependencies below them; a failure in a shared dependency reaches both."
+    },
+    {
+      "slug": "isolation-at-every-layer",
+      "eyebrow": "THE SAME MOVE, EVERY LAYER",
+      "caption": "The same boundary shows at every scale: a process in a container, a customer with separated data, work run across more than one location, code in a sandbox. At each layer, one unit's failure is kept from becoming everyone's.",
+      "ariaLabel": "Four panels show the isolation boundary at process, customer, location, and sandbox scopes."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: four services, one pool of shared resources, and a toggle that gives each service its own isolated slice.",
+    "idea": "Four services draw on one pool of resources. Fault isolation gives each its own dedicated slice, so when one service gets stuck it can only starve itself - not the others.",
+    "whatToTry": "Click a service to make it STUCK. With ISOLATE off it drains the shared pool and every service starves; turn ISOLATE on and the damage stops at its own boundary."
+  }
 }
