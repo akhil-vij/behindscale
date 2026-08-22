@@ -1,16 +1,41 @@
 {
   "slug": "universal-staged-rollout",
   "name": "Universal Staged Rollout",
-  "category": "resilience",
-  "definition": "Every channel through which change can reach the fleet — deployments, configuration, infrastructure automation, and OS or security updates — must flow through the same staged-rollout discipline: small first, observed, then expanded. The pattern's threat model is the implicit channel: a default-on update mechanism, a vendor auto-upgrade, a cron that touches everything at the same wall-clock hour. Such a channel converts any latent defect anywhere beneath it into a synchronized, fleet-wide event, and it does so precisely because it was never inventoried as a change channel at all. The discipline therefore includes an audit obligation: enumerate every path by which bits can change on a node, and either route it through staging or close it.\n\nClosing a fast channel is cheapest when it is redundant — Datadog disabled unattended-upgrades at zero security cost because node-replacement patching already delivered the same updates through a controlled path. When the fast channel is NOT redundant, the pattern forces the real decision into the open: how much simultaneity of change the system can survive, traded against how quickly a fix must land everywhere. Boundary against Conservative Auto-Remediation: that pattern throttles how eagerly automation responds to failure signals; this one throttles how synchronously change of any kind reaches the fleet.",
+  "oneLineDefinition": "Universal staged rollout means every change - not just code, but config and auto-updates - rolls out gradually, so a bad one is caught early instead of hitting all the application servers at once.",
+  "definition": "Every production change has to go out the same careful way: a little at a time, monitored, then widened. The real danger is the change path nobody thinks of as change - an auto-update that is on by default, a vendor tool that upgrades itself, a scheduled job that runs on every machine at the same minute. A path like that turns one hidden bug into an outage that hits every machine at the same moment, and it does so precisely because nobody ever listed it as a way change gets in.\n\nSo list every way a machine can change, and either put each one through staged rollout or turn it off. The paths that count:\n\n- code deploys\n- configuration changes\n- infrastructure automation\n- OS and security updates\n- vendor agents that upgrade themselves\n- scheduled jobs that run everywhere at once\n\n{{figure:the-unstaged-channel}}\n\nShutting a fast channel off is cheapest when it is redundant - when something else already delivers the same change through a staged path, closing the fast one costs nothing. When it is not redundant, the pattern puts the real tradeoff on the table: how much change the fleet can safely take at the same time, against how fast a fix needs to reach everywhere. This is different from [Conservative Auto-Remediation](/patterns/conservative-auto-remediation): that pattern limits how eagerly automation reacts to failures; this one limits how much change of any kind reaches the fleet at once.",
   "whenItApplies": [
-    "Fleets with OS-level or vendor-managed auto-update mechanisms enabled by default and never audited as change channels",
-    "Homogeneous fleets (one OS version, one base image) where a single defective change has fleet-wide reach by construction",
-    "Post-incident hardening: any outage whose trigger arrived simultaneously everywhere is evidence of an unstaged channel"
+    "You have auto-updates turned on by default: OS or vendor tools that upgrade themselves on every machine, and nobody has checked whether they go out gradually or all at once.",
+    "Every machine is basically identical: one OS version, one base image, so a single bad change reaches the whole fleet by construction, with nothing to stop it partway.",
+    "You are hardening after an outage: if the trigger hit everywhere at the same moment, that is a sign the change went out to every machine at once, unstaged."
   ],
   "tradeoffs": [
-    "Staging security patches extends the vulnerable window — the pattern is honest that blast-radius control is bought with patch latency unless a redundant controlled path already exists",
-    "The audit is never finished: every new vendor agent, operator, or automation is a potential new unstaged channel",
-    "Fleet heterogeneity (mixed versions during permanent rollout) complicates debugging and support even as it caps correlated failure"
-  ]
+    "Staging slows down security patches: rolling a fix out gradually means some machines stay unpatched longer, so you are trading a smaller blast radius for a slower patch - unless a safe fast path already exists.",
+    "The audit is never finished: every new vendor agent, tool, or piece of automation is another possible change channel you have to find and bring under staging.",
+    "It leaves you running mixed versions: while a change is only part way across the fleet, different machines run different versions, which is harder to debug and support - the price of capping correlated failure."
+  ],
+  "aliases": [
+    "phased rollout",
+    "canary release",
+    "incremental rollout",
+    "progressive delivery"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/universal-staged-rollout/index.html",
+    "teaser": "Send a bad change through the channel nobody staged - it takes the whole fleet at once."
+  },
+  "figures": [
+    {
+      "slug": "the-unstaged-channel",
+      "eyebrow": "THE CHANNEL NOBODY STAGED",
+      "caption": "Most ways a change reaches the fleet run through the same staging gate - small first, watched, then widened. The danger is the channel that skips the gate, like an auto-update on by default, and reaches every machine at once.",
+      "ariaLabel": "Several change channels pass through a staging gate to the fleet; one auto-update channel bypasses the gate to every node."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: a fleet of servers, one change to ship, and two ways to ship it - all at once, or a small wave at a time with a health check between waves.",
+    "idea": "A bad change caught in a small first wave is a small problem. The same change pushed to every server at once is an outage. Staged rollout is just insisting on the first path - for every kind of change, not only deploys.",
+    "whatToTry": "Ship a bad change all at once and watch it take every server. Then stage it: deploy to the canary, read the health signal, and roll back before it spreads."
+  }
 }

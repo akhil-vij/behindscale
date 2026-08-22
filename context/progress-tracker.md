@@ -7439,6 +7439,19 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-22: **Pattern review Round 3 — Universal Staged Rollout**.
+  Placed the round package: updated
+  `content/patterns/universal-staged-rollout.json` (authored
+  `oneLineDefinition`, readability-passed `definition` with one figure
+  marker, `whenItApplies`/`tradeoffs`/`mechanism`, aliases: phased rollout
+  · canary release · incremental rollout · progressive delivery), a new
+  authored artifact `content/artifacts/universal-staged-rollout.jsx` (zero
+  near-miss grays, zero em-dashes, `export default`), and one figure
+  `content/figures/universal-staged-rollout/the-unstaged-channel.svg`. Now
+  a rich page (mechanism section + inline figure). Figure `file` field
+  already dropped by the review agent. Revision-preview HTML not placed.
+  Build + 254 tests green. Pattern-round zips deleted from repo root after
+  this round per owner.
 - 2026-08-22: **Pattern review Round 2 — Fault Isolation**. Placed the
   round package: updated `content/patterns/fault-isolation.json` (authored
   `oneLineDefinition`, readability-passed `definition` with two figure
