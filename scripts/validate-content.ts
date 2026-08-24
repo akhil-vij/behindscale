@@ -17,6 +17,7 @@ import { artifactPathMatchesSlug } from './checks/artifact-path-matches-slug'
 import { artifactSlugUnique } from './checks/artifact-slug-unique'
 import { artifactBundleExists } from './checks/artifact-bundle-exists'
 import { orphanArtifacts } from './checks/orphan-artifacts'
+import { inlineLinkTargets } from './checks/inline-link-targets'
 import { statsValueInProse } from './checks/stats-value-in-prose'
 import { cruxSummaryLength } from './checks/crux-summary-length'
 import { cruxTagRegistryCoverage } from './checks/cruxtag-registry-coverage'
@@ -56,6 +57,7 @@ const CHECKS: readonly Check[] = [
   markerPlacementLegal,
   figureCountCeiling,
   listBlockWellFormed,
+  inlineLinkTargets,
   cruxtagUrlslug,
   problemEssay,
   patternCategory,

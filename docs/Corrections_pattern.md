@@ -20,12 +20,12 @@ Living reference for reviewing **pattern-registry entries**. Companion to `CORRE
 
 - **PP-6. `oneLineDefinition`** — the page lede, and the source of the page's meta-description. A single plain sentence: what the pattern does and what that buys. Renders as a plain string (no markdown). If it is missing, the page has no lede and the meta-description falls back to the first sentence of the definition — so authoring it is usually the unblock.
 - **PP-7. `definition`** — the **only** field rendered through Prose, so it is the only field that supports markdown lists (see §5). Keep the four-move shape: **mechanism → insight → requirements/variants → applicability.** The **first sentence is in the search corpus** (see §3), so write it to carry the pattern's plain vocabulary.
-- **PP-8. `whenItApplies` / `tradeoffs`** — arrays of structured cards, not Prose. `whenItApplies` renders as a **numbered** list; both render **bold-lead** (see §6). No markdown, no lists inside an entry.
+- **PP-8. `whenItApplies` / `tradeoffs`** — arrays of structured cards, not Prose. `whenItApplies` renders as a **numbered** list, `tradeoffs` as a plain list; both use the same **sentence-based bold-lead** rendering (see §6). No markdown, no lists inside an entry.
 - **PP-9. `mechanism`** = `{caption, blurb, idea, whatToTry}`. `blurb` renders under the "The mechanism" heading. `idea` + `whatToTry` render as a collapsible **"THE IDEA · WHAT TO TRY"** block **above** the artifact, sourced from this JSON (not from the `.jsx`). `caption` is the artifact's label eyebrow.
 - **PP-10. `artifact`** = `{path, teaser}`. `teaser` is evocative copy (see §7).
 - **PP-11. `aliases`** — search-only (see §3).
 - **PP-12. `category`** — exactly one of `resilience`, `throughput`, `consistency`, `observability`, `performance`.
-- **PP-13. `figures`** — optional; `[{slug, eyebrow, caption, ariaLabel, file}]` plus a `{{figure:slug}}` marker placed in the `definition` (see §8). The pattern renderer resolves the marker (confirmed 2026-08-21).
+- **PP-13. `figures`** — optional; `[{slug, eyebrow, caption, ariaLabel}]` (exactly those four keys — **no `file` key**) plus a `{{figure:slug}}` marker placed in the `definition` (see §8). The pattern renderer resolves the marker, and resolves the SVG **by convention from the slug** (see §8) — confirmed by the implementation agent 2026-08-21.
 
 ---
 
@@ -93,13 +93,14 @@ Inherits `CORRECTIONS.md` (articles). Pattern pages skew **plainer** — the rea
 - **PP-32.** A list must be its **own blank-line-separated chunk in which every line is a list item** — intro text ("The pattern needs three things:") goes in the preceding paragraph, not inside the list chunk.
 - **PP-33.** **Minimum two items. No nesting.** Do not use `*`, `+`, or `N)` forms.
 - **PP-34.** Use a list when the content is genuinely enumerable (a set of requirements, a small set of cases). Keep narrative as prose.
+- **PP-54. Inline cross-links.** The `definition` (the only Prose field) also supports inline markdown links `[text](/patterns/<slug>)` to neighbouring patterns. Use a **relative internal path**, link the natural phrase already in the prose (the pattern's name, or the plain term for it), and link **only patterns confirmed to exist** — a co-occurrence entry, a live pattern, or an owner-confirmed one; **never guess a slug** (PP-53). Established Rounds 3–4: `conservative-auto-remediation` (owner-confirmed), `idempotency-keys` (co-occurrence), `priority-aware-load-shedding` (live). The preview's `render_def` link-ifies these; whether the **live** Prose renderer renders inline links is not yet 100% confirmed by the implementation agent — keep it flagged until it is.
 
 ---
 
 ## 6. whenItApplies and tradeoffs — bold-lead cards
 
-- **PP-35.** Each entry renders with its **lead clause bolded** — the text before the first colon (or, with no colon, the first sentence). Write each entry as **`<punchy lead clause>: <plain detail>.`** so the bolded part carries the point on its own.
-- **PP-36.** Lead clause 4–12 words. Entry 1–2 sentences within the band.
+- **PP-35.** Bold-lead is **sentence-based**, confirmed from live pages (Round 4). The renderer bolds the **first sentence** of an entry, and **only when a second sentence follows** — a single-sentence entry renders with **no bold**, and a colon does *not* trigger bolding. So author each card as **`<punchy lead sentence>. <plain detail sentence>.`** (two sentences, period-separated) so the lead sentence bolds and carries the point on its own. Applies to both `whenItApplies` and `tradeoffs`. *(Correction to the earlier assumption of a colon-delimited lead: the live rule is period/sentence-based. The preview generator's `bold_lead` was fixed to match — bold group 1 of `^(.+?[.?!])\s+(.+)$`, else no bold.)*
+- **PP-36.** Lead **sentence** 4–12 words; whole entry 1–2 sentences within the band. If a point is naturally one sentence, split it into lead + detail to earn the bold, or accept a plain (unbolded) single sentence — don't pad.
 - **PP-37.** Entries must be **distinct and true.** No two `whenItApplies` describing the same situation; no two `tradeoffs` naming the same cost. Cut to the ones the evidence actually supports (typically 4–5 `whenItApplies`, 3–4 `tradeoffs`) rather than padding to a number.
 - **PP-38.** `whenItApplies` are *situations where you'd reach for this*; `tradeoffs` are *real costs you accept by using it*. Keep the two from bleeding into each other.
 
@@ -120,7 +121,7 @@ Inherits `CORRECTIONS.md` (articles). Pattern pages skew **plainer** — the rea
 
 - **PP-45. High bar.** A figure earns its place only if it shows a structure or flow that the prose states less clearly **and** the artifact doesn't already show. **Zero figures is a valid and common outcome.** (Round 1's `priority-tier-ladder` earned it because the two-class artifact never shows the t0–t5 ladder.)
 - **PP-46. House light-shell idiom** (matches the article figures): viewBox 700 wide; Inter + JetBrains Mono; muted grays #8A8A94 / #52525B; category colours; rounded rects, stroke-width ~1.3; small font sizes (9–11); eyebrow at top-left.
-- **PP-47. Delivery:** a raw `.svg` file, a `figures[]` entry (eyebrow/caption/ariaLabel within the §2 bands), and a `{{figure:slug}}` marker placed at the right spot in the `definition`. Drop all three together if the figure is cut.
+- **PP-47. Delivery.** Three things, dropped together if the figure is cut: (a) a raw `.svg` named **exactly `<figure-slug>.svg`** (`priority-tier-ladder` → `priority-tier-ladder.svg`) — the repo resolves it by convention at `content/figures/<pattern-slug>/<figure-slug>.svg`, so the **slug is the only source of truth for the filename and there is no `file` key**; (b) a `figures[]` entry of exactly `{slug, eyebrow, caption, ariaLabel}`, bands per §2; (c) a `{{figure:slug}}` marker at the right spot in the `definition`.
 - **PP-48.** Verify the SVG renders (rasterize and look) before shipping.
 
 ---
@@ -129,7 +130,7 @@ Inherits `CORRECTIONS.md` (articles). Pattern pages skew **plainer** — the rea
 
 - **PP-49. Round package:** updated JSON (validated) · figure SVG(s) if any · artifact (authored, or readability-passed) · revision-preview HTML · **change summary** (one line per edit + its reason) · **flags list**.
 - **PP-50. Revision-preview HTML** — light reading shell with `:root` tokens, a draft banner, and nav; the artifact **mounts the real shipping `.jsx`** via unpkg React 18 + Babel standalone; figures embed as inline URL-encoded data-URI SVGs. Mechanism block order mirrors production: topbar → collapsible "THE IDEA · WHAT TO TRY" → the sim. Derived sections are shown for context and clearly marked "not edited this round." **Revision-only; never live.**
-- **PP-51. Validators (all must pass):** JSON well-formed · aliases lowercase/unique/non-empty · category in enum · teaser non-empty when present · **no em-dash in any rendered string** · figure bands in range · **longest sentence ≤ 40 words** · definition list chunks well-formed (≥2 items, `- `/`N. ` only, no nesting).
+- **PP-51. Validators (all must pass):** JSON well-formed · aliases lowercase/unique/non-empty · category in enum · teaser non-empty when present · **no em-dash in any rendered string** · figure bands in range · `figures[]` entries carry **exactly** `slug/eyebrow/caption/ariaLabel` (no `file` or other stray key — the repo validator is lenient and won't catch one) · **longest sentence ≤ 40 words** · definition list chunks well-formed (≥2 items, `- `/`N. ` only, no nesting).
 - **PP-52. Live-page drift check.** Fetch the live pattern page and compare the editable fields to the uploaded JSON. If they differ, flag the drift before editing — don't silently overwrite.
 
 ---
@@ -143,3 +144,5 @@ Inherits `CORRECTIONS.md` (articles). Pattern pages skew **plainer** — the rea
 ## Change log
 
 - **v0.1 — 2026-08-21.** Seeded from Round 1 (Priority-Aware Load Shedding). Bands in §2 grounded in what that round shipped. Alias mechanics (§3) captured from the implementation agent. Open for the owner to fix bands and rule on the broad-alias tier.
+- **v0.2 — 2026-08-21.** Round 1 published live. Figure-schema correction from the implementation agent: the repo `Figure` type is exactly `{slug, eyebrow, caption, ariaLabel}` — no `file` key; the SVG is resolved by convention from `content/figures/<pattern-slug>/<figure-slug>.svg`, so the slug alone names the file. Updated PP-13, PP-47, PP-51.
+- **v0.3 — 2026-08-22.** Rounds 3–4. **Bold-lead corrected to sentence-based** (PP-8, PP-35, PP-36): live pages show the renderer bolds the first sentence *only when a second sentence follows*; a colon does not trigger it, and single-sentence entries render plain. Author cards as `Lead sentence. Detail sentence.` for both `whenItApplies` and `tradeoffs`; the preview `bold_lead` was fixed to match. **Added PP-54:** the `definition` supports inline cross-links `[text](/patterns/<slug>)` to confirmed neighbouring patterns (relative path; live-renderer link support still flagged for the implementation agent). Round 3 also exercised the silent-absence rule for the co-occurrence section (present in Round 4, which has `idempotency-keys ×3`; absent in Round 3) — already covered by the page anatomy, no new rule.

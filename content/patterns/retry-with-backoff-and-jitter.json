@@ -1,18 +1,42 @@
 {
   "slug": "retry-with-backoff-and-jitter",
   "name": "Retry with Backoff and Jitter",
-  "definition": "When a client retries a failed operation against a shared service, raw persistence is dangerous: the failure might be transient (retry soon and succeed) or systemic (the server is degraded, and every retry adds load at the worst possible moment). The client cannot tell which regime it is in. Exponential backoff resolves this without requiring the client to know — each successive failure waits proportionally longer (typically 2^n), so transient failures recover quickly while systemic failures see the retry rate collapse automatically.\n\nBackoff alone is not enough when many clients fail together. A server incident fails thousands of clients at nearly the same instant, and identical backoff schedules mean they all retry at nearly the same instant too — the thundering herd, where each recovery wave re-creates the overload that caused the failure. Adding random jitter to each client's wait decorrelates the population: individually each client waits a slightly arbitrary time, collectively the retry load spreads into a smooth curve the server can absorb while recovering.\n\nThe pattern is among the oldest in networked computing and among the most widely embodied: Ethernet's CSMA/CD used binary exponential backoff to arbitrate a shared wire, TCP applies it to retransmission timers, AWS SDKs ship full-jitter backoff as default retry policy, and gRPC and Envoy implement it alongside retry budgets that cap total retry volume. Client libraries for payment and infrastructure APIs (Stripe's official libraries among them) bundle it with idempotency keys so that retrying is both safe and polite by default.\n\nThe deeper principle: a retry policy is not private client behavior — it is load the rest of the system must absorb. Backoff and jitter are the client-side half of overload protection; server-side load shedding is the other half, and systems under real pressure generally need both.",
+  "oneLineDefinition": "Retry with backoff and jitter means when a call fails, each retry waits a bit longer and a bit randomly, so a wave of retries doesn't hit a struggling server all at once.",
+  "definition": "When a client keeps retrying a call that failed against a shared service, just trying again right away, over and over, is dangerous. The failure might be a brief blip that clears on its own, in which case a quick retry works. Or the server itself might be in trouble, in which case every retry piles on more load at the worst possible time. The client cannot tell which of the two it is facing. Exponential backoff handles both without the client knowing which: after each failure it waits longer than the last (each wait roughly doubling), so a brief blip recovers fast while a real outage sees the retries slow to a trickle.\n\nBackoff by itself is not enough when many clients fail together. One server incident knocks out thousands of clients at almost the same instant, and if they all follow the same backoff schedule they all retry at almost the same instant too. That is the thundering herd: each wave of retries re-creates the very overload that caused the failure. Adding a little randomness to each client's wait (jitter) breaks the clients out of lockstep. Each one waits a slightly different amount, so together their retries spread into a smooth wave the server can absorb while it recovers.\n\n{{figure:spread-the-retries}}\n\nThis is one of the oldest tricks in networking, and it shows up everywhere. Ethernet used it to let many machines share one wire, and TCP uses it to space out resends. The AWS and Stripe client libraries do backoff and jitter by default, often bundled with [idempotency keys](/patterns/idempotency-keys) so a retry is both safe and polite.\n\nThe bigger point: a retry is not just the client's own business - it is load that the rest of the system has to absorb. Backoff and jitter are the client's half of protecting against overload; server-side [load shedding](/patterns/priority-aware-load-shedding) is the other half, and a system under real pressure usually needs both.",
   "whenItApplies": [
-    "Any client retrying operations against a shared remote service, where retry load lands on infrastructure other clients depend on.",
-    "Mass-failure events — a server incident, a network partition healing, a fleet-wide reconnect — where synchronized recovery attempts can re-trigger the original overload.",
-    "As the client-side complement to server-side load shedding and admission control; one without the other leaves half the overload problem unsolved.",
-    "Default behavior in SDKs and client libraries, where individual integrators cannot be relied on to implement polite retry themselves."
+    "A client keeps retrying a shared service. The retries land on infrastructure that other clients depend on too, so how you retry is everyone's problem, not just yours.",
+    "Many clients can fail at the same moment. A server incident, a network partition healing, or a fleet-wide reconnect can make thousands of clients try to recover in sync and re-trigger the original overload.",
+    "You already shed load on the server side. Backoff and jitter are the client-side half of the same job, and doing one without the other leaves half the overload problem unsolved.",
+    "You ship an SDK or client library. The people who use it will not all add polite retries themselves, so the safe behavior has to be built into the library by default."
   ],
   "tradeoffs": [
-    "Individual convergence gets slower as collective stability gets stronger. A client in exponential backoff may hold divergent state for progressively longer windows, and jitter adds further variance on top; latency-sensitive callers feel this directly.",
-    "Backoff parameters are load-bearing configuration. The base wait, the multiplier, the cap, and the maximum attempt count together determine both how fast a healthy system recovers and how hard a sick one gets hit; defaults that are wrong for a workload fail quietly until an incident exposes them.",
-    "Jitter makes client behavior non-deterministic, which complicates testing, debugging, and reasoning about exact retry timing — the cost of decorrelation is reproducibility.",
-    "Backoff bounds the rate of retries but not their total volume. Long incidents with many queued callers can still deliver overwhelming aggregate retry load; retry budgets, circuit breakers, or server-side shedding are needed to cap the total, not just the rate."
+    "Each client recovers slower so the group stays stable. A client in backoff can hold stale state for longer and longer windows, and jitter adds more variance on top, which latency-sensitive callers feel directly.",
+    "The backoff numbers are load-bearing configuration. The starting wait, the multiplier, the cap, and the attempt limit together decide how fast a healthy system recovers and how hard a sick one gets hit, and bad defaults fail quietly until an incident exposes them.",
+    "Jitter makes retry timing non-deterministic. That randomness is the price of spreading the load, and it makes testing, debugging, and reasoning about exact timing harder.",
+    "Backoff limits the rate of retries but not the total. A long incident with many queued callers can still add up to overwhelming load, so you also need retry budgets, circuit breakers, or server-side shedding to cap the total."
   ],
-  "category": "resilience"
+  "aliases": [
+    "exponential backoff",
+    "thundering herd",
+    "spread out retries"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/retry-with-backoff-and-jitter/index.html",
+    "teaser": "Watch synchronized retries re-crash a server - then add jitter and smooth them into a curve it can absorb."
+  },
+  "figures": [
+    {
+      "slug": "spread-the-retries",
+      "eyebrow": "WHY JITTER WORKS",
+      "caption": "Without jitter, clients that failed together retry together, and the load arrives in tall synchronized spikes that keep overwhelming the server. A little randomness in each wait spreads the same retries into a smooth curve it can absorb.",
+      "ariaLabel": "Two load charts: without jitter, tall synchronized retry spikes over capacity; with jitter, a low smooth curve under capacity."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: a crowd of clients all retrying a server that just failed, and a choice of how they space out their retries - all together, or spread apart.",
+    "idea": "When a server fails, every client that was talking to it wants to retry. If they all retry on the same clock, they arrive in synchronized waves that keep knocking the server back down. Spacing each client out by a slightly random amount turns those waves into a smooth load the recovering server can handle.",
+    "whatToTry": "Watch the retry load with no backoff, then with backoff, then with backoff and jitter. Only the last one turns the spikes into a smooth curve under the capacity line."
+  }
 }

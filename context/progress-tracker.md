@@ -7439,6 +7439,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-24: **Pattern review Round 4 — Retry with Backoff and Jitter**,
+  plus **inline cross-link support** (a real renderer change this round).
+  Repo-truth catch: the round introduced inline markdown links
+  `[text](/patterns/<slug>)` in the definition (PP-54), but Prose had **no
+  markdown-link support** — so Round 3 (universal-staged-rollout, already
+  live) was rendering `[Conservative Auto-Remediation](/patterns/...)` as
+  literal text (a bug I shipped by not checking the definition for links).
+  Fix: added `renderInline` to `src/components/Prose.tsx` (internal
+  `/`-prefixed links → react-router `<Link>`, in paragraphs + list items),
+  and a new validator `inline-link-targets` (every `/patterns/<slug>`
+  inline link must resolve to a real pattern — the no-404 guard; checks now
+  22). This fixed the Round-3 live bug automatically (no content change) and
+  makes Round-4 links render. Also placed the Round-4 package (json/jsx/svg,
+  aliases: exponential backoff · thundering herd · spread out retries) and
+  the updated `docs/Corrections_pattern.md` (v0.2/v0.3 — `file`-field fix
+  folded in per Round-1 feedback; bold-lead corrected to sentence-based).
+  Bold-lead note: the doc says "colon doesn't trigger"; my actual `boldLead`
+  is colon-first-else-first-sentence, but the round's period-separated
+  two-sentence cards bold correctly via the sentence branch, so content is
+  fine. Build + 254 tests green.
 - 2026-08-22: **Pattern review Round 3 — Universal Staged Rollout**.
   Placed the round package: updated
   `content/patterns/universal-staged-rollout.json` (authored
