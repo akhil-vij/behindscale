@@ -1,18 +1,42 @@
 {
   "slug": "atomic-phases",
   "name": "Atomic Phases",
-  "definition": "Break a long workflow into discrete, individually committable phases so that any interruption resumes from the last committed boundary without redoing or skipping work.\n\nEach phase has a clear input, a single side effect (or a tightly bounded group of related side effects), and a durable commit point that captures what was done. A subsequent retry reads the workflow's stored state, sees which phase completed last, and continues from the next one. The pattern turns a long, network-spanning operation into a sequence of small, locally-reasoned operations — each of which can succeed, fail, or replay on its own without breaking the whole.\n\nThe key invariant is that each phase is atomic with respect to the workflow's externally observable state: either the phase committed and its effects are visible to the next phase, or it didn't and the next retry sees the world as it was before the phase started. No partial commits, no observable in-between states.",
+  "oneLineDefinition": "Atomic phases means splitting a long job into steps that each save their result when they finish, so an interrupted job resumes from the last finished step instead of starting over or repeating work.",
+  "definition": "Break a long job into separate steps, each able to finish and be saved on its own, so that if the job is interrupted it can pick up from the last saved point without redoing or skipping work. Each phase has three parts:\n\n- a clear input, so it knows what it starts from\n- one real change to the outside world, such as charging a card or saving a record, kept to that one change or a small set of closely related ones\n- a saved marker that records it finished\n\nWhen the job retries, it reads what was saved, sees which phase finished last, and carries on from the next one. A long operation that reaches across the network becomes a line of small steps you can think about one at a time - each free to succeed, fail, or run again on its own without breaking the rest.\n\n{{figure:resume-from-the-checkpoint}}\n\nThe rule that makes it work: each phase is all-or-nothing as far as the outside world can see. Either the phase finished and its result is there for the next phase, or it didn't and the next try sees the world exactly as it was before the phase started. Nothing half-done is ever visible.",
   "whenItApplies": [
-    "Long-running workflows that must survive partial failure (process crash, network drop, host loss).",
-    "Operations that must be safe to retry from any midpoint without double-execution.",
-    "Workflows that span multiple external systems where any single call could fail independently.",
-    "Pipelines where re-executing earlier work is expensive or destructive, so resumption needs a precise restart point."
+    "A long job has to survive a crash partway. A process crash, a dropped network connection, or a lost machine should not force the whole thing to start over.",
+    "A retry must be safe from any point. Whatever step it stopped on, running it again should never do the same work twice.",
+    "The job touches several outside systems. Each call to a database, a payment provider, or another service can fail on its own, so recovery has to happen one step at a time.",
+    "Redoing earlier work is expensive or harmful. When re-running a step costs real money or cannot be undone, the retry needs an exact point to restart from instead of starting over."
   ],
   "tradeoffs": [
-    "Requires durable storage at each phase boundary, with the latency cost that implies.",
-    "Phase boundaries must be designed carefully — too coarse and a failure replays expensive work; too fine and the bookkeeping dominates the actual work.",
-    "Adds complexity to the data model; every workflow carries its phase state alongside its business state.",
-    "Designing each phase as atomic with respect to externally observable state is hard for operations that touch multiple systems simultaneously."
+    "Every phase has to save its state durably. That saved checkpoint takes time to write, so each boundary adds a little latency.",
+    "Choosing where the phases begin and end is hard. Too few and a failure replays a lot of expensive work; too many and the bookkeeping costs more than the work itself.",
+    "The data model gets more complicated. Every job now stores its progress, which phase it reached, next to its actual business data.",
+    "Making a phase truly all-or-nothing is hard across systems. When one phase touches several services at once, it is difficult to guarantee they all commit together or not at all."
   ],
-  "category": "resilience"
+  "aliases": [
+    "checkpointing",
+    "resumable workflows",
+    "save progress between steps"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/atomic-phases/index.html",
+    "teaser": "Crash a workflow partway, then retry - resume from the last checkpoint, or restart from zero and charge the card twice."
+  },
+  "figures": [
+    {
+      "slug": "resume-from-the-checkpoint",
+      "eyebrow": "RESUME, DON'T RESTART",
+      "caption": "A crash partway through does not send the job back to the start. Each finished phase saved a checkpoint, so the retry skips what already committed and resumes at the phase that failed, redoing nothing and skipping nothing.",
+      "ariaLabel": "A four-phase workflow; a crash during phase three; a retry arrow resuming at phase three, not the start."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: a job split into a few steps, each one saving a checkpoint when it finishes, and a retry that reads those checkpoints to pick up where it left off.",
+    "idea": "A job that runs as one big step has to start over from the beginning after any crash, redoing work that already happened - and redone work can mean charging a card twice. Splitting the job into steps that each save a checkpoint lets a retry skip what already finished and resume from the exact point that failed.",
+    "whatToTry": "Run the workflow, then crash it partway. As one big step it restarts from the top and charges the card twice; with atomic phases the retry resumes from the last checkpoint and every step runs exactly once."
+  }
 }

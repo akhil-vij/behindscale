@@ -7439,6 +7439,15 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-24: **Pattern review Round 5 — Atomic Phases**. Clean drop-in:
+  updated `content/patterns/atomic-phases.json` (authored `oneLineDefinition`,
+  readability-passed definition with one figure marker, no inline links,
+  aliases: checkpointing · resumable workflows · save progress between
+  steps), new authored artifact `content/artifacts/atomic-phases.jsx` (zero
+  near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/atomic-phases/resume-from-the-checkpoint.svg`. Rich page
+  now (mechanism + figure). No `file` field. Revision HTML not placed.
+  Build + 254 tests green.
 - 2026-08-24: **Pattern review Round 4 — Retry with Backoff and Jitter**,
   plus **inline cross-link support** (a real renderer change this round).
   Repo-truth catch: the round introduced inline markdown links
