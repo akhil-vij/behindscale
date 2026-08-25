@@ -20,12 +20,26 @@
 // band counts or leak into any future index/description. The renderer
 // keeps them (via proseRaw) because it needs to see the list.
 //
+// Inline links (docs/Corrections_pattern.md PP-54, added Round 4):
+// prose fields may carry inline cross-links `[text](/path)` that the
+// renderer (Prose.tsx) turns into <Link>s. Like figure/list markers,
+// the bracket-and-URL syntax is STRUCTURE, not prose -- it must never
+// leak into a measurement, index, or description. proseText() unwraps
+// each link to its visible label (`[workflows](/patterns/x)` ->
+// `workflows`). This closes the JSON-LD description leak observed in
+// Round 9 (embedded-vs-centralized-orchestration), where a link in the
+// first definition paragraph shipped raw into the DefinedTerm
+// description. The renderer still sees the raw link via proseRaw().
+//
 // Today's consumers wired in:
 //   - scripts/checks/stats-value-in-prose.ts -> proseText()
 //   - src/components/Prose.tsx                -> proseRaw()
+//   - scripts/prerender.ts pattern JSON-LD    -> proseText()
+//     (DefinedTerm + meta description built from pattern.definition's
+//     first paragraph; wired Round 9 to strip the inline link chrome)
 //
 // Forward-looking guards (safe today, safe forever if the rule holds):
-//   - scripts/prerender.ts JSON-LD descriptions currently use
+//   - scripts/prerender.ts article JSON-LD descriptions use
 //     article.summary / article.crux, not problem/solution. If a
 //     future revision starts building descriptions from body prose,
 //     it must call proseText().
@@ -43,6 +57,13 @@ import { stripListMarkers } from './proseList'
 // (marker-placement-legal).
 const FIGURE_MARKER_RE = /\{\{figure:[a-z0-9]+(?:-[a-z0-9]+)*\}\}/g
 
+// Inline internal cross-link syntax `[text](/path)` -- mirrors the
+// renderer's INLINE_LINK matcher in src/components/Prose.tsx (internal
+// only: the target must start with `/`). proseText() replaces each with
+// its visible label so the link chrome never leaks into a description
+// or index. Kept in sync with Prose.tsx by construction.
+const INLINE_LINK_RE = /\[([^\]]+)\]\(\/[^)\s]+\)/g
+
 // Strip figure markers and collapse the whitespace they leave behind
 // to a single blank-line paragraph break. Two callers that count
 // characters against the taste doc bands (problem 1300-3000, solution
@@ -55,6 +76,9 @@ const FIGURE_MARKER_RE = /\{\{figure:[a-z0-9]+(?:-[a-z0-9]+)*\}\}/g
 export function proseText(field: string): string {
   return stripListMarkers(field)
     .replace(FIGURE_MARKER_RE, '')
+    // Unwrap inline cross-links to their visible label, so link chrome
+    // never leaks into a description/index (see header note).
+    .replace(INLINE_LINK_RE, '$1')
     // A marker on its own line, with blank lines both sides, leaves
     // three consecutive newlines after removal (`\n\n` + `` + `\n\n`
     // -> `\n\n\n\n`). Collapse any run of 3+ newlines down to the

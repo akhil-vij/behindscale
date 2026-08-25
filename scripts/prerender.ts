@@ -20,6 +20,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { catalogGroups, type CatalogGroup } from '../src/lib/catalogGroups'
+import { proseText } from '../src/lib/proseText'
 import type {
   Article,
   CruxTagRegistry,
@@ -389,7 +390,10 @@ function patternsIndexMeta(): Meta {
     '@type': 'DefinedTerm',
     '@id': patternTermId(pattern.slug),
     name: pattern.name,
-    description: pattern.definition.split(/\n\s*\n/)[0] ?? '',
+    // proseText() strips figure markers and unwraps inline links so the
+    // DefinedTerm description carries plain prose, never link/marker
+    // chrome (see src/lib/proseText.ts; Round 9 leak fix).
+    description: proseText(pattern.definition).split(/\n\s*\n/)[0] ?? '',
     termCode: pattern.slug,
     url: `${SITE_URL}/patterns/${pattern.slug}`,
   }))
@@ -529,7 +533,11 @@ function articleMeta(article: Article): Meta {
 }
 
 function patternMeta(pattern: PatternDefinition): Meta {
-  const firstParagraph = pattern.definition.split(/\n\s*\n/)[0] ?? ''
+  // proseText() strips figure markers and unwraps inline links so both
+  // the JSON-LD DefinedTerm description and the (fallback) meta
+  // description carry plain prose, never link/marker chrome. This is
+  // also the `oneLineDefinition ?? firstParagraph` fallback path below.
+  const firstParagraph = proseText(pattern.definition).split(/\n\s*\n/)[0] ?? ''
 
   // DefinedTerm for the pattern itself, referenced by article
   // TechArticle.mentions from every article that embodies this

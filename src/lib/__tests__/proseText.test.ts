@@ -56,6 +56,34 @@ describe('proseText', () => {
     const input = 'Lead-in:\n\n- first item\n- second item\n\nAfter.'
     expect(proseText(input)).toBe('Lead-in:\n\nfirst item\nsecond item\n\nAfter.')
   })
+
+  it('unwraps an inline link to its visible label (no link chrome leaks)', () => {
+    expect(
+      proseText('Running [workflows](/patterns/durable-workflows), retrying.'),
+    ).toBe('Running workflows, retrying.')
+  })
+
+  it('unwraps multiple inline links in one field', () => {
+    expect(
+      proseText('See [A](/patterns/a) and [B](/patterns/b) both.'),
+    ).toBe('See A and B both.')
+  })
+
+  it('leaves external-looking or non-internal bracket text untouched', () => {
+    // Only internal `/`-prefixed targets are link syntax (mirrors the
+    // renderer). A markdown-ish external URL is not unwrapped here.
+    expect(proseText('See [docs](https://example.com) online.')).toBe(
+      'See [docs](https://example.com) online.',
+    )
+    // Bare bracketed text with no URL is left alone.
+    expect(proseText('An [aside] with no link.')).toBe('An [aside] with no link.')
+  })
+
+  it('does not miscount characters -- the link chrome is fully removed', () => {
+    const withLink = 'Uses the [checkpoint](/patterns/atomic-phases) idea.'
+    const withoutLink = 'Uses the checkpoint idea.'
+    expect(proseText(withLink).length).toBe(withoutLink.length)
+  })
 })
 
 describe('proseRaw', () => {
