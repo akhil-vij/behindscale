@@ -40,3 +40,6 @@ public/artifacts/*
 # the build copies each file here so Vite ships it as a static asset.
 public/figures/*
 !public/figures/.gitkeep
+
+# transient delivery bundles (pattern rounds, design zips)
+*.zip
