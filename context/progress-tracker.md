@@ -7439,6 +7439,19 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-25: **Pattern review Round 6 — Cell Architecture**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/cell-architecture.json`,
+  slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[failure isolation](/patterns/fault-isolation)` (target exists —
+  Round 2; `inline-link-targets` guard green), aliases: cell-based
+  architecture · cellular architecture · blast radius. New authored artifact
+  `content/artifacts/cell-architecture.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/cell-architecture/the-coordination-wall.svg` (viewBox
+  0 0 700 252, safe). No `file` field. Revision HTML not placed. Rendered
+  detail page verified: real `/patterns/fault-isolation` anchor (0 literal
+  markdown), figure img, mechanism teaser. Build + 254 tests green.
 - 2026-08-24: **Pattern review Round 5 — Atomic Phases**. Clean drop-in:
   updated `content/patterns/atomic-phases.json` (authored `oneLineDefinition`,
   readability-passed definition with one figure marker, no inline links,
