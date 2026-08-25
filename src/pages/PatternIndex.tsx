@@ -39,11 +39,27 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-// First sentence of the definition (strip any figure markers first). The card's
-// one-line definition and search corpus layer 1.
-function oneLineOf(definition: string): string {
-  const clean = definition
+// The card's one-liner + search-corpus layer 1. Prefer the authored
+// `oneLineDefinition` (the field exists precisely to be the card/lede
+// summary); patterns not yet enriched fall back to the first-sentence
+// derivation from the full definition (unchanged behavior).
+//
+// The fallback strips figure markers and unwraps inline links
+// `[text](/path)` -> `text` (same reason proseText does — link chrome is
+// structure, not prose), then takes the first sentence. Preferring the
+// authored one-liner is what fixes embedded-vs-centralized-orchestration:
+// its definition opens with a colon list lead-in (no .!? in the first
+// "sentence"), so the derivation alone degenerates to the whole text —
+// the authored oneLineDefinition is the reliable source.
+function oneLineFor(pattern: {
+  oneLineDefinition?: string
+  definition: string
+}): string {
+  const authored = pattern.oneLineDefinition?.trim()
+  if (authored) return authored
+  const clean = pattern.definition
     .replace(/\{\{figure:[^}]+\}\}/g, ' ')
+    .replace(/\[([^\]]+)\]\(\/[^)\s]+\)/g, '$1')
     .replace(/\s+/g, ' ')
     .trim()
   const m = clean.match(/^(.*?[.!?])(?:\s|$)/)
@@ -56,7 +72,7 @@ function buildViews(): PatternView[] {
     const companies = [...(stats?.companies ?? [])].sort((a, b) =>
       a.localeCompare(b),
     )
-    const oneLine = oneLineOf(p.definition)
+    const oneLine = oneLineFor(p)
     const aliases = p.aliases ?? []
     const cat = patternCategoryById.get(p.category ?? '')
     // Three-layer corpus (case-insensitive substring):
