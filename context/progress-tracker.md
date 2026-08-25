@@ -7465,6 +7465,32 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-25: **Pattern review Round 9 — Embedded vs Centralized
+  Orchestration**. Enrichment of the pre-existing minimal pattern
+  (`content/patterns/embedded-vs-centralized-orchestration.json`,
+  slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[workflows](/patterns/durable-workflows)` (target exists —
+  Round 8; guard green), aliases: workflow orchestration · workflow platform ·
+  in-process orchestration. New authored artifact
+  `content/artifacts/embedded-vs-centralized-orchestration.jsx` (zero
+  near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/embedded-vs-centralized-orchestration/two-shapes.svg`
+  (viewBox 0 0 700 252, safe). No `file` field. Revision HTML not placed.
+  Tradeoffs use `Embedded: … Centralized: …` — colon-first bold-lead verified
+  (`<strong>Embedded:</strong>`). Rendered VISIBLE DOM verified clean:
+  real `/patterns/durable-workflows` anchor, 0 literal markdown, figure img,
+  mechanism teaser. Build (22 checks, 0 errors) + 254 tests green.
+  KNOWN ISSUE surfaced (not blocking, pre-existing, code-side): this is the
+  first pattern with an inline link in its FIRST definition paragraph, so the
+  JSON-LD `<script type="application/ld+json">` description
+  (`scripts/prerender.ts` builds it from `pattern.definition.split(…)[0]`)
+  ships the raw markdown `[workflows](/patterns/durable-workflows)`. VISIBLE
+  page is unaffected. Root cause: `proseText()` (src/lib/proseText.ts, the
+  canonical description/index cleaner) strips figure + list markers but was
+  never taught to unwrap inline links (added Round 4). Fix pending owner
+  greenlight: extend `proseText()` to unwrap `[text](/path)` → `text` and
+  route the pattern JSON-LD description through it.
 - 2026-08-25: **Pattern review Round 8 — Durable Workflows**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/durable-workflows.json`,
   slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
