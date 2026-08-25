@@ -7439,6 +7439,22 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-25: **Pattern review Round 7 — Circuit Breaker**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/circuit-breaker.json`,
+  slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker (no inline links),
+  aliases: fail fast · half-open · trip the circuit. New authored artifact
+  `content/artifacts/circuit-breaker.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/circuit-breaker/the-three-states.svg` (viewBox 0 0 700 286,
+  safe). No `file` field. Revision HTML not placed. Also folded in
+  `docs/Corrections_pattern.md` **v0.4**: the review agent corrected PP-8/PP-35
+  to match the real `boldLead` (colon-first, else first sentence, else no
+  bold) and the preview `bold_lead` now checks colon-first then sentence —
+  the fix I flagged after Round 5. Build (22 checks, 0 errors) + 254 tests
+  green. NOTE: v0.4 PP-8 still says whenItApplies AND tradeoffs both bold-lead;
+  the live component bolds tradeoffs only (whenItApplies is a plain numbered
+  grid) — flagged back to the review agent.
 - 2026-08-25: **Pattern review Round 6 — Cell Architecture**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/cell-architecture.json`,
   slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
