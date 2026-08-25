@@ -1,16 +1,40 @@
 {
   "slug": "generic-mitigation",
   "name": "Generic Mitigation",
-  "category": "resilience",
-  "definition": "Build mitigations that can be applied before the root cause is understood: actions that reduce impact for a broad class of failures, are safe to apply experimentally, and are cheap to reverse. A generic mitigation is judged on four properties — it acts fast relative to the availability budget, it introduces no user-visible errors of its own, it can be applied incrementally so recovery can be tested at small percentages, and it does not depend on resources inside the failure domain it mitigates.\n\nThe pattern's premise is epistemic humility during incidents: diagnosis is slow and often wrong under pressure, while a small set of reversible actions — drain the zone, roll back the deploy, fail over the region, disable the feature flag — resolves most incidents without anyone knowing the cause yet. Making those actions safe to try on suspicion converts incident response from a diagnosis race into an experiment loop: apply, observe, keep or revert.",
+  "oneLineDefinition": "A generic mitigation is a safe, reversible action that reduces the damage for many kinds of failure, so you can apply it before you even know what caused the incident.",
+  "definition": "A generic mitigation is a fix you can apply before you know the root cause: something that reduces the damage across a whole range of failures, is safe to try, and is cheap to undo. A good one has four properties:\n\n- **fast** - it takes effect quickly, before the outage does too much damage\n- **harmless** - it adds no errors of its own, so trying it can't make things worse\n- **gradual** - you can turn it on a little at a time and watch whether things recover\n- **independent** - it doesn't rely on anything inside the part that is failing\n\nThe idea rests on being honest about what you don't know during an incident: figuring out the root cause is slow and, under pressure, often wrong. Meanwhile a handful of reversible moves - drain the zone (stop sending it new traffic), roll back the deploy, fail over to another region, turn off the feature flag - clears up most incidents before anyone knows the cause. Once those moves are safe to try on a hunch, incident response stops being a race to diagnose and becomes a simple loop: apply a mitigation, watch what happens, then keep it or undo it.\n\n{{figure:the-experiment-loop}}",
   "whenItApplies": [
-    "Failure modes that defeat automatic detection (gray failures, partial network faults) where human judgment must act on ambiguous evidence",
-    "Services with tight availability budgets where mitigation speed matters more than root-cause speed",
-    "Any system where the common mitigations (drain, rollback, failover, flag-off) can be made harmless enough to apply experimentally"
+    "The failure hides from your automatic detection. Gray failures and partial network faults leave the signals ambiguous, so a human has to act on a hunch rather than a clear alert.",
+    "You can't afford to wait for a diagnosis. A tight availability target leaves very little room: 99.99% allows only about 52 minutes of downtime across the whole year. Every minute spent diagnosing instead of mitigating eats that budget, so stopping the bleeding fast matters more than finding the exact cause.",
+    "The usual moves can be made safe to try. If drain, rollback, failover, and flag-off can be made harmless enough, you can apply them on suspicion instead of waiting for certainty."
   ],
   "tradeoffs": [
-    "Generic means blunt: the mitigation over-scopes by design, evacuating healthy workloads along with sick ones",
-    "Safety properties must be engineered and continuously verified — a drain that causes errors, or depends on the failing domain, silently stops being generic",
-    "Optimizing for recovery time over prevention is a budget allocation: the same failure will happen again, cheaper"
-  ]
+    "Generic means blunt: it deliberately casts a wide net, so healthy work gets moved out along with the failing work.",
+    "The safety has to be built and constantly re-checked. A drain that throws errors, or that secretly depends on the failing part, quietly stops being safe to apply on a hunch.",
+    "Fast recovery instead of prevention is a trade, not a cure: the same failure will happen again, just cheaper each time."
+  ],
+  "aliases": [
+    "mitigate before diagnosis",
+    "stop the bleeding",
+    "buy time in an incident"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/generic-mitigation/index.html",
+    "teaser": "Meet an incident of unknown cause - diagnose first, or mitigate on suspicion, and watch the user impact shrink."
+  },
+  "figures": [
+    {
+      "slug": "the-experiment-loop",
+      "eyebrow": "THE EXPERIMENT LOOP",
+      "caption": "Because each mitigation is safe and reversible, you don't need the cause first. Apply one on suspicion, watch whether the impact drops, then keep it if it helped or revert and try another.",
+      "ariaLabel": "A loop: apply a mitigation, observe the impact, then keep it if it helped or revert and try another."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: an incident whose cause is still unknown, and a choice between debugging for the cause first or applying a safe, reversible mitigation right away.",
+    "idea": "Finding the root cause of an incident is slow and often wrong under pressure, and users see errors the whole time you are looking. A generic mitigation - drain a bad zone (stop its traffic), roll back, fail over, flag off - stops the errors for a broad class of failures without needing the cause. Because it is reversible, a wrong guess just gets undone. Acting early cuts the total user impact sharply.",
+    "whatToTry": "Run the incident by diagnosing first, then by mitigating first. Diagnosing keeps errors high until the cause is found; a generic mitigation stops them almost immediately, at a fraction of the total user impact, before the cause is even known."
+  }
 }
