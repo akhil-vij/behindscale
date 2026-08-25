@@ -4,6 +4,32 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Rich problem-page template v3 prototype authored (2026-08-25).**
+  Owner kicked off the problem-detail redesign (minimal → rich, one class
+  at a time, starting with `ambiguous-failure-under-retry`). Agent
+  reviewed the owner's `ambiguous-failure-comparison-redesign-v2.html`
+  (comparison module: spectrum / anatomy strip / matrix / Q1–Q6) and
+  authored `ambiguous-timeouts-problem-page-v3.html` — the full-page
+  rich-template proposal. New over v2: THE WALL (problem-level
+  three-deaths figure + stat strip, every number company-attributed),
+  BREAK IT YOURSELF (first **problem-level artifact** — "The ambiguity
+  window": cut × action × state-shelf = 15 sourced endings, each bad one
+  naming the company whose post covers it; inline JS in the prototype
+  only, ships as a sandboxed iframe), WHICH ANSWER IS YOURS (constraint →
+  article decision guide), WHAT TO STEAL (five transferable rules, one
+  per matrix row), article cards now carry each article's existing
+  `artifact.teaser` as a BREAK IT line. v2 fixes folded in: per-company
+  spectrum dots (AWS separates from Stripe — SDK autofill), strip/matrix/
+  answers reordered to spectrum order so the machinery visibly migrates
+  caller→server, Q6 open by default (matrix anchors landed on closed
+  details), th scope attrs, anatomy rows scroll-wrapped (min-width 560px)
+  for phones, hardcoded grays → classes, hot tints promoted to named
+  tokens (need ui-context.md mints), dead question-page link removed.
+  Verified: tag-balance/JS-syntax/anchor checks green; full page +
+  artifact click-paths browser-checked via localhost. Approval asks
+  consolidated as open-decisions item 20 (blocker). Page-level JS policy
+  unchanged: the page itself stays zero-JS.
+
 - **14 problem-class ledes authored — first essay content LANDED
   (2026-08-18).** Owner-approved final set; created 14 lede-only
   `content/problems/<cruxTag>.json` files (`{cruxTag, lede}`), the first
@@ -7439,6 +7465,19 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-25: **Pattern review Round 8 — Durable Workflows**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/durable-workflows.json`,
+  slug/name/category frozen — resilience). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[checkpoint-and-resume](/patterns/atomic-phases)` (target exists —
+  Round 5; `inline-link-targets` guard green), aliases: durable execution ·
+  workflow engine · long-running workflows. New authored artifact
+  `content/artifacts/durable-workflows.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/durable-workflows/flow-and-effects.svg` (viewBox
+  0 0 700 262, safe). No `file` field. Revision HTML not placed. Rendered page
+  verified: real `/patterns/atomic-phases` anchor (0 literal markdown), figure
+  img, mechanism teaser. Build (22 checks, 0 errors) + 254 tests green.
 - 2026-08-25: **Pattern review Round 7 — Circuit Breaker**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/circuit-breaker.json`,
   slug/name/category frozen — resilience). Added authored `oneLineDefinition`,

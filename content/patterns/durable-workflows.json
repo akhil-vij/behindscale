@@ -1,18 +1,42 @@
 {
   "slug": "durable-workflows",
   "name": "Durable Workflows",
-  "definition": "A durable workflow is a multi-step business process whose execution state survives crashes, restarts, and arbitrary waits — without the business logic needing to know about persistence, retries, or recovery. The workflow author writes linear code; the runtime guarantees that if execution is interrupted at any point, it resumes from the last known good state when restarted.\n\nThe defining mechanism is the separation of orchestration logic from side effects. Orchestration logic (conditionals, loops, waits, the overall flow) must be deterministic so it can be replayed identically. Side effects (API calls, database writes, anything observable externally) are wrapped in an explicit primitive (often called an Action, Activity, or Step) whose result is checkpointed to durable storage after each successful execution.\n\nOn crash and resume, the workflow re-executes from the beginning. Where it encounters an already-completed side effect, it short-circuits to the checkpointed result instead of re-running. The workflow author sees linear, top-to-bottom code; the runtime handles the heavy lifting of durability.",
+  "oneLineDefinition": "A durable workflow lets you write a multi-step process as plain top-to-bottom code, while the system saves each step as it finishes, so a crash resumes from the last completed step, not the start.",
+  "definition": "A durable workflow is a multi-step process - a payment, an onboarding, an approval - that remembers how far it has got, even through crashes, restarts, and long waits. Your code never has to handle the saving, retrying, or recovering itself. The person writing the workflow writes plain, top-to-bottom code, and the engine underneath promises that if the process is interrupted anywhere, it picks back up from the last good point when it restarts.\n\nThe key idea is to split the workflow into two kinds of code:\n\n- the flow - the ifs, loops, waits, and order of steps; it must be deterministic (same inputs, same result every time) so it can be replayed exactly\n- the effects - the parts that change the outside world, like calling an API or writing to a database; each one is wrapped in a named step whose result is saved (checkpointed) when it succeeds\n\nAfter a crash, the workflow runs again from the top. But wherever it reaches a step that already finished, it uses the saved result instead of running that step again - the same [checkpoint-and-resume](/patterns/atomic-phases) idea, now applied to a whole multi-step process at once. So the author just sees plain, top-to-bottom code, while the engine underneath does the work of surviving crashes.\n\n{{figure:flow-and-effects}}",
   "whenItApplies": [
-    "Multi-step processes spanning minutes to days where intermediate state matters (payments, claims, onboarding, multi-stage approvals)",
-    "Workflows with external waits — waiting for human approval, third-party callbacks, scheduled times — where blocking a thread or polling would be wasteful",
-    "Business logic that must survive arbitrary infrastructure failures without leaving partial state, duplicate side effects, or orphaned operations",
-    "Domains where reconciliation scripts and ad-hoc cleanup jobs have proliferated; durable workflows replace that scattered logic with a single coherent execution model"
+    "The process runs for minutes to hours, and the middle matters. Things like payments, claims, or multi-stage approvals, where losing the half-finished state would be a real problem.",
+    "The process has to wait on the outside world. It waits for a human to approve, a callback to arrive, or a scheduled time, and holding a thread open or polling the whole time would be wasteful.",
+    "A crash must not leave a mess behind. The process has to survive failures without half-finished state, duplicate effects, or work that got started and then forgotten.",
+    "You are drowning in cleanup and reconciliation scripts. When failures keep spawning one-off fix-up jobs, a durable workflow folds that scattered recovery logic into one place."
   ],
   "tradeoffs": [
-    "Workflow code must be deterministic. Random numbers, clock reads, and non-deterministic branches must be wrapped in side-effect primitives so their results checkpoint.",
-    "Side effects are at-least-once. If execution succeeds but the checkpoint write fails, the next replay re-runs the side effect. Idempotency at the side-effect boundary is required.",
-    "Workflow evolution is hard. Changing a workflow's logic while instances are in flight requires versioning — replaying old instances against new code will diverge if the action sequence changes.",
-    "Debugging requires understanding replay. Observed behavior may not match what the code appears to do on a single execution — the durable runtime is shaping outcomes in ways that need their own mental model."
+    "The flow code has to be deterministic. Anything that could differ between runs - a random number, the current time, a branch that depends on either - has to be wrapped in a saved step, or the replay won't match.",
+    "Effects can run more than once. If a step succeeds but its checkpoint fails to save, the replay will run it again, so each step has to be safe to repeat.",
+    "Changing a running workflow is hard. If you edit the logic while old runs are still in flight, replaying them against the new code can go wrong, so you have to version the workflow.",
+    "Debugging means thinking in replays. What actually happens may not match a plain top-to-bottom read of the code, because the runtime is replaying and short-circuiting underneath."
   ],
-  "category": "resilience"
+  "aliases": [
+    "durable execution",
+    "workflow engine",
+    "long-running workflows"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/durable-workflows/index.html",
+    "teaser": "Crash a workflow partway, then replay it - each finished step returns its saved result, so every effect fires once."
+  },
+  "figures": [
+    {
+      "slug": "flow-and-effects",
+      "eyebrow": "FLOW VS EFFECTS",
+      "caption": "A durable workflow has two layers: a deterministic flow that replays exactly on each restart, and effects that run once and save a checkpoint. On replay the flow reuses those saved results instead of firing the effects again.",
+      "ariaLabel": "Two lanes: a deterministic flow on top, checkpointed effects below, with replay reusing the saved results."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: a multi-step workflow that crashes partway, and a runtime that replays the code from the top but returns the saved result for every step that already finished, so no step's effect runs twice.",
+    "idea": "You write the workflow as plain top-to-bottom code. When it crashes, the runtime runs that same code again from the beginning - but every step that already finished returns its saved result instead of re-running, so its effect fires only once. Execution reaches the point where it crashed and carries on from there.",
+    "whatToTry": "Run the workflow, crash it partway, then replay. Watch the runtime re-enter from the top: the finished steps return their saved results instantly, the crashed step runs for real, and every effect still fires exactly once."
+  }
 }
