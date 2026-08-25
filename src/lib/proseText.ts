@@ -58,11 +58,16 @@ import { stripListMarkers } from './proseList'
 const FIGURE_MARKER_RE = /\{\{figure:[a-z0-9]+(?:-[a-z0-9]+)*\}\}/g
 
 // Inline internal cross-link syntax `[text](/path)` -- mirrors the
-// renderer's INLINE_LINK matcher in src/components/Prose.tsx (internal
-// only: the target must start with `/`). proseText() replaces each with
-// its visible label so the link chrome never leaks into a description
-// or index. Kept in sync with Prose.tsx by construction.
+// renderer's INLINE matcher in src/components/Prose.tsx (internal only:
+// the target must start with `/`). proseText() replaces each with its
+// visible label so the link chrome never leaks into a description or
+// index. Kept in sync with Prose.tsx by construction.
 const INLINE_LINK_RE = /\[([^\]]+)\]\(\/[^)\s]+\)/g
+
+// Inline bold `**text**` -- also mirrors the Prose.tsx INLINE matcher.
+// Unwrapped to the visible text so the `**` chrome never leaks into a
+// description or index (same reason as links and figure/list markers).
+const BOLD_RE = /\*\*([^*]+)\*\*/g
 
 // Strip figure markers and collapse the whitespace they leave behind
 // to a single blank-line paragraph break. Two callers that count
@@ -79,6 +84,8 @@ export function proseText(field: string): string {
     // Unwrap inline cross-links to their visible label, so link chrome
     // never leaks into a description/index (see header note).
     .replace(INLINE_LINK_RE, '$1')
+    // Unwrap inline bold to its visible text, for the same reason.
+    .replace(BOLD_RE, '$1')
     // A marker on its own line, with blank lines both sides, leaves
     // three consecutive newlines after removal (`\n\n` + `` + `\n\n`
     // -> `\n\n\n\n`). Collapse any run of 3+ newlines down to the

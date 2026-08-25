@@ -84,6 +84,21 @@ describe('proseText', () => {
     const withoutLink = 'Uses the checkpoint idea.'
     expect(proseText(withLink).length).toBe(withoutLink.length)
   })
+
+  it('unwraps inline bold to its visible text (no ** leaks)', () => {
+    expect(proseText('- **fast** - it takes effect quickly')).toBe(
+      'fast - it takes effect quickly',
+    )
+    expect(proseText('A **harmless** move and a **gradual** one.')).toBe(
+      'A harmless move and a gradual one.',
+    )
+  })
+
+  it('leaves a lone/unbalanced ** untouched (validator catches it)', () => {
+    expect(proseText('An unbalanced ** marker here.')).toBe(
+      'An unbalanced ** marker here.',
+    )
+  })
 })
 
 describe('proseRaw', () => {

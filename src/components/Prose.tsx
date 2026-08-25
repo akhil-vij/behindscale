@@ -36,32 +36,46 @@ interface ProseProps {
   figures?: readonly FigureType[]
 }
 
-// Inline internal cross-links: `[text](/path)` renders as a react-router
-// <Link>. INTERNAL only -- the target must start with `/` (the regex won't
-// match `http(s)://`), so no external navigation is introduced and the site
-// stays static-by-construction. Applied inside paragraphs and list items.
-// `/patterns/<slug>` targets are guarded against 404 by the build-time
-// `inline-link-targets` check. See docs/Corrections_pattern.md PP-54.
-const INLINE_LINK = /\[([^\]]+)\]\((\/[^)\s]+)\)/g
+// Inline markup, applied inside paragraphs and list items. Two forms, matched
+// in a single left-to-right pass by INLINE (alternation):
+//   - `[text](/path)`  -> react-router <Link>. INTERNAL only: the target must
+//     start with `/` (the regex won't match `http(s)://`), so no external
+//     navigation is introduced and the site stays static-by-construction.
+//     `/patterns/<slug>` targets are guarded against 404 by the build-time
+//     `inline-link-targets` check. See docs/Corrections_pattern.md PP-54.
+//   - `**text**`       -> <strong>. Non-nested (the inner run has no `*`); the
+//     build-time `bold-markers-balanced` check rejects an odd number of `**`
+//     in any Prose field so an unbalanced marker can never leak literal
+//     asterisks. proseText() strips `**` for descriptions/indexes.
+const INLINE = /\[([^\]]+)\]\((\/[^)\s]+)\)|\*\*([^*]+)\*\*/g
 
 function renderInline(text: string): ReactNode {
-  if (!text.includes('](/')) return text // fast path: no internal links
+  // fast path: nothing to transform
+  if (!text.includes('](/') && !text.includes('**')) return text
   const nodes: ReactNode[] = []
   let last = 0
   let k = 0
-  INLINE_LINK.lastIndex = 0
+  INLINE.lastIndex = 0
   let m: RegExpExecArray | null
-  while ((m = INLINE_LINK.exec(text)) !== null) {
+  while ((m = INLINE.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index))
-    nodes.push(
-      <Link
-        key={k++}
-        to={m[2]!}
-        className="text-accent-primary underline underline-offset-2 hover:text-accent-hover"
-      >
-        {m[1]}
-      </Link>,
-    )
+    if (m[1] !== undefined) {
+      nodes.push(
+        <Link
+          key={k++}
+          to={m[2]!}
+          className="text-accent-primary underline underline-offset-2 hover:text-accent-hover"
+        >
+          {m[1]}
+        </Link>,
+      )
+    } else {
+      nodes.push(
+        <strong key={k++} className="font-semibold text-text-primary">
+          {m[3]}
+        </strong>,
+      )
+    }
     last = m.index + m[0].length
   }
   if (last < text.length) nodes.push(text.slice(last))
