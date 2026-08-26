@@ -7465,6 +7465,22 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-26: **Pattern review Round 12 — Queue with Guaranteed
+  Delivery**. Enrichment of the pre-existing minimal pattern
+  (`content/patterns/queue-with-guaranteed-delivery.json`,
+  slug/name/category frozen — resilience). Added authored
+  `oneLineDefinition`, readability-passed definition with one figure
+  marker (no inline links) and five `**bold**` list-item leads across
+  three lists (to producers / to consumers; search indexing /
+  notifications / event-sourced systems) — all render as <strong> via
+  the Round 10 bold feature. Aliases: durable queue · persistent queue ·
+  at-least-once delivery. New authored artifact
+  `content/artifacts/queue-with-guaranteed-delivery.jsx` (zero near-miss
+  grays, zero em-dashes, export-default), one figure
+  `content/figures/queue-with-guaranteed-delivery/stored-until-acked.svg`
+  (viewBox 0 0 700 232, safe). No `file` field. Revision HTML not placed.
+  Visible DOM verified: 0 literal markdown, all 5 bold leads, figure img,
+  mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-26: **Pattern review Round 11 — Logical–Physical Migration
   Split**. Enrichment of the pre-existing minimal pattern
   (`content/patterns/logical-physical-migration-split.json`,

@@ -1,21 +1,45 @@
 {
   "slug": "queue-with-guaranteed-delivery",
   "name": "Queue with Guaranteed Delivery",
-  "definition": "A queue with guaranteed delivery persists messages durably until they have been successfully consumed and acknowledged. The queue tolerates large backlogs, survives consumer failures, and does not drop messages under sustained pressure. The contract with producers is: once the queue acknowledges receipt, the message will eventually be delivered. The contract with consumers is: the message remains available (and potentially redelivered) until it's been processed and acknowledged.\n\nThe pattern's defining contrast is with the alternative often present in early architectures: an in-memory or lightly-persisted buffer that exhibits queue-like semantics under normal load but degrades to data loss under sustained pressure. Redis used as a queue is a common example — it works well as a buffer, but its eviction policies and memory constraints mean that under sufficient backpressure, messages disappear. Buffers like this are useful for many things, but they are not queues in the strict sense, because they do not guarantee delivery.\n\nThe principle the pattern enforces is simple but easy to violate: if your queue's failure mode under pressure is data loss, you don't have a queue, you have a buffer. Real queues persist. Whether through replicated disk-backed logs (Kafka, Kinesis), managed cloud services (PubSub, SQS, EventBridge), or carefully-operated message brokers (RabbitMQ with durable queues, Pulsar with persistent storage), the implementation must store messages durably enough to survive consumer failures, producer surges, and partial cluster outages.\n\nThe practical implication for system design is that any workflow where 'message lost' is a customer-visible problem requires a guaranteed-delivery queue between producers and consumers. Examples include indexing pipelines (lost messages mean unsearchable data), notification systems (lost messages mean failed user-visible alerts), event-sourced systems (lost messages mean state divergence), and any pipeline that performs work the system can't reconstruct from upstream state.",
+  "oneLineDefinition": "A queue with guaranteed delivery saves every message until it has been processed and confirmed, so it survives backlogs and crashes without dropping anything - unlike a buffer, which loses messages under pressure.",
+  "definition": "A queue with guaranteed delivery keeps each message safely stored until it has been picked up, processed, and confirmed done. It can hold a large backlog, keep working when the consumers crash, and never drop a message even under heavy, sustained load. It makes two promises:\n\n- **to producers** (the code putting messages in) - once the queue says it has your message, that message will be delivered, no matter what happens next\n- **to consumers** (the workers reading messages out) - the message stays available, and may be handed to you more than once, until you have processed it and confirmed it done\n\n{{figure:stored-until-acked}}\n\nThe pattern is best understood by what it is not: a buffer. A buffer keeps messages in memory (or barely saves them) and acts like a queue on a normal day, but starts silently losing messages once the pressure is sustained. A fast in-memory store used as a queue is the classic example: it works fine as a buffer, but because it runs out of memory and throws old entries away, messages vanish once the backlog grows large enough. Buffers are useful for plenty of things, but they are not real queues, because they do not guarantee delivery.\n\nThe principle is simple but easy to break: if your queue's response to pressure is to lose data, it is not a queue, it is a buffer. Real queues save every message, however they are built:\n\n- a disk-backed log copied across several machines\n- a managed cloud queue you don't run yourself\n- a carefully-run message broker with durable storage\n\nWhichever form you pick, it has to store messages solidly enough to survive consumer crashes, sudden bursts from producers, and part of the cluster going down.\n\nThe practical takeaway: any pipeline where a lost message is a problem the customer would notice needs a guaranteed-delivery queue between the producers and consumers. A few examples:\n\n- **search indexing** - a lost message means data no one can find\n- **notifications** - a lost message means an alert that never arrives\n- **event-sourced systems** - a lost message means the state quietly drifts out of sync\n\nMore broadly, any pipeline that does work the system can't recreate from its upstream sources needs one too.",
   "whenItApplies": [
-    "Indexing pipelines feeding search or analytics systems where lost messages produce visible gaps in downstream data",
-    "Asynchronous workflows where the work cannot be reconstructed from upstream sources (the message is the only authoritative record of the work to be done)",
-    "Notification, alerting, or webhook systems where lost messages mean failed user-visible outcomes that the system has already committed to delivering",
-    "Inter-service event streams in event-driven architectures, especially when events trigger persistent state changes downstream",
-    "Workloads where producer rate can occasionally exceed consumer capacity, and the correct behavior is for the queue to absorb the difference rather than for the system to lose data",
-    "Any pipeline replacing an in-memory queue or unpersisted buffer that has exhibited message loss under load — this is one of the most common architectural upgrades distributed systems undergo"
+    "A lost message leaves a visible gap downstream. Indexing pipelines feeding search or analytics, where a dropped message means data that simply never shows up.",
+    "The message is the only record of the work. In async workflows where you can't rebuild the task from anywhere else, losing the message means the work is just gone.",
+    "A dropped message becomes a promise you break. Notifications, alerts, and webhooks that the system already told the user it would send, so losing one is a visible failure.",
+    "Events between services drive real state changes. When one service's events cause another to update its data, a lost event leaves the two out of sync.",
+    "Producers sometimes send faster than consumers can keep up. When work arrives faster than it's processed, you want the queue to absorb the surge, not throw the extra away.",
+    "You're replacing a buffer that already lost data. Swapping out an in-memory queue that has dropped messages under load is one of the most common upgrades a growing system makes."
   ],
   "tradeoffs": [
-    "Guaranteed delivery typically costs latency. The queue must persist each message durably before acknowledging receipt to the producer, which means writes commit to disk (or to multiple replicas) before the producer can move on. For most workloads this latency is acceptable; for very latency-sensitive ones, the architectural choice may be different.",
-    "Backlog tolerance creates a different failure mode: instead of dropping messages, the queue accumulates them. A consumer outage can lead to a multi-hour backlog that the consumers then have to drain. The system must be designed for this — consumer scale-up under backlog, monitoring of queue depth, and graceful recovery from large backlogs are all required.",
-    "Storage costs grow with backlog size. A queue holding a 10-million-message backlog uses meaningful storage. Managed services charge for this; self-hosted systems consume disk for it. Long-running incidents that produce large backlogs can have surprising operational costs.",
-    "Exactly-once delivery semantics are usually a separate concern from guaranteed delivery. Most guaranteed-delivery queues provide at-least-once semantics; consumers must be idempotent (or the system must accept some duplicate processing). The combination of guaranteed delivery and exactly-once processing requires additional design work beyond the queue itself.",
-    "Operational complexity is real. Guaranteed-delivery queues require durable storage, replication, and careful operational care. The simplest version is a managed service, which trades cost for operational simplicity; self-hosted versions trade cost for control."
+    "Guaranteed delivery usually costs speed. The queue has to save each message solidly - to disk, or across several machines - before it can tell the producer it has it, which adds delay. That is fine for most workloads, but a very latency-sensitive one might need a different choice.",
+    "Not dropping messages just changes the failure: instead of losing them, the queue piles them up. A consumer outage can build a backlog that takes hours to work through, so you have to design for it - scale consumers up under load, watch how deep the queue is getting, and recover cleanly from big backlogs.",
+    "Storage cost grows with the backlog. A queue sitting on ten million messages uses real storage - which a managed service bills you for, and a self-hosted one burns disk on. A long incident that builds a huge backlog can cost more than you would expect.",
+    "Delivered once is a different problem from delivered at all. Most guaranteed-delivery queues promise at-least-once, meaning a message can arrive more than once, so your consumers have to be safe to run twice (or you accept some duplicate work). Getting true exactly-once takes extra design on top of the queue.",
+    "It is real work to run. These queues need durable storage, copies across machines, and careful operational care. The simplest path is a managed service - you pay money to skip the operational burden; running it yourself costs less but hands you the control and the work."
   ],
-  "category": "resilience"
+  "aliases": [
+    "durable queue",
+    "persistent queue",
+    "at-least-once delivery"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/queue-with-guaranteed-delivery/index.html",
+    "teaser": "Send a producer surge through a buffer, then a durable queue - one drops messages, the other just backlogs."
+  },
+  "figures": [
+    {
+      "slug": "stored-until-acked",
+      "eyebrow": "STORED UNTIL ACKED",
+      "caption": "A message is written to durable storage the moment it arrives and stays there until the consumer confirms it is done. If the consumer crashes before that confirmation, the message is simply delivered again - it is never dropped.",
+      "ariaLabel": "A message flows from producer to a durable queue to a consumer, deleted only after the consumer acknowledges it."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: a producer sending faster than the consumer can keep up, and the difference between a buffer that drops the overflow and a queue that holds all of it.",
+    "idea": "When work arrives faster than it is processed, something has to give. A buffer has a fixed size, so once it is full the extra messages are dropped and gone for good. A durable queue saves every message, so the same surge just builds a backlog that the consumer drains once it catches up. The failure turns from lost data into delay - which is almost always the better failure.",
+    "whatToTry": "Run the same producer surge as a buffer, then as a durable queue. The buffer overflows its cap and drops messages for good; the queue holds the whole backlog and drains it later, losing nothing. Same overload, very different outcome."
+  }
 }
