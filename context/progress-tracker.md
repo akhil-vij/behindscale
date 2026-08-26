@@ -7465,6 +7465,23 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-26: **Pattern review Round 14 — Layered Admission Control**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/layered-admission-control.json`, slug/name/category
+  frozen — resilience). First round to combine `**bold**` AND inline
+  links in one definition: two bold list-item leads (a rate limiter in
+  front / a load shedder behind) plus two inline cross-links
+  `[Priority-Aware Load Shedding](/patterns/priority-aware-load-shedding)`
+  (Round 1) and `[Circuit Breaker](/patterns/circuit-breaker)` (Round 7)
+  — both guard-green; bold and links render together with no
+  interference. Aliases: defense in depth · layered rate limiting ·
+  overload protection. New authored artifact
+  `content/artifacts/layered-admission-control.jsx` (zero near-miss grays,
+  zero em-dashes, export-default), one figure
+  `content/figures/layered-admission-control/the-stack.svg` (viewBox
+  0 0 700 208, safe). No `file` field. Revision HTML not placed. Visible
+  DOM verified: 0 literal markdown, both bold leads, both anchors, figure
+  img, mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-26: **Pattern review Round 13 — Conservative Auto-Remediation**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/conservative-auto-remediation.json`,

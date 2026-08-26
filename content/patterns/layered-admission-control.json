@@ -1,16 +1,40 @@
 {
   "slug": "layered-admission-control",
   "name": "Layered Admission Control",
-  "category": "resilience",
-  "definition": "Protect a service with a stack of admission mechanisms rather than one: preventative per-client rate limiters in front (pacing fairness on normal days, firing constantly and cheaply), reactive whole-system load shedders behind (deciding under emergency which work deserves the capacity that remains, firing rarely). Each layer has its own scope (one user vs the whole system), its own trigger (client pace vs system state), and its own expected firing frequency — and the layers are ordered so that each one existing means the next one rarely fires. The stack's health is readable from its rejection counts: orders of magnitude between the first layer and the last is the design working.\n\nBoundary against Priority-Aware Load Shedding: that pattern governs the drop order within a shedding decision; this one governs the stack of decisions — which mechanism gets to reject first, and on what evidence. Boundary against Circuit Breaker: a breaker severs a caller's outbound edge on downstream failure; admission layers gate inbound work at the service's own door.",
+  "oneLineDefinition": "Guard a service with several layers that decide which requests to let in: cheap per-client rate limiters in front that fire all the time, and whole-system load shedders behind that fire only in emergencies.",
+  "definition": "Protect a service with a stack of admission checks - the gates that decide which requests to let in - instead of just one. The stack has two kinds of layer:\n\n- **a rate limiter in front** - scoped to one client at a time, it paces each client so no single one takes more than its share of capacity; usually, it fires constantly and cheaply\n- **a load shedder behind** - scoped to the whole system, it decides under emergency which work deserves the capacity that is left; it fires rarely, only when the system is genuinely in trouble\n\nEach layer has its own scope (one client versus the whole system), its own trigger (a client's pace versus the system's state), and its own firing rate. They are ordered so that each layer existing means the next one rarely has to fire. You can read the stack's health straight from the rejection counts: a healthy stack rejects orders of magnitude more at the front than at the back.\n\n{{figure:the-stack}}\n\nTwo nearby patterns are worth telling apart:\n\n- [Priority-Aware Load Shedding](/patterns/priority-aware-load-shedding) decides the drop order within a single shedding decision - which requests to drop first; this pattern decides the stack of decisions, which mechanism gets to reject first and on what evidence\n- [Circuit Breaker](/patterns/circuit-breaker) cuts off the calls a service makes to a dependency when that dependency is failing; admission layers instead decide which incoming requests the service accepts",
   "whenItApplies": [
-    "Public or multi-tenant APIs where one client's behavior — accidental or deliberate — can spend capacity every other client needs",
-    "Services whose incident posture must differ from their daily posture: fairness limiters for normal days, criticality triage for emergencies",
-    "Anywhere a single admission mechanism is being asked to be both the everyday abuse guard and the last-resort emergency triage — two jobs with different scopes and triggers"
+    "One client can eat the capacity everyone else needs. On public or multi-tenant APIs, a single client - by accident or on purpose - can burn through the capacity every other client depends on.",
+    "Normal days and incidents need different defenses. On a normal day you want fairness between clients; in an emergency you want to protect the most important work - two different jobs.",
+    "One mechanism is being asked to do two jobs. When a single guard has to be both the everyday abuse limiter and the last-resort emergency triage, it is stretched across two jobs with different scopes and triggers."
   ],
   "tradeoffs": [
-    "Each layer is separately configured, separately dark-launched, separately capable of misfiring — the stack multiplies calibration and observability work",
-    "Layers interact: a well-tuned front layer starves the rear layers of activations, so their thresholds go stale precisely because the design is working",
-    "Every layer must fail open independently, so the failure of the limiting infrastructure leaves the service running and entirely unguarded"
-  ]
+    "Every layer is more to build and watch. Each one is configured, rolled out carefully, and capable of misfiring on its own, so the stack multiplies the tuning and monitoring work.",
+    "Layers interact: a well-tuned front layer means the back layers almost never fire, so their settings quietly go stale - precisely because the design is working.",
+    "Every layer has to fail open, which leaves a gap. If a layer breaks it must let traffic through rather than block everything, so if the whole limiting system fails, the service runs on with no protection at all."
+  ],
+  "aliases": [
+    "defense in depth",
+    "layered rate limiting",
+    "overload protection"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/layered-admission-control/index.html",
+    "teaser": "Toggle a rate limiter and a load shedder against a noisy client and a system surge - each covers a job the other can't."
+  },
+  "figures": [
+    {
+      "slug": "the-stack",
+      "eyebrow": "A STACK OF LAYERS",
+      "caption": "Requests pass through a stack of admission layers: a per-client rate limiter in front that fires constantly, then a whole-system load shedder that fires only in emergencies. Each layer exists so the next rarely fires.",
+      "ariaLabel": "Traffic flows through a per-client rate limiter, then a whole-system load shedder, into the service."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: two admission layers with different jobs - a per-client rate limiter for one noisy client, a whole-system load shedder for a surge from every client at once - and what goes wrong without the layer a situation needs.",
+    "idea": "A single admission mechanism can't do both jobs. A per-client rate limiter stops one client from taking more than its fair share of capacity, but it can't catch a surge where every client stays within its own limit yet the total number of requests overwhelms the service. A whole-system load shedder catches that surge, but on its own, faced with one noisy client, it drops low-priority work from every client instead of just reining in the noisy one. Stack them: the front layer handles per-client fairness and fires constantly, the back layer handles system-wide emergencies and fires rarely, and each exists so the next barely has to.",
+    "whatToTry": "Switch between one noisy client and a surge from every client at once, and toggle each layer off. The noisy client needs the front rate limiter; the surge needs the back load shedder. Remove the layer the scenario needs and the service is overloaded, or protected only by shedding unfairly across every client."
+  }
 }
