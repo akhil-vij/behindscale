@@ -7465,6 +7465,43 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-26: **Pattern review Round 11 — Logical–Physical Migration
+  Split**. Enrichment of the pre-existing minimal pattern
+  (`content/patterns/logical-physical-migration-split.json`,
+  slug/name/category frozen — resilience; the en-dash in the name is
+  pre-existing and frozen). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker, one inline
+  cross-link `[ramp it up](/patterns/universal-staged-rollout)` (target
+  exists — Round 3; guard green), and FIVE `**bold**` list-item leads
+  across two lists (logical/physical; expand-and-contract /
+  branch-by-abstraction / dark-reads-and-shadow-traffic) — all render as
+  <strong> via the Round 10 bold feature. Aliases: expand and contract ·
+  branch by abstraction · two-phase migration. New authored artifact
+  `content/artifacts/logical-physical-migration-split.jsx` (zero
+  near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/logical-physical-migration-split/the-two-phases.svg`
+  (viewBox 0 0 700 240, safe). No `file` field. Revision HTML not placed.
+  Visible DOM verified: 0 literal markdown, real
+  `/patterns/universal-staged-rollout` anchor, all 5 bold leads, figure
+  img, mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
+- 2026-08-25: **Pattern review Round 10 — Generic Mitigation**. Enrichment
+  of the pre-existing minimal pattern
+  (`content/patterns/generic-mitigation.json`, slug/name/category frozen —
+  resilience). Added authored `oneLineDefinition`, readability-passed
+  definition with one figure marker and four `**bold**` list-item leads
+  (fast/harmless/gradual/independent), aliases: mitigate before diagnosis ·
+  stop the bleeding · buy time in an incident. New authored artifact
+  `content/artifacts/generic-mitigation.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/generic-mitigation/the-experiment-loop.svg` (viewBox
+  0 0 700 232, safe). No `file` field. Revision HTML not placed. This round
+  drove the **bold-support feature** (commit 2febb4b): `Prose.tsx`
+  renderInline renders `**text**` as <strong> alongside links; `proseText()`
+  strips `**` for descriptions/indexes; new `bold-markers-balanced`
+  validator (checks now 23) rejects odd/malformed `**`. Content shipped
+  verbatim; page has zero literal markdown. Build + 260 tests green.
+  (Tracker entry was deferred at the time — a concurrent session was
+  editing this file; folded in now with the Round 11 commit.)
 - 2026-08-25: **Pattern review Round 9 — Embedded vs Centralized
   Orchestration**. Enrichment of the pre-existing minimal pattern
   (`content/patterns/embedded-vs-centralized-orchestration.json`,
