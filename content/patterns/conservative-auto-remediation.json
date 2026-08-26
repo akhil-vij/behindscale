@@ -1,16 +1,40 @@
 {
   "slug": "conservative-auto-remediation",
   "name": "Conservative Auto-Remediation",
-  "category": "resilience",
-  "definition": "When an automatic recovery action is expensive, destructive, or hard to reverse, gate its trigger on evidence proportional to that cost — and treat elapsed time as evidence: a brief ambiguity should not be allowed to fire an hours-long cure. Detection under partial failure is unreliable by nature, so the governing question moves from 'is the component down?' to 'is the evidence strong enough to justify what this remediation will destroy if it's wrong?' The trigger's delay is tuned per target, to the cost of the cure rather than to a global reaction-time goal.\n\nThe pattern governs the response side of automation, not the detection side: it assumes signals will sometimes be ambiguous or wrong and rate-limits how eagerly any signal may act. Boundary against Dead Man's Switch: that pattern adds a detection channel (absence of heartbeat as signal); this one throttles the response regardless of which detection fired. Boundary against Throttled Readmission: that pattern paces the reintroduction of load after recovery; this one paces the firing of the recovery action itself.",
+  "oneLineDefinition": "Before an expensive automatic fix fires, we need evidence that it is actually worth its cost and time. A brief blip should not trigger an automatic costly cure.",
+  "definition": "When an automatic recovery action is expensive, damaging, or hard to reverse, don't let it fire on weak evidence. Demand evidence that matches the cost of the action, and count elapsed time as part of that evidence: a brief, unclear blip should not be able to trigger an hours-long, drastic fix. When a system is only partly broken, the signals are unreliable, so the question you are really asking changes. It stops being just 'is this component down?' and becomes 'is my evidence strong enough to justify a fix this costly, given the damage it does if I've got it wrong?' The delay before the fix fires is tuned for each target, based on how costly that fix is - not on some single, system-wide 'react within N seconds' goal.\n\n{{figure:cost-sets-the-delay}}\n\nThis pattern is about the response, not the detection. It assumes signals will sometimes be unclear or plain wrong, and limits how eagerly any signal is allowed to act. It helps to place it against two neighbors:\n\n- **Dead Man's Switch** adds a way to detect trouble - a missing heartbeat is the signal - while this pattern slows the response, no matter what detected the problem\n- **Throttled Readmission** paces how fast traffic returns to a service after it recovers, while this pattern paces the firing of the recovery action itself",
   "whenItApplies": [
-    "Automated failovers or promotions whose execution is expensive to complete or to undo (replica rebuilds, cache invalidation, topology changes)",
-    "Systems exposed to gray or partial failures, where detection signals can be contradictory and 'no signal' is not proof of death",
-    "Any remediation whose misfire cost exceeds the cost of waiting out a short ambiguity — the trigger delay is capacity insurance"
+    "The fix itself is expensive to run or to reverse. Automated failovers or promotions - rebuilding a replica, clearing a cache, changing the topology - that cost a lot whether they help or not.",
+    "The system fails in unclear, partial ways. When the failure is only partial and the signals contradict each other, 'no signal' doesn't prove the component is actually dead.",
+    "Firing wrongly costs more than waiting a bit. Whenever a false trigger would hurt more than pausing through a short, unclear moment, the delay before firing is cheap insurance."
   ],
   "tradeoffs": [
-    "A genuinely dead component now waits out the full evidence window before its cure fires — the safety margin is paid in real recovery latency",
-    "Per-target tuning replaces one global knob with many local ones, each needing an owner and a rationale",
-    "Damping the trigger treats the symptom of unreliable detection; it does not improve the detection, and can mask signals worth investigating"
-  ]
+    "A truly dead component recovers more slowly now. It has to wait out the full evidence window before the fix fires, so the safety margin is paid for in real recovery time.",
+    "One global setting becomes many local ones. Tuning the delay per target means every target needs its own value, with an owner and a reason behind it.",
+    "Slowing the trigger treats the symptom, not the cause. It doesn't make your detection any better, and it can hide signals that were actually worth looking into."
+  ],
+  "aliases": [
+    "self-healing",
+    "conservative failover",
+    "proportional response"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/conservative-auto-remediation/index.html",
+    "teaser": "Fire an expensive fix twitchily or wait for evidence - test each against a brief blip and a real outage."
+  },
+  "figures": [
+    {
+      "slug": "cost-sets-the-delay",
+      "eyebrow": "COST SETS THE DELAY",
+      "caption": "The delay before an automatic fix fires is tuned to the cost of that fix. A cheap, reversible fix can be triggered on thin evidence; an expensive, hard-to-reverse one should wait for strong evidence, since a wrong firing is costly.",
+      "ariaLabel": "A comparison: a cheap reversible fix fires on thin evidence, an expensive irreversible fix waits for strong evidence."
+    }
+  ],
+  "mechanism": {
+    "caption": "THE PATTERN, GENERAL",
+    "blurb": "The pattern at its core: an ambiguous signal that a system component might be down, and the choice between firing an expensive fix at once or waiting long enough to be sure the fix is actually needed.",
+    "idea": "Detection during a partial failure is unreliable, so a signal that looks bad might just be a brief blip. An eager trigger fires the expensive fix on any bad signal, so it fires on blips that would have cleared on their own - a costly false alarm. A conservative trigger waits out an evidence window first, using elapsed time as evidence: blips clear inside the window and fire nothing, while a real outage is still fixed, just a little later. The costlier the fix, the longer that wait should be.",
+    "whatToTry": "Run an eager trigger and a conservative one against a brief blip and a real outage. The eager one fires the expensive fix on the blip - a false alarm; the conservative one lets the blip clear and still fixes the outage, at the cost of a little recovery time."
+  }
 }

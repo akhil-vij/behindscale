@@ -7465,6 +7465,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-26: **Pattern review Round 13 — Conservative Auto-Remediation**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/conservative-auto-remediation.json`,
+  slug/name/category frozen — resilience). Added authored
+  `oneLineDefinition`, readability-passed definition with one figure
+  marker (no inline links) and two `**bold**` pattern-name references
+  (Dead Man's Switch, Throttled Readmission — authored as bold text, not
+  links; shipped verbatim), rendered as <strong> via the Round 10 bold
+  feature. Aliases: self-healing · conservative failover · proportional
+  response. New authored artifact
+  `content/artifacts/conservative-auto-remediation.jsx` (zero near-miss
+  grays, zero em-dashes, export-default), one figure
+  `content/figures/conservative-auto-remediation/cost-sets-the-delay.svg`
+  (viewBox 0 0 700 226, safe). No `file` field. Revision HTML not placed.
+  Note: this is the pattern universal-staged-rollout (Round 3) links to —
+  the Round 3 live literal-markdown bug that drove inline-link support.
+  Visible DOM verified: 0 literal markdown, both bold refs, figure img,
+  mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-26: **Pattern review Round 12 — Queue with Guaranteed
   Delivery**. Enrichment of the pre-existing minimal pattern
   (`content/patterns/queue-with-guaranteed-delivery.json`,
