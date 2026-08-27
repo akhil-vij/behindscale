@@ -1,16 +1,40 @@
 {
   "slug": "load-bearing-cache",
   "name": "Load-Bearing Cache",
-  "category": "resilience",
-  "definition": "A cache begins life as an optimization: the system works without it, just slower. At scale, that quietly stops being true — the backing datastore's provisioned capacity assumes the cache absorbs most reads, and the moment the hit rate drops far enough, offered load exceeds what the database can serve at all. The cache has become load-bearing: its warmth is part of the system's capacity, and losing it is not a latency regression but an availability cliff, often a self-sustaining one, because the overloaded backing store times out exactly the queries that would refill the cache.\n\nThe pattern is the discipline for systems on the load-bearing side of that line. Treat hit rate as a capacity metric with an explicit floor, and know the tipping point — the hit rate below which the database cannot keep up at peak traffic. Protect warmth as an operational invariant: node replacement and maintenance must not churn more cold capacity into the ring than the backing store can absorb refilling (pace replacements, avoid unnecessary flushes, budget cold slots per unit time). Warm before serving where possible, rather than promoting empty nodes into the hot path. And audit the query inventory for hidden amplifiers: any high-volume query whose cost is only acceptable because the cache currently hides it — scatter reads, fan-outs, expensive joins on immutable data — is a latent cliff-steepener that fires precisely when the cache is cold. Boundary against ordinary caching: if losing the cache merely slows you down, none of this rigor is owed; the pattern applies exactly when the honest answer to 'can the database take the traffic alone?' is no.",
+  "oneLineDefinition": "When a database can handle only the reads its cache misses, losing the cache can take the system down, not just slow it: every read it was answering now hits the database at once.",
+  "definition": "A cache starts as a speed-up: the system still works without it, just slower. At scale that can stop being true. To save money, the database behind the cache is often given only enough capacity to handle the reads the cache misses, because the cache is expected to answer most reads. The share of reads the cache answers is called its hit rate. If the hit rate drops far enough, too many reads reach the database at once and it can no longer keep up.\n\nNow the cache is load-bearing: the system depends on it to stay up, not just to stay fast. Losing the cache is no longer a slowdown - it can take the system down. Worse, the outage often keeps itself going. Once the database is overloaded, it starts failing the very reads that would refill the cache, so the cache stays empty and the database stays overloaded.\n\n{{figure:the-empty-cache-loop}}\n\nThe pattern is the discipline for systems where the cache has become load-bearing. It has four parts:\n\n- **know the breaking point** - treat the hit rate like a capacity limit, and find the hit rate below which the database can no longer keep up when traffic is at its peak\n- **protect the cache during maintenance** - routine work like replacing or restarting nodes empties part of the cache; do it in small steps, and do not clear the cache unless you have to\n- **fill a node before it serves** - when a node starts up empty, fill it with data before it takes real traffic, instead of putting an empty node in front of users\n- **watch for hidden expensive reads** - some reads are cheap only because the cache hides their cost, like reads that hit many shards or join large tables; each one gets far more expensive the moment the cache is empty\n\nOne limit on all this: if losing the cache only makes the system slower, you do not need any of it. These habits are for the case where the honest answer to 'can the database handle the traffic without the cache?' is no.",
   "whenItApplies": [
-    "The backing datastore is provisioned assuming high cache hit rates — it cannot serve peak traffic at realistically degraded hit rates",
-    "Cache-node lifecycle events (replacement, flushes, deploys, network blips) can remove meaningful fractions of warm capacity quickly",
-    "The read path contains queries whose per-miss cost is high (scatter/fan-out/expensive), currently masked by long TTLs and high hit rates"
+    "The database cannot serve peak traffic on its own. It was set up to handle only the reads the cache misses, so once the hit rate drops to a realistic low, more reads arrive than it can handle.",
+    "Routine work can empty the cache fast. Replacing or restarting nodes, clearing the cache, deploys, and network blips can each wipe out a large share of it in a short time.",
+    "Some reads are cheap only because the cache hides their cost. Reads that hit many shards or join large tables cost little while the cache answers them, but each gets far more expensive the moment the cache is empty."
   ],
   "tradeoffs": [
-    "Protecting warmth slows operations: paced node replacement, flush avoidance, and warm-before-serve all add time and machinery to maintenance that used to be free",
-    "The tipping point moves with traffic and data shape, so the hit-rate floor must be validated under peak-load conditions, not derived once and trusted",
-    "Warmth protection can conflict with correctness mechanisms (flushing rejoined nodes to avoid stale data was the safe choice that also created cold slots) — the pattern forces that tradeoff to be explicit rather than incidental"
-  ]
+    "Protecting the cache slows maintenance: replacing nodes in small steps, avoiding cache clears, and filling nodes before they serve all add time to work that used to be quick.",
+    "The safe hit rate is a moving target. The point where the database can no longer keep up shifts with traffic and data, so the safe hit rate has to be re-checked under peak load, not measured once and trusted.",
+    "Keeping the cache full can fight correctness. Clearing a rejoined node to get rid of stale data is the safe choice, but it also empties that node's cache. The two goals pull against each other, and the pattern forces the conflict into the open."
+  ],
+  "aliases": [
+    "cold cache outage",
+    "cache becomes a hard dependency",
+    "cache warming"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/load-bearing-cache/index.html",
+    "teaser": "Empty a cache past the point of no return and the database goes down with it - protect the cache and it holds."
+  },
+  "figures": [
+    {
+      "slug": "the-empty-cache-loop",
+      "eyebrow": "WHY THE CACHE STAYS EMPTY",
+      "caption": "An empty cache floods the database until it is overloaded, and the overloaded database then fails the very reads that would refill the cache - so the cache stays empty and the outage keeps itself going.",
+      "ariaLabel": "A four-step loop where an empty cache floods the database, refills fail, and the cache stays empty."
+    }
+  ],
+  "mechanism": {
+    "caption": "HIT RATE IS CAPACITY",
+    "blurb": "At its core: the database can serve only part of peak traffic on its own, so the cache's hit rate is real capacity. Let the hit rate drop too far and the database is overloaded, and the outage does not fix itself.",
+    "idea": "The database behind the cache cannot serve peak traffic on its own. It was set up to handle only the reads the cache misses, so the cache's hit rate is real capacity: while the hit rate stays high, the database sees only a trickle of reads. If the hit rate drops too far, the database is overloaded, and the failure feeds itself, because an overloaded database fails the very reads that would refill the cache. The fix is to limit how much of the cache any single maintenance job is allowed to empty, so the hit rate never drops that far.",
+    "whatToTry": "Empty part of the cache with a maintenance event and watch the load on the database rise toward its limit. Find the point where it goes over and cannot recover, then turn on protection and try the same event again."
+  }
 }

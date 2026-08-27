@@ -7465,6 +7465,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-27: **Pattern review Round 15 — Load-Bearing Cache**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/load-bearing-cache.json`, slug/name/category frozen
+  — resilience). Added authored `oneLineDefinition`, readability-passed
+  definition with one figure marker (no inline links) and four `**bold**`
+  list-item leads (know the breaking point / protect the cache during
+  maintenance / fill a node before it serves / watch for hidden expensive
+  reads) — all render as <strong> via the Round 10 bold feature. Aliases:
+  cold cache outage · cache becomes a hard dependency · cache warming.
+  New authored artifact `content/artifacts/load-bearing-cache.jsx` (zero
+  near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/load-bearing-cache/the-empty-cache-loop.svg` (viewBox
+  0 0 700 236, safe). No `file` field. Revision HTML not placed. Visible
+  DOM verified: 0 literal markdown, all 4 bold leads, figure img,
+  mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-26: **Pattern review Round 14 — Layered Admission Control**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/layered-admission-control.json`, slug/name/category
