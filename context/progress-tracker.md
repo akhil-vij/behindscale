@@ -7465,6 +7465,18 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-27: **Pattern review Round 16 — Retry Budget**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/retry-budget.json`,
+  slug/name/category frozen — resilience). FIRST FIGURELESS round:
+  `figures: []`, no SVG, no figure marker — artifact only. Added authored
+  `oneLineDefinition`, readability-passed definition with one inline
+  cross-link `[backoff and jitter](/patterns/retry-with-backoff-and-jitter)`
+  (Round 4; guard green), no bold. Aliases: retry storm · retry
+  amplification · token bucket for retries. New authored artifact
+  `content/artifacts/retry-budget.jsx` (zero near-miss grays, zero
+  em-dashes, export-default). No `file` field. Revision HTML not placed.
+  Visible DOM verified: 0 literal markdown, real anchor, no <figure>,
+  mechanism teaser. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-27: **Pattern review Round 15 — Load-Bearing Cache**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/load-bearing-cache.json`, slug/name/category frozen

@@ -1,16 +1,33 @@
 {
   "slug": "retry-budget",
   "name": "Retry Budget",
-  "category": "resilience",
-  "definition": "Bound retry amplification mechanically by giving each client a local budget — typically a token bucket — that retries spend. While tokens remain, transient failures are masked freely; when the bucket empties, retrying continues only at a fixed, low rate. The budget converts the retry storm from a behavioral risk (hoping clients back off enough) into an arithmetic bound: no client can more than marginally multiply its offered load, no matter how long the dependency stays down.\n\nThe pattern's strongest form ships the budget as default platform behavior — in the SDK, the service mesh, or the RPC framework — so the safe behavior is ambient rather than per-team discipline.",
+  "oneLineDefinition": "Each client gets a small number of retry tokens that build back up slowly, so a failing service gets only a little extra load instead of every client piling on to keep it down.",
+  "definition": "When a request fails, the client often retries - it sends the same request again, hoping the problem was brief. That is usually fine. But if a shared service starts failing under load, every client retrying at once adds to the overload that is already the problem. That extra load causes more failures, which cause more retries, which add even more load. The result is a retry storm: a flood of retries that holds a struggling service down, and can keep it down even after the first problem has passed.\n\nSpacing retries out with [backoff and jitter](/patterns/retry-with-backoff-and-jitter) - waiting longer after each failure and not retrying in perfect sync - helps, but over a long outage it still cannot cap the total load the retries add.\n\nA retry budget puts a hard cap on this. Each client gets a small number of retry tokens, an idea called a token bucket - every retry spends one token, and tokens are added back slowly over time. While the client has tokens, it retries failed requests normally, so brief failures are still hidden from users. When the tokens run out, the client stops retrying, or retries only a small fixed share of requests. The effect is a cap you can work out in advance: no matter how long the service stays down, retries can add only a small, fixed amount of extra load, not an open-ended pile-on.\n\nThe strongest version does not leave this to each team. It builds the budget into shared infrastructure that every client already uses - the client library or SDK, the service mesh, or the RPC framework. Then bounded retrying is the default everywhere, not something each team has to remember to add.\n\nThis matters when many clients share a dependency whose failures can be made worse by load, and where spacing retries out is not enough on its own to cap the total. If losing a few retries would not hurt and retries cannot overwhelm anything, a budget is more complexity than the problem needs.",
   "whenItApplies": [
-    "Client fleets calling shared dependencies whose failures are sometimes caused by overload — where retries would amplify the cause",
-    "Platforms (SDKs, meshes, RPC layers) positioned to make bounded retrying the default for every consumer",
-    "Systems where backoff and jitter alone cannot bound aggregate retry load during extended outages"
+    "Many clients depend on the same service. When that shared service fails because it is overloaded, every client retrying at once adds to the overload that is already the problem.",
+    "You own a shared client layer. An SDK, service mesh, or RPC framework is a place to make bounded retries the default, so every team that uses it is protected without extra work.",
+    "Spacing retries out is not enough on its own. Backoff and jitter stop every client from retrying at the same instant, but over a long outage they still do not cap the total load the retries add."
   ],
   "tradeoffs": [
-    "Budgets throttle retries during long runs of genuinely transient faults, where more retrying would have been safe",
-    "The bound is per-client and local; aggregate fleet amplification is emergent, not centrally guaranteed",
-    "Sizing the bucket is a policy decision — too small masks nothing, too large bounds nothing"
-  ]
+    "A budget can stop retries that would have been fine. During a long run of brief, harmless failures, the budget may cut retries off even though the service could have taken more, so some requests fail that a retry would have saved.",
+    "Each client only caps itself. There is no central control over the whole fleet - the fleet-wide limit is just the sum of every client capping its own retries, so it holds only as long as every client actually has the budget turned on.",
+    "Picking the size is a judgment call. Make the budget too small and it never lets clients retry, so it helps no one; make it too large and it never actually caps anything, so it protects no one."
+  ],
+  "aliases": [
+    "retry storm",
+    "retry amplification",
+    "token bucket for retries"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/retry-budget/index.html",
+    "teaser": "Open the retry budget wide and the service drowns; tighten it and the service comes back."
+  },
+  "figures": [],
+  "mechanism": {
+    "caption": "A CAP ON THE STORM",
+    "blurb": "At its core: when a service is failing, unlimited retries multiply the load on it and can pin it down for good. A retry budget caps the extra load each client can add, so any retry storm is avoided.",
+    "idea": "When a shared service starts failing, its clients retry. With no limit, those retries multiply the load: one failed request turns into several retries, and the extra traffic keeps the service overloaded, which causes even more failures and more retries. The load can stay pinned above capacity even after the first problem is gone. A retry budget gives each client a small number of retry tokens and stops it retrying once they run out, so the extra load retries add is capped at a small, known amount and no storm gets going.",
+    "whatToTry": "Start with the budget wide open and watch the retries bury the service. Then tighten the budget and watch the extra load shrink until the service is healthy again."
+  }
 }
