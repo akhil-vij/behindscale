@@ -2918,3 +2918,115 @@ This is the first article of the "blast radius scales with cluster size" class p
 sessions (siblings: airbnb-monitoring, meta-foqs, aws-shuffle-sharding, shopify-pods).
 
 **Follow-up (plain-language, round 2).** Defined "bulk indexing" where it first matters and simplified the terms around it: "bulk indexing" is now "adding messages to the search index in batches", introduced plainly in the second failure mode ("Messages were indexed in batches... workers send 50 messages to Elasticsearch in a single batch"); the crux and cruxSummary avoid the unglossed term ("~40% of indexing batches"). Also: "the indexing queue" -> "the queue of messages waiting to be indexed"; "backed up" -> "filled up faster than it could drain"; "buffer" -> "holding area"; "failed all-or-nothing" spelled out; the spam-guild stopgap, the PubSub-generalized line ("Tellingly... the choice generalized" -> "the team liked PubSub enough to start using it for other jobs"), the "all-or-nothing bulk-indexing problem" reference ("That whole-batch-fails problem"), and the dense BFG tradeoff all rephrased in plain language. Bands hold; figures and artifact unchanged.
+
+---
+
+## aws-shuffle-sharding - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding clean, and the combinatorics are exact: 8 choose 2 = 28 (the 1/28th)
+and 2,048 choose 4 = 730,862,190,080 (the "730 billion"). The AWS Builders' Library page now sits
+behind a JS-rendered redirect to builder.aws.com that returned no content on fetch, so the Route 53
+specifics (2,048 virtual name servers, four per domain, no two domains sharing more than two, the
+DDoS isolation, "usually comes at no additional cost") were confirmed against MacCarthaigh's own
+cached text via search. The worked example (rainbow W1+W4, rose W1+W8, overlapping on W1) and the
+Shield / recursive / Infima details all check. No factual error. Blast-radius class, sibling of the
+Discord article (relatedArticles: discord-trillions-message-search, shopify-pods-architecture).
+
+**Strong shape going in.** Every band was already in range (summary 1,032, crux 757, problem 1,637,
+solution 2,815, cruxSummary 16w), so no compression was needed, and the crux already opened
+concretely, not on the taxonomy. The work was dashes, long sentences, plain language, and the
+toggle.
+
+**De-meta / de-editorialize.** Trimmed the Discord tradeoff's closing "the staff-level judgment" ->
+"which shape you can use depends on where your data lives". Glossed the crux's "fate domain" ->
+"the whole fleet shares one fate", "multi-tenant economics" -> "sharing a fleet across many
+customers cheaply", and "combinatorics" -> "simple combinations".
+
+**Em-dash overrun - swept: 54 (35 JSON + 19 JSX) -> 0**, including the cruxSummary em-dash (-> colon)
+and two stat-label em-dashes.
+
+**Sentence length - 10 over 40 words, longest a 58-word run-on -> all <= 40.** The 58-word
+shuffle-sharding note was split into four sentences; the 50-word crux opener and the rest were split.
+
+**Full plain-language pass.** fate domain -> "the whole fleet shares one fate"; blast radius glossed
+once ("how much of the service one problem takes down"); multi-tenant economics -> "sharing a fleet
+across many customers"; the choose function -> "the math of how many combinations you can form";
+DDoS -> "floods of junk traffic (DDoS attacks)"; fault-tolerant clients -> "clients that can work
+around a bad worker"; virtual shard -> "their own pair of workers"; recursive shuffle sharding ->
+"sharding at several layers, to isolate even a customer's own customers"; Shield scrubbers and
+Infima kept (named); "poisonous request" kept (the source's term). For consistency with the Discord
+article, its "bulk operations" was glossed as "indexing batches" in the cross-reference tradeoff.
+
+**Images - 3 figures.** blast-radius-ladder: the same eight workers three ways, 100% (shared) ->
+25% (four fixed shards) -> ~1/28th (shuffle). shuffle-overlap: rainbow on W1+W4 and rose on W1+W8
+share only W1, so poisoning rainbow leaves rose its worker 8 to retry through. route53-scale: 2-of-8
+= 28 combinations (1/28th) versus Route 53's 4-of-2,048 = 730 billion, blast radius as a dial.
+
+**Artifact - full plain-language sweep, sim untouched.** "in expectation" -> "on average";
+multi-tenant, fault-tolerant, and DDoS/Shield glossed. Dashes swept (18 -> 0); off-state toggle
+border #2a2a3a -> #4a4f60. The skeleton diff was noisy but prose-only (heavy context-block, footer,
+and verdict-text edits); verified directly that the SHUFFLE assignment
+[[0,3],[1,5],[2,6],[3,7],[4,1],[5,2],[6,4],[0,7]], the three modes, and the downCount / custState /
+verdict logic are intact, and re-traced the poison-rainbow case (only rainbow fully down; rose rides
+through on its unshared worker; shared 100%, fixed 25%).
+
+**Recurring-defect scorecard:** em-dash overrun (fixed); invisible off-state toggles (fixed); mild
+editorializing "staff-level judgment" (fixed). Taxonomy-first crux and over-band summary/crux were
+ABSENT - strong shape, and the combinatorics were exact. P27 frozen fields byte-identical (title,
+cruxTag, stats values/placements, relatedArticles, artifact.path unchanged; two dash-bearing stat
+labels swept). Deliverables: corrected .json, swept .jsx, rebuilt preview .html, three .svg figures,
+this entry.
+
+Second article of the "blast radius scales with cluster size" class produced in these sessions
+(after Discord); Shopify pods remains.
+
+---
+
+## aws-shuffle-sharding - Deep plain-language round (2026-08-11)
+
+Owner ran a second, extensive plain-language pass with two structural asks. All bands still hold
+(summary 1,027, crux 836, problem 1,688, solution 2,795), dashes 0, longest sentence 40 words, P27
+frozen fields intact. The sim logic was not touched.
+
+**Define the term, introduce the examples cold.** The summary now opens by saying what shuffle
+sharding is ("a way to limit how much of a service one bad customer can break, without buying extra
+hardware") before using it. The rainbow and rose customers are introduced from scratch ("Take two
+example customers, call them rainbow and rose"), since a reader will not have read the original.
+
+**"load-bearing" removed everywhere** (an owner ban): the retry is now "doing quiet but essential
+work" in the solution and "the recovery depends on code you don't control" in the tradeoffs.
+
+**Glossed or simplified, per the owner's flags.** Route 53 -> "Amazon's DNS service, Route 53";
+customer domain -> "(like example.com)"; the 28 pairs are now explained ("28 different ways to pick
+a pair: machine 1 with 2, 1 with 3, and so on"); "fleet" and "workers" -> "machines" throughout;
+"the post"/"which post" -> "the article" or dropped; "canonical source" -> "the original
+explanation, written by the team that invented it"; "statistical" -> "about averages"; "dissolves
+the dilemma" -> "solves this"; "a number you dial in" -> "a number you can configure"; Shield
+scrubbers -> "Amazon's own Shield service that filters out attack traffic"; "retry / ride through"
+-> "software resends failed requests and keeps working"; "shard's slice of the fleet" -> "one group
+of machines"; "earns its name" -> "gives the pattern its name"; recursive -> "extended it to several
+layers at once". The Discord tradeoff was made self-contained ("A related system, Discord's message
+search, shows where this pattern stops fitting"). Stat labels and the teaser were rewritten in plain
+words, and the cruxSummary was reworded to drop "fleet".
+
+**New problem figure (now four figures).** shared-fleet-and-sharding, placed in the problem, answers
+the owner's "represent it as an actual picture": on the left, a load balancer sprays one bad
+customer's traffic to all eight machines (100% down); on the right, four fixed groups of two confine
+it to one group (25% down). The blast-radius-ladder font was enlarged (the sub-notes were unreadable)
+and its labels moved to "machines" / M1..M8; shuffle-overlap and route53-scale were rebuilt with the
+same machine labels.
+
+**Artifact - plain-language sweep plus new cascade interactivity, sim untouched.** Terminology now
+matches the prose: MACHINES (M1..M8) not WORKERS, "4 FIXED GROUPS" and "SHUFFLE SHARDING" not
+"shards", "the customers in that group" not "shard-mates"/"tenants", "auto-resend" not "client
+retries". Every verdict, the context block, and the footer were rewritten plainly. The requested
+interactivity: in the shared scheme, poisoning a customer now makes the eight machines turn red one
+at a time (a staggered transitionDelay), so the failure visibly spreads from machine to machine
+until the whole service is down; under fixed and shuffle the affected machines fail together and
+stay contained, and a hint line spells out the spread. The state machine (the SHUFFLE assignment,
+downCount, custState, verdict selection) was not changed; re-traced poison-rainbow still leaves only
+rainbow fully down with rose riding through on its unshared machine.
+
+Deliverables re-shared: corrected .json, swept .jsx, rebuilt preview .html, four .svg figures, this
+entry.

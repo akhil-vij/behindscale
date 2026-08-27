@@ -7465,6 +7465,25 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-27: **Article review round — AWS Shuffle Sharding** (first
+  article round in this series; the rest were pattern rounds). Enriched
+  the existing `content/articles/aws-shuffle-sharding.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with four figures +
+  artifact. Placed article, artifact
+  `content/artifacts/aws-shuffle-sharding.jsx`, four figure SVGs under
+  `content/figures/aws-shuffle-sharding/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. TWO owner-approved
+  corrections to the delivered copy: (1) **stat labels were rotated one
+  position** off their values (the existing article had them paired
+  correctly) — reattached each value to its label (1/28th→shuffle
+  blast radius, 730 billion→Route 53 combinations, 100%→all-shared);
+  `stats-value-in-prose` never caught it because each value still
+  appeared in its placement section. (2) **all four figures exceeded the
+  Q10 word bands** (captions 48-60w vs 40; ariaLabels 30-39w vs 20; one
+  eyebrow 7w vs 6), hard-failing `figure-fields-nonempty` with 9 errors —
+  tightened all 9 fields into band, arithmetic preserved. Rendered page
+  verified: 4 figures, all three stats correctly paired, artifact embed,
+  0 literal markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-27: **Pattern review Round 16 — Retry Budget**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/retry-budget.json`,
   slug/name/category frozen — resilience). FIRST FIGURELESS round:

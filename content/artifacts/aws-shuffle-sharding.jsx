@@ -22,40 +22,40 @@ export default function OneTwentyEighth() {
     return "ok";
   };
   const downCount = [...Array(N).keys()].filter(c => custState(c) === "down").length;
-  const scope = mode === "shared" ? "100% — the whole service" : mode === "fixed" ? "25% — everyone on the shard, fully down" : "1/28th of customers in expectation — 28 unique 2-of-8 combinations";
+  const scope = mode === "shared" ? "100% - the whole service" : mode === "fixed" ? "25% - everyone in the group, fully down" : "about 1/28th of customers: 28 possible pairs from 8 machines";
 
   const verdict = poison === null
-    ? { c: AMBER, code: mode === "shared" ? "ONE FLEET, ANY WORKER SERVES ANYONE" : mode === "fixed" ? "FOUR FIXED SHARDS OF TWO" : "SHUFFLE SHARDS — EVERY CUSTOMER GETS A COMBINATION", t: mode === "shared" ? "Maximally efficient, maximally shared-fate: a worker dies and seven absorb the work. Now poison a customer and watch where their traffic goes." : mode === "fixed" ? "A poisonous customer can now take down only their own shard — a quarter of the service. But for their shard-mates, that outage is total." : "Rainbow holds workers 1+4; rose holds 1+8. Their shards overlap — that's the design, not the defect. Poison one and count who else falls." }
+    ? { c: AMBER, code: mode === "shared" ? "ALL SHARED: ANY MACHINE SERVES ANYONE" : mode === "fixed" ? "FOUR FIXED GROUPS OF TWO" : "SHUFFLE SHARDING: EVERY CUSTOMER GETS ITS OWN PAIR", t: mode === "shared" ? "Efficient, but every customer shares all eight machines. If one machine dies, the other seven absorb the work. Now click a customer to send bad traffic, and watch where it goes." : mode === "fixed" ? "A bad customer can now take down only their own group, a quarter of the service. But for the other customers in that group, the outage is total." : "Rainbow holds machines 1 and 4; rose holds 1 and 8. Their pairs overlap on machine 1, and that overlap is the point, not a flaw. Send bad traffic from one and count who else falls." }
     : mode === "shared"
-    ? { c: RED, code: "SCOPE OF IMPACT: EVERYTHING", t: "The load balancer sprays the poison across the fleet; the problem visits every worker in turn. Every customer is down from one customer's traffic. Adding workers adds reach, not containment." }
+    ? { c: RED, code: "THE WHOLE SERVICE IS DOWN", t: "The load balancer spreads the bad traffic across every machine, so the problem reaches all of them. Every customer is down because of one customer. Adding machines just gives the failure more places to reach." }
     : mode === "fixed"
-    ? { c: RED, code: "SHARD DOWN — 25% OF THE SERVICE, 100% FOR ITS TENANTS", t: "Much better than everything — and the customers sharing that shard are fully out. The only lever is more/thinner shards: isolation priced in dedicated capacity, which multi-tenant economics exist to avoid." }
+    ? { c: RED, code: "ONE GROUP DOWN: 25% OF THE SERVICE, 100% FOR EVERYONE IN IT", t: "Much better than everything down, and the customers sharing that group are fully out. The only way to shrink it is more or smaller groups, which costs dedicated machines, exactly what sharing machines was meant to avoid." }
     : downCount <= 1
-    ? { c: retries ? GREEN : AMBER, code: retries ? "BLAST RADIUS: THE POISONED SHARD, AND ONLY IT" : "RETRIES OFF — THE HIDDEN HALF OF THE GUARANTEE", t: retries ? "The poisoned customer loses their combination — a quarter of raw capacity is degraded — but every other customer shares at most ONE worker with it, and their retries route around the loss. Uninterrupted service from a fully shared fleet: 28 combinations, 1/28th scope, same eight machines. With Route 53's numbers — 4 of 2,048 — it's 730 billion combinations." : "Overlapping customers just lost half their shard, and without fault-tolerant clients they feel it. The uninterrupted-service claim lives partly in the caller: shuffle sharding halves the failure, the retry hides the half." }
-    : { c: AMBER, code: "PARTIAL OVERLAPS VISIBLE", t: "Count the states: only the poisoned shard is fully down; overlapped customers are degraded on one worker each." };
+    ? { c: retries ? GREEN : AMBER, code: retries ? "DAMAGE HELD TO THE BAD CUSTOMER'S OWN PAIR" : "RESENDS OFF: THE HIDDEN HALF OF THE PROTECTION", t: retries ? "The bad customer loses its own pair, so a quarter of raw capacity is degraded. But every other customer shares at most ONE machine with it, and their resends route around the loss. Full service from fully shared machines: 28 pairs, about 1/28th reach, same eight machines. At Route 53's scale (4 of 2,048) it is 730 billion combinations." : "The overlapping customers just lost half their pair, and without software that resends failed requests, they feel it. Part of the protection was really coming from the customer's own side: shuffle sharding removes half the capacity, the resend hides that half." }
+    : { c: AMBER, code: "PARTIAL OVERLAPS", t: "Only the bad customer's own pair is fully down; the overlapping customers are degraded on one machine each." };
 
   const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
   const S = {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on) => ({ padding: "7px 10px", borderRadius: 6, cursor: "pointer", border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffd9a8" : "#8b90a0", background: on ? "rgba(255,153,0,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11, marginRight: 6, marginTop: 6 }),
+    btn: (on) => ({ padding: "7px 10px", borderRadius: 6, cursor: "pointer", border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffd9a8" : "#8b90a0", background: on ? "rgba(255,153,0,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11, marginRight: 6, marginTop: 6 }),
   };
   const custColor = { ok: GREEN, riding: ACCENT, degraded: AMBER, down: RED };
-  const custLabel = { ok: "OK", riding: "RETRYING·OK", degraded: "DEGRADED", down: "DOWN" };
+  const custLabel = { ok: "OK", riding: "RESENDING·OK", degraded: "DEGRADED", down: "DOWN" };
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>AWS · SHUFFLE SHARDING — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>AWS · SHUFFLE SHARDING - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>One twenty-eighth</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Same eight workers, same poison — three assignment schemes. Blast radius is the only thing that changes.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>The same eight machines and the same one bad customer, three ways of assigning customers to machines. Watch how much of the service goes down each way.</p>
       <ContextBlock />
 
       <div style={{ marginTop: 12 }}>
         <span style={S.label}>SCHEME · </span>
         <button style={S.btn(mode === "shared")} onClick={() => { setMode("shared"); setPoison(null); }}>SHARED FLEET</button>
-        <button style={S.btn(mode === "fixed")} onClick={() => { setMode("fixed"); setPoison(null); }}>4 FIXED SHARDS</button>
-        <button style={S.btn(mode === "shuffle")} onClick={() => { setMode("shuffle"); setPoison(null); }}>SHUFFLE SHARDS (2-of-8)</button>
-        {mode === "shuffle" && <button style={S.btn(retries)} onClick={() => setRetries(!retries)}>CLIENT RETRIES: {retries ? "ON" : "OFF"}</button>}
+        <button style={S.btn(mode === "fixed")} onClick={() => { setMode("fixed"); setPoison(null); }}>4 FIXED GROUPS</button>
+        <button style={S.btn(mode === "shuffle")} onClick={() => { setMode("shuffle"); setPoison(null); }}>SHUFFLE SHARDING (2 of 8)</button>
+        {mode === "shuffle" && <button style={S.btn(retries)} onClick={() => setRetries(!retries)}>AUTO-RESEND: {retries ? "ON" : "OFF"}</button>}
       </div>
 
       <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${verdict.c}`, background: `${verdict.c}14`, marginTop: 12 }}>
@@ -64,20 +64,21 @@ export default function OneTwentyEighth() {
       </div>
 
       <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12, marginTop: 12 }}>
-        <div style={S.label}>WORKERS</div>
+        <div style={S.label}>MACHINES</div>
         <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
           {[...Array(N).keys()].map(w => (
-            <div key={w} style={{ width: 42, height: 34, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, background: deadWorkers.has(w) ? "rgba(239,68,68,0.18)" : "#0c0d13", border: `1px solid ${deadWorkers.has(w) ? RED : "#2a2f45"}`, color: deadWorkers.has(w) ? RED : "#8b90a0" }}>W{w + 1}</div>
+            <div key={w} style={{ width: 42, height: 34, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, transition: "background 0.3s ease, border-color 0.3s ease, color 0.3s ease", transitionDelay: (mode === "shared" && deadWorkers.has(w)) ? `${w * 130}ms` : "0ms", background: deadWorkers.has(w) ? "rgba(239,68,68,0.18)" : "#0c0d13", border: `1px solid ${deadWorkers.has(w) ? RED : "#2a2f45"}`, color: deadWorkers.has(w) ? RED : "#8b90a0" }}>M{w + 1}</div>
           ))}
         </div>
-        <div style={{ ...S.label, marginTop: 12 }}>CUSTOMERS — CLICK ONE TO POISON IT {poison !== null && <button style={{ ...S.btn(false), padding: "2px 8px", fontSize: 9 }} onClick={() => setPoison(null)}>CURE</button>}</div>
+        {mode === "shared" && poison !== null && <div style={{ fontSize: 10, color: RED, marginTop: 6 }}>the failure spreads from machine to machine until the whole service is down</div>}
+        <div style={{ ...S.label, marginTop: 12 }}>CUSTOMERS - CLICK ONE TO SEND BAD TRAFFIC {poison !== null && <button style={{ ...S.btn(false), padding: "2px 8px", fontSize: 9 }} onClick={() => setPoison(null)}>CURE</button>}</div>
         <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
           {[...Array(N).keys()].map(c => {
             const st = custState(c); const names = ["🌈 rainbow","C2","C3","C4","C5","C6","C7","🌹 rose"];
             return (
               <button key={c} onClick={() => setPoison(c)} style={{ minWidth: 92, padding: "7px 8px", borderRadius: 6, cursor: "pointer", textAlign: "left", fontFamily: mono, fontSize: 10, background: poison === c ? "rgba(239,68,68,0.14)" : "#0c0d13", border: `1px solid ${poison === c ? RED : custColor[st] + "55"}`, color: "#c8cdd8" }}>
                 <div style={{ fontWeight: 700 }}>{names[c]}{poison === c ? " ☠" : ""}</div>
-                <div style={{ color: "#6b7080" }}>W{workersOf(c).map(x => x + 1).join("+W")}</div>
+                <div style={{ color: "#6b7080" }}>M{workersOf(c).map(x => x + 1).join("+M")}</div>
                 <div style={{ color: custColor[st], fontWeight: 700 }}>{poison === null ? "OK" : custLabel[st]}</div>
               </button>
             );
@@ -87,7 +88,7 @@ export default function OneTwentyEighth() {
       </div>
 
       <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
-        Assignments and the worked example are the post's (rainbow = W1+W4, rose = W1+W8; eight workers; shards of two; 28 combinations → 1/28th scope, seven times better than regular sharding; at most one shared worker between shards, so fault-tolerant requestors with retries continue uninterrupted). Route 53 scale, sourced: 2,048 virtual name servers, shuffle shards of four per domain, 730 billion combinations, no two domains sharing more than two servers, targeted DDoS traffic isolated to dedicated attack capacity alongside Shield scrubbers. The scheme usually comes at no additional cost — a rearrangement of existing resources.
+        Assignments and the worked example are the post's (rainbow = machines 1+4, rose = machines 1+8; eight machines; pairs of two; 28 combinations → about 1/28th reach, seven times better than fixed groups; at most one shared machine between pairs, so a customer whose software resends keeps working). Route 53 scale, sourced: 2,048 machines, sets of four per domain, 730 billion combinations, no two domains sharing more than two servers, targeted flood traffic (a DDoS attack) isolated onto dedicated attack capacity alongside AWS's Shield traffic scrubbers. The scheme usually comes at no additional cost - a rearrangement of existing resources.
         {" "}<a href="https://behindscale.com/articles/aws-shuffle-sharding" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
     </div>
@@ -101,12 +102,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>In a shared fleet where any worker serves any request, one customer's poisonous request or flood reaches every worker — the blast radius is the whole service. Fixed shards cap it at 25%, but that's total loss for the shard's tenants, and shrinking it further costs dedicated capacity.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Shuffle sharding: give each customer a random combination of two workers. 28 combinations from eight machines → 1/28th scope, and since any two shards overlap in at most one worker, retrying clients ride through. Route 53 runs it at 4-of-2,048: 730 billion combinations.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Poison the rainbow customer under each scheme and count who else goes down. Then switch off client retries and find the half of the guarantee that was living in the caller.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>When all machines are shared and any machine serves any request, one customer's bad request or flood reaches every machine, so the whole service goes down. Four fixed groups cap that at 25%, but that's a total outage for everyone in the hit group, and shrinking it further costs dedicated machines.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Shuffle sharding: give each customer a random pair of machines. 28 pairs from eight machines means one problem reaches about 1/28th of customers, and since any two pairs share at most one machine, a customer whose software resends keeps working. Route 53 runs it at 4 of 2,048: 730 billion combinations.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Send bad traffic from the rainbow customer under each scheme and count who else goes down. Then switch off the customers' auto-resend and see how much of the protection was really coming from their side.</div>
     </div>
   );
 }
