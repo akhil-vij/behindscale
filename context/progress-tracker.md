@@ -7465,6 +7465,23 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-28: **Pattern review Round 17 — Retryable Error
+  Classification**. Enrichment of the pre-existing minimal pattern
+  (`content/patterns/retryable-error-classification.json`,
+  slug/name/category frozen — resilience). Added authored
+  `oneLineDefinition`, readability-passed definition with one figure
+  marker, two `**bold**` list-item leads (safe to retry / do not retry),
+  and two inline cross-links `[idempotency key](/patterns/idempotency-keys)`
+  and `[retry budget](/patterns/retry-budget)` (Round 16; both guard-green).
+  Aliases: transient vs permanent errors · which errors are safe to retry
+  · non-retryable errors. New authored artifact
+  `content/artifacts/retryable-error-classification.jsx` (zero near-miss
+  grays, zero em-dashes, export-default), one figure
+  `content/figures/retryable-error-classification/before-a-retry.svg`
+  (viewBox 0 0 720 188, fields in-band, safe). No `file` field. Revision
+  HTML not placed. Visible DOM verified: 0 literal markdown, both bold
+  leads, both anchors, figure img, mechanism teaser. Build (23 checks, 0
+  errors) + 260 tests green.
 - 2026-08-27: **Article review round — AWS Shuffle Sharding** (first
   article round in this series; the rest were pattern rounds). Enriched
   the existing `content/articles/aws-shuffle-sharding.json`

@@ -1,16 +1,40 @@
 {
   "slug": "retryable-error-classification",
   "name": "Retryable Error Classification",
-  "category": "resilience",
-  "definition": "Partition every failure a request can produce into retryable (presumed transient — infrastructure and network faults; a later identical attempt may succeed) and non-retryable (deterministic — validation and state errors; every identical attempt will fail the same way), and make the classification part of the response contract so clients and frameworks know mechanically whether re-attempting under the same idempotency key is permitted. Default conservatively: for operations with irreversible side effects, an unclassified error is non-retryable.\n\nThe classification converts 'retries are safe' from a global assumption into a per-error contract, and both mislabel directions carry a named price: transient-marked-permanent fails the request forever, with every retry parroting the wrong verdict; permanent-marked-transient re-opens the door to duplicated side effects and manual cleanup. Boundary against Retry Budget: the budget governs how much retrying a system can afford; classification governs whether a given failure may be retried at all.",
+  "oneLineDefinition": "Sort every error into safe to retry or not, put that label in the response, and clients will retry the temporary faults and give up fast on the ones that would just fail again.",
+  "definition": "When a request fails, something has to decide whether trying again is worth it. Some failures are temporary: a network blip, a server that was busy for a moment. Trying again will probably work. Other failures are permanent: bad input, or an invalid action. Trying again will fail the exact same way, every time. So the two kinds need opposite handling: retry the temporary ones, stop on the permanent ones. A single rule for every error gets one group wrong.\n\nRetryable error classification sorts every failure into one of two labels:\n\n- **safe to retry** - the failure looks temporary, so trying again may work\n- **do not retry** - the failure is permanent, so trying again will fail the same way\n\nThe label goes into the response the server sends back, so clients and frameworks do not have to guess: they only retry the failures marked safe to retry. Retries go out under the same [idempotency key](/patterns/idempotency-keys), a marker that lets the server tell a retry apart from a brand-new request, so a safe retry does not do the work twice. When the label is missing and the action cannot be undone, treat it as do not retry - the careful default.\n\nGetting the label wrong costs something in both directions. Mark a temporary failure as permanent and you fail a request that a retry would have fixed. Because the label says permanent, nothing ever tries again. Mark a permanent failure as temporary and you retry something that cannot succeed, which wastes work and can repeat a side effect that already happened, like a double charge that a person then has to clean up.\n\nThis is a different question from how much to retry. A [retry budget](/patterns/retry-budget) caps how much retrying a system can afford; classification decides whether a given failure should be retried at all. You want both: the budget keeps retries from piling up, and the classification keeps them pointed only at failures that a retry can actually fix.\n\n{{figure:before-a-retry}}",
   "whenItApplies": [
-    "Idempotent request frameworks where retry decisions must be automatic rather than per-call-site judgment",
-    "APIs whose errors mix infrastructure faults (5XX-shaped) with validation and state errors (4XX-shaped)",
-    "Operations with irreversible side effects, where a wrong 'retryable' verdict costs more than a wrong 'permanent' one"
+    "A framework retries for you, automatically. When retrying is built into shared code rather than decided by hand at each call, that code needs a rule for which errors are safe to retry.",
+    "The API returns a mix of error kinds. Some are server or network problems that may pass (the 5xx kind), and some are bad-request or bad-state errors that will not (the 4xx kind), so one retry rule for all of them is wrong.",
+    "The action cannot be undone. For things like charging a card or shipping an order, wrongly retrying is worse than wrongly giving up, so the safe default matters most here."
   ],
   "tradeoffs": [
-    "Every exception path needs a deliberate label, maintained as the codebase grows — the contract is only as good as its worst-classified error",
-    "Ambiguous cases (a null from a connectivity blip vs a null from bad input) require context the classification layer may not have",
-    "A conservative default protects side effects by silently converting some transient faults into permanent failures needing human unsticking"
-  ]
+    "Every error needs a deliberate label. As the code grows, each new failure path has to be classified on purpose, and one badly labeled error can undo the whole benefit.",
+    "Some errors are genuinely ambiguous. The same empty result can come from a network blip or from bad input, and the layer doing the labeling may not have enough context to tell which.",
+    "The safe default has its own cost. Defaulting unknown errors to do not retry protects against double actions, but it quietly turns some temporary faults into hard failures that a person has to go in and fix by hand."
+  ],
+  "aliases": [
+    "transient vs permanent errors",
+    "which errors are safe to retry",
+    "non-retryable errors"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/retryable-error-classification/index.html",
+    "teaser": "Label an error right and a retry helps; label it wrong and you either give up too soon or charge the card twice."
+  },
+  "figures": [
+    {
+      "slug": "before-a-retry",
+      "eyebrow": "BEFORE A RETRY GOES OUT",
+      "caption": "Classification is the first gate a retry passes: whether this failure may be retried at all, before a retry budget limits how many and backoff and jitter decide how long to wait.",
+      "ariaLabel": "Three gates before a retry goes out: is it retryable, is there budget, and how long to wait."
+    }
+  ],
+  "mechanism": {
+    "caption": "TWO WAYS TO BE WRONG",
+    "blurb": "At its core: each error is either temporary (a retry may work) or permanent (a retry never will), and labeling one as the other has a cost both ways - give up too early, or retry something that keeps failing.",
+    "idea": "Every failure is either temporary or permanent. A temporary failure - a network blip, a busy server - may clear on the next try. A permanent failure - bad input, a state that will not change - will fail the same way every time. If you retry a permanent failure you waste work and can repeat a side effect, like charging a card twice; if you give up on a temporary one you fail a request that would have recovered. The pattern labels each error safe to retry or not, puts the label in the response, and defaults to do not retry when it cannot tell and the action cannot be undone.",
+    "whatToTry": "Pick an error and choose whether to retry it - watch it land in one of four cells, two good and two costly. Then try the unknown error on a payment and see why the safe default is do not retry."
+  }
 }
