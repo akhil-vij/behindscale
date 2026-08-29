@@ -1,0 +1,22 @@
+<svg viewBox="0 0 700 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three layers of isolation: dedicated compute clusters break the compute loop, a separate network path breaks the data-flow loop, and external heartbeat detection breaks the alerting loop"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="vah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7C3AED"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">THREE LOOPS, CUT ONE AT A TIME</text>
+<rect x="16" y="40" width="212" height="150" rx="10" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.4"/>
+<text x="32" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#2563EB" text-anchor="start" font-weight="700">COMPUTE</text>
+<text x="32" y="88" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">monitoring gets its own</text>
+<text x="32" y="102" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">dedicated clusters, not shared</text>
+<text x="32" y="116" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">with the services it watches</text>
+<text x="32" y="178" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="start" font-weight="700">✂ breaks the compute loop</text>
+<rect x="244" y="40" width="212" height="150" rx="10" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="260" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#2E7D46" text-anchor="start" font-weight="700">NETWORK</text>
+<text x="260" y="88" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">monitoring data gets its own</text>
+<text x="260" y="102" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">path, outside the shared</text>
+<text x="260" y="116" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">networking layer</text>
+<text x="260" y="178" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="start" font-weight="700">✂ breaks the data-flow loop</text>
+<rect x="472" y="40" width="212" height="150" rx="10" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.4"/>
+<text x="488" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="12" fill="#7C3AED" text-anchor="start" font-weight="700">DETECTION</text>
+<text x="488" y="88" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">an external heartbeat, watched</text>
+<text x="488" y="102" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">from outside Airbnb's systems,</text>
+<text x="488" y="116" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">catches a dead monitor</text>
+<text x="488" y="178" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#7C3AED" text-anchor="start" font-weight="700">✂ breaks the alerting loop</text>
+<text x="350" y="214" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">no layer of the safety net shares a dependency with the thing it protects</text>
+</svg>

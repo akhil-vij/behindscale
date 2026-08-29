@@ -3270,3 +3270,92 @@ building toward." Sim untouched.
 
 Note: bold now renders in the preview (added markdown bold support to the preview builder), so the
 one bolded sentence shows correctly.
+
+---
+
+## airbnb-monitoring-reliably-at-scale - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES, with an unusual headline: this
+article shipped well UNDER band, so the defining work was grounded EXPANSION, not trimming. Live page
+byte-for-byte the upload (no drift). Grounding is clean against Abdurrahman J. Allawala's May 2026
+Airbnb Engineering post; the JSON was accurate but thin, leaving a lot of the source's detail unused.
+First article of the "observer shares fate with observed" class; relatedArticles
+roblox-return-to-service and datadog-incident-response-observer-fate.
+
+**Under band, expanded with substance.** summary 555 -> 892; crux 395 (under floor) -> 812; problem
+1,081 (under by 219) -> 1,964; solution 1,622 (under by ~780) -> 4,041. The expansion is grounded, not
+padding: the two compute extremes (shared clusters vs running their own) as a list; the
+change-coordination discipline (one major change at a time, validated on lower-priority clusters
+first); the custom layer routing read and write requests, the 1,000+ services as tenants in one
+global namespace with tenant-label routing, and the mirroring / access-control rationale; the
+Prometheus and Alertmanager high-availability sets kept on separate machines across separate
+datacenters with no pair on the same hardware; the specific failure modes the heartbeat catches; and
+the point that shared traffic could hurt Airbnb.com itself.
+
+**Full plain-language pass** (jargon-dense). observability -> "monitoring"; Kubernetes glossed on
+first use; Istio / service mesh -> "the shared networking layer (a service mesh)"; Envoy L7 ingress ->
+"a custom entry point... based on a proxy called Envoy"; data plane -> "network path / layer";
+telemetry -> "monitoring data"; Prometheus -> "a tool called Prometheus"; AWS SNS / CloudWatch -> "an
+external service on Amazon's cloud" / "a separate Amazon alarm"; availability zones -> "separate
+datacenters"; meta-monitoring -> "watch the watchers"; circular dependency and dead man's switch both
+glossed ("a steady heartbeat whose silence is the alarm").
+
+**Em-dash overrun - swept: 15 JSON + 19 JSX -> 0.**
+
+**Sentence length -> all <= 40.** Split the 52-word "three layers" summary sentence, the 60-word
+independent-observability note run-on, and two long sentences created during expansion.
+
+**Notes.** Softened the independent-observability note ("the pattern's canonical statement" and "a
+worked example of how those loops hide in plain sight" removed) and broke its 60-word run-on into
+shorter sentences.
+
+**Images - 3 figures (the article shipped with none).** circular-dependency: a vertical dependency
+chain with a loop-back arrow, showing that the alert needs the monitoring, which runs on the same
+foundation, so a failure there means the alert never fires. three-layers: compute, network, and
+detection, each cutting one dependency loop. dead-mans-switch: the heartbeat chain out to an external
+Amazon service and alarm, where the missing signal is the signal.
+
+**Artifact - plain-language sweep, sim untouched.** Istio / K8s / telemetry / data plane / SNS /
+CloudWatch glossed across the option cards, the heartbeat chain, the verdicts, and the context block.
+Dashes swept (19 -> 0). Six selector toggle off-states #2a2a3a -> #4a4f60 (the neutral status border
+and a divider left as chrome). The simulation is unchanged: the before/after x failure "who gets
+paged" logic, the visited scoreboard, the three compute options, and the Dead Man's Switch chain are
+all intact.
+
+**Recurring-defect scorecard:** under-band content (fixed by grounded expansion, the standout here);
+em-dash overrun (fixed); invisible off-state toggles (fixed); mild note editorializing (softened).
+Taxonomy-first crux was ABSENT (the crux is concrete) and grounding was clean. The article shipped
+with no figures, so three were added. P27 frozen fields byte-identical (title, cruxTag, the single
+stat value/placement, relatedArticles, tags, artifact.path). Only one stat is present; the source
+supports more (thousands of services, orders-of-magnitude telemetry), but stats are frozen, so left
+at one pending owner direction. Deliverables: expanded .json, swept .jsx, rebuilt preview .html, three
+.svg figures, this entry.
+
+First article of the observer-fate class produced; roblox-return-to-service and
+datadog-incident-response-observer-fate remain its unproduced siblings.
+
+---
+
+## airbnb-monitoring-reliably-at-scale - Plain-language round + artifact interactivity (2026-08-11)
+
+Owner ran a plain-language pass and asked to make the artifact more interactive. Bands hold (summary
+944, crux 755, problem 1,986, solution 4,084), dashes 0, longest sentence 40 words, frozen intact.
+
+**Prose.** The dead man's switch line was rewritten to say what the alarm is ("the silence itself is
+what pages the on-call engineer") rather than "triggers the alarm"; removed the low-value tail
+"exactly when someone needed to be told" and the filler "many times over"; "The loop was concrete,
+and it closed on itself at every step" -> "The loop is easy to trace, and every step lands back on
+the same shared foundation"; "rides on the very thing it watches" -> "relies on the very thing it
+watches"; "which it could not sustain" -> "which was not sustainable"; "give monitoring data its own
+road" -> "its own separate network path"; "each treated as its own tenant in one global namespace"
+-> "keeps each service separate from the others but manages them all in one place"; "throughline"
+removed from both the summary ("the one rule running through all of it") and the
+independent-observability note ("the common thread of the redesign").
+
+**Artifact - live Dead Man's Switch heartbeat added.** The switch is now the thing you watch happen.
+In "Full chain" mode a green heart pulses once per beat with a running "beats received" counter that
+ticks up. Switch to "When it breaks" and the heart goes dark, the counter freezes, and after a
+couple of seconds of silence the panel flips to "SILENCE DETECTED -> PAGING ON-CALL" - the "silence
+is the signal" idea made literal and self-running. This is a small useEffect-driven interval plus its
+own state; the FailureSim "who gets paged" logic, the compute options, and the static chain view are
+all unchanged. No dashes; parses clean; the preview builder rebinds useEffect so it runs there too.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const sections = [
   { id: "problem", label: "Break the Stack" },
@@ -16,8 +16,8 @@ const computeOptions = [
     icon: "✕",
     pros: ["No new infrastructure", "Already operated"],
     cons: [
-      "Circular dependency — monitoring fails with the infra it's monitoring",
-      "Shared blast radius with all other workloads",
+      "Circular dependency: monitoring fails together with the infrastructure it monitors",
+      "Shares its fate with every other workload",
     ],
   },
   {
@@ -28,7 +28,7 @@ const computeOptions = [
     icon: "✕",
     pros: ["Full isolation", "Independent failure domains"],
     cons: [
-      "Heavy K8s operational expertise required",
+      "Needs deep Kubernetes operations expertise",
       "Unsustainable maintenance burden for a small team",
       "Reinvents what the Cloud team already does well",
     ],
@@ -40,8 +40,8 @@ const computeOptions = [
     verdictColor: "#22c55e",
     icon: "✓",
     pros: [
-      "Isolated from app workloads — no circular dependency",
-      "Cloud team manages the clusters — low ongoing overhead",
+      "Isolated from the product workloads: no circular dependency",
+      "Cloud team runs the clusters: low ongoing overhead",
       "Changes coordinated and validated on lower-priority clusters first",
     ],
     cons: [
@@ -53,11 +53,11 @@ const computeOptions = [
 
 const deadmanChain = [
   { label: "Metrics engine", icon: "📊", desc: "The observability stack being monitored.", color: "#3b82f6" },
-  { label: "Prometheus (isolated)", icon: "🔍", desc: "Scrapes metrics from the engine. Runs on separate nodes across availability zones.", color: "#a78bfa" },
-  { label: "Always-firing alert rule", icon: "⚡", desc: "A rule that ALWAYS evaluates true while Prometheus is healthy — a constant heartbeat.", color: "#eab308" },
-  { label: "Alertmanager (HA)", icon: "📢", desc: "Receives the heartbeat, continuously pushes to SNS.", color: "#eab308" },
-  { label: "AWS SNS topic", icon: "☁️", desc: "Receives heartbeats. Lives outside Airbnb's infra — no shared failure domain.", color: "#22c55e" },
-  { label: "CloudWatch alarm", icon: "⏰", desc: "Watches SNS message rate. If heartbeats STOP, the alarm fires.", color: "#ef4444" },
+  { label: "Prometheus (isolated)", icon: "🔍", desc: "Collects metrics from the engine. Runs on separate machines across separate datacenters.", color: "#a78bfa" },
+  { label: "Always-firing alert rule", icon: "⚡", desc: "A rule that ALWAYS fires while the monitor is healthy: a constant heartbeat.", color: "#eab308" },
+  { label: "Alertmanager (HA)", icon: "📢", desc: "Receives the heartbeat and continuously forwards it to Amazon's messaging service (SNS).", color: "#eab308" },
+  { label: "AWS SNS topic", icon: "☁️", desc: "Receives heartbeats. Lives outside Airbnb's own infrastructure, so it shares no fate with it.", color: "#22c55e" },
+  { label: "CloudWatch alarm", icon: "⏰", desc: "Watches how often heartbeats arrive. If they STOP, the alarm fires.", color: "#ef4444" },
   { label: "PagerDuty → on-call", icon: "🚨", desc: "CloudWatch triggers PagerDuty. Engineer gets paged. Silence itself is the signal.", color: "#ef4444" },
 ];
 
@@ -84,7 +84,7 @@ function FailureSim() {
           ["Alerts", "ok", "armed"],
         ],
         paged: null,
-        verdict: "Healthy — and every dependency loop invisible. Each line below works; what's hidden is that they all stand on the same floor.",
+        verdict: "Healthy - and every dependency loop invisible. Each line below works; what's hidden is that they all stand on the same floor.",
       },
       k8s: {
         rows: [
@@ -94,7 +94,7 @@ function FailureSim() {
           ["Alerts", "dark", "nothing left to evaluate them"],
         ],
         paged: false,
-        verdict: "Blind at the worst moment. The monitoring died with the infrastructure it monitors — no alert ever fires, no one is paged.",
+        verdict: "Blind at the worst moment. The monitoring died with the infrastructure it monitors - no alert ever fires, no one is paged.",
       },
       istio: {
         rows: [
@@ -104,7 +104,7 @@ function FailureSim() {
           ["Alerts", "dark", "no data arriving"],
         ],
         paged: false,
-        verdict: "Metrics about the mesh needed the mesh to be delivered. The signal about the failure travels over the thing that failed.",
+        verdict: "The alert about the network layer had to travel over that same network layer. The signal about the failure rides the thing that failed.",
       },
       obs: {
         rows: [
@@ -126,17 +126,17 @@ function FailureSim() {
           ["DMS heartbeat", "ok", "Prometheus → SNS → CloudWatch, beating"],
         ],
         paged: null,
-        verdict: "Healthy — and now the floors are separate. Run the same failures and compare.",
+        verdict: "Healthy - and now the floors are separate. Run the same failures and compare.",
       },
       k8s: {
         rows: [
           ["App services", "degraded", "shared clusters failing"],
           ["Istio mesh", "dark", "runs on the shared K8s"],
-          ["Metrics pipeline", "ok", "dedicated clusters — different floor"],
+          ["Metrics pipeline", "ok", "dedicated clusters - different floor"],
           ["DMS heartbeat", "ok", "still beating"],
         ],
         paged: true,
-        verdict: "The page goes out. Monitoring survives the exact failure it exists to catch — alerts about the K8s outage fire from infrastructure the outage can't reach.",
+        verdict: "The page goes out. Monitoring survives the exact failure it exists to catch - alerts about the K8s outage fire from infrastructure the outage can't reach.",
       },
       istio: {
         rows: [
@@ -146,7 +146,7 @@ function FailureSim() {
           ["DMS heartbeat", "ok", "still beating"],
         ],
         paged: true,
-        verdict: "The telemetry path no longer shares the data plane it observes. Mesh fails; the news about it still arrives.",
+        verdict: "The monitoring traffic no longer shares the network layer it observes. The mesh fails, but the news about it still gets out.",
       },
       obs: {
         rows: [
@@ -178,9 +178,9 @@ function FailureSim() {
         the difference between the two columns of outcomes.
       </p>
 
-      {/* who-gets-paged scoreboard — fills in as you explore the six cells */}
+      {/* who-gets-paged scoreboard - fills in as you explore the six cells */}
       <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 12px", marginBottom: 12 }}>
-        <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 8 }}>YOUR RUNS — WHO GETS PAGED</div>
+        <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 8 }}>YOUR RUNS - WHO GETS PAGED</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {FAILS.map((f) => (
             <div key={f.id} style={{ flex: "1 1 150px", minWidth: 150 }}>
@@ -191,7 +191,7 @@ function FailureSim() {
                 return (
                   <div key={a} style={{ display: "flex", gap: 6, alignItems: "baseline", fontSize: 11, color: has ? (visited[k] ? "#22c55e" : "#ef4444") : "#666", opacity: has ? 1 : 0.55 }}>
                     <span style={{ minWidth: 16 }}>{has ? (visited[k] ? "🚨" : "🔇") : "·"}</span>
-                    <span>{lbl}{has ? (visited[k] ? " — paged" : " — silent") : ""}</span>
+                    <span>{lbl}{has ? (visited[k] ? " - paged" : " - silent") : ""}</span>
                   </div>
                 );
               })}
@@ -200,7 +200,7 @@ function FailureSim() {
         </div>
         {allSix && (
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid #2a2a3a", fontSize: 11, lineHeight: 1.6, color: "#c0c0cc" }}>
-            All six run. Before: zero pages from three failures — every alarm depended on the thing that failed, including the alarm about the monitoring itself. After: three pages from three failures — the last one raised not by a signal but by the absence of one.
+            All six run. Before: zero pages from three failures - every alarm depended on the thing that failed, including the alarm about the monitoring itself. After: three pages from three failures - the last one raised not by a signal but by the absence of one.
           </div>
         )}
       </div>
@@ -209,7 +209,7 @@ function FailureSim() {
         {[["before", "Before · shared everything"], ["after", "After · isolated"]].map(([id, label]) => (
           <button key={id} onClick={() => setArch(id)} style={{
             padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
-            border: `1px solid ${arch === id ? (id === "before" ? "#ef4444" : "#22c55e") : "#2a2a3a"}`,
+            border: `1px solid ${arch === id ? (id === "before" ? "#ef4444" : "#22c55e") : "#4a4f60"}`,
             borderRadius: 6,
             background: arch === id ? (id === "before" ? "#ef444418" : "#22c55e18") : "transparent",
             color: arch === id ? (id === "before" ? "#ef4444" : "#22c55e") : "#666",
@@ -221,7 +221,7 @@ function FailureSim() {
         {FAILURES.map((f) => (
           <button key={f.id} onClick={() => setFailure(f.id)} style={{
             padding: "6px 10px", fontSize: 10.5, fontFamily: "inherit",
-            border: `1px solid ${failure === f.id ? "#06b6d4" : "#2a2a3a"}`,
+            border: `1px solid ${failure === f.id ? "#06b6d4" : "#4a4f60"}`,
             borderRadius: 5,
             background: failure === f.id ? "#06b6d418" : "transparent",
             color: failure === f.id ? "#06b6d4" : "#666",
@@ -297,12 +297,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Airbnb's monitoring ran on the same Kubernetes clusters and Istio mesh it existed to observe — so a failure in the foundation silenced the very alerts that should have reported it. And telemetry runs orders of magnitude larger than business traffic, on a shared mesh that could not tell their priorities apart.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Never let the safety mechanism depend on the thing it protects: dedicated-but-managed compute for the observability stack, a custom Envoy network path outside the shared mesh, and a Dead Man's Switch that alarms on the absence of expected health signals — because monitoring itself can fail.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Break each layer — shared K8s, the Istio mesh, the observability stack itself — in the old architecture and then the new one, and see who gets paged.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Airbnb's monitoring ran on the same Kubernetes clusters and Istio mesh it existed to observe - so a failure in the foundation silenced the very alerts that should have reported it. And telemetry runs orders of magnitude larger than business traffic, on a shared mesh that could not tell their priorities apart.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Never let the safety mechanism depend on the thing it protects: dedicated-but-managed compute for the observability stack, a custom Envoy network path outside the shared mesh, and a Dead Man's Switch that alarms on the absence of expected health signals - because monitoring itself can fail.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Break each layer (the shared Kubernetes clusters, the shared service mesh, the monitoring stack itself) in the old architecture and then the new one, and see who gets paged.</div>
     </div>
   );
 }
@@ -311,6 +311,16 @@ export default function AirbnbMonitoring() {
   const [section, setSection] = useState("problem");
   const [selectedCompute, setSelectedCompute] = useState(null);
   const [deadmanMode, setDeadmanMode] = useState("normal");
+  const [beats, setBeats] = useState(0);
+  const [silentTicks, setSilentTicks] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (deadmanMode === "normal") { setBeats((b) => b + 1); setSilentTicks(0); }
+      else { setSilentTicks((t) => t + 1); }
+    }, 900);
+    return () => clearInterval(id);
+  }, [deadmanMode]);
+  const alarmed = deadmanMode === "broken" && silentTicks >= 3;
 
   return (
     <div style={{
@@ -345,7 +355,7 @@ export default function AirbnbMonitoring() {
                 padding: "7px 12px",
                 fontSize: 11,
                 fontFamily: "inherit",
-                border: `1px solid ${section === s.id ? "#06b6d4" : "#2a2a3a"}`,
+                border: `1px solid ${section === s.id ? "#06b6d4" : "#4a4f60"}`,
                 borderRadius: 6,
                 background: section === s.id ? "#06b6d418" : "transparent",
                 color: section === s.id ? "#06b6d4" : "#666",
@@ -373,7 +383,7 @@ export default function AirbnbMonitoring() {
                     style={{
                       padding: "12px 14px",
                       background: selectedCompute === opt.id ? "#111118" : "#0c0d13",
-                      border: `1px solid ${selectedCompute === opt.id ? opt.verdictColor + "60" : "#2a2a3a"}`,
+                      border: `1px solid ${selectedCompute === opt.id ? opt.verdictColor + "60" : "#4a4f60"}`,
                       borderRadius: selectedCompute === opt.id ? "6px 6px 0 0" : 6,
                       cursor: "pointer",
                     }}
@@ -525,7 +535,7 @@ export default function AirbnbMonitoring() {
                 Why own networking but not compute?
               </div>
               <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-                Compute (K8s) was already a mature managed platform — adding dedicated clusters was a small increment. Networking needed telemetry-specific features the shared mesh couldn't provide: strict prioritization, tenant-based header routing for 1,000+ services, traffic mirroring, fine-grained access control.
+                Compute (K8s) was already a mature managed platform - adding dedicated clusters was a small increment. Networking needed telemetry-specific features the shared mesh couldn't provide: strict prioritization, tenant-based header routing for 1,000+ services, traffic mirroring, fine-grained access control.
               </div>
             </div>
           </div>
@@ -534,13 +544,27 @@ export default function AirbnbMonitoring() {
         {section === "deadman" && (
           <div>
             <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              Who monitors the monitors? Instead of infinite layers of monitoring, use a <strong style={{ color: "#f0f0f5" }}>Dead Man's Switch</strong> — a signal that says "I'm alive." When the signal stops, something is wrong.
+              Who monitors the monitors? Instead of infinite layers of monitoring, use a <strong style={{ color: "#f0f0f5" }}>Dead Man's Switch</strong> - a signal that says "I'm alive." When the signal stops, something is wrong.
             </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: "#0c0d13", border: `1px solid ${alarmed ? "#ef4444" : "#22c55e"}55`, borderRadius: 8, marginBottom: 14 }}>
+              <div style={{ fontSize: 30, width: 34, textAlign: "center", transition: "transform 0.25s ease, opacity 0.25s ease",
+                transform: deadmanMode === "normal" && beats % 2 === 0 ? "scale(1.3)" : "scale(1.0)",
+                opacity: deadmanMode === "normal" ? (beats % 2 === 0 ? 1 : 0.5) : 0.3,
+                color: deadmanMode === "normal" ? "#22c55e" : "#555" }}>{deadmanMode === "normal" ? "♥" : "🖤"}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: "#8b90a0" }}>{deadmanMode === "normal" ? "Heartbeat: alive - a steady \"I'm OK\" every beat" : silentTicks < 3 ? "Heartbeat: just stopped - CloudWatch is noticing..." : "Heartbeat: SILENT"}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginTop: 3, color: alarmed ? "#ef4444" : "#22c55e" }}>
+                  {alarmed ? "🚨 SILENCE DETECTED → PAGING ON-CALL" : `beats received: ${beats}`}
+                </div>
+              </div>
+              <button onClick={() => { setDeadmanMode("normal"); setSilentTicks(0); }} style={{ padding: "5px 9px", fontSize: 10, fontFamily: "inherit", border: "1px solid #4a4f60", borderRadius: 5, background: "transparent", color: "#8b90a0", cursor: "pointer" }}>reset</button>
+            </div>
 
             <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
               <button onClick={() => setDeadmanMode("normal")} style={{
                 padding: "6px 12px", fontSize: 11, fontFamily: "inherit",
-                border: `1px solid ${deadmanMode === "normal" ? "#06b6d4" : "#2a2a3a"}`,
+                border: `1px solid ${deadmanMode === "normal" ? "#06b6d4" : "#4a4f60"}`,
                 borderRadius: 5,
                 background: deadmanMode === "normal" ? "#06b6d418" : "transparent",
                 color: deadmanMode === "normal" ? "#06b6d4" : "#666",
@@ -550,7 +574,7 @@ export default function AirbnbMonitoring() {
               </button>
               <button onClick={() => setDeadmanMode("broken")} style={{
                 padding: "6px 12px", fontSize: 11, fontFamily: "inherit",
-                border: `1px solid ${deadmanMode === "broken" ? "#ef4444" : "#2a2a3a"}`,
+                border: `1px solid ${deadmanMode === "broken" ? "#ef4444" : "#4a4f60"}`,
                 borderRadius: 5,
                 background: deadmanMode === "broken" ? "#ef444418" : "transparent",
                 color: deadmanMode === "broken" ? "#ef4444" : "#666",
@@ -583,7 +607,7 @@ export default function AirbnbMonitoring() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 12, color: "#f0f0f5", fontWeight: 600 }}>{item.label}</div>
                         <div style={{ fontSize: 11, color: broken ? "#ef4444" : "#999", marginTop: 2, lineHeight: 1.5 }}>
-                          {broken ? "💥 DOWN — crashed, stalled, or unreachable" : fires ? "🚨 FIRES because heartbeats stopped" : silence ? "📭 No messages arriving — silence detected" : item.desc}
+                          {broken ? "💥 DOWN - crashed, stalled, or unreachable" : fires ? "🚨 FIRES because heartbeats stopped" : silence ? "📭 No messages arriving - silence detected" : item.desc}
                         </div>
                       </div>
                     </div>
@@ -613,7 +637,7 @@ export default function AirbnbMonitoring() {
                 Why this stops infinite regress
               </div>
               <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-                Normal monitoring detects <strong style={{ color: "#f0f0f5" }}>the presence of bad signals</strong> (errors, latency spikes). The Dead Man's Switch detects <strong style={{ color: "#f0f0f5" }}>the absence of good signals</strong> (heartbeats stop). CloudWatch just counts messages — almost nothing to fail. This breaks the recursion: the final watchdog is as simple as "am I still receiving pings?"
+                Normal monitoring detects <strong style={{ color: "#f0f0f5" }}>the presence of bad signals</strong> (errors, latency spikes). The Dead Man's Switch detects <strong style={{ color: "#f0f0f5" }}>the absence of good signals</strong> (heartbeats stop). CloudWatch just counts messages - almost nothing to fail. This breaks the recursion: the final watchdog is as simple as "am I still receiving pings?"
               </div>
             </div>
           </div>

@@ -1,0 +1,26 @@
+<svg viewBox="0 0 700 182" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A heartbeat flows from the monitoring stack out to an external Amazon service and an alarm that counts the beats, then to the on-call engineer; when the beats stop, the alarm trips and pages on-call"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="vah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7C3AED"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">SILENCE IS THE ALARM</text>
+<rect x="24" y="54" width="110" height="46" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="79.0" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">monitoring</text>
+<text x="79.0" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">stack</text>
+<line x1="134" y1="77" x2="158" y2="77" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="158" y="54" width="110" height="46" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="213.0" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">heartbeat</text>
+<text x="213.0" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">♥ every few s</text>
+<line x1="268" y1="77" x2="292" y2="77" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="292" y="54" width="110" height="46" rx="8" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.4"/>
+<text x="347.0" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#7C3AED" text-anchor="middle" font-weight="700">Amazon</text>
+<text x="347.0" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#7C3AED" text-anchor="middle" font-weight="700">service (SNS)</text>
+<line x1="402" y1="77" x2="426" y2="77" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="426" y="54" width="120" height="46" rx="8" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.4"/>
+<text x="486.0" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#7C3AED" text-anchor="middle" font-weight="700">Amazon alarm</text>
+<text x="486.0" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#7C3AED" text-anchor="middle" font-weight="700">counts beats</text>
+<line x1="546" y1="77" x2="566" y2="77" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="566" y="54" width="110" height="46" rx="8" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.4"/>
+<text x="621.0" y="74" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="middle" font-weight="700">on-call</text>
+<text x="621.0" y="87" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="middle" font-weight="700">engineer</text>
+<rect x="292" y="118" width="244" height="22" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.3"/>
+<text x="414" y="133" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">beats stop → alarm trips → page</text>
+<line x1="480" y1="116" x2="470" y2="102" stroke="#DC2626" stroke-width="1.4" marker-end="url(#rah)"/>
+<text x="350" y="164" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">nothing has to figure out what went wrong: the missing signal is the signal</text>
+</svg>

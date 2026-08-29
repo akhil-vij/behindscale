@@ -7465,6 +7465,23 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-29: **Article review round — Airbnb Monitoring Reliably at
+  Scale** (4th article round). Enriched the existing
+  `content/articles/airbnb-monitoring-reliably-at-scale.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen; carries the optional
+  `updatedAt` field, which is schema-supported) with three figures +
+  updated artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/airbnb-monitoring-reliably-at-scale/`, and the updated
+  article `docs/CORRECTIONS.md`. Revision HTML not placed. Single stat
+  `1,000+` correctly grounded (no warning). Refs verified: patterns
+  independent-observability / fault-isolation / dead-mans-switch, related
+  roblox-return-to-service / datadog-incident-response-observer-fate,
+  cruxTag observer-shares-fate-with-observed — all exist. RECURRING
+  correction (4th article round running): **8 of 9 figure fields exceeded
+  the Q10 word bands** (captions 55-63w vs 40, ariaLabels 24-37w vs 20,
+  two eyebrows 7-8w vs 6) — tightened all into band, meaning preserved.
+  Rendered page verified: 3 figures, stat present, artifact embed, 0
+  literal markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-29: **Article review round — Slack Cellular Architecture** (3rd
   article round). Enriched the existing
   `content/articles/slack-cellular-architecture.json`
