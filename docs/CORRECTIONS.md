@@ -3030,3 +3030,124 @@ rainbow fully down with rose riding through on its unshared machine.
 
 Deliverables re-shared: corrected .json, swept .jsx, rebuilt preview .html, four .svg figures, this
 entry.
+
+---
+
+## shopify-pods-architecture - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is spotless: every load-bearing claim matches Xavier Denis's 2018
+Shopify Engineering post word for word (the 2015 ceiling, the with_each_shard idiom and its
+platform-wide unavailability, pods as shops on fully isolated datastores, shared compute restricted
+to one pod per action, every unit of work assigned to one pod, Sorting Hat's header routing across
+data centers, pod-paired disaster recovery, Pod Mover's one-minute evacuation, daily moves, and
+whole-data-center evacuation done pod by pod). The claims not in that post (Redismageddon, 100+ pods,
+no global outage since) are correctly attributed in the footer to Shopify's separate "E-Commerce at
+Scale" piece, and the 99.9% per-shard uptime and shop percentages are flagged illustrative. Third
+article of the blast-radius class produced (after Discord and AWS shuffle sharding); relatedArticles
+discord-trillions-message-search and aws-shuffle-sharding.
+
+**Two structural defects, both fixed.** The crux opened concretely ("Sharding multiplies the
+machines that can fail without dividing what their failure touches") but then drifted cross-article
+("This is the blast-radius class in its purest algebraic form"; "Where AWS shrinks shared fate
+combinatorially with shuffle sharding and Discord caps it..."). The crux is now self-contained on
+Shopify, and that AWS/Discord comparison was rehomed to a new final tradeoff, written plainly and
+self-containedly. All three pattern notes were in registry voice ("Second company", "Third
+company... Cloudflare/Slack/Shopify arc", "Twelfth article... pairs with Datadog's"); each now
+describes how Shopify uses the pattern, with the counts and cross-article arcs removed.
+
+**Em-dash overrun - swept: 53 (35 JSON + 18 JSX) -> 0.**
+
+**Sentence length - 9 over 40 words, two of them monsters (a 60-word pod definition in the summary
+and a 59-word Pod Mover sentence in the solution) -> all <= 40.** The pod's two rules were pulled
+into a standalone two-bullet list, which both compresses and clarifies them.
+
+**Full plain-language pass.** "failure geometry" -> "a new way to fail"; sharding glossed ("split
+its database across many servers"); "availability is the product" -> "its chance of working is all
+the shards' uptimes multiplied together"; "fan-out idiom" -> "one-line pattern/command"; "failure
+domains" -> "things that can fail"; datastores -> databases; "asynchronous, denormalized paths" ->
+"slower background jobs... against pre-combined copies of the data"; bulkhead -> "wall"; multi-tenant
+-> "serving many merchants"; podify -> "split into pods"; the words "combinatorially", "statistical",
+and "algebraic" dropped. Sorting Hat, Pod Mover, Redismageddon, and with_each_shard kept as named
+source terms. Editorializing softened: "the most dangerous property a failure geometry can have" ->
+"what made it so easy to miss"; "demand it be boring" -> "keeps that layer as simple and boring as
+it can".
+
+**Images - 3 figures.** fan-out-decay: a with_each_shard action fanning to every shard, an
+availability ladder (99.6% at 4 shards, 99.2% at 8, 98.4% at 16), and one dead shard failing the
+whole action. one-pod-per-request: Sorting Hat routing each request to one isolated pod, one pod
+down affecting only its shops. pod-mover-dr: a pod's active data center failing and Pod Mover
+relocating it to its backup in about a minute, with whole-DC evacuation done pod by pod.
+
+**Artifact - plain-language sweep, sim untouched.** The intro was de-jargoned ("failure geometries"
+/ "the class's name made draggable" gone); "GEOMETRY SOLD" -> "RESILIENCE SOLD"; "THE FLEET WITHOUT
+THE FATE" -> "THE SERVERS WITHOUT THE SHARED FATE"; fan-out, "renunciation", and "denormalized"
+glossed; datastores -> databases. Dashes swept (10 -> 0); off-state toggle border #2a2a3a ->
+#4a4f60. The state machine is unchanged: per-shard uptime U = 0.999, fan-out availability = U^n, and
+the era / dead / ranAction / refused / dcDead / moved logic all intact; recomputed availability
+(99.60% / 99.20% / 98.41%) matches the figure ladder.
+
+**Recurring-defect scorecard:** taxonomy-first crux (fixed, was cross-article); registry jargon in
+notes (fixed, all three); em-dash overrun (fixed); invisible off-state toggle (fixed);
+editorializing (softened). Over-band summary/crux were ABSENT and grounding was spotless. P27 frozen
+fields byte-identical (title, cruxTag, stats values/placements, relatedArticles, tags,
+artifact.path unchanged; two dash-bearing stat labels swept). Deliverables: corrected .json, swept
+.jsx, rebuilt preview .html, three .svg figures, this entry.
+
+This completes the "blast radius scales with cluster size" class: Discord, AWS shuffle sharding, and
+Shopify pods all produced to the full bar.
+
+---
+
+## shopify-pods-architecture - Second plain-language round (2026-08-11)
+
+Owner ran a second detailed plain-language pass. Bands hold (summary 1,025, crux 1,077, problem
+1,498, solution 2,569), dashes 0, longest sentence 40 words, P27 frozen intact, sim untouched.
+
+**Explained the mechanism the reader kept asking about.** The summary now says who wrote
+with_each_shard and what it did ("Shopify's developers had a one-line command... whenever a
+platform-wide task ran, it made that task touch every shard in turn"), and the problem says the same
+plainly. "a new way to fail" -> "another failure mode"; "reorganize around pods" -> "reorganized the
+platform around a new unit called a pod".
+
+**Crux simplified.** The dense opener "Sharding multiplies the machines that can fail without
+dividing what their failure touches" -> "Splitting the database into shards adds more machines that
+can break, but it does not make any single break affect less of the platform". "cure" -> "fix", and
+"structural" is now defined inline ("changes the design so the problem cannot happen, rather than
+just making it less likely").
+
+**Problem/solution wording.** "The article is honest about the trade" dropped for a plain statement;
+"one-line pattern found all over the codebase" -> "one-line shared action found all across the
+codebase"; "simple and unforgiving" -> "simple, and it works against you"; "The pod is what that
+goal produced" -> "To meet that goal, Shopify built a new unit called the pod"; "re-linking the
+pods' fates" -> "tying the pods back together"; the "First rule / Second rule" labels dropped so the
+two rules read as clean bullets; "not renegotiated on every query" -> "not worked out again for
+every query"; "The same unit reorganized disaster recovery" -> "Pods also helped with disaster
+recovery"; "into many small per-pod ones" -> "into many small ones, each covering just a single
+pod"; "unworkable and stressful" -> "too error-prone and too stressful".
+
+**Tradeoffs.** "quietly flips the availability math" -> "quietly turns the reliability math against
+you"; the "hid this coupling at the point where it was written" sentence rewritten plainly; the
+"wall built from discipline" tradeoff rewritten to say the barrier is rules not hardware and to drop
+"re-links the very fates"; "total but local failure" spelled out as "one pod's shops go fully down
+while every other shop is untouched"; "paid in full by whoever happens to live on the unlucky pod"
+-> "the full cost of it lands on whoever happens to be on the pod that went down"; "makes evacuation
+something you can rehearse" -> "lets the team practice moving a pod at any time"; the trailing "The
+article's own words: unworkable, and stressful" line removed.
+
+**Notes.** "generic mitigation in its pre-positioned form" -> "a generic mitigation... built and
+ready before anything goes wrong"; "It works no matter what is actually wrong with the pod's home"
+-> "It works whatever has gone wrong with the pod's current data center"; "Shopify rehearses this
+lever daily, it is not an emergency improvisation" -> "Because Shopify moves pods every day, pulling
+this lever is routine rather than something figured out in a panic mid-outage".
+
+**Figure + artifact.** The fan-out figure eyebrow "WHY EVERY SHARD ADDED MADE IT WORSE" -> "WHY
+EVERY NEW SHARD MADE IT WORSE". Artifact intro rewritten ("as flat shards (2015) or grouped into
+isolated pods (2016)"); the sharded panel label -> "click a shard below to kill it"; context block
+"with_each_shard idiom" -> "command", "Availability decayed as a product over shards" -> "Availability
+dropped as more shards were added", "Sorting Hat routes at the edge" -> "routes requests to pods at
+the edge", "watch the fan-out availability decay" -> "watch the platform action's availability drop".
+
+Open question left with the owner: the "2015" stat is the problem section's only stat and the source
+is light on other hard numbers; kept as-is, with an offer to swap in "100+ pods" or "no platform-wide
+outage since 2016" if they want (that touches a P27-frozen field, so it needs their go-ahead).

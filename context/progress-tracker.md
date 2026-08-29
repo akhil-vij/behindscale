@@ -7465,6 +7465,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-29: **Article review round — Shopify Pods Architecture** (2nd
+  article round). Enriched the existing
+  `content/articles/shopify-pods-architecture.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/shopify-pods-architecture/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats value↔label
+  pairing was CORRECT this round (no scramble, unlike AWS). ONE recurring
+  correction: **8 of 9 figure fields exceeded the Q10 word bands**
+  (captions 47-53w vs 40, ariaLabels 27-36w vs 20, two eyebrows 7w vs 6),
+  hard-failing `figure-fields-nonempty` — tightened all into band,
+  meaning preserved (applied the same owner ruling as the AWS round).
+  KNOWN soft warnings (non-blocking, left as authored): stat values
+  `1 pod` and `1 minute` don't literally appear in prose (which says
+  "one pod" / "a minute") — `stats-value-in-prose` warns but does not
+  fail. Rendered page verified: 3 figures, all three stats correctly
+  paired, artifact embed, 0 literal markdown. Build (23 checks, 0 errors,
+  2 new warnings) + 260 tests green.
 - 2026-08-28: **Pattern review Round 17 — Retryable Error
   Classification**. Enrichment of the pre-existing minimal pattern
   (`content/patterns/retryable-error-classification.json`,
