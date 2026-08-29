@@ -3151,3 +3151,122 @@ the edge", "watch the fan-out availability decay" -> "watch the platform action'
 Open question left with the owner: the "2015" stat is the problem section's only stat and the source
 is light on other hard numbers; kept as-is, with an offer to swap in "100+ pods" or "no platform-wide
 outage since 2016" if they want (that touches a P27-frozen field, so it needs their go-ahead).
+
+---
+
+## slack-cellular-architecture - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is spotless: every load-bearing claim matches Cooper Bethea's 2023 Slack
+Engineering post word for word (the June 30 2021 timeline, a single request fanning into hundreds of
+RPCs that all must succeed, Vitess strong consistency and single-primary writes, the four design
+goals, the Hack/Go/Java/C++ and Envoy/Consul/DNS heterogeneity, siloing, the Envoy weighted-clusters
+plus RTDS plus Rotor reweighting, seconds-scale propagation, 1% granularity, edge load balancers in
+other regions, and the 1.5-year migration with follow-ups promised). The RNG and error probabilities
+are flagged illustrative. First article of a new class, "gray failure defeats automatic detection";
+relatedArticles discord, cloudflare-byzantine, meta-silent-corruption.
+
+**Strong shape going in.** All bands were already in range and the crux opened concretely on the June
+30 incident, so the work was dashes, long sentences, lists, one cross-article reference, plain
+language, and figures.
+
+**De-reference and de-editorialize.** The cell-architecture note reached into Discord ("The
+recurrence with Discord, whose cells are small Elasticsearch clusters"); dropped, keeping the general
+principle ("a cell is whatever unit you can afford to lose"). "textbook instance" -> "clear example";
+"the architecture's honest edge" -> "the real limit of the design"; every "the post" reference made
+plain.
+
+**Em-dash overrun - swept: 59 (40 JSON + 19 JSX) -> 0**, cruxSummary included.
+
+**Sentence length - 12 over 40 words, several monsters (a 58-word heterogeneity sentence, 56-word
+final tradeoff, 55-word problem sentence, 51-word design goal, 47-word Vitess, 46-word crux) -> all
+<= 40.**
+
+**Two list conversions.** The four design goals became a labelled four-bullet list (fast, harmless,
+incremental, self-sufficient), and the naive-implementation heterogeneity became a three-bullet list
+(four languages; mixed service discovery; Vitess fork-or-upstream), which absorbed the 58-word
+monster.
+
+**Full plain-language pass** (the most jargon-dense piece so far). gray failure kept and glossed;
+RPCs -> "internal calls"; availability zone -> "zone (a separate datacenter)"; Vitess / strongly
+consistent / single primary -> "keeps each slice of data on one machine that must be reachable for
+writes"; Envoy -> "a widely used proxy"; xDS / RTDS / weighted clusters -> "two standard Envoy
+features that let you split traffic by adjustable weights"; Rotor -> "an in-house system"; HAProxy
+dropped; siloing glossed; quiesce -> "go quiet"; the 99.99% SLA -> "under an hour of downtime a
+year"; "cat GIFs" kept.
+
+**Images - 3 figures.** gray-failure-disagreement: a flapping link in zone 2, and three contradictory
+views (inside sees outside down, outside sees zone 2 down, two same-zone clients disagree), so
+detection cannot converge. crossaz-vs-siloed: the original cross-zone fan-out where a sick zone
+causes errors everywhere, versus siloed cells where the failure is contained and traffic routes
+around it. drain-button: the edge load balancers (in other regions) reweighting a sick zone to zero,
+in-flight requests finishing.
+
+**Artifact - plain-language sweep, sim untouched.** "topologies" -> "layouts", RPCs -> "internal
+calls", quiesce -> "goes quiet", "load-bearing later" -> "the thing that bites later", "knees" ->
+"sharp drops"; the footer's Envoy / Rotor / RTDS / Vitess terms glossed; AZ -> zone in the labels.
+Dashes swept (19 -> 0); off-state toggle border #2a2a3a -> #4a4f60. The simulation is unchanged: the
+mulberry32 RNG, the 12-RPC fan-out standing in for hundreds, the cross-zone touch probability
+(1 - (2/3)^12, about 0.99), and the per-zone / global error-rate and verdict logic are all intact.
+
+**Recurring-defect scorecard:** cross-article reference in a note (fixed); editorializing and "the
+post" references (fixed); em-dash overrun (fixed); invisible off-state toggle (fixed). Taxonomy-first
+crux and over-band summary/crux were ABSENT, and grounding was spotless. P27 frozen fields
+byte-identical (title, cruxTag, stats values/placements, relatedArticles, tags, artifact.path
+unchanged; one dash-bearing stat label swept). Deliverables: corrected .json, swept .jsx, rebuilt
+preview .html, three .svg figures, this entry.
+
+First article of the gray-failure class produced; cloudflare-byzantine and meta-silent-corruption
+remain its unproduced siblings.
+
+---
+
+## slack-cellular-architecture - Second plain-language round (2026-08-11)
+
+Owner ran a second detailed plain-language pass. Bands hold (summary 1,046, crux 859, problem 2,314,
+solution 3,484), dashes 0, longest sentence 40 words, P27 frozen intact, sim untouched.
+
+**Kept "drain button" but defined it.** It is the article's actual title and the feature's real name,
+so rather than rename it the solution now defines it on first use: "Slack's fix is a control they
+call the drain button. Draining a zone means pulling all user traffic out of it; undraining means
+letting traffic back in." Every later drain/undrain reads against that definition.
+
+**Summary.** Dropped the "(a separate datacenter)" gloss; "visible to users at all" -> "reached users
+at all"; the Vitess line now connects to the incident ("when the flaky link cut those machines off,
+those saves failed"); made the zone/cell relationship explicit ("turning each zone into a
+self-contained cell"); "The payoff is a button that pulls traffic out of a sick zone" -> "The result
+is a single control that pulls all traffic out of a troubled zone".
+
+**Crux.** "Automatic detection cannot settle on a failure that the components themselves cannot agree
+exists" -> "The automatic tools cannot act on a problem that the different parts of the system cannot
+even agree is happening."
+
+**Problem.** "pulled the link / removed it for good" -> "took the faulty link out of service /
+removed it permanently"; the compounding mechanics ("Several things pile up") are now a three-bullet
+list; the "if a button existed... they would have smashed it" line rewritten without the
+button/smashed analogy ("if they had one way to tell every system 'this zone is bad, send traffic
+elsewhere,' they would have used it instantly").
+
+**Solution.** "upstream" glossed ("get the changes merged back into the shared open-source project");
+the key siloing sentence is now bold ("to pull traffic out of every siloed service in a zone, you
+only have to stop user requests from entering that zone"); "go quiet" -> "wind down"; the harmless
+goal rewritten so drain/undrain read clearly.
+
+**Tradeoffs.** "the honest core of the article is that gray failure defeats it" -> "Gray failure
+defeats the automatic failure detection Slack already had"; "human pager fatigue" -> "the burnout of
+being paged again and again"; "That spare-headroom-per-zone" -> "Keeping that spare capacity in every
+zone"; "generic means blunt" rewritten ("The drain works no matter what the problem is, which is its
+strength, but that also makes it blunt"); "you cannot trust yourself to pinpoint the problem" -> "you
+do not know the root cause"; "on every suspicious blip" -> "every time something looks wrong";
+"concentrates trust in the edge" simplified; "the parts that must never be wrong" -> "a single point
+of failure, the one part that must never get it wrong"; "leaky for data that has a single writer" ->
+"not for writes that must reach one specific machine, the stateful data that lives in a single
+place"; "unglamorous payoff" -> "what it bought is undramatic".
+
+**Artifact.** The intro was rewritten from the unclear "Reproduce June 30... use the button Slack
+spent 1.5 years earning the right to build" to "Recreate the June 30, 2021 outage in each layout and
+see who gets errors. Then pull all traffic out of the troubled zone, the fix Slack spent 1.5 years
+building toward." Sim untouched.
+
+Note: bold now renders in the preview (added markdown bold support to the preview builder), so the
+one bolded sentence shows correctly.

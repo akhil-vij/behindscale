@@ -7465,6 +7465,25 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-29: **Article review round — Slack Cellular Architecture** (3rd
+  article round). Enriched the existing
+  `content/articles/slack-cellular-architecture.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/slack-cellular-architecture/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats value↔label
+  pairing CORRECT (no scramble). One `**bold**` sentence in the solution
+  renders as <strong> via the Round 10 feature. RECURRING correction (3rd
+  article round running): **8 of 9 figure fields exceeded the Q10 word
+  bands** (captions 66-73w vs 40, ariaLabels 31-32w vs 20, two eyebrows
+  8w vs 6) — tightened all into band, meaning preserved (same owner
+  ruling as AWS/Shopify). KNOWN soft warning (left as authored): stat
+  value `5 minutes` not literally in prose (says "within five minutes").
+  Rendered page verified: 3 figures, three stats correctly paired, bold
+  sentence, artifact embed, 0 literal markdown. Build (23 checks, 0
+  errors) + 260 tests green. NOTE: article figures have now run over the
+  word bands 3-for-3 — flagged to owner for a review-agent reminder or a
+  wider band for multi-panel article figures.
 - 2026-08-29: **Article review round — Shopify Pods Architecture** (2nd
   article round). Enriched the existing
   `content/articles/shopify-pods-architecture.json`

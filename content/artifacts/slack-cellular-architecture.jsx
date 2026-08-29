@@ -53,11 +53,11 @@ export default function DrainButton() {
   const drained = weights[1] === 0;
 
   const verdict = (() => {
-    if (!gray) return { c: GREEN, code: "HEALTHY", t: siloed ? "Cells quiet: every service present in every AZ, no service talking across an AZ boundary. Prioritization of failure domains costs nothing until something fails." : "Cross-AZ topology healthy. Each request's dozen RPCs (standing in for hundreds) spray across all three AZs — invisible now, load-bearing later." };
-    if (!siloed) return { c: RED, code: "GRAY FAILURE — VISIBLE EVERYWHERE", t: `az-2's network link is flapping, and because backends are spread across AZs, nearly every request from every AZ fans out into it. Global error rate ${globalErr.toFixed(0)}% — and there is no drain that helps: traffic entering az-1 still calls into az-2. This is June 30, 2021.` };
-    if (drained) return { c: GREEN, code: "DRAINED — MITIGATED WITHOUT DIAGNOSIS", t: "az-2 still has a flapping link — nobody has fixed anything — and users can't tell. New requests route to az-1/az-3, in-flight requests completed gracefully, and the sick cell quiesces on its own. Undrain at 1% when you want to test recovery." };
-    if (weights[1] <= 5) return { c: AMBER, code: `TESTING RECOVERY AT ${weights[1]}%`, t: `A ${weights[1]}% weight sends a trickle into az-2 to ask whether it has truly recovered — the incremental undrain the design goals demanded. It hasn't: that trickle is failing. Back to zero.` };
-    return { c: AMBER, code: "CONTAINED — NOW HIT THE BUTTON", t: `Siloing contains the failure: only az-2's own ${weights[1]}% of traffic sees errors (error rate ${errRate(1).toFixed(0)}% there, ~0% elsewhere). The blast radius is a cell — which means draining works. Step az-2's weight down and watch the knee.` };
+    if (!gray) return { c: GREEN, code: "HEALTHY", t: siloed ? "Cells quiet: every service runs in every zone, and no service talks across a zone boundary. Splitting into cells costs nothing until something actually fails." : "Cross-zone layout healthy. Each request's dozen internal calls (standing in for hundreds) spread across all three zones: invisible now, but the thing that bites later." };
+    if (!siloed) return { c: RED, code: "GRAY FAILURE - VISIBLE EVERYWHERE", t: `az-2's network link is flapping, and because backends are spread across all zones, nearly every request from every zone reaches into az-2. Global error rate ${globalErr.toFixed(0)}%, and no drain helps: traffic entering az-1 still calls into az-2. This is June 30, 2021.` };
+    if (drained) return { c: GREEN, code: "DRAINED - MITIGATED WITHOUT DIAGNOSIS", t: "az-2 still has a flapping link, nobody has fixed anything, and users can't tell. New requests route to az-1 and az-3, in-flight requests finish cleanly, and the sick cell goes quiet on its own. Undrain at 1% when you want to test recovery." };
+    if (weights[1] <= 5) return { c: AMBER, code: `TESTING RECOVERY AT ${weights[1]}%`, t: `A ${weights[1]}% weight sends a trickle into az-2 to ask whether it has truly recovered, the small-step undrain the design goals demanded. It hasn't: that trickle is failing. Back to zero.` };
+    return { c: AMBER, code: "CONTAINED - NOW HIT THE BUTTON", t: `Siloing contains the failure: only az-2's own ${weights[1]}% of traffic sees errors (error rate ${errRate(1).toFixed(0)}% there, ~0% elsewhere). The blast radius is a single cell, which means draining works. Step az-2's weight down and watch the sharp drop.` };
   })();
 
   const mono = "'JetBrains Mono','Fira Code','SF Mono',ui-monospace,monospace";
@@ -65,14 +65,14 @@ export default function DrainButton() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis) => ({ display: "inline-block", padding: "6px 10px", marginTop: 6, marginRight: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffe3a3" : "#8b90a0", background: on ? "rgba(236,178,46,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis) => ({ display: "inline-block", padding: "6px 10px", marginTop: 6, marginRight: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffe3a3" : "#8b90a0", background: on ? "rgba(236,178,46,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
   };
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>SLACK · CELLULAR ARCHITECTURE — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>SLACK · CELLULAR ARCHITECTURE - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>The drain button</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Reproduce June 30, 2021 in both topologies — then use the button Slack spent 1.5 years earning the right to build.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>Recreate the June 30, 2021 outage in each layout and see who gets errors. Then pull all traffic out of the troubled zone, the fix Slack spent 1.5 years building toward.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
@@ -81,13 +81,13 @@ export default function DrainButton() {
           <button style={S.btn(!siloed, false)} onClick={() => setSiloed(false)}>CROSS-AZ (original)</button>
           <button style={S.btn(siloed, false)} onClick={() => setSiloed(true)}>SILOED (cells)</button>
           <div style={{ ...S.label, marginTop: 12 }}>FAILURE</div>
-          <button style={S.btn(gray, false)} onClick={() => setGray(!gray)}>💥 GRAY FAILURE IN az-2 {gray ? "· ON" : "· OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>intermittent link faults — different components see different truths</div></button>
-          <div style={{ ...S.label, marginTop: 12 }}>THE DRAIN BUTTON — az-2 WEIGHT {siloed ? "" : "(useless without cells)"}</div>
+          <button style={S.btn(gray, false)} onClick={() => setGray(!gray)}>💥 GRAY FAILURE IN az-2 {gray ? "· ON" : "· OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>intermittent link faults: different components see different truths</div></button>
+          <div style={{ ...S.label, marginTop: 12 }}>THE DRAIN BUTTON: az-2 WEIGHT {siloed ? "" : "(useless without cells)"}</div>
           {[34, 10, 5, 1, 0].map((v) => (
             <button key={v} style={S.btn(weights[1] === v, false)} onClick={() => setAz2(v)}>{v}%</button>
           ))}
           <div style={{ fontSize: 9.5, color: "#6b7080", marginTop: 8, lineHeight: 1.7 }}>
-            DESIGN GOALS (sourced): drain in &lt;5 min · no errors caused by draining · 1% increments · nothing needed inside the drained AZ
+            DESIGN GOALS (sourced): drain in &lt;5 min · no errors caused by draining · 1% increments · nothing needed inside the drained zone
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export default function DrainButton() {
                   <div style={{ fontSize: 9, letterSpacing: 1.5, color: gray && i === 1 ? RED : "#6b7080" }}>{az.toUpperCase()} {gray && i === 1 ? "· LINK FLAPPING" : ""}</div>
                   <div style={{ fontSize: 10, color: "#8b90a0", marginTop: 4 }}>weight {weights[i]}%</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: errRate(i) > 20 ? RED : errRate(i) > 2 ? AMBER : GREEN }}>ERR {errRate(i).toFixed(0)}%</div>
-                  <div style={{ fontSize: 9, color: "#6b7080", marginTop: 2 }}>{siloed ? "talks only to " + az : "fans out to all AZs"}</div>
+                  <div style={{ fontSize: 9, color: "#6b7080", marginTop: 2 }}>{siloed ? "talks only to " + az : "fans out to all zones"}</div>
                 </div>
               ))}
               <div style={{ flex: "1 1 120px", background: "#0c0d13", border: `1px solid ${globalErr > 10 ? RED : "#2a2a3a"}`, borderRadius: 6, padding: "8px 10px" }}>
@@ -112,7 +112,7 @@ export default function DrainButton() {
               </div>
             </div>
             <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>QUERIES PER SECOND, BY AZ — the sourced graph's knees, live</div>
+              <div style={{ fontSize: 10, color: "#8b90a0", marginBottom: 4 }}>QUERIES PER SECOND, BY ZONE: the sharp drops from the sourced graph, live</div>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: 44, background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 6, padding: "4px 6px" }}>
                 {W.hist.map((h, i) => {
                   const t = h[0] + h[1] + h[2] || 1;
@@ -125,14 +125,14 @@ export default function DrainButton() {
                   );
                 })}
               </div>
-              <div style={{ fontSize: 9, color: "#6b7080", marginTop: 3 }}>■ az-2 in gold — step the weight and watch how sharp the knee is (seconds of propagation, per the post)</div>
+              <div style={{ fontSize: 9, color: "#6b7080", marginTop: 3 }}>■ az-2 in gold: step the weight and watch how sharp the drop is (it propagates through the system in seconds)</div>
             </div>
           </div>
         </div>
       </div>
 
       <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
-        Three AZs and a 12-RPC fan-out stand in for the real topology (a single request fans into hundreds of RPCs); error probabilities are illustrative. The mechanisms are the post's: the 2021-06-30 gray failure where components held different views of availability; siloing so each service talks only within its AZ, making the AZ a drainable cell; drains via Envoy weighted clusters reweighted through Rotor (the in-house xDS control plane) with seconds-scale propagation, 1% granularity, graceful in-flight handling, and no dependence on the drained AZ; and the four design goals against a 99.99% SLA. Strongly consistent stores (Vitess single-primary writes) are why not everything silos — the series' next post's subject.
+        Three AZs and a 12-RPC fan-out stand in for the real topology (a single request fans into hundreds of RPCs); error probabilities are illustrative. The mechanisms are from Slack's article: the 2021-06-30 gray failure where components held different views of availability; siloing so each service talks only within its AZ, making the AZ a drainable cell; drains done by reweighting traffic at the edge load balancers (via Rotor, Slack's in-house control system) with seconds-scale propagation, 1% steps, graceful handling of in-flight requests, and no dependence on the drained zone; and the four design goals against a target of under an hour of downtime a year. Strongly consistent stores (Vitess keeps each data slice on one machine for writes) are why not everything can be siloed, the subject of the next post in the series.
         {" "}<a href="https://behindscale.com/articles/slack-cellular-architecture" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
     </div>
@@ -146,12 +146,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>On June 30, 2021, a flapping network link in one AWS availability zone degraded Slack for everyone. Gray failure defeated automatic detection: components held different views of what was up, requests fanned into hundreds of RPCs that all had to succeed, and single-primary writes pinned shards to unreachable boxes.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Make the AZ a cell: every service in every AZ, no service talking across AZ boundaries — so a failure is contained to one cell, and a human can drain it with a button: Envoy weighted clusters, seconds of propagation, 1% increments, nothing required inside the sick AZ.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Inject the gray failure into the cross-AZ topology and watch errors surface everywhere with no drain that helps. Switch to cells, inject it again — then drain az-2 to zero, and undrain at 1% to test recovery.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>On June 30, 2021, a flapping network link in one AWS availability zone degraded Slack for everyone. Gray failure defeated automatic detection: components held different views of what was up, a single request fanned out into hundreds of internal calls that all had to succeed, and the main database needed one specific machine reachable for each write.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Make the zone a cell: every service in every zone, no service talking across zone boundaries, so a failure is contained to one cell, and a human can drain it with a button by reweighting traffic at the edge: seconds of propagation, 1% steps, nothing needed inside the sick zone.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Inject the gray failure into the cross-zone layout and watch errors surface everywhere with no drain that helps. Switch to cells, inject it again, then drain az-2 to zero, and undrain at 1% to test recovery.</div>
     </div>
   );
 }
