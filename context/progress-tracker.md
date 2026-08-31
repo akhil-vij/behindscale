@@ -7465,6 +7465,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-31: **Pattern review Round 19 — Application-Layer Sharding**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/application-layer-sharding.json`, slug/name/category
+  frozen — throughput). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[shard-key colocation](/patterns/shard-key-colocation)`
+  (guard-green), no bold. Aliases: app-level sharding · custom data
+  partitioning · tenant routing. New authored artifact
+  `content/artifacts/application-layer-sharding.jsx` (zero near-miss
+  grays, zero em-dashes, export-default), one figure
+  `content/figures/application-layer-sharding/the-mapping-layer.svg`
+  (viewBox 0 0 720 220, in-band, safe). No `file` field. Revision HTML not
+  placed. Visible DOM verified: 0 literal markdown, shard-key-colocation
+  anchor, figure img, mechanism teaser. Build (23 checks, 0 errors) + 260
+  tests green.
 - 2026-08-31: **Pattern review Round 18 — Feedback-Controlled Load
   Management**. Enrichment of the pre-existing minimal pattern
   (`content/patterns/feedback-controlled-load-management.json`,
