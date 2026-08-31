@@ -1,0 +1,40 @@
+<svg viewBox="0 0 700 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A ladder from the bottom up: computing capacity recovered first because everything rides on it, then platform features, then applications; and a timeline from 06:00 trigger and 06:03 detection through 08:00, 08:30 and 16:44"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">RECOVERY IN DEPENDENCY ORDER</text>
+<rect x="120" y="44" width="460" height="40" rx="8" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.4"/>
+<text x="138" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2563EB" text-anchor="start" font-weight="700">3. applications</text>
+<text x="138" y="77" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="start" font-weight="400">recovered last</text>
+<rect x="120" y="90" width="460" height="40" rx="8" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.4"/>
+<text x="138" y="108" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#7C3AED" text-anchor="start" font-weight="700">2. platform features</text>
+<text x="138" y="123" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="start" font-weight="400">recovered next</text>
+<rect x="120" y="136" width="460" height="40" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="138" y="154" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2E7D46" text-anchor="start" font-weight="700">1. computing capacity</text>
+<text x="138" y="169" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="start" font-weight="400">recovered first: everything rides on it</text>
+<text x="90" y="90" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#52525B" text-anchor="end" font-weight="400">depends on</text>
+<line x1="90" y1="86" x2="90" y2="132" stroke="#52525B" stroke-width="1.2" marker-end="url(#fah)"/>
+<text x="24" y="206" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#52525B" text-anchor="start" font-weight="700">TIMELINE (UTC):</text>
+<line x1="24" y1="224" x2="676" y2="224" stroke="#E4E4E7" stroke-width="1.5"/>
+<circle cx="44" cy="224" r="4" fill="#DC2626"/>
+<text x="44" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">06:00</text>
+<text x="44" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">trigger</text>
+<circle cx="132" cy="224" r="4" fill="#2E7D46"/>
+<text x="132" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">06:03</text>
+<text x="132" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">detected</text>
+<circle cx="220" cy="224" r="4" fill="#2E7D46"/>
+<text x="220" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">06:08</text>
+<text x="220" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">paged</text>
+<circle cx="308" cy="224" r="4" fill="#B45309"/>
+<text x="308" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">06:31</text>
+<text x="308" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">status</text>
+<circle cx="396" cy="224" r="4" fill="#B45309"/>
+<text x="396" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">08:00</text>
+<text x="396" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">stabilized</text>
+<circle cx="484" cy="224" r="4" fill="#B45309"/>
+<text x="484" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">08:30</text>
+<text x="484" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">EU1 fix</text>
+<circle cx="572" cy="224" r="4" fill="#B45309"/>
+<text x="572" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">09:13</text>
+<text x="572" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">web back</text>
+<circle cx="660" cy="224" r="4" fill="#B45309"/>
+<text x="660" y="216" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">16:44</text>
+<text x="660" y="238" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">1st service</text>
+</svg>

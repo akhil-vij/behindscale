@@ -3359,3 +3359,128 @@ couple of seconds of silence the panel flips to "SILENCE DETECTED -> PAGING ON-C
 is the signal" idea made literal and self-running. This is a small useEffect-driven interval plus its
 own state; the FailureSim "who gets paged" logic, the compute options, and the static chain view are
 all unchanged. No dashes; parses clean; the preview builder rebinds useEffect so it runs there too.
+
+---
+
+## datadog-incident-response-observer-fate - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is clean: the response narrative matches Laura de Vesine's Datadog
+incident-response deep dive exactly (06:03 detection, 06:08 two teams paged - the APM team whose pods
+were not restarting, and the team paged by the out-of-band monitors about Datadog's own alerting -
+06:31 first status page, 08:00 Kubernetes validation, 08:30 EU1 mitigation, 11:36 trigger identified,
+judgment over runbooks / "people over process", several hundred engineers in shifts with no responder
+active over eight hours, the "this is how we monitor the monitors" motto, and the region isolation
+with no shared control plane). The root-cause specifics (systemd v248/v249 route-flushing armed Dec
+2020, Cilium, unattended-upgrades, 90%+ on Ubuntu 22.04, the node counts, 09:13 web and 16:44 first
+service, the ~13-hour figure) come from Datadog's linked companion root-cause and platform-impact
+posts and match the documented public account. The RNG, fleet percentages, and the fate-shared branch
+are flagged illustrative. Class observer-shares-fate-with-observed; relatedArticles airbnb-monitoring,
+roblox-return-to-service.
+
+**De-registered all three notes (the standout defect).** independent-observability opened "Third
+company, and the class's success story: Airbnb argues... Roblox shows..."; fault-isolation opened
+"Recurrence as a boundary lesson:"; universal-staged-rollout opened "Minted from the fix rather than
+the failure:". Dropped the counts and both sibling cross-references; each note now stands on Datadog
+alone. Removed every "the post" reference and softened the editorial phrases ("the poverty is the
+point", "learned the loud way", "the class's motto/sentence").
+
+**Em-dash overrun - swept: 38 JSON + ~19 JSX -> 0.**
+
+**Sentence length - 13 over 40 words, three monsters (a 62-word response sentence, a 61-word note, a
+60-word tradeoff, plus 52 and 51) -> all <= 40.**
+
+**Bands.** Summary trimmed from 11 over to 1,002; crux 1,044, problem 2,159, solution 3,250, all in
+range.
+
+**Full plain-language pass** (dense infra jargon). systemd / systemd-networkd -> "a low-level Linux
+networking component"; Cilium -> "Datadog's own networking (Cilium)"; the CVE patch -> "a routine
+security fix"; unattended-upgrades -> "Ubuntu's automatic-update feature"; Kubernetes control planes
+-> "the systems that manage the servers" / "repair the broken servers"; ASG -> "automated
+replacement"; VMs and nodes -> "machines"; telemetry and agents -> "monitoring" / "data collectors";
+out-of-band monitoring -> "a deliberately simple watcher outside... checks it like a customer"; the
+APM team -> "one whose automation noticed its own services were not restarting"; OS monoculture ->
+"90% of the servers ran the same operating system".
+
+**Two list conversions.** The recovery milestones (08:30 EU1 fix, 09:13 web, 11:36 trigger, 16:44
+first service) became an ordered list, and the four fixes became one.
+
+**Images - 3 figures (the article shipped with none).** outage-chain: one automatic-update channel
+firing at 06:00 across five regions and three clouds, so isolated regions failed together.
+silence-not-red: in-platform alerting going quiet (not red) so no one is paged, versus the outside
+watcher that stays up and pages at 06:08. recovery-ladder: recovery in dependency order (compute,
+then platform, then applications) with the 06:00-to-16:44 timeline.
+
+**Artifact - plain-language sweep, sim untouched.** The verdicts, context block, and footer were
+reworded to mirror the JSON glosses (systemd / networkd / Cilium / unattended-upgrades / ASG / control
+planes / telemetry / agents / out-of-band / APM). Dashes swept (16 -> 0); the off-state toggle border
+#2a2a3a -> #4a4f60. The live simulation is unchanged: step(), initial(), the 350ms interval, the fleet
+math, the verdict selection, and the milestone timings (the out-of-band branch versus the labeled
+fate-shared counterfactual) are all intact.
+
+**Recurring-defect scorecard:** registry voice in all three notes (fixed, the standout); "the post"
+references and editorializing (fixed); em-dash overrun (fixed); off-state toggle (fixed); over-band
+summary (trimmed). Taxonomy-first crux was ABSENT (the crux is concrete) and grounding was clean. The
+article shipped with no figures, so three were added. P27 frozen fields byte-identical (title,
+cruxTag, the three stat values and placements, relatedArticles, tags, artifact.path; the three stat
+labels were dash-swept and plainened). Deliverables: corrected .json, swept .jsx, rebuilt preview
+.html, three .svg figures, this entry.
+
+This completes the observer-fate articles produced so far (Airbnb and Datadog);
+roblox-return-to-service remains the unproduced sibling of the class.
+
+---
+
+## datadog-incident-response-observer-fate - Plain-language round 2 + artifact visualization (2026-08-11)
+
+Owner ran a second plain-language pass and asked to make the artifact more visual. Bands hold (summary
+1,003, crux 1,043, problem 2,133, solution 3,331), dashes 0, longest sentence 40 words, frozen intact.
+
+**Prose.** Many plain-language reworkings: "Detection is the part you cannot buy back after the fact"
+-> "Detection is something you have to set up before an outage, not after"; "took the company's eyes
+with it" -> "took out the company's monitoring itself"; "the monitoring did not light up red" -> "did
+not alert"; the cruxSummary -> "When your monitoring runs on the very platform it watches, an outage
+blinds you too"; "The trap was armed two years before it sprang" -> "This problem had been waiting to
+happen for two years"; "The outside watcher buys its independence by being deliberately poor" -> "is
+deliberately simple, and that simplicity is exactly what keeps it independent"; "Datadog's fix
+rebalances rather than retreats" -> "does not give up on fast patching; it just moves it onto a safer,
+staged path"; "no soak time" -> "no waiting to see if problems appeared"; "The same reflex was both
+the recovery and the obstruction" -> "The very same automatic behavior was both the rescue and the
+obstacle"; plus "guiding philosophy was explicit", "dictated by the damage", "close the loop the crux
+opened", "certifies a boundary", "shift handoffs preserve context", "at the same clock time", and the
+quote's antecedent ("how the regions could remain indirectly related") all simplified.
+
+**Grounding note - the machine count.** Applied the owner's edit "Within an hour, thousands of
+machines" in the summary. The Datadog source says "tens of thousands," and the solution still uses
+that grounded figure ("tens of thousands of machines recreated"), so the two now differ. Flagged to
+the owner to align in whichever direction they want; left the grounded figure in the solution
+untouched pending that call.
+
+**Artifact - pacing, labels, and a new visual layer.** Slowed the tick from 350 ms to 500 ms so the
+states are readable (the owner noted the out-of-band branch flew past). De-jargoned the labels:
+"fate-shared" -> "same fate", "counterfactual" -> "a what-if", removed "wall-clock", and reworded
+"count your blind minutes". Added a visual fleet-and-monitoring panel driven by the existing state: a
+48-square grid of the fleet that turns red as the update wave runs; in "same fate" mode the in-platform
+monitoring badge flips to DOWN with "ALERTS: 0 - silent -> no one is paged"; in out-of-band mode a
+separate OUTSIDE WATCHER badge stays green, pulses, and fires "ALERT 06:03 -> PAGED 06:08". The
+simulation itself (step(), initial(), the fleet math, the verdict selection, and the milestone
+timings) is unchanged; only pacing, labels, and the added visual are new.
+
+---
+
+## datadog-incident-response-observer-fate - Grounding restore + artifact pacing fix (2026-08-11)
+
+**Machine count restored.** Put "tens of thousands of machines" back in the summary to match the
+Datadog source and the solution section; the article is consistent on the grounded figure again.
+
+**Artifact - fixed the out-of-band pacing and verdict order.** The real problem was not only speed: the
+"THE LONG HAUL" verdict was showing at t=0-1, before the platform was even down, so the sequence read
+armed -> long haul -> silence -> paged, out of order and too fast. Two fixes: (1) added a "THE 06:00
+UPDATE WAVE IS ROLLING" state for the window after the wave starts but before the platform is down, so
+the long-haul verdict no longer appears early; (2) added a small "hold" to the simulation that lingers
+about three ticks on each key beat (the moment it goes dark, and the detection/catch), and slowed the
+tick from 500 ms to 750 ms. A headless trace confirms the order is now WAVE ROLLING -> SILENCE (about
+three seconds) -> PAGED 06:08 -> LONG HAUL for the out-of-band branch, and WAVE ROLLING -> SILENCE ->
+DETECTED BY CUSTOMERS -> LONG HAUL for the fate-shared branch. The step()/fleet/verdict-selection logic
+and the milestone timings are otherwise unchanged; the hold and the wave-rolling state are the only
+additions.

@@ -1,0 +1,31 @@
+<svg viewBox="0 0 700 224" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A chain where the automatic update at 06:00 restarts a networking component, wipes Datadog's routes, and drops the server off the network, repeated across five regions and three clouds at the same hour so isolated regions failed together"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">ONE CHANNEL, EVERY REGION, THE SAME HOUR</text>
+<rect x="24" y="44" width="150" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="99" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">automatic update</text>
+<text x="99" y="79" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">installs at 06:00</text>
+<line x1="174" y1="66" x2="196" y2="66" stroke="#52525B" stroke-width="1.4" marker-end="url(#rah)"/>
+<rect x="196" y="44" width="150" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="271" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">networking</text>
+<text x="271" y="79" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#B45309" text-anchor="middle" font-weight="700">component restarts</text>
+<line x1="346" y1="66" x2="368" y2="66" stroke="#52525B" stroke-width="1.4" marker-end="url(#rah)"/>
+<rect x="368" y="44" width="150" height="44" rx="7" fill="#FEECEC" stroke="#DC2626" stroke-width="1.3"/>
+<text x="443" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">Datadog's routes</text>
+<text x="443" y="79" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">wiped</text>
+<line x1="518" y1="66" x2="540" y2="66" stroke="#52525B" stroke-width="1.4" marker-end="url(#rah)"/>
+<rect x="540" y="44" width="150" height="44" rx="7" fill="#FEECEC" stroke="#DC2626" stroke-width="1.3"/>
+<text x="615" y="64" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">server drops</text>
+<text x="615" y="79" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">off the network</text>
+<rect x="24" y="110" width="652" height="36" rx="8" fill="#FEECEC" stroke="#DC2626" stroke-width="1.4"/>
+<text x="40" y="132" font-family="'Inter',system-ui,sans-serif" font-size="10.5" fill="#DC2626" text-anchor="start" font-weight="700">the same channel fired in all 5 regions and 3 clouds at 06:00 UTC, so isolated regions failed together</text>
+<rect x="24" y="158" width="120" height="26" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="84" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">US1 down</text>
+<rect x="156" y="158" width="120" height="26" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="216" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">EU1 down</text>
+<rect x="288" y="158" width="120" height="26" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="348" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">AWS down</text>
+<rect x="420" y="158" width="120" height="26" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="480" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">Azure down</text>
+<rect x="552" y="158" width="120" height="26" rx="6" fill="#FEECEC" stroke="#DC2626" stroke-width="1.2"/>
+<text x="612" y="175" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#DC2626" text-anchor="middle" font-weight="700">GCP down</text>
+<text x="350" y="206" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">regions built to fail separately were bypassed by a channel that reached them all at once</text>
+</svg>

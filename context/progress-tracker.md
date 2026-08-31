@@ -7465,6 +7465,25 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-31: **Article review round — Datadog Incident Response
+  (observer fate)** (5th article round; pairs with the Airbnb round —
+  both carry cruxTag observer-shares-fate-with-observed, and they
+  cross-reference as related). Enriched the existing
+  `content/articles/datadog-incident-response-observer-fate.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/datadog-incident-response-observer-fate/`, and the
+  updated article `docs/CORRECTIONS.md`. Revision HTML not placed. Stats
+  pairing CORRECT (90+%→OS uniformity, 06:03→detection, ~13 hours→
+  recovery), no warnings. Refs verified: patterns
+  independent-observability / fault-isolation / universal-staged-rollout,
+  related airbnb-monitoring-reliably-at-scale / roblox-return-to-service.
+  RECURRING correction (5th article round running): **8 of 9 figure
+  fields exceeded the Q10 word bands** (captions 59-66w vs 40, ariaLabels
+  25-38w vs 20, two eyebrows 7w vs 6) — tightened all into band, meaning
+  preserved. Rendered page verified: 3 figures, three stats present,
+  artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
+  tests green.
 - 2026-08-31: **Pattern review Round 19 — Application-Layer Sharding**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/application-layer-sharding.json`, slug/name/category
