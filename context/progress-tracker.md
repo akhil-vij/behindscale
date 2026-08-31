@@ -7465,6 +7465,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-31: **Pattern review Round 18 — Feedback-Controlled Load
+  Management**. Enrichment of the pre-existing minimal pattern
+  (`content/patterns/feedback-controlled-load-management.json`,
+  slug/name/category frozen). FIRST non-resilience pattern round —
+  category **throughput**. Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker, two `**bold**`
+  list-item leads (measure the system you have… / when several
+  controllers share a resource, use one loop…), and THREE inline
+  cross-links `[retry storms](/patterns/retry-budget)` (Round 16),
+  `[backoff and jitter](/patterns/retry-with-backoff-and-jitter)` (Round 4),
+  `[priority-aware load shedding](/patterns/priority-aware-load-shedding)`
+  (Round 1) — all guard-green. Aliases: adaptive concurrency limits ·
+  adaptive load shedding · control loop for admission. New authored
+  artifact `content/artifacts/feedback-controlled-load-management.jsx`
+  (zero near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/feedback-controlled-load-management/the-control-loop.svg`
+  (viewBox 0 0 700 236, in-band, safe). No `file` field. Revision HTML not
+  placed. Visible DOM verified: 0 literal markdown, both bold leads, all
+  three anchors, figure img, mechanism teaser. Build (23 checks, 0 errors)
+  + 260 tests green.
 - 2026-08-29: **Article review round — Airbnb Monitoring Reliably at
   Scale** (4th article round). Enriched the existing
   `content/articles/airbnb-monitoring-reliably-at-scale.json`

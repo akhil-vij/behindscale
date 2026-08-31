@@ -1,18 +1,42 @@
 {
   "slug": "feedback-controlled-load-management",
   "name": "Feedback-Controlled Load Management",
-  "definition": "Static limits are perpetually wrong. A fixed concurrency cap, queue timeout, or shed threshold encodes one moment's understanding of capacity into a number that traffic immediately outgrows or undershoots — too tight and the system rejects work it could handle; too loose and it melts before the limit triggers. Worse, static thresholds produce cliff behavior: the system is fully open until the instant it slams fully closed, and the synchronized rejections that follow seed retry storms that re-create the overload.\n\nFeedback-controlled load management replaces the static number with a closed control loop. The system continuously measures a signal that reflects real load — queue wait, inflow versus outflow, high-percentile latency, error rate — compares it against a target, and smoothly adjusts admission: how many requests to accept, how long to queue them, what fraction to shed. The controller incorporates not just the current error but its history and trend, which is what produces stability — gradual corrections instead of overreactions, a dimmer switch instead of a hammer. Because the loop measures outcomes rather than assumptions, it adapts to capacity changes (hardware, workload mix, downstream slowness) without anyone retuning a config.\n\nThe pattern's lineage runs through decades of systems: TCP congestion control is a feedback loop over packet loss and round-trip time (TCP Vegas, which some modern shedders directly adapt for concurrency auto-tuning); CoDel regulates queues by measured sojourn time rather than length; Netflix's adaptive concurrency limits compute limits from observed latency gradients; and Uber's Cinnamon applies a PID controller to request shedding, with a pluggable-signal design that feeds heterogeneous overload indicators — local concurrency, memory pressure, replication lag — into one unified decision loop, eliminating the split-brain behavior of independent per-signal limiters.\n\nThe deeper principle has two halves. First: measure the system you have, not the system you provisioned. Second: when several controllers act on the same resource, unify them — competing feedback loops fight, oscillate, and make globally incoherent decisions; one loop consuming many signals makes one coherent decision.",
+  "oneLineDefinition": "A fixed limit on how much load to accept is wrong as capacity varies, so a feedback loop watches a live signal and adjusts the load limit dynamically.",
+  "definition": "A fixed limit on how much work to accept is an unreliable guess about capacity. Set it too low and the system turns away work it could have handled; set it too high and it melts before the limit ever trips. And capacity keeps moving - faster or slower hardware, a heavier traffic mix, a slow downstream - so any single number is wrong most of the time. Worse, a fixed limit tends to fail all at once: the system keeps accepting work until it suddenly rejects all of it, and the flood of rejections that follows sets off [retry storms](/patterns/retry-budget) that recreate the overload.\n\nFeedback-controlled load management replaces the fixed number with a control loop, the way a thermostat replaces a fixed valve setting. The system watches a live signal that reflects real load, such as:\n\n- how long requests wait in line\n- how fast work arrives versus how fast it clears\n- the slowest response times\n- the error rate\n\nIt compares that signal to a target and gently adjusts how much to admit. It steers by the trend, not just the latest reading, so it makes small corrections instead of overreacting: a dimmer switch, not a hammer. And because it reacts to what is actually happening, it keeps up with changing capacity on its own, with no one editing a config.\n\n{{figure:the-control-loop}}\n\nTwo ideas sit underneath it:\n\n- **measure the system you have, not the one you planned** - the loop reacts to real, current behavior, not to a capacity someone estimated up front\n- **when several controllers share a resource, use one loop, not many** - many loops on the same thing fight and swing back and forth; one loop that reads all the signals makes one steady decision\n\nOne limit is built in: the loop only reacts after it sees a change, so a sudden spike is absorbed by its response time. That is why it works alongside client-side [backoff and jitter](/patterns/retry-with-backoff-and-jitter), which slow the incoming flood, rather than replacing them. And the loop decides how much to admit; deciding which requests to drop first, when it has to shed, is a separate job for [priority-aware load shedding](/patterns/priority-aware-load-shedding).",
   "whenItApplies": [
-    "Admission control and load shedding for services whose capacity varies with workload mix, hardware, or downstream health — anywhere a static threshold needs perpetual retuning.",
-    "Replacing cliff-shaped overload behavior (fully open → fully closed) with smooth degradation, especially where synchronized rejections trigger retry storms.",
-    "Auto-tuning concurrency limits, queue timeouts, or rate caps from observed latency and error signals rather than provisioned estimates.",
-    "Unifying multiple overload signals (local resource pressure, replication lag, tenant skew) into a single admission decision, where independent per-signal limiters would conflict."
+    "The service's real capacity keeps changing. When capacity shifts with the traffic mix, the hardware, or a downstream's health, any fixed limit needs constant retuning to stay right.",
+    "You want to fail gradually, not all at once. A control loop replaces a sudden, all-at-once shutoff - and the retry storm that follows - with a smooth, gradual pullback as load rises.",
+    "You want limits set from real behavior, not guesses. Let the loop derive how many requests to run at once, how long to queue, or how fast to accept from live latency and errors, instead of a number picked up front.",
+    "Several overload signals need to act as one. If signals like local pressure, replication lag, and tenant skew each drive their own limiter, those limiters fight each other. One loop that reads them all makes a single, clear decision instead."
   ],
   "tradeoffs": [
-    "The tuning burden moves rather than vanishes. Per-service static configuration disappears, but the controller itself must be made stable — gains, targets, and damping that neither oscillate nor respond sluggishly — and that calibration is paid at the platform level, often through several iterations before the loop behaves across diverse workloads.",
-    "Feedback loops are harder to reason about than thresholds. 'Why was this request shed?' has a one-line answer under a static limit and a controller-state answer under feedback control; operators need visibility into the loop's inputs and decisions or they will distrust it during incidents.",
-    "Signals must be normalized to compose. A loop consuming heterogeneous inputs (latency, lag, bytes, counts) needs them on scales that combine meaningfully; a badly scaled signal can dominate or destabilize the decision.",
-    "Control latency is real. A loop that measures outcomes necessarily reacts after the fact; sudden load steps are absorbed by the loop's response time, which is why feedback control complements — rather than replaces — client-side discipline like backoff and jitter."
+    "The tuning does not disappear, it moves. You stop hand-setting a limit per service, but now the loop itself has to be made stable - not too jumpy, not too slow - and that calibration is done once at the platform level, usually over several tries.",
+    "A loop is harder to reason about than a number. 'Why was this request dropped?' has a one-line answer under a fixed limit, but only a controller-state answer under a loop. Operators need a clear view into what the loop saw and decided, or they will not trust it during an incident.",
+    "Different signals have to be put on the same scale. A loop that blends latency, lag, byte counts, and request counts needs them in comparable units, or one badly scaled signal will dominate and throw off the decision.",
+    "The loop always reacts a step late. Because it measures results, it can only respond after load has already changed, so a sudden spike is ridden out by its reaction time - which is why it pairs with client-side backoff and jitter rather than replacing them."
   ],
-  "category": "throughput"
+  "aliases": [
+    "adaptive concurrency limits",
+    "adaptive load shedding",
+    "control loop for admission"
+  ],
+  "category": "throughput",
+  "artifact": {
+    "path": "/artifacts/feedback-controlled-load-management/index.html",
+    "teaser": "A fixed limit sits flat while capacity moves; a feedback loop makes the limit chase it."
+  },
+  "figures": [
+    {
+      "slug": "the-control-loop",
+      "eyebrow": "THE LOOP, NOT A NUMBER",
+      "caption": "A closed loop replaces the fixed number: it watches a live signal, compares it to a target, adjusts how much to admit, and then measures the result and does it again.",
+      "ariaLabel": "A four-step loop: measure a signal, compare to target, adjust admission, and measure again."
+    }
+  ],
+  "mechanism": {
+    "caption": "A LIMIT THAT TRACKS CAPACITY",
+    "blurb": "At its core: a fixed limit cannot match a capacity that keeps moving, so it is wrong most of the time. A feedback loop watches the system and slides the limit up and down to follow capacity, keeping the accepted load close to what the system can actually handle.",
+    "idea": "A fixed limit on how much work to accept is a guess about capacity. But real capacity moves - the hardware, the traffic, a slow downstream - so a fixed number is too low half the time (turning away work it could serve) and too high the other half (melting under load). A feedback loop makes the number dynamic: it watches a live signal like queue wait or latency, compares it to a target, and nudges the limit up when there is room and down when there is strain. Steering by the trend keeps it smooth, and because it measures the real system it keeps up with change on its own.",
+    "whatToTry": "Leave the limit static and watch it sit flat while capacity rises and falls beneath it - too low when capacity is high, too high when capacity drops. Then switch to the feedback loop and watch the limit start to match the capacity line."
+  }
 }
