@@ -1,0 +1,29 @@
+<svg viewBox="0 0 700 292" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two columns comparing Ripple (shallow, constant, milliseconds, 70% in 15 days, 7% unique) and Fleetscanner (deep, maintenance, minutes, every 180 days, 23% unique), with a coverage bar of 70% common, 23% deep-only, and 7% shallow-only"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">WHY THE FLEET NEEDS BOTH</text>
+<rect x="16" y="40" width="336" height="116" rx="10" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="32" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#2E7D46" text-anchor="start" font-weight="700">RIPPLE · shallow</text>
+<text x="32" y="84" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• runs constantly, beside live work</text>
+<text x="32" y="101" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• a few hundred milliseconds each</text>
+<text x="32" y="118" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• reaches 70% coverage in ~15 days</text>
+<text x="32" y="135" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• finds 7% of faults nothing else does</text>
+<rect x="368" y="40" width="336" height="116" rx="10" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.4"/>
+<text x="384" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11.5" fill="#7C3AED" text-anchor="start" font-weight="700">FLEETSCANNER · deep</text>
+<text x="384" y="84" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• runs during maintenance only</text>
+<text x="384" y="101" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• minutes long, deeply invasive</text>
+<text x="384" y="118" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• ~once every 180 days per machine</text>
+<text x="384" y="135" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">• finds 23% of faults nothing else does</text>
+<text x="16" y="182" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#52525B" text-anchor="start" font-weight="700">WHICH TEST FINDS WHICH FAULTS</text>
+<rect x="16" y="192" width="467.6" height="34" rx="5" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="249.8" y="213" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2E7D46" text-anchor="middle" font-weight="700">70%</text>
+<rect x="483.6" y="192" width="153.64" height="34" rx="5" fill="#F3EEFE" stroke="#7C3AED" stroke-width="1.3"/>
+<text x="560.4200000000001" y="213" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#7C3AED" text-anchor="middle" font-weight="700">23%</text>
+<rect x="637.24" y="192" width="46.76" height="34" rx="5" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="660.62" y="213" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#2563EB" text-anchor="middle" font-weight="700">7%</text>
+<rect x="90" y="240" width="12" height="12" rx="2" fill="#2E7D46"/>
+<text x="108" y="250" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">common (both tests)</text>
+<rect x="251.60000000000002" y="240" width="12" height="12" rx="2" fill="#7C3AED"/>
+<text x="269.6" y="250" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">deep test only</text>
+<rect x="381.20000000000005" y="240" width="12" height="12" rx="2" fill="#2563EB"/>
+<text x="399.20000000000005" y="250" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">shallow test only</text>
+<text x="350" y="278" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">drop either test and you choose between slow detection and a permanent blind spot</text>
+</svg>

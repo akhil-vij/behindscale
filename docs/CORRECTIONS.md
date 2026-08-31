@@ -3484,3 +3484,72 @@ three seconds) -> PAGED 06:08 -> LONG HAUL for the out-of-band branch, and WAVE 
 DETECTED BY CUSTOMERS -> LONG HAUL for the fate-shared branch. The step()/fleet/verdict-selection logic
 and the milestone timings are otherwise unchanged; the hold and the wave-rolling state are the only
 additions.
+
+---
+
+## meta-silent-data-corruption - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is spotless against Harish Dattatraya Dixit's March 2022 Engineering at
+Meta post: every number matches (the ~180-day deep-test cadence, 68M+ tests and ~4B machine-seconds
+lifetime, ~2.5B seeds per month and ~100M colocated seconds, hundreds-of-ms runs at 1,000x shorter
+than deep, and the coverage split of 70% common in 15 days vs ~6 months, 23% found only by the deep
+test, 7% only by the shallow), as do the Fleetscanner/Ripple mechanics, the maintenance-event list,
+and the three faults the shallow test exists to catch. The six-machine miniature and tick timescale
+are flagged illustrative. Class gray-failure-defeats-automatic-detection; relatedArticles
+slack-cellular-architecture, cloudflare-byzantine-failure.
+
+**Cross-article registry in the crux (the standout).** The crux opened concretely but closed with a
+taxonomy tour: "Two other systems in behindscale hit the same invisible-failure wall: Slack... and
+Cloudflare... Meta meets it at its purest, in silicon." Removed, so the crux ends on Meta. The
+fault-isolation note did the same ("The other gray-failure articles here (Slack's cellular
+architecture, Cloudflare's byzantine failure)...") - dropped, keeping the point that fault isolation
+is turned inward here to contain the cost of the detection itself. Also removed "This is the class
+lesson at its purest" from the first tradeoff.
+
+**Em-dash overrun - swept: 4 JSON + ~10 JSX -> 0.**
+
+**Sentence length -> all <= 40.** Split the eight over-40 sentences, the longest being a 47-word
+tradeoff and a 46-word solution sentence (the latter became the three-faults list).
+
+**Bands.** Crux 1,088 -> 909 after de-referencing; summary trimmed to 1,045; problem and solution in
+range.
+
+**Full plain-language pass** (dense hardware jargon). silicon and CPU -> "chip"; circuitry with no
+check logic -> "a part of the chip that has no self-check"; datapath -> "the way data flows through
+particular circuits" / "sensitive to the exact data it handles"; fleet -> "data center"; passive
+signal -> "ordinary signal"; vendor -> "manufacturer"; integrator -> "the company that assembles it
+into a server"; in-production / out-of-production -> "live / offline machines"; kernel, reimages,
+provisioning -> "software updates, wipe-and-reinstalls, setup"; intrusive -> "invasive"; bit patterns
+-> "inputs whose correct answers are known"; thermals -> "cool". Fleetscanner and Ripple kept as tool
+names.
+
+**Two list conversions.** The manufacturing progression (a few hours at the manufacturer, at best a
+couple of days at the assembler, spot-checks after) and the three faults the shallow test exists to
+catch (between windows, tied to a data pattern, on a mode switch).
+
+**Images - 3 figures (the article shipped with none).** silent-corruption-flow: a wrong answer that
+reports success, passes every health check, flows downstream, and surfaces weeks later as an app bug,
+with a broken arrow showing no trace back. known-answer-testing: the questions health checks ask (all
+green, none about correctness) versus a known-answer test that sends a known input and catches the
+wrong answer. deep-vs-shallow: Ripple against Fleetscanner with a coverage bar (70% common, 23% deep
+only, 7% shallow only).
+
+**Artifact - plain-language sweep, sim untouched.** Verdicts, context, and footer reworded to mirror
+the JSON glosses (silicon / CPU / thermals / passive / bit patterns / datapath), and the button labels
+went from "DEFECT" to "FAULT". Dashes swept (10 -> 0). The off-state toggles were already at #4a4f60
+(this artifact carried prior review fixes), so no toggle change was needed. The simulation is
+unchanged: step(), initial(), MAINT_EVERY, the detection and quarantine logic, and the verdict
+selection are all intact, including the earlier guard that keeps Ripple blind to the rare-mode fault
+(the "23% only the deep test finds" lesson).
+
+**Recurring-defect scorecard:** cross-article registry inside the crux (fixed, the standout);
+cross-article references in a note (fixed); mild editorializing (removed); em-dash overrun (fixed).
+The crux opener was concrete (not taxonomy-first), the off-state toggle was already fixed, and no band
+was out. Grounding spotless. The article shipped with no figures, so three were added. P27 frozen
+fields byte-identical (title, cruxTag, the three stat values and placements, relatedArticles, tags,
+artifact.path; one dash-bearing stat label swept). Deliverables: corrected .json, swept .jsx, rebuilt
+preview .html, three .svg figures, this entry.
+
+Sibling of Slack in the gray-failure class; cloudflare-byzantine-failure remains the one unproduced
+sibling.

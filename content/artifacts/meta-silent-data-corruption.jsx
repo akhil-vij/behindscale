@@ -14,13 +14,13 @@ function step(w) {
     n.corrupted += n.rare ? 1 : 3; // wrong answers shipped downstream this tick
     n.exposedTicks++;
     // FIX (2026-07-31 review, bug 1): ripple catches the COMMON defect only. The rare-mode
-    // defect must stay invisible to ripple — that blindness IS the "23% only the deep test
+    // defect must stay invisible to ripple - that blindness IS the "23% only the deep test
     // finds" lesson and the teaser's promise. Guard the whole branch on !n.rare so ripple
     // never quarantines a rare defect.
     if (n.ripple && !n.rare && n.exposedTicks >= 3) { n.detectedBy = "ripple"; n.detectedAt = n.t; n.quarantined = true; }
     // FIX (2026-07-31 review, bug 2): the deep test fires one full maintenance interval AFTER
     // the defect was planted, not on an absolute-clock boundary. Previously w.t % 24 === 0 meant
-    // exposure depended on when the user happened to click — planting near a boundary made
+    // exposure depended on when the user happened to click - planting near a boundary made
     // fleetscanner look instant and destroyed the "months of exposure" lesson.
     else if (n.fs && n.plantedAt !== null && n.exposedTicks >= MAINT_EVERY) { n.detectedBy = "fleetscanner"; n.detectedAt = n.t; n.quarantined = true; }
   }
@@ -31,19 +31,19 @@ export default function NoTraceInAnyLog() {
   const [w, setW] = useState(initial);
   useEffect(() => { const id = setInterval(() => setW(step), 600); return () => clearInterval(id); }, []);
   const active = w.defect !== null && !w.quarantined;
-  // FIX (2026-07-31 review): the countdown reflects the plant-relative rule — a full
+  // FIX (2026-07-31 review): the countdown reflects the plant-relative rule - a full
   // maintenance interval after the defect was planted, so the number matches when the
   // deep test will actually fire regardless of when the user clicked.
   const ticksToMaint = w.plantedAt === null ? MAINT_EVERY : Math.max(0, MAINT_EVERY - w.exposedTicks);
 
   const verdict = (() => {
-    if (w.quarantined && w.detectedBy === "ripple") return { c: GREEN, code: "FIFTEEN DAYS, NOT SIX MONTHS", t: `A ripple probe — a known bit pattern with a known answer, hundreds of milliseconds, injected beside the live workload — got a wrong answer back after ${w.exposedTicks} ticks of exposure. ${w.corrupted} corrupted results shipped before detection; without ripple, this machine's next deep test was ${ticksToMaint || MAINT_EVERY} ticks away. Now plant the RARE-MODE defect and watch ripple go blind.` };
-    if (w.quarantined && w.detectedBy === "fleetscanner") return { c: w.rare ? VIOLET : AMBER, code: w.rare ? "ONLY THE DEEP TEST SAW IT" : "CAUGHT AT MAINTENANCE — MONTHS OF EXPOSURE", t: w.rare ? `The rare-mode defect never tripped a shallow probe — it needed the minutes-long, intrusive battery that only runs when the machine is already out of production. ${w.corrupted} corrupted results shipped across ${w.exposedTicks} ticks of exposure. This is fleetscanner's 23%: the faulty CPUs nothing else ever finds. The fleet needs both hands.` : `Fleetscanner's deep battery caught the defect at the machine's maintenance window — after ${w.exposedTicks} ticks and ${w.corrupted} corrupted results. Opportunism is cheap because it rides downtime you already bought, and slow because it doesn't control its own schedule: on average, one deep look per machine every ~180 days. Arm RIPPLE and replant the defect.` };
-    if (active && !w.fs && !w.ripple) return { c: RED, code: "GREEN CHECKS, WRONG ANSWERS", t: `The defective CPU is computing wrong results under its trigger pattern — ${w.corrupted} corrupted answers shipped downstream so far — and every health signal is green, because liveness, thermals, and error counters all answer a different question than the one that matters. No record. No trace. No log line will ever come. Detection must be manufactured: arm a testing regime.` };
-    if (active && w.rare && w.ripple && !w.fs) return { c: RED, code: "THE SHALLOW PROBES KEEP MISSING", t: `Ripple is firing constantly — and this defect only manifests in an operating mode the quick probes don't reach. ${w.corrupted} corrupted results and counting. Between-window arrivals, data-pattern dependencies, and mode-switch triggers were ripple's reasons to exist; deep-and-rare coverage is fleetscanner's. Arm it.` };
+    if (w.quarantined && w.detectedBy === "ripple") return { c: GREEN, code: "FIFTEEN DAYS, NOT SIX MONTHS", t: `A ripple probe (a known input with a known answer, a few hundred milliseconds, run beside the live work) got a wrong answer back after ${w.exposedTicks} ticks of exposure. ${w.corrupted} corrupted results shipped before detection. Without ripple, this machine's next deep test was ${ticksToMaint || MAINT_EVERY} ticks away. Now plant the RARE-MODE fault and watch ripple go blind.` };
+    if (w.quarantined && w.detectedBy === "fleetscanner") return { c: w.rare ? VIOLET : AMBER, code: w.rare ? "ONLY THE DEEP TEST SAW IT" : "CAUGHT AT MAINTENANCE - MONTHS OF EXPOSURE", t: w.rare ? `The rare-mode fault never tripped a shallow probe. It needed the minutes-long, invasive battery of tests that only runs when the machine is already offline. ${w.corrupted} corrupted results shipped across ${w.exposedTicks} ticks of exposure. This is fleetscanner's 23%: the faulty chips nothing else ever finds. The fleet needs both hands.` : `Fleetscanner's deep battery of tests caught the fault at the machine's maintenance window, after ${w.exposedTicks} ticks and ${w.corrupted} corrupted results. It is cheap because it rides downtime you already bought, and slow because it does not control its own schedule: on average, one deep look per machine every ~180 days. Arm RIPPLE and replant the fault.` };
+    if (active && !w.fs && !w.ripple) return { c: RED, code: "GREEN CHECKS, WRONG ANSWERS", t: `The faulty chip is computing wrong results under its trigger pattern (${w.corrupted} corrupted answers shipped downstream so far), and every health signal is green, because whether it is up, cool, and error-free all answer a different question than the one that matters. No record. No trace. No log line will ever come. Detection must be manufactured: arm a test.` };
+    if (active && w.rare && w.ripple && !w.fs) return { c: RED, code: "THE SHALLOW PROBES KEEP MISSING", t: `Ripple is firing constantly, but this fault only appears in an operating mode the quick probes never reach. ${w.corrupted} corrupted results and counting. Faults between windows, faults tied to a data pattern, and faults on a mode switch were ripple's reasons to exist; the deep-and-rare ones are fleetscanner's. Arm it.` };
     if (active) return { c: AMBER, code: "A DEFECT IS LOOSE IN THE FLEET", t: `Machine 3 is corrupting results under its trigger. ${w.fs ? `Fleetscanner's next window for it: ${ticksToMaint} ticks.` : ""} ${w.ripple && !w.rare ? "Ripple probes are closing in." : ""}` };
-    if (w.fs && w.ripple) return { c: GREEN, code: "BOTH HANDS ON THE FLEET", t: "Shallow-and-constant (ripple: ~2.5B known-answer seeds a month, milliseconds each, polite guest beside the workloads) plus deep-and-rare (fleetscanner: minutes-long intrusive batteries riding every maintenance event). Neither substitutes for the other — 70% coverage in 15 days versus 6 months, but 23% of faulty CPUs only ever fall to the deep tests. Plant a defect." };
-    return { c: AMBER, code: "SIX MACHINES, ALL REPORTING HEALTHY", t: "A miniature fleet with every passive signal green. The question those signals can't answer: is each machine telling the truth? Plant a defect and try to find it — first with observation alone, then with manufactured evidence." };
+    if (w.fs && w.ripple) return { c: GREEN, code: "BOTH HANDS ON THE FLEET", t: "Shallow-and-constant (ripple: ~2.5B known-answer seeds a month, milliseconds each, a polite guest beside the workloads) plus deep-and-rare (fleetscanner: minutes-long invasive batteries of tests riding every maintenance event). Neither substitutes for the other: 70% coverage in 15 days versus 6 months, but 23% of faulty chips only ever fall to the deep tests. Plant a fault." };
+    return { c: AMBER, code: "SIX MACHINES, ALL REPORTING HEALTHY", t: "A miniature fleet with every ordinary signal green. The question those signals cannot answer: is each machine telling the truth? Plant a fault and try to find it, first with observation alone, then with manufactured evidence." };
   })();
 
   const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
@@ -52,7 +52,7 @@ export default function NoTraceInAnyLog() {
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
     btn: (on, dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? (col || ACCENT) : "#4a4f60"}`, color: on ? "#b9d4ff" : "#9aa0b0", background: on ? "rgba(8,102,255,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
-    // FIX (2026-07-31 review): regime toggles carry their signal color permanently — ON/OFF
+    // FIX (2026-07-31 review): regime toggles carry their signal color permanently - ON/OFF
     // shown by fill, never by brightness, so an off toggle still looks like a button. The
     // Kafka round's off-state matched the page background and became invisible.
     tog: (on, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: "pointer", border: `1px solid ${col}`, color: col, background: on ? `${col}29` : "#0c0d13", fontWeight: on ? 700 : 400, fontFamily: mono, fontSize: 11 }),
@@ -60,16 +60,16 @@ export default function NoTraceInAnyLog() {
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>META · DETECTING SILENT ERRORS IN THE WILD — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>META · DETECTING SILENT ERRORS IN THE WILD - INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>No trace in any log</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>A machine that lies passes every health check. You find it by asking questions you already know the answers to — at two depths.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>A machine that lies passes every health check. You find it by asking questions you already know the answers to - at two depths.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           <div style={S.label}>PLANT A DEFECT (machine 3)</div>
-          <button style={S.btn(w.defect === "common", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "common", plantedAt: x.t, t: x.t }))}>COMMON-PATTERN DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>wrong answers under an everyday data pattern</div></button>
-          <button style={S.btn(w.defect === "rare", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "rare", rare: true, plantedAt: x.t, t: x.t }))}>RARE-MODE DEFECT<div style={{ color: "#6b7080", fontSize: 10 }}>manifests only in a mode shallow probes don't reach</div></button>
+          <button style={S.btn(w.defect === "common", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "common", plantedAt: x.t, t: x.t }))}>COMMON-PATTERN FAULT<div style={{ color: "#6b7080", fontSize: 10 }}>wrong answers under an everyday data pattern</div></button>
+          <button style={S.btn(w.defect === "rare", w.defect !== null)} disabled={w.defect !== null} onClick={() => setW(x => ({ ...initial(), fs: x.fs, ripple: x.ripple, defect: "rare", rare: true, plantedAt: x.t, t: x.t }))}>RARE-MODE FAULT<div style={{ color: "#6b7080", fontSize: 10 }}>manifests only in a mode shallow probes don't reach</div></button>
           <div style={{ ...S.label, marginTop: 12 }}>TESTING REGIMES</div>
           <button style={S.tog(w.fs, AMBER)} onClick={() => setW(x => ({ ...x, fs: !x.fs }))}>FLEETSCANNER: {w.fs ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>deep · minutes · rides maintenance (every {MAINT_EVERY} ticks)</div></button>
           <button style={S.tog(w.ripple, GREEN)} onClick={() => setW(x => ({ ...x, ripple: !x.ripple }))}>RIPPLE: {w.ripple ? "ON" : "OFF"}<div style={{ color: "#6b7080", fontSize: 10 }}>shallow · milliseconds · beside the workload, always</div></button>
@@ -83,7 +83,7 @@ export default function NoTraceInAnyLog() {
           </div>
           <div style={S.panel}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <div style={S.label}>THE FLEET — EVERY PASSIVE SIGNAL, EVERY MACHINE</div>
+              <div style={S.label}>THE FLEET - EVERY PASSIVE SIGNAL, EVERY MACHINE</div>
               <div style={{ fontSize: 10, color: "#6b7080" }}>t={w.t} · next maint. window in {ticksToMaint}</div>
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
@@ -105,7 +105,7 @@ export default function NoTraceInAnyLog() {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
               <div style={{ flex: 1 }}><div style={S.label}>CORRUPTED RESULTS SHIPPED</div><div style={{ fontSize: 16, fontWeight: 700, color: w.corrupted > 0 ? RED : GREEN }}>{w.corrupted}</div></div>
               <div style={{ flex: 1 }}><div style={S.label}>EXPOSURE (ticks)</div><div style={{ fontSize: 16, fontWeight: 700, color: active ? RED : "#c8cdd8" }}>{w.exposedTicks}</div></div>
-              <div style={{ flex: 1 }}><div style={S.label}>DETECTED BY</div><div style={{ fontSize: 13, fontWeight: 700, color: w.detectedBy ? (w.detectedBy === "ripple" ? GREEN : VIOLET) : "#6b7080" }}>{w.detectedBy || "—"}</div></div>
+              <div style={{ flex: 1 }}><div style={S.label}>DETECTED BY</div><div style={{ fontSize: 13, fontWeight: 700, color: w.detectedBy ? (w.detectedBy === "ripple" ? GREEN : VIOLET) : "#6b7080" }}>{w.detectedBy || "-"}</div></div>
             </div>
           </div>
         </div>
@@ -126,12 +126,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Defective silicon — aged, heat-stressed, datapath-dependent — computes wrong answers that leave no record in any log, pass every health check, and propagate corruption to services far from the defect. Passive observation can never detect it, because the failure produces no signal at all.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Manufacture the evidence: known-answer tests at two depths. Fleetscanner rides every maintenance event with minutes-long intrusive batteries (each machine ~every 180 days); ripple injects millisecond bit-pattern probes beside live workloads, always on — 2.5B seeds a month. Ripple reaches 70% coverage in 15 days vs 6 months; 23% of faulty CPUs fall only to the deep tests. Run both.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Plant the common defect with no testing armed and watch green checks beside a climbing corruption counter. Arm fleetscanner and pay months of exposure until the maintenance window; arm ripple and catch it in days — then plant the rare-mode defect and learn what only the deep test sees.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A faulty chip (aged, heat-stressed, sensitive to the exact data it handles) computes wrong answers that leave no record in any log, pass every health check, and spread corruption to services far from the chip. Ordinary observation can never detect it, because the failure produces no signal at all.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Manufacture the evidence with known-answer tests at two depths. Fleetscanner rides every maintenance event with minutes-long invasive tests (each machine about every 180 days); ripple runs millisecond known-input probes beside live workloads, always on, 2.5B a month. Ripple reaches 70% coverage in 15 days versus 6 months; 23% of faulty chips fall only to the deep tests. Run both.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Plant the common fault with no testing armed and watch green checks beside a climbing corruption counter. Arm fleetscanner and pay months of exposure until the maintenance window; arm ripple and catch it in days. Then plant the rare-mode fault and learn what only the deep test sees.</div>
     </div>
   );
 }

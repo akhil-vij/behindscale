@@ -7465,6 +7465,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-31: **Article review round — Meta Silent Data Corruption**
+  (6th article round; shares cruxTag gray-failure-defeats-automatic-
+  detection with the Slack round). Enriched the existing
+  `content/articles/meta-silent-data-corruption.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/meta-silent-data-corruption/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats pairing CORRECT
+  (~180 days→deep-test gap, 15 days→shallow coverage, 2.5B→monthly
+  shallow tests). Refs verified: patterns known-answer-testing /
+  fault-isolation, related slack-cellular-architecture /
+  cloudflare-byzantine-failure. RECURRING correction (6th article round):
+  **6 of 9 figure fields exceeded the Q10 word bands** (captions 63-69w
+  vs 40, ariaLabels 28-39w vs 20; eyebrows in-band this round) — tightened
+  all into band, meaning preserved. KNOWN soft warning (left as authored):
+  stat value `2.5B` not literally in prose (says "2.5 billion"). Rendered
+  page verified: 3 figures, three stats present, artifact embed, 0 literal
+  markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-31: **Article review round — Datadog Incident Response
   (observer fate)** (5th article round; pairs with the Airbnb round —
   both carry cruxTag observer-shares-fate-with-observed, and they
