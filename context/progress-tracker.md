@@ -7522,6 +7522,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-08-31: **Pattern review Round 20 — Single-Writer Ownership**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/single-writer-ownership.json`, slug/name/category
+  frozen — throughput). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[application-layer sharding](/patterns/application-layer-sharding)`
+  (Round 19; guard-green), no bold. Aliases: single writer per shard ·
+  exclusive write ownership · lease-based ownership. New authored artifact
+  `content/artifacts/single-writer-ownership.jsx` (zero near-miss grays,
+  zero em-dashes, export-default), one figure
+  `content/figures/single-writer-ownership/one-owner-per-store.svg`
+  (viewBox 0 0 720 236, in-band, safe). No `file` field. Revision HTML not
+  placed. Visible DOM verified: 0 literal markdown, application-layer-
+  sharding anchor, figure img, mechanism teaser. Build (23 checks, 0
+  errors) + 260 tests green.
 - 2026-08-31: **Pattern review Round 19 — Application-Layer Sharding**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/application-layer-sharding.json`, slug/name/category

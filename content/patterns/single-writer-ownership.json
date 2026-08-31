@@ -1,16 +1,40 @@
 {
   "slug": "single-writer-ownership",
   "name": "Single-Writer Ownership",
-  "category": "throughput",
-  "definition": "Assign each data store exactly one writer process, enforced by a mutual-exclusion lease (a Consul session, a fencing token), so that all caching, locking, and invalidation collapse into that process's local state. With no concurrent writers there is nothing to coordinate: the owner caches everything it has written with perfect confidence, batches and orders writes freely, and touches the store on reads only during crash recovery. The pattern inverts the default web-service shape — a stateless tier sharing databases — and pays off when the workload is write-dominated with a small working set, where coordination overhead would otherwise dominate.\n\nBoundary against leader election for availability: there, replicas elect a leader so the SYSTEM survives node loss; here, exclusivity exists so the WRITER can skip coordination entirely — availability is deliberately traded per-slice, with crash recovery reading state back from the store. The lease is correctness-critical in both, but this pattern's failure mode is quieter: a split-brain second writer corrupts cache assumptions rather than partitioning a cluster.",
+  "oneLineDefinition": "Let just one process write to each database (or shard), so that owner keeps everything it wrote in its own memory and never coordinates with other writers.",
+  "definition": "Give each store - a database, or one shard of one - a single owner: the only process allowed to write to it. Because nothing else writes, there is nothing to coordinate. The owner can hold everything it has written in its own memory and trust it completely, since no one else could have changed it. It can group and reorder writes however is fastest, and it only reads from the store to rebuild its memory after a crash. That flips the usual web-service shape, where a crowd of identical, stateless servers all share one database.\n\n{{figure:one-owner-per-store}}\n\nWhat makes this safe is a lease: a lock that one process holds by continually renewing it, and that expires if that process stops. Whoever holds the lease is the writer; everyone else stays out. The lease usually carries a version number, so if an old owner is slow and a new one takes over, the store can reject the stale owner's writes. This lease is the whole thing's correctness: if two processes ever believe they own the same store at once, both trust their own memory and quietly corrupt the data.\n\nThis pays off for a specific shape of workload: mostly writes, over a set of data small enough to fit in one process's memory, where the cost of coordinating between writers would otherwise be the main cost. At scale the data is usually split into many shards - as in [application-layer sharding](/patterns/application-layer-sharding) - and each shard gets its own single owner. It is worth being clear how this differs from electing a leader for availability. There, replicas choose a leader so the system keeps running when a node dies. Here, the single owner exists so the writer can skip coordination, and you accept that if an owner dies, its shard is down until a successor takes the lease and reads the state back from the store.",
   "whenItApplies": [
-    "Write-heavy stores with short-lived items, where in-process caching by a sole owner eliminates nearly all reads",
-    "Sharded or fleet-of-stores designs where each slice is small enough for one process to own outright",
-    "Systems where cross-writer coordination (distributed locks, cache invalidation) would cost more than per-slice failover time"
+    "The workload is mostly writes, over short-lived data. Think a deduplication store answering 'have I seen this message?', a rate limiter's counters, or a queue's in-flight jobs. A single owner keeps that hot data in memory, so almost every read is answered from memory and the store is barely touched.",
+    "The data is split into shards, each small enough for one process. When each shard fits in one owner's memory, you can hand every shard its own single writer.",
+    "Coordinating between writers costs more than the odd outage. If distributed locks and cache invalidation would cost more than briefly losing a shard while a successor takes over, dropping the coordination is the better trade."
   ],
   "tradeoffs": [
-    "Each owner is a per-slice single point of failure; a crash stalls its slice until a successor acquires the lease and re-reads state",
-    "The lease mechanism becomes correctness-critical — an expired-but-active writer alongside a new one is silent corruption",
-    "Throughput per slice is capped at one process; scaling means more slices, not more writers per slice"
-  ]
+    "Each shard has a single point of failure. If its owner crashes, that shard is stalled until a successor takes the lease and reads its state back from the store - a short outage for that shard by design.",
+    "The lease has to be exactly right. If an old owner keeps writing after its lease expired while a new one has started, the two silently corrupt the data - so the lease is not a nice-to-have, it is the correctness of the whole design.",
+    "One shard can only go as fast as one process. Since only the owner writes, a shard's throughput is capped at what one process can do, so you scale by adding more shards, not more writers per shard."
+  ],
+  "aliases": [
+    "single writer per shard",
+    "exclusive write ownership",
+    "lease-based ownership"
+  ],
+  "category": "throughput",
+  "artifact": {
+    "path": "/artifacts/single-writer-ownership/index.html",
+    "teaser": "One owner per store means no locks and no cache invalidation - until the lease fails and two writers corrupt the data."
+  },
+  "figures": [
+    {
+      "slug": "one-owner-per-store",
+      "eyebrow": "ONE OWNER PER STORE",
+      "caption": "The usual shape has many identical servers sharing one database, so every write must coordinate; single-writer ownership gives each store one owner that writes from its own memory, with nothing to coordinate.",
+      "ariaLabel": "Many servers sharing one database must coordinate; one owner per store writes from memory with no coordination."
+    }
+  ],
+  "mechanism": {
+    "caption": "ONE WRITER, NO COORDINATION",
+    "blurb": "At its core: the usual design has many stateless servers share a database, so every write has to coordinate - locks, cache invalidation. Give each store one owner instead, and all of that collapses: it writes from its own memory with no one to coordinate with.",
+    "idea": "The default web-service shape is a pool of identical, stateless servers all sharing one database. Because any of them can write, every write needs coordination: a lock so two writers do not clash, and a way to invalidate everyone's caches when data changes. Single-writer ownership removes the coordination. Each store gets one owner, kept exclusive by a lease - a lock it must keep renewing to stay the writer. With no one else writing, the owner trusts its own memory completely, batches writes freely, and reads the store only to recover after a crash. The two costs: if the owner crashes, its store is unavailable until another process takes over; and if the lease ever fails and two owners write at once, the data is silently corrupted.",
+    "whatToTry": "Start with the shared setup and watch every write pay a coordination tax. Switch to single-writer ownership and watch that tax vanish - then crash the owner, or break the lease, and see the two costs the design accepts."
+  }
 }
