@@ -3553,3 +3553,76 @@ preview .html, three .svg figures, this entry.
 
 Sibling of Slack in the gray-failure class; cloudflare-byzantine-failure remains the one unproduced
 sibling.
+
+---
+
+## cloudflare-byzantine-failure - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is spotless against Tom Lianza and Chris Snook's November 2020 Cloudflare
+post: the 6-minutes-to-6h33m impact, 75% API and 80x dashboard, the redundancy inventory, the 14:43
+partial switch failure (LACP and BGP up, vPC down, forwarding plane dropping some packets, invisible
+because LACP load-balances), the six-minute self-recovery, the node-1-to-leader etcd split producing
+tied read-only elections, the automatic promotion when etcd went read-only, the rebuild-all-replicas
+defect landing on the read-heavy auth database, the manual load-shedding and secondary-datacenter
+read-steering, the dashboard-in-Redis tradeoff, 21:20 recovery, the retuned promotion trigger, "the
+cure may be worse than the disease," the RAFT-over-BFT defense, and the omission-fault postscript. The
+gauge dynamics between anchors are flagged illustrative. Class
+gray-failure-defeats-automatic-detection; relatedArticles slack-cellular-architecture,
+meta-silent-data-corruption.
+
+**The "the post" habit (the standout) - 10 references made plain.** "the post enumerates" ->
+"Cloudflare lists"; "The post opens with the question" -> "Cloudflare asks"; "the post named this" ->
+"Cloudflare first called this"; "The postmortem's own observation" -> "Cloudflare's own observation";
+"The post closes" -> "Cloudflare closes"; "The post's redundancy inventory" -> "Cloudflare's backup
+inventory"; "The post defends" -> "Cloudflare defends"; "the post implies is on the roadmap" ->
+"Cloudflare put on its roadmap"; plus the artifact footer. ("postscript" and "post-incident" are
+legitimate and were kept.)
+
+**Cross-article reference trimmed.** The generic-mitigation note reached into Slack ("Slack had
+pre-built its version of this as a ready button"); dropped, keeping the Cloudflare point and the
+general lesson (pre-position the lever so it is ready to pull rather than invented under pressure).
+
+**Em-dash overrun - swept: 1 JSON (the teaser) -> 0** (the artifact was already clean).
+
+**Sentence length - 8 over 40 words (a 54-word and a 49-word summary sentence, a 50-word solution
+sentence, a 46-word problem opener, and four at 41) -> all <= 40.**
+
+**Bands.** Crux trimmed from 1,137 to 1,090 to stay under the ceiling; summary held at 1,046; problem
+and solution in range.
+
+**Full plain-language pass** (dense distributed-systems jargon). control plane glossed; microservices
+-> "many small services"; etcd glossed ("the shared store the control plane uses to keep its
+coordination data in agreement"); RAFT kept and glossed; LACP / BGP / vPC described by function rather
+than named ("status protocols," "the one that makes a pair of switches look like one," "bundled
+links"); synchronous / asynchronous replica -> "a standby copy kept exactly in step" / "copies that
+lag slightly behind"; replica -> "standby copy"; authentication database -> "login database";
+redundancy -> "backup"; auto-remediation -> "automatic recovery"; BFT glossed.
+
+**Two list conversions.** The redundancy inventory (two switches per rack, cross-rack spread, dual
+power, RAID 10 or three-machine replication) and the three manual moves (shed load, use a backup the
+automation did not know about, accept the tradeoff).
+
+**Images - 3 figures (the article shipped with none).** neither-dead-nor-alive: the half-alive switch,
+and why a clean death would have failed over cleanly while the half-alive state let failover miss it.
+etcd-three-realities: the three-node triangle where node 1 reaches the leader only through the broken
+switch, the votes tie, and the cluster goes read-only. promotion-cascade: the chain from a six-minute
+switch fault to a six-hour-and-33-minute outage.
+
+**Artifact - footer and context plain-language, sim untouched.** The footer's "the post's" became
+"Cloudflare's," and the context block's LACP / vPC / data-plane / replica terms were glossed. Dashes
+were already 0 and the off-state toggles were already at signal colors (this artifact carried prior
+review fixes), so no toggle or dash work was needed. The simulation (switch fate, promotion trigger,
+the shed / steer / rebuild mitigations, and the verdict selection) is unchanged.
+
+**Recurring-defect scorecard:** the "the post" habit (fixed, the standout); a cross-article reference
+in a note (fixed); one em-dash (fixed); an over-ceiling crux (trimmed). The crux opener was concrete,
+the off-state toggles were already fixed, and dashes were already near-clean. Grounding spotless. The
+article shipped with no figures, so three were added. P27 frozen fields byte-identical (title,
+cruxTag, the three stat values and placements, relatedArticles, tags, artifact.path; two dash-bearing
+stat labels swept). Deliverables: corrected .json, swept .jsx, rebuilt preview .html, three .svg
+figures, this entry.
+
+This completes the gray-failure-defeats-automatic-detection class: Slack, Meta, and Cloudflare are all
+now produced. In the observer-shares-fate-with-observed class, roblox-return-to-service remains the one
+unproduced sibling.

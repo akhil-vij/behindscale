@@ -7465,6 +7465,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   existing non-article artifact host. Four owner decisions surfaced to
   `open-decisions.md` item 1 (collision A/B, placement, prop rename,
   scope).
+- 2026-08-31: **Article review round — Cloudflare Byzantine Failure**
+  (7th article round; completes the gray-failure trio — Slack, Meta,
+  Cloudflare all carry cruxTag gray-failure-defeats-automatic-detection
+  and cross-reference as related). Enriched the existing
+  `content/articles/cloudflare-byzantine-failure.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/cloudflare-byzantine-failure/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats pairing CORRECT
+  (6 min → 6h 33m→duration comparison [note: '→' is an arrow, not an
+  em-dash], 75%→API success, 21:20 UTC→rebuild done). Refs verified:
+  patterns generic-mitigation / fault-isolation /
+  conservative-auto-remediation, related slack / meta. RECURRING
+  correction (7th article round): **7 of 9 figure fields exceeded the Q10
+  word bands** (captions 61-72w vs 40, ariaLabels 36-48w vs 20, one
+  eyebrow 8w vs 6) — tightened all into band, meaning preserved. KNOWN
+  soft warning (left as authored, pre-existing on this article): composite
+  stat value `6 min → 6h 33m` not literally in prose. Rendered page
+  verified: 3 figures, three stats present, artifact embed, 0 literal
+  markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-08-31: **Article review round — Meta Silent Data Corruption**
   (6th article round; shares cruxTag gray-failure-defeats-automatic-
   detection with the Slack round). Enriched the existing

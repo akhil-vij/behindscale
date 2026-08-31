@@ -1,0 +1,24 @@
+<svg viewBox="0 0 700 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A switch at 14:43 with two status protocols up, cross-switch sync down, and forwarding dropping some packets; a full death would fail over cleanly to the paired switch, but the half-alive state means failover never fires and the damage reaches one etcd path"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="vah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#7C3AED"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">WHY UP-OR-DOWN FAILOVER MISSED IT</text>
+<rect x="230" y="40" width="240" height="96" rx="10" fill="#FCFCFD" stroke="#B45309" stroke-width="1.5"/>
+<text x="350" y="60" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#B45309" text-anchor="middle" font-weight="700">THE SWITCH AT 14:43</text>
+<text x="246" y="78" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">status protocol A</text>
+<text x="454" y="78" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="end" font-weight="700">up</text>
+<text x="246" y="93" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">status protocol B</text>
+<text x="454" y="93" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="end" font-weight="700">up</text>
+<text x="246" y="108" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">cross-switch sync</text>
+<text x="454" y="108" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#DC2626" text-anchor="end" font-weight="700">down</text>
+<text x="246" y="123" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">forwarding packets</text>
+<text x="454" y="123" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#B45309" text-anchor="end" font-weight="700">dropping some</text>
+<rect x="20" y="168" width="320" height="66" rx="9" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="36" y="188" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="start" font-weight="700">IF IT HAD DIED FULLY</text>
+<text x="36" y="206" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">links drop → traffic fails over cleanly</text>
+<text x="36" y="222" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">to the paired switch. handled.</text>
+<rect x="360" y="168" width="320" height="66" rx="9" fill="#FEECEC" stroke="#DC2626" stroke-width="1.4"/>
+<text x="376" y="188" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#DC2626" text-anchor="start" font-weight="700">WHAT HAPPENED: HALF-ALIVE</text>
+<text x="376" y="206" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">looks alive → failover never fires.</text>
+<text x="376" y="222" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="start" font-weight="400">the damage slips to one etcd path.</text>
+<line x1="300" y1="136" x2="180" y2="166" stroke="#2E7D46" stroke-width="1.5" marker-end="url(#gah)"/>
+<line x1="400" y1="136" x2="520" y2="166" stroke="#DC2626" stroke-width="1.5" marker-end="url(#rah)"/>
+<text x="350" y="250" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">every failover layer was built for a clean death; this was neither dead nor alive</text>
+</svg>
