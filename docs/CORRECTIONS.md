@@ -3626,3 +3626,75 @@ figures, this entry.
 This completes the gray-failure-defeats-automatic-detection class: Slack, Meta, and Cloudflare are all
 now produced. In the observer-shares-fate-with-observed class, roblox-return-to-service remains the one
 unproduced sibling.
+
+---
+
+## roblox-return-to-service - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Live page byte-for-byte the
+upload (no drift). Grounding is spotless against Daniel Sturman's January 2022 Roblox postmortem: the
+73-hour timeline, fifty million players on 18,000 servers and 170,000 containers, the HashiStack with
+Consul as the single point of failure, the streaming feature funneling contention onto a single Go
+channel under high read+write load, the BoltDB freelist pathology (a 4.2GB log holding 489MB, a 7.8MB
+freelist written per 16kB Raft append, the TCP zero-window backpressure), the four failed theories in
+order, the 128-core dual-socket NUMA amplification and the reversal to 64-core, the snapshot reset
+seeding stale scheduling data, the cold-cache 1B-req/s rebuild, the DNS-steered 10% readmission with
+players reverse-engineering it on Twitter, and 100% at hour 73. The telemetry-on-Consul circular
+dependency is near-verbatim. Hour costs flagged illustrative. Class observer-shares-fate-with-observed;
+relatedArticles airbnb-monitoring, datadog-incident-response, reddit-piday-outage.
+
+**The "the post" habit (the standout) - 8 references made plain.** In the JSON: "The post's own
+summary" -> "Roblox's own summary"; "The post is explicit" -> "Roblox is explicit"; "the post names
+the cost plainly" -> "Roblox names the cost plainly"; "the post is honest about the bet" -> "Roblox is
+honest"; "the post doesn't pretend otherwise" -> "Roblox does not pretend otherwise"; "the post is
+careful to keep those separate" -> "Roblox is careful." Plus two in the artifact (a verdict and the
+footer). ("post-outage" is legitimate and was kept.)
+
+**Cross-article references trimmed in two places.** The independent-observability note and tradeoff 2
+both ended by reaching into Airbnb ("Airbnb reached the same conclusion from a far smaller outage...");
+dropped from both, keeping the Roblox point and the general rule that the thing watching a system must
+not depend on that system.
+
+**Banned and flagged words removed.** "load-bearing" (a standing ban) -> "underneath everything," and
+"through-line" -> "common thread."
+
+**Em-dash overrun - swept: 2 JSON (the teaser) -> 0** (the artifact was already clean).
+
+**Sentence length - 7 over 40 words (a 66-word DNS-steering monster, a 55-word Raft/BoltDB sentence,
+plus 47/45/44 and two at 41) -> all <= 40.** The 66-word one became three sentences.
+
+**Full plain-language pass.** telemetry -> monitoring throughout; NUMA glossed as "two-processor
+layout"; shared-resource contention -> "processes fighting over shared resources"; the TCP zero-window
+jargon dropped for "the receiving side tells senders to stop because its buffer is full"; flame graphs
+glossed ("visual breakdowns of where a program spends its time"); the Raft-log "consensus algorithm"
+parenthetical trimmed; concurrency model -> "the way it coordinated work"; on-prem -> "its own
+hardware"; the flame-graph verb -> "profile." HashiStack, Nomad, Vault, Consul, bbolt, and DNS
+steering kept and glossed inline.
+
+**Two list conversions.** The four failed diagnoses (hardware, traffic/128-core, corrupted state,
+load) and the three fixes (circular dependency, shared-fate hub, recovery gap).
+
+**Images - 3 figures (the article shipped with none).** everything-on-one-consul: the hub every
+service, Nomad, Vault, and the monitoring depended on, so the monitoring went dark with everything
+else. two-bugs: the streaming Go-channel contention and the BoltDB freelist bloat driving write
+latency from 300ms to 2 seconds. readmission-ramp: DNS steering admitting players in roughly 10% steps
+from hour 61 to hour 73 against cold caches.
+
+**Artifact - "the post" and telemetry cleanup, sim untouched.** The two "the post" references became
+"Roblox," and the displayed "telemetry" (including the INDEPENDENT TELEMETRY toggle) became
+"monitoring." Dashes were already 0 and the off-state toggle was already at #4a4f60 (this artifact
+carried prior review fixes), so no toggle or dash work was needed. The simulation (the four diagnosis
+theories, the independent-monitoring reveal, streaming/leaders/readmission, and the relapse path) is
+unchanged.
+
+**Recurring-defect scorecard:** the "the post" habit (fixed, the standout); cross-article references in
+a note and a tradeoff (fixed); a banned word and a flagged word (removed); one em-dash (fixed). The
+crux opener was concrete, the off-state toggle was already fixed, dashes were near-clean, and no band
+was out. Grounding spotless. The article shipped with no figures, so three were added. P27 frozen
+fields byte-identical (title, cruxTag, the three stat values and placements, relatedArticles, tags,
+artifact.path). Deliverables: corrected .json, swept .jsx, rebuilt preview .html, three .svg figures,
+this entry.
+
+This was the last unproduced sibling of the observer-fate class as it stood - but its relatedArticles
+list a reddit-piday-outage that is not yet produced, so that becomes the new unproduced sibling of the
+class.

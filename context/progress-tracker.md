@@ -7522,6 +7522,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-01: **Article review round — Roblox Return to Service** (8th
+  article round; third member of the observer-fate trio with Airbnb and
+  Datadog — all three carry cruxTag observer-shares-fate-with-observed
+  and cross-reference as related). Enriched the existing
+  `content/articles/roblox-return-to-service.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/roblox-return-to-service/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats ground correctly
+  (73 hours, 7.8 MB, ~10%; no warnings). Refs verified incl the newer
+  related article reddit-piday-outage. RECURRING correction (8th article
+  round): **8 of 9 figure fields exceeded the Q10 word bands** (captions
+  61-67w vs 40, ariaLabels 32-34w vs 20, two eyebrows 7-8w vs 6) —
+  tightened all into band; needed a second pass on readmission-ramp
+  (first trim left caption 42w / ariaLabel 23w, still over) before build
+  went clean. Rendered page verified: 3 figures, three stats present,
+  artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
+  tests green.
 - 2026-09-01: **Pattern review Round 21 — Distributed Metadata Model**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/distributed-metadata-model.json`, slug/name/category
