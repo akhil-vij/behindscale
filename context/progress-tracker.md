@@ -7522,6 +7522,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-01: **Article review round — Skipper Workflow Engine** (9th
+  article round; the workflow/durability cluster — links to patterns
+  durable-workflows, embedded-vs-centralized-orchestration,
+  hibernation-vs-polling, atomic-phases). Enriched the existing
+  `content/articles/skipper-workflow-engine.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen; keeps optional
+  updatedAt) with three figures + artifact. Placed article, artifact,
+  three figure SVGs under `content/figures/skipper-workflow-engine/`, and
+  the updated article `docs/CORRECTIONS.md`. Revision HTML not placed.
+  cruxTag partial-completion-under-crashes in registry. All refs verified,
+  incl new related article netflix-conductor-microservices-orchestrator.
+  RECURRING correction (9th article round): **8 of 9 figure fields
+  exceeded the Q10 word bands** (captions 56-65w vs 40, ariaLabels 32-41w
+  vs 20, one eyebrow 7w vs 6) — tightened all into band; verified counts
+  before build this time and caught happy-path-safety-net still over
+  (caption 43w/ariaLabel 22w) on the first pass, trimmed again before
+  building. KNOWN soft warning (left as authored): stat `10,000 per
+  second` not literally in prose (says "10,000 workflows per second").
+  Rendered page verified: 3 figures, two stats present, artifact embed, 0
+  literal markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-09-01: **Article review round — Roblox Return to Service** (8th
   article round; third member of the observer-fate trio with Airbnb and
   Datadog — all three carry cruxTag observer-shares-fate-with-observed

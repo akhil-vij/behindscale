@@ -1,0 +1,38 @@
+<svg viewBox="0 0 700 228" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="First run: submit and activate are checkpointed, notify is running when a crash loses in-memory progress; on replay from the top the checkpointed actions are skipped and return saved results, and the workflow resumes at notify"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="cah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0E7490"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">DURABILITY BY REPLAY</text>
+<text x="16" y="50" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#52525B" text-anchor="start" font-weight="700">FIRST RUN</text>
+<rect x="16" y="58" width="120" height="38" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="76" y="76" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">submit</text>
+<text x="76" y="90" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#2E7D46" text-anchor="middle" font-weight="700">checkpointed ✓</text>
+<line x1="136" y1="77" x2="166" y2="77" stroke="#52525B" stroke-width="1.3" marker-end="url(#fah)"/>
+<rect x="166" y="58" width="120" height="38" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="226" y="76" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">activate</text>
+<text x="226" y="90" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#2E7D46" text-anchor="middle" font-weight="700">checkpointed ✓</text>
+<line x1="286" y1="77" x2="316" y2="77" stroke="#52525B" stroke-width="1.3" marker-end="url(#fah)"/>
+<rect x="316" y="58" width="120" height="38" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="376" y="76" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">notify</text>
+<text x="376" y="90" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#B45309" text-anchor="middle" font-weight="700">running...</text>
+<rect x="478" y="58" width="120" height="38" rx="7" fill="#FEECEC" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="3 3"/>
+<text x="538" y="81" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#DC2626" text-anchor="middle" font-weight="700">⚡ CRASH</text>
+<line x1="456" y1="77" x2="476" y2="77" stroke="#DC2626" stroke-width="1.4" marker-end="url(#rah)"/>
+<rect x="610" y="58" width="78" height="38" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.1"/>
+<text x="649" y="74" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400">in-memory</text>
+<text x="649" y="86" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400">lost</text>
+<text x="350" y="116" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#52525B" text-anchor="middle" font-weight="700">but the checkpoints are safe in the database</text>
+<text x="16" y="142" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#0E7490" text-anchor="start" font-weight="700">REPLAY FROM THE TOP</text>
+<rect x="16" y="150" width="120" height="40" rx="7" fill="#E7F6FA" stroke="#0E7490" stroke-width="1.4"/>
+<text x="76" y="168" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#0E7490" text-anchor="middle" font-weight="700">submit</text>
+<text x="76" y="182" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#0E7490" text-anchor="middle" font-weight="700">SKIP (saved result)</text>
+<line x1="136" y1="170" x2="166" y2="170" stroke="#52525B" stroke-width="1.3" marker-end="url(#cah)"/>
+<rect x="166" y="150" width="120" height="40" rx="7" fill="#E7F6FA" stroke="#0E7490" stroke-width="1.4"/>
+<text x="226" y="168" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#0E7490" text-anchor="middle" font-weight="700">activate</text>
+<text x="226" y="182" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#0E7490" text-anchor="middle" font-weight="700">SKIP (saved result)</text>
+<line x1="286" y1="170" x2="316" y2="170" stroke="#52525B" stroke-width="1.3" marker-end="url(#cah)"/>
+<rect x="316" y="150" width="120" height="40" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="376" y="168" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10" fill="#2E7D46" text-anchor="middle" font-weight="700">notify</text>
+<text x="376" y="182" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#2E7D46" text-anchor="middle" font-weight="700">RUN (resumes here)</text>
+<rect x="478" y="152" width="210" height="36" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="583" y="168" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="700">finished, no work redone,</text>
+<text x="583" y="180" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="700">no action run twice</text>
+<text x="350" y="214" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">checkpointed actions return their saved results instantly; the workflow resumes where it stopped</text>
+</svg>

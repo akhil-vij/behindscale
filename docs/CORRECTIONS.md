@@ -3698,3 +3698,108 @@ this entry.
 This was the last unproduced sibling of the observer-fate class as it stood - but its relatedArticles
 list a reddit-piday-outage that is not yet produced, so that becomes the new unproduced sibling of the
 class.
+
+---
+
+## skipper-workflow-engine - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. First article of a new class,
+"partial completion under crashes." Live page byte-for-byte the upload (no drift). Grounding is
+spotless against Ricardo Gamba and Andriy Sergiyenko's April 2026 Airbnb post: the insurance-claim
+example (crash after validation, before payout), the Temporal/Cadence rejection for Tier-0 by blast
+radius, cloud-managed's lock-in, the fragmented-domain-logic problem, the library-embedded model with
+state in the service's own MySQL/UDS, the Workflow and Action abstractions with the
+@Execute/@StateField/@SignalMethod/@Compensate annotations, replay skipping checkpointed actions,
+direct state persistence versus event-sourcing, hibernation on waitUntil, compensation in reverse
+order, the happy-path two-DB-writes-plus-delayed-task safety net, determinism, at-least-once, the
+evolution and observability frictions, and the 15+ use cases at 10,000/s on DynamoDB. The artifact even
+models the crash-after-execute-before-checkpoint re-execution correctly. relatedArticles
+netflix-conductor; the live page also lists uber-cadence, both unproduced siblings.
+
+**Em-dash overrun (the standout) - swept: 59 (34 JSON + 25 artifact) -> 0.** This article predated the
+sweep the recent batch had already been through.
+
+**The "the post" habit - 7 references made plain.** Four in the JSON ("The post names this" ->
+"Airbnb names this"; "the post flags" -> "Airbnb flags"; "The post is explicit" -> "Airbnb is
+explicit"; "the post is unusually explicit" -> "Airbnb is unusually explicit") and three in the
+artifact (two display, one code comment), attributed to Airbnb or Skipper.
+
+**Registry / editorializing softened.** "the canonical embedded implementation" -> "a clean embedded
+version of the pattern"; "The worked example of the embedded side" -> "This is the embedded side of
+the choice"; "The design's signature move is the happy path" -> "The best part of the design is the
+happy path."
+
+**Sentence length - 8 over 40 words (two at 50) -> all <= 40.**
+
+**Bands held, kept length-neutral.** The solution sat near its ceiling (4,035), so the plain-language
+pass was balanced against the two list conversions; it landed at 4,039.
+
+**Calibrated plain-language pass.** Because the subject is the programming model, the named primitives
+were kept (Workflow, Action, checkpoint, replay, the annotations, waitUntil) while the surrounding
+jargon was glossed: Tier-0 -> "most critical services"; blast radius -> "how much it could take down
+at once"; deterministic -> "behave identically every time"; idempotent -> "safe to run more than
+once"; at-least-once/exactly-once -> "run at least once, not exactly once"; event-sourced ->
+"rebuilding by replaying a full history of past events"; saga-style choreography -> "hand-coordinated
+steps across services"; in-process/thread pools -> "inside the service on its own threads";
+observability -> "seeing what your workflows are doing."
+
+**Two list conversions.** The rejected alternatives (central orchestration cluster, cloud-managed
+service, homegrown queue) and the "only pay when something goes wrong" cases (crash -> replay,
+waitUntil -> hibernate, error -> compensate).
+
+**Images - 3 figures (the article shipped with none).** embedded-vs-central: a central cluster every
+service depends on versus Skipper as a library with its own database inside each service.
+crash-and-replay: checkpoints survive a crash, and replay skips the committed actions and resumes.
+happy-path-safety-net: two DB writes and an in-process run, with the delayed task catching a crash and
+firing harmlessly on success.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 24 em-dashes to 0; raised the section-selector
+off-state #2a2a3a -> #4a4f60 (the chrome borders left as-is); "the post" -> Airbnb/Skipper. The
+crash-and-replay simulator (REPLAY_STEPS, the checkpoint map, the crash and crash-in-window paths, the
+execution counters that show at-least-once, and the replayed-skip logic) is unchanged.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed, the standout at 59); the "the post" habit
+(fixed); registry/editorializing (softened); an off-state toggle (raised). The crux opener was
+concrete and no band was out. Grounding spotless. The article shipped with no figures, so three were
+added. P27 frozen fields byte-identical (title, cruxTag, the two stat values and placements,
+relatedArticles, tags, artifact.path). Deliverables: corrected .json, swept .jsx, rebuilt preview
+.html, three .svg figures, this entry.
+
+First article of the partial-completion-under-crashes class; its siblings
+uber-cadence-workflow-platform and netflix-conductor-microservices-orchestrator remain unproduced.
+
+---
+
+## skipper-workflow-engine - Plain-language round + artifact rebuild (2026-08-11)
+
+Owner ran a plain-language pass and asked to make the artifact genuinely visual and interactive. Bands
+hold (summary 764, crux 563, problem 1,924, solution 4,193), dashes 0, longest sentence 39 words,
+frozen intact.
+
+**Prose.** The dense summary clause was unpacked into three plain sentences (hibernation as "uses no
+compute at all while it waits," compensation as "undoes the steps that already ran, in reverse order,"
+and where the state lives). "The deliberate inversion" -> "The whole design is built around one
+choice." "A timed-out caller retries into duplicate processing" -> "The caller times out and retries,
+running the work twice." The two-abstractions-plus-two-primitives prose became one four-bullet list
+(Workflow, Action, @StateField, @SignalMethod). "a leftover content-validation result for a
+publication that now will not happen" -> the concrete listing example. "lease" glossed as "a short
+waiting period (long enough to be sure the original run really died)." "integrator" -> "the team using
+Skipper." "Adopters inherit this unsolved edge" -> "Teams that adopt Skipper are stuck with this rough
+edge for now." "buys leanness at the cost of auditability" unpacked. Plus "partway through" -> "in
+mid-run," "the business logic fragments" -> "gets fragmented," "most-cited" -> "most common,"
+"build-it-yourself" -> "custom," "hand-rolled" -> "manual," "that trade cuts the wrong way" -> "that
+is the wrong trade to make."
+
+**Artifact - rebuilt as a timeline visualization.** The old artifact read like a condensed version of
+the article; it is now a genuinely interactive timeline. The multi-step listing workflow is laid out
+across async time: submit photos, then a wide hibernation band, then activate, then notify, then done.
+An architecture toggle switches between Embedded (Skipper) and a Central orchestrator. You advance the
+workflow one step at a time. At the wait it visibly hibernates - a compute meter reads "0 - asleep"
+and the band shows "just a DB row" - until a signal wakes it. Crashes behave differently per
+architecture: in Embedded, crashing the service triggers a replay that skips the checkpointed steps
+and resumes with nothing lost; in Central, crashing a worker is survivable (the cluster re-dispatches),
+but crashing the orchestrator freezes every dependent workflow at once, drawn as a cluster-and-
+dependents strip going red - the single point of failure the embedded model removes. A verdict panel
+and an event log narrate each state. "Tier-0 services" became "user-facing services." Zero dashes,
+off-states at #4a4f60, parses clean. (The happy path is now visualized both by the happy-path-safety-
+net figure and interactively by stepping the timeline.)

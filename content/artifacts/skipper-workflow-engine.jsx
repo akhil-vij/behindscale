@@ -1,546 +1,227 @@
 import { useState } from "react";
 
-const sections = [
-  { id: "replay", label: "Crash & Replay" },
-  { id: "problem", label: "The Problem" },
-  { id: "embedded", label: "Embedded vs Central" },
-  { id: "hibernation", label: "Hibernation" },
+const ACCENT = "#e0616e";      // Skipper coral
+const GREEN = "#22c55e"; const CYAN = "#22b8cf"; const AMBER = "#eab308"; const RED = "#ef4444"; const VIOLET = "#9b8cf0";
+const OFF = "#4a4f60";
+
+// The listing-publication workflow, laid out across (async) time.
+const STEPS = [
+  { id: "submit", kind: "action", label: "submit photos", sub: "external review request", t: "0h" },
+  { id: "wait", kind: "wait", label: "waitUntil(photos approved)", sub: "hibernates: thread freed, state saved as a DB row", t: "0 - 24h" },
+  { id: "activate", kind: "action", label: "activate listing", sub: "listing goes live", t: "~24h" },
+  { id: "notify", kind: "action", label: "notify host", sub: "host notified", t: "~24h" },
 ];
+const WAIT_IDX = 1;
 
-const problemPoints = [
-  {
-    icon: "💥",
-    title: "Mid-workflow crashes",
-    desc: "Multi-step processes (insurance claims, payments, media) span minutes to days. A server crash mid-flight leaves partial state, duplicate side effects, or orphaned operations.",
-  },
-  {
-    icon: "🔁",
-    title: "Each team re-discovered the same edge cases",
-    desc: "Teams built bespoke queue consumers, scheduled jobs, and reconciliation scripts — re-learning idempotency, retries, and crash recovery on every new workflow.",
-  },
-  {
-    icon: "🚫",
-    title: "External orchestrators added a SPOF",
-    desc: "Temporal/Cadence-style centralized engines would mean every Tier-0 service depends on the orchestrator cluster. One cluster outage = company-wide failure.",
-  },
-];
-
-const comparison = [
-  {
-    aspect: "Failure domain",
-    central: "Shared cluster; one outage hits all services",
-    embedded: "Each service is self-contained; isolated blast radius",
-    winner: "embedded",
-  },
-  {
-    aspect: "Infra dependencies",
-    central: "Dedicated cluster + queues + storage",
-    embedded: "Reuses the service's existing database",
-    winner: "embedded",
-  },
-  {
-    aspect: "Cross-service workflows",
-    central: "Natural — orchestrator coordinates from one place",
-    embedded: "Awkward — needs API calls + saga-like patterns",
-    winner: "central",
-  },
-  {
-    aspect: "Workflow UI / observability",
-    central: "Built-in dashboard, replay, manual intervention",
-    embedded: "DB rows; build your own visibility",
-    winner: "central",
-  },
-  {
-    aspect: "Language support",
-    central: "Polyglot SDKs (Go, Python, TS, Java...)",
-    embedded: "JVM only at Airbnb",
-    winner: "central",
-  },
-  {
-    aspect: "Latency on happy path",
-    central: "Network round-trip per step",
-    embedded: "In-process; only activates on crash/wait",
-    winner: "embedded",
-  },
-];
-
-const replaySteps = [
-  {
-    label: "Step 1",
-    title: "submitPhotosForReview",
-    type: "action",
-    state: "completed",
-    note: "Checkpoint written: result saved to DB. Side effect: API call made.",
-  },
-  {
-    label: "Step 2",
-    title: "waitUntil(photosApproved, 24h)",
-    type: "wait",
-    state: "active",
-    note: "Workflow hibernates. State serialized to DB. Thread returned to pool. Zero compute consumed.",
-  },
-  {
-    label: "Step 3",
-    title: "activateListing",
-    type: "action",
-    state: "pending",
-    note: "Will execute when waitUntil resolves.",
-  },
-  {
-    label: "Step 4",
-    title: "notifyHost",
-    type: "action",
-    state: "pending",
-    note: "Final step.",
-  },
-];
-
-// Crash-and-replay simulator for Skipper's durability model.
-// Sourced from the ListingPublicationWorkflow example in the post.
-// Demonstrates: checkpointed actions skip on replay, state fields persist,
-// waitUntil hibernates, the determinism requirement, and the happy-path
-// "you only pay when something goes wrong" property.
-
-const REPLAY_ACCENT = "#22c55e";
-const REPLAY_STEPS = [
-  { id: "submit", kind: "action", code: "actions.submitPhotosForReview(listingId)", short: "submitPhotosForReview", effect: "External review request created", checkpointable: true },
-  { id: "wait", kind: "wait", code: "waitUntil({ photosApproved != null }, 24.hours)", short: "waitUntil(photosApproved)", effect: "Workflow hibernates — thread released, state in DB", checkpointable: false },
-  { id: "branch", kind: "control", code: "if (timedOut || !photosApproved) return rejected()", short: "if (timedOut || !approved)", effect: "Deterministic branch — reads @StateField, no side effect", checkpointable: false },
-  { id: "activate", kind: "action", code: "actions.activateListing(listingId)", short: "activateListing", effect: "Listing goes live (external write)", checkpointable: true },
-  { id: "notify", kind: "action", code: "actions.notifyHost(hostId, \"live!\")", short: "notifyHost", effect: "Host notified (external call)", checkpointable: true },
-];
-
-function ReplaySim() {
-  // execution log: array of { stepIdx, mode: "ran" | "replayed-skip" | "hibernate" | "crash" }
-  const [cursor, setCursor] = useState(0);        // next step to execute
-  const [checkpoints, setCheckpoints] = useState({}); // stepId -> true once committed
-  const [signaled, setSignaled] = useState(false); // photosApproved set via @SignalMethod
-  const [hibernating, setHibernating] = useState(false);
+export default function SkipperTimeline() {
+  const [arch, setArch] = useState("embedded");  // "embedded" | "central"
+  const [at, setAt] = useState(0);               // index of next step (STEPS.length = done)
+  const [committed, setCommitted] = useState({}); // stepId -> true (survives a crash)
+  const [signaled, setSignaled] = useState(false);
+  const [crash, setCrash] = useState(null);      // null | "process" | "orchestrator"
+  const [replaying, setReplaying] = useState(false);
   const [log, setLog] = useState([]);
-  const [crashedOnce, setCrashedOnce] = useState(false);
-  const [done, setDone] = useState(false);
-  const [execCounts, setExecCounts] = useState({}); // stepId -> times the external effect actually happened
 
-  const reset = (hard) => {
-    setCursor(0); setLog([]); setHibernating(false); setDone(false);
-    if (hard) { setCheckpoints({}); setSignaled(false); setCrashedOnce(false); setExecCounts({}); }
-  };
+  const done = at >= STEPS.length;
+  const step = STEPS[at];
+  const hibernating = !done && step.kind === "wait" && !signaled && at === WAIT_IDX;
+  const frozen = arch === "central" && crash === "orchestrator";
+  const addLog = (text, kind) => setLog((l) => [...l, { text, kind }].slice(-7));
 
-  const step = REPLAY_STEPS[cursor];
+  const reset = () => { setAt(0); setCommitted({}); setSignaled(false); setCrash(null); setReplaying(false); setLog([]); };
 
   const advance = () => {
-    if (done || !step) return;
-    if (step.kind === "wait" && !signaled) { setHibernating(true); return; } // park until signal
-    const committed = !!checkpoints[step.id];
-    let mode;
+    if (done || frozen) return;
+    setCrash(null); setReplaying(false);
     if (step.kind === "action") {
-      mode = committed ? "replayed-skip" : "ran";
-      if (!committed) {
-        setCheckpoints((c) => ({ ...c, [step.id]: true }));
-        setExecCounts((c) => ({ ...c, [step.id]: (c[step.id] || 0) + 1 }));
-      }
-    } else if (step.kind === "wait") {
-      mode = "wait-pass";
-      setHibernating(false);
-    } else {
-      mode = "control";
+      setCommitted((c) => ({ ...c, [step.id]: true }));
+      addLog(`${step.label}: ran + checkpointed to DB`, "ok");
+      setAt(at + 1);
+    } else { // wait
+      if (!signaled) { addLog("hibernating: 0 compute, waiting as a row in the DB", "wait"); }
+      else { addLog("signal present: workflow wakes and continues", "ok"); setAt(at + 1); }
     }
-    setLog((l) => [...l, { stepId: step.id, mode }]);
-    if (cursor + 1 >= REPLAY_STEPS.length) setDone(true);
-    else setCursor(cursor + 1);
   };
 
-  const crash = () => {
-    // crash mid-flight: in-memory cursor/log lost, but checkpoints + state fields survive in DB
-    setLog((l) => [...l, { stepId: step ? step.id : "end", mode: "crash" }]);
-    setCrashedOnce(true);
-    setTimeout(() => {
-      setCursor(0);            // replay from the top
-      setHibernating(false);
-      setDone(false);
-      setLog((l) => [...l, { stepId: "replay-start", mode: "replay-banner" }]);
-    }, 50);
+  const sendSignal = () => {
+    if (frozen) return;
+    setSignaled(true); setCrash(null);
+    if (at === WAIT_IDX) { addLog("signal @SignalMethod arrived: photosApproved = true", "signal"); }
   };
 
-  const crashInWindow = () => {
-    // the at-least-once window: the action's external effect happens,
-    // but the process dies before the checkpoint write reaches the DB
-    if (!step || step.kind !== "action" || checkpoints[step.id]) return;
-    setExecCounts((c) => ({ ...c, [step.id]: (c[step.id] || 0) + 1 }));
-    setLog((l) => [...l, { stepId: step.id, mode: "crash-window" }]);
-    setCrashedOnce(true);
-    setTimeout(() => {
-      setCursor(0);
-      setHibernating(false);
-      setDone(false);
-      setLog((l) => [...l, { stepId: "replay-start", mode: "replay-banner" }]);
-    }, 50);
+  const crashProcess = () => {
+    if (done) return;
+    if (arch === "embedded") {
+      setCrash("process"); setReplaying(true);
+      const skipped = STEPS.slice(0, at).filter((s) => s.kind === "action" && committed[s.id]).map((s) => s.label);
+      addLog("process crashed - in-memory progress lost", "crash");
+      addLog(`replay from top: ${skipped.length ? skipped.join(", ") + " -> SKIP (saved results)" : "nothing to skip"}; resume at "${done ? "done" : step.label}"`, "replay");
+    } else {
+      setCrash("process");
+      addLog("worker crashed - the central cluster re-dispatched the step to another worker; workflow continues", "replay");
+    }
   };
 
-  const sendSignal = () => { setSignaled(true); setHibernating(false); };
-
-  const modeStyle = {
-    "ran": { c: "#22c55e", t: "RAN", note: "executed + checkpoint committed to DB" },
-    "replayed-skip": { c: "#06b6d4", t: "SKIPPED", note: "checkpoint found — returned saved result instantly, no re-execution" },
-    "wait-pass": { c: "#a78bfa", t: "RESUMED", note: "signal present — wait satisfied" },
-    "control": { c: "#888", t: "EVAL", note: "deterministic branch re-evaluated against persisted state" },
-    "crash": { c: "#ef4444", t: "💥 CRASH", note: "process dies — in-memory progress lost, DB checkpoints + state survive" },
-    "crash-window": { c: "#ef4444", t: "💥 CRASH", note: "action EXECUTED, but the process died before the checkpoint write — the DB never learned it ran" },
+  const crashOrchestrator = () => {
+    setCrash("orchestrator");
+    addLog("central cluster is DOWN - no workflow can start, advance, or resume", "crash");
   };
+
+  const verdict = (() => {
+    if (frozen) return { c: RED, code: "THE CENTRAL CLUSTER IS DOWN - EVERYTHING IS FROZEN",
+      t: "With a central orchestrator, every workflow in every service runs through the one cluster. It has failed, so nothing can start, advance, or resume anywhere - the whole platform waits for it to come back. This single point of failure is exactly what the embedded model avoids: switch to Embedded and crash all you like." };
+    if (crash === "process" && arch === "embedded") return { c: GREEN, code: "CRASHED, THEN REPLAYED - NOTHING LOST",
+      t: "The service died and its in-memory progress vanished, but the checkpoints are safe in the database. On restart Skipper replays the workflow method from the top: already-checkpointed actions return their saved results instantly and are skipped, and the workflow resumes at the first step that had not yet committed. No work redone, no action run twice." };
+    if (crash === "process" && arch === "central") return { c: AMBER, code: "WORKER CRASHED - THE CLUSTER RE-RAN IT",
+      t: "A single worker died, but the central cluster is still up and holds the workflow's state, so it simply hands the step to another worker and the workflow continues. A worker crash is survivable here. The dangerous crash in this architecture is the cluster itself - try 'Crash the orchestrator'." };
+    if (done) return { c: GREEN, code: "WORKFLOW COMPLETE",
+      t: arch === "embedded" ? "All actions checkpointed, the wait hibernated at zero cost, and the workflow reached a terminal state - all inside the service, with no external engine in the path." : "Complete - but every step paid a network round-trip to the central cluster to persist its result before advancing." };
+    if (hibernating) return { c: CYAN, code: "HIBERNATING - ZERO COMPUTE",
+      t: "The workflow hit waitUntil. Its state was written to the database and the thread was handed back to the pool. Right now the workflow is not running at all - it exists only as a row in the DB, using no compute, whether the wait is seconds or weeks. Send the signal to wake it." };
+    if (at === 0) return { c: AMBER, code: arch === "embedded" ? "EMBEDDED: THE ENGINE IS A LIBRARY IN THIS SERVICE" : "CENTRAL: EVERY STEP GOES THROUGH THE CLUSTER",
+      t: arch === "embedded" ? "Skipper runs inside this service, storing state in the service's own database. Step the workflow forward. On the happy path it is almost free - just a few DB writes - and the engine only does real work when something goes wrong." : "A dedicated cluster drives the workflow. It gives exactly-once guarantees, but every activity needs a network round-trip to the cluster, and the cluster is a dependency every service shares. Step forward, then crash a worker - and then crash the orchestrator." };
+    return { c: ACCENT, code: `RUNNING - STEP ${at + 1} OF ${STEPS.length}`,
+      t: `Next: ${step.label}. ${step.kind === "action" ? "An Action wraps a side effect; @Execute(checkpoint = true) saves its result to the DB the moment it runs, so a later crash can skip it." : "A durable wait: the workflow will hibernate until the signal arrives."}` };
+  })();
+
+  const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
+  const S = {
+    root: { background: "#0b0b10", color: "#c8cdd8", fontFamily: mono, maxWidth: 980, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #23232e", fontSize: 12, lineHeight: 1.5 },
+    panel: { background: "#14141c", border: "1px solid #23232e", borderRadius: 8, padding: 12 },
+    label: { color: "#7a8090", fontSize: 10, letterSpacing: 1.2 },
+    btn: (on, dis, col) => ({ display: "inline-block", padding: "7px 11px", marginTop: 6, marginRight: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? (col || ACCENT) : OFF}`, color: on ? "#fff" : "#aab0c0", background: on ? `${col || ACCENT}22` : "#101018", fontFamily: mono, fontSize: 11, fontWeight: on ? 700 : 400 }),
+  };
+
+  // colours per timeline segment
+  const segState = (i) => {
+    const s = STEPS[i];
+    if (committed[s.id]) return "done";
+    if (s.kind === "wait" && at > WAIT_IDX) return "done";
+    if (i === at && !frozen) return "current";
+    if (i === at && frozen) return "frozen";
+    return "future";
+  };
+  const segColor = { done: GREEN, current: ACCENT, frozen: RED, future: "#2a2a38" };
 
   return (
-    <div>
-      <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 12 }}>
-        Step the <code style={{ color: REPLAY_ACCENT }}>publishListing</code> workflow. Crash it anywhere — then
-        keep stepping and watch replay <em>skip</em> the actions that already committed. The workflow
-        method re-runs top-to-bottom; only the un-checkpointed work executes again.
-      </p>
+    <div style={S.root}>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>SKIPPER - A DURABLE WORKFLOW ON A TIMELINE - INTERACTIVE</div>
+      <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>Step it, hibernate it, crash it</div>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>A multi-step listing workflow across async time. Watch a crash in the embedded engine versus a central orchestrator.</p>
+      <ContextBlock />
 
-      {/* state panel */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
-          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>DURABLE STATE (survives crash)</div>
-          <div style={{ fontSize: 10.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-            checkpoints: <span style={{ color: REPLAY_ACCENT }}>{Object.keys(checkpoints).filter((k) => checkpoints[k]).length}</span> committed<br />
-            @StateField photosApproved: <span style={{ color: signaled ? REPLAY_ACCENT : "#666" }}>{signaled ? "true" : "null"}</span>
-          </div>
-        </div>
-        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
-          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>EXTERNAL WORLD (what actually happened)</div>
-          <div style={{ fontSize: 10.5, lineHeight: 1.7 }}>
-            {Object.keys(execCounts).length === 0 ? (
-              <span style={{ color: "#666" }}>no external effects yet</span>
-            ) : (
-              REPLAY_STEPS.filter((x) => execCounts[x.id]).map((x) => (
-                <div key={x.id} style={{ color: execCounts[x.id] > 1 ? "#eab308" : "#c0c0cc" }}>
-                  {x.short}: <span style={{ color: execCounts[x.id] > 1 ? "#eab308" : REPLAY_ACCENT }}>{execCounts[x.id]}×</span>
-                  {execCounts[x.id] > 1 ? " ⚠ duplicate" : ""}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-        <div style={{ flex: "1 1 160px", background: "#111118", border: "1px solid #2a2a3a", borderRadius: 6, padding: "8px 10px" }}>
-          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 4 }}>IN-MEMORY (lost on crash)</div>
-          <div style={{ fontSize: 10.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-            cursor: step <span style={{ color: "#eab308" }}>{Math.min(cursor + 1, REPLAY_STEPS.length)}</span> / {REPLAY_STEPS.length}<br />
-            status: <span style={{ color: hibernating ? "#a78bfa" : done ? REPLAY_ACCENT : "#eab308" }}>
-              {done ? "complete" : hibernating ? "hibernating" : "running"}
-            </span>
-          </div>
-        </div>
+      <div style={{ ...S.panel, marginTop: 12 }}>
+        <div style={S.label}>ARCHITECTURE</div>
+        <button style={S.btn(arch === "embedded", false, ACCENT)} onClick={() => { setArch("embedded"); reset(); }}>EMBEDDED (Skipper: a library in the service)</button>
+        <button style={S.btn(arch === "central", false, VIOLET)} onClick={() => { setArch("central"); reset(); }}>CENTRAL ORCHESTRATOR (a shared cluster)</button>
       </div>
 
-      {/* the workflow steps */}
-      <div style={{ background: "#0c0d13", border: "1px solid #2a2a3a", borderRadius: 8, padding: 10, marginBottom: 12 }}>
-        {REPLAY_STEPS.map((s, i) => {
-          const committed = !!checkpoints[s.id];
-          const isNext = i === cursor && !done;
-          const kindColor = s.kind === "action" ? REPLAY_ACCENT : s.kind === "wait" ? "#a78bfa" : "#888";
-          return (
-            <div key={s.id} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "7px 9px", borderRadius: 5,
-              marginBottom: 3,
-              background: isNext ? `${REPLAY_ACCENT}14` : "transparent",
-              border: `1px solid ${isNext ? `${REPLAY_ACCENT}55` : "transparent"}`,
-              opacity: i > cursor && !done ? 0.5 : 1,
-            }}>
-              <span style={{
-                fontSize: 8, padding: "2px 5px", borderRadius: 3, minWidth: 48, textAlign: "center",
-                background: `${kindColor}20`, color: kindColor, border: `1px solid ${kindColor}40`, letterSpacing: 0.5,
-              }}>{s.kind.toUpperCase()}</span>
-              <code style={{ fontSize: 10.5, color: "#c0c0cc", flex: 1 }}>{s.short}</code>
-              {s.checkpointable && (
-                <span style={{ fontSize: 8.5, color: committed ? "#06b6d4" : "#444" }}>
-                  {committed ? "✓ checkpoint" : "○ uncommitted"}
-                </span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* controls */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        <button onClick={advance} disabled={done} style={replayBtn(done ? "#333" : REPLAY_ACCENT, done)}>
-          {step && step.kind === "wait" && !signaled ? "hibernate ▸" : "step ▸"}
-        </button>
-        <button onClick={crash} disabled={done && Object.keys(checkpoints).length === 0} style={replayBtn("#ef4444")}>💥 crash now</button>
-        {step && step.kind === "action" && !checkpoints[step.id] && !done && (
-          <button onClick={crashInWindow} style={replayBtn("#eab308")}>💥 crash in the checkpoint window</button>
-        )}
-        {hibernating && <button onClick={sendSignal} style={replayBtn("#a78bfa")}>📩 signal: completePhotoReview(true)</button>}
-        <span style={{ flex: 1 }} />
-        <button onClick={() => reset(false)} style={replayBtn("#666")}>↺ replay</button>
-        <button onClick={() => reset(true)} style={replayBtn("#666")}>⟲ full reset</button>
-      </div>
-
-      {hibernating && (
-        <div style={{ fontSize: 10.5, color: "#a78bfa", background: "#1a1525", border: "1px solid #a78bfa40", borderRadius: 6, padding: "8px 10px", marginBottom: 12, lineHeight: 1.6 }}>
-          Hibernating: the thread is back in the pool and the workflow exists only as a DB row. It will
-          consume zero compute until the signal arrives or the 24h timeout fires. Send the signal to wake it.
+      {/* TIMELINE */}
+      <div style={{ ...S.panel, marginTop: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+          <div style={S.label}>THE WORKFLOW ACROSS TIME</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: hibernating ? CYAN : done ? GREEN : frozen ? RED : ACCENT }}>
+            COMPUTE: {hibernating ? "0 - asleep" : frozen ? "frozen" : done ? "idle - complete" : "running"}
+          </div>
         </div>
-      )}
-
-      {/* execution log */}
-      {log.length > 0 && (
-        <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "10px 12px" }}>
-          <div style={{ fontSize: 8.5, letterSpacing: 1.5, color: "#666", marginBottom: 8 }}>EXECUTION LOG</div>
-          {log.map((entry, i) => {
-            if (entry.mode === "replay-banner") {
-              return (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", margin: "4px 0", borderTop: "1px dashed #ef444450", borderBottom: "1px dashed #ef444450" }}>
-                  <span style={{ fontSize: 10, color: "#ef4444", letterSpacing: 1 }}>↻ REPLAY FROM TOP — same method, re-executed</span>
-                </div>
-              );
-            }
-            const ms = modeStyle[entry.mode] || modeStyle.control;
-            const s = REPLAY_STEPS.find((x) => x.id === entry.stepId);
+        <div style={{ display: "flex", gap: 4, marginTop: 10, alignItems: "stretch" }}>
+          {STEPS.map((s, i) => {
+            const st = segState(i);
+            const c = segColor[st];
+            const wide = s.kind === "wait";
             return (
-              <div key={i} style={{ display: "flex", gap: 10, padding: "4px 0", alignItems: "baseline" }}>
-                <span style={{ fontSize: 8.5, color: ms.c, minWidth: 64, fontWeight: 700 }}>{ms.t}</span>
-                <span style={{ fontSize: 10.5, color: "#c0c0cc" }}>
-                  <code style={{ color: "#f0f0f5" }}>{s ? s.short : ""}</code>
-                  <span style={{ color: "#777" }}> — {ms.note}</span>
-                </span>
+              <div key={s.id} style={{ flex: wide ? "2.4 1 0" : "1 1 0", minWidth: 0, background: `${c}1c`, border: `1px solid ${c}`, borderRadius: 6, padding: "8px 9px", position: "relative", opacity: st === "future" ? 0.55 : 1, borderStyle: (i === at && crash === "process") ? "dashed" : "solid" }}>
+                <div style={{ fontSize: 9, color: "#7a8090" }}>{s.t}</div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: c, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</div>
+                <div style={{ fontSize: 9, color: "#8b90a0", marginTop: 3, lineHeight: 1.4 }}>{hibernating && i === WAIT_IDX ? "asleep - 0 compute, just a DB row" : s.sub}</div>
+                <div style={{ fontSize: 9, marginTop: 5, fontWeight: 700, color: committed[s.id] ? GREEN : (s.kind === "wait" && at > WAIT_IDX) ? GREEN : st === "current" ? c : "#5c6474" }}>
+                  {committed[s.id] ? "checkpoint saved" : s.kind === "wait" ? (at > WAIT_IDX ? "woke + resumed" : hibernating ? "waiting for signal" : "wait") : st === "current" ? "next to run" : st === "frozen" ? "frozen" : "pending"}
+                </div>
+                {i === at && crash === "process" && <div style={{ position: "absolute", top: 4, right: 6, fontSize: 12 }}>💥</div>}
               </div>
             );
           })}
-          {done && (() => {
-            const dups = REPLAY_STEPS.filter((x) => (execCounts[x.id] || 0) > 1);
-            const clean = dups.length === 0;
-            return (
-              <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 5, background: clean ? "#0a2a1a" : "#2a220a", border: `1px solid ${clean ? REPLAY_ACCENT : "#eab308"}`, fontSize: 11, color: clean ? "#95d5b2" : "#f0dc8c", lineHeight: 1.6 }}>
-                {clean ? (
-                  <>✓ Workflow reached a terminal state.{crashedOnce && " Despite the crash, every external effect happened exactly once — check the EXTERNAL WORLD panel. The replayed actions returned their checkpoints instead of re-running. That is durable execution: linear code, crash-proof outcome."}</>
-                ) : (
-                  <>⚠ Terminal state reached — but {dups.map((d) => d.short).join(", ")} executed {dups.map((d) => execCounts[d.id] + "×").join(", ")}. A crash in the window between an action executing and its checkpoint committing replays that action: checkpointed actions are at-least-once, not exactly-once — which is precisely why the post requires action implementations to be idempotent. (The Stripe dissection is the deep dive on making that safe.)</>
-                )}
-              </div>
-            );
-          })()}
+          <div style={{ flex: "0.7 1 0", background: done ? `${GREEN}1c` : "#14141c", border: `1px dashed ${done ? GREEN : "#2a2a38"}`, borderRadius: 6, padding: "8px 9px", display: "flex", alignItems: "center", justifyContent: "center", color: done ? GREEN : "#5c6474", fontSize: 10.5, fontWeight: 700 }}>{done ? "DONE ✓" : "done"}</div>
         </div>
-      )}
-
-      <div style={{ fontSize: 9.5, color: "#666", lineHeight: 1.7, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
-        Note the asymmetry the post emphasizes: on the happy path the engine adds only a few database
-        writes (checkpoints + a delayed timeout task as a safety net). The replay machinery is invoked
-        <em> only</em> when something goes wrong — a crash, a wait, or an error. You pay for durability
-        only when you use it. (Actions are at-least-once: a crash after executing but before the
-        checkpoint write replays the action — which is why action implementations must be idempotent.)
+        {replaying && arch === "embedded" && (
+          <div style={{ marginTop: 9, fontSize: 10.5, color: CYAN }}>↻ replay: checkpointed actions return saved results instantly (skipped); the workflow resumes at the first uncommitted step - no work redone.</div>
+        )}
       </div>
-    </div>
-  );
-}
 
-function replayBtn(color, disabled) {
-  return {
-    padding: "7px 12px", fontSize: 11, fontFamily: "inherit",
-    border: `1px solid ${color}${disabled ? "40" : ""}`, borderRadius: 6,
-    background: `${color}18`, color, cursor: disabled ? "default" : "pointer",
-    opacity: disabled ? 0.5 : 1,
-  };
-}
-
-
-function ContextBlock() {
-  const [open, setOpen] = useState(true);
-  const lbl = { fontSize: 10, color: "#22c55e", letterSpacing: 1.2 };
-  if (!open) return (
-    <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "0 0 14px", display: "block" }}>SHOW CONTEXT ▾</button>
-  );
-  return (
-    <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginBottom: 18 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
-        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
-      </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A multi-step process that crashes between steps leaves the outcome to chance — a timed-out caller retries into a duplicate payout, or partial state corrupts what follows — and for workflows spanning hours to days, interruption is the expected case, not the edge. A central orchestration cluster fixes this at a blast-radius cost Airbnb's Tier-0 services could not accept: one outage stops every dependent service's workflows.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Ship the engine as a library inside each service instead: durability comes from replaying the workflow method against checkpointed actions — committed steps are skipped, not re-executed — and long waits hibernate to zero compute until a signal arrives.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Step the workflow and crash it anywhere — replay skips the checkpointed actions. Then crash inside the checkpoint window and watch an action run twice: the reason action implementations must be idempotent. Wake the hibernating wait with the signal.</div>
-    </div>
-  );
-}
-
-export default function Skipper() {
-  const [section, setSection] = useState("replay");
-
-  return (
-    <div style={{
-      fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-      background: "#08090D",
-      color: "#C8CDD8",
-      minHeight: "100vh",
-      padding: "20px 16px",
-      boxSizing: "border-box",
-    }}>
-      <div style={{ maxWidth: 760, margin: "0 auto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 10, letterSpacing: 4, color: "#22c55e", marginBottom: 6, textTransform: "uppercase" }}>
-            Airbnb · Workflow Orchestration
-          </div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#f0f0f5", margin: 0, lineHeight: 1.3 }}>
-            Skipper: Embedded Workflow Engine
-          </h1>
-          <p style={{ fontSize: 12, color: "#888", marginTop: 6, lineHeight: 1.6 }}>
-            Durable, multi-step workflows as a library inside each service — not a central cluster. Replay-based recovery, hibernation between waits, full reuse of the service's existing DB.
-          </p>
-        </div>
-
-        <ContextBlock />
-
-        <div style={{ display: "flex", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSection(s.id)}
-              style={{
-                padding: "7px 12px",
-                fontSize: 11,
-                fontFamily: "inherit",
-                border: `1px solid ${section === s.id ? "#22c55e" : "#2a2a3a"}`,
-                borderRadius: 6,
-                background: section === s.id ? "#22c55e18" : "transparent",
-                color: section === s.id ? "#22c55e" : "#666",
-                cursor: "pointer",
-              }}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {section === "problem" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {problemPoints.map((p, i) => (
-              <div key={i} style={{
-                background: "#111118",
-                border: "1px solid #2a2a3a",
-                borderRadius: 8,
-                padding: "14px 16px",
-                display: "flex", gap: 12, alignItems: "flex-start",
-              }}>
-                <div style={{ fontSize: 22 }}>{p.icon}</div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#f0f0f5", marginBottom: 4 }}>{p.title}</div>
-                  <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.6 }}>{p.desc}</div>
-                </div>
+      {/* CENTRAL SPOF STRIP */}
+      {arch === "central" && (
+        <div style={{ ...S.panel, marginTop: 12, borderColor: frozen ? RED : "#23232e" }}>
+          <div style={S.label}>THE SHARED CLUSTER {frozen ? "- DOWN" : ""}</div>
+          <div style={{ display: "flex", gap: 10, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={{ padding: "8px 12px", borderRadius: 6, border: `1px solid ${frozen ? RED : VIOLET}`, background: frozen ? `${RED}18` : `${VIOLET}18`, color: frozen ? RED : VIOLET, fontWeight: 700, fontSize: 11 }}>
+              central cluster {frozen ? "✕ DOWN" : "● up"}
+            </div>
+            <div style={{ color: "#5c6474" }}>drives →</div>
+            {["this workflow", "payments svc", "media svc"].map((w, i) => (
+              <div key={i} style={{ padding: "6px 10px", borderRadius: 6, border: `1px solid ${frozen ? RED : "#2a2a38"}`, color: frozen ? RED : "#9aa0b0", fontSize: 10.5, background: frozen ? `${RED}12` : "#101018" }}>
+                {w} {frozen ? "- FROZEN" : ""}
               </div>
             ))}
           </div>
-        )}
+          {frozen && <div style={{ fontSize: 10, color: RED, marginTop: 8 }}>▲ one cluster outage stops every dependent service at once - the single point of failure the embedded model removes.</div>}
+        </div>
+      )}
 
-        {section === "embedded" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              The fundamental tradeoff: <strong style={{ color: "#f0f0f5" }}>autonomy vs coordination</strong>. Embedding gives autonomy at the cost of cross-service coordination. Centralizing inverts both.
-            </p>
-            <div style={{
-              background: "#111118",
-              border: "1px solid #2a2a3a",
-              borderRadius: 8,
-              overflow: "hidden",
-            }}>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "1.2fr 1fr 1fr 60px",
-                padding: "8px 12px",
-                background: "#1a1a2a",
-                fontSize: 10,
-                color: "#888",
-                letterSpacing: 1,
-                textTransform: "uppercase",
-              }}>
-                <div>Aspect</div>
-                <div>Central</div>
-                <div>Embedded</div>
-                <div></div>
-              </div>
-              {comparison.map((c, i) => (
-                <div key={i} style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.2fr 1fr 1fr 60px",
-                  padding: "10px 12px",
-                  borderTop: "1px solid #2a2a3a",
-                  fontSize: 11,
-                  alignItems: "center",
-                }}>
-                  <div style={{ color: "#f0f0f5", fontWeight: 600 }}>{c.aspect}</div>
-                  <div style={{ color: c.winner === "central" ? "#22c55e" : "#888", lineHeight: 1.5 }}>{c.central}</div>
-                  <div style={{ color: c.winner === "embedded" ? "#22c55e" : "#888", lineHeight: 1.5 }}>{c.embedded}</div>
-                  <div style={{ fontSize: 10, color: "#22c55e", textAlign: "right", letterSpacing: 1 }}>
-                    {c.winner === "central" ? "← C" : "E →"}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* VERDICT */}
+      <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${verdict.c}`, background: `${verdict.c}14`, marginTop: 12 }}>
+        <div style={{ color: verdict.c, fontWeight: 700, fontSize: 12 }}>{verdict.code}</div>
+        <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.6 }}>{verdict.t}</div>
+      </div>
 
-        {section === "replay" && <ReplaySim />}
-
-        {section === "hibernation" && (
-          <div>
-            <p style={{ fontSize: 12, color: "#c0c0cc", lineHeight: 1.7, marginBottom: 14 }}>
-              <strong style={{ color: "#f0f0f5" }}>waitUntil</strong> isn't a blocking thread — it's hibernation. The workflow's state serializes to DB, the thread returns to the pool, and the workflow is just a row until a signal arrives.
-            </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {replaySteps.map((step, i) => {
-                const colors = step.state === "completed"
-                  ? { bg: "#1a3a2a", border: "#2d6a4f", text: "#95d5b2", label: "CHECKPOINTED" }
-                  : step.state === "active"
-                  ? { bg: "#2a2010", border: "#e09f3e", text: "#ffd97d", label: "HIBERNATING" }
-                  : { bg: "#1a1a2a", border: "#333", text: "#666", label: "PENDING" };
-
-                return (
-                  <div key={i} style={{
-                    background: colors.bg,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: 8,
-                    padding: "12px 14px",
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 10, color: colors.text, letterSpacing: 1, textTransform: "uppercase" }}>{step.label}</span>
-                        <span style={{
-                          fontSize: 9,
-                          padding: "2px 6px",
-                          background: `${colors.border}30`,
-                          border: `1px solid ${colors.border}50`,
-                          borderRadius: 3,
-                          color: colors.text,
-                          letterSpacing: 1,
-                        }}>{step.type.toUpperCase()}</span>
-                      </div>
-                      <span style={{ fontSize: 9, color: colors.text, letterSpacing: 1.5 }}>{colors.label}</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: "#f0f0f5", fontWeight: 600, marginBottom: 4 }}>{step.title}</div>
-                    <div style={{ fontSize: 11, color: "#999", lineHeight: 1.5 }}>{step.note}</div>
-                  </div>
-                );
-              })}
-            </div>
-            <div style={{
-              marginTop: 14,
-              padding: "12px 14px",
-              background: "#111118",
-              borderRadius: 6,
-              borderLeft: "3px solid #e09f3e",
-            }}>
-              <div style={{ fontSize: 10, color: "#e09f3e", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-                What hibernation eliminates
-              </div>
-              <div style={{ fontSize: 11.5, color: "#c0c0cc", lineHeight: 1.7 }}>
-                A typical "wait 24h for review" without Skipper means: a queue consumer for the initial submission, a callback endpoint for the review result, a scheduled job for the timeout case, a state table to coordinate the three, and race-condition handling between callback and timeout. With Skipper: one method, reading top-to-bottom, no scattered state machine.
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ fontSize: 9, color: "#555", marginTop: 20, lineHeight: 1.6, borderTop: "1px solid #2a2a3a", paddingTop: 10 }}>
-          <a href="https://behindscale.com/articles/skipper-workflow-engine" target="_blank" rel="noopener noreferrer" style={{ color: "#22c55e", textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+      {/* CONTROLS */}
+      <div style={{ ...S.panel, marginTop: 12 }}>
+        <div style={S.label}>CONTROLS</div>
+        <div>
+          <button style={S.btn(false, done || frozen, GREEN)} disabled={done || frozen} onClick={advance}>▶ {hibernating ? "STAY ASLEEP (advance)" : "ADVANCE ONE STEP"}</button>
+          <button style={S.btn(signaled, signaled || frozen, CYAN)} disabled={signaled || frozen} onClick={sendSignal}>✉ SEND SIGNAL (photos approved)</button>
+          <button style={S.btn(false, done || frozen, RED)} disabled={done || frozen} onClick={crashProcess}>💥 CRASH THE {arch === "embedded" ? "SERVICE" : "WORKER"}</button>
+          {arch === "central" && <button style={S.btn(frozen, done || frozen, RED)} disabled={done || frozen} onClick={crashOrchestrator}>💥 CRASH THE ORCHESTRATOR</button>}
+          <button style={S.btn(false, false, "#8b90a0")} onClick={reset}>↺ RESET</button>
+        </div>
+        <div style={{ fontSize: 9.5, color: "#6b7080", marginTop: 8, lineHeight: 1.7 }}>
+          Try: advance to the wait, crash the service (embedded) and watch replay skip the saved steps. Then switch to Central, crash a worker (survives), then crash the orchestrator (everything freezes).
         </div>
       </div>
+
+      {/* LOG */}
+      {log.length > 0 && (
+        <div style={{ ...S.panel, marginTop: 12 }}>
+          <div style={S.label}>EVENT LOG</div>
+          <div style={{ marginTop: 6 }}>
+            {log.map((e, i) => {
+              const col = { ok: GREEN, wait: CYAN, signal: VIOLET, crash: RED, replay: CYAN }[e.kind] || "#8b90a0";
+              return <div key={i} style={{ fontSize: 10.5, color: col, padding: "2px 0", fontFamily: mono }}>· {e.text}</div>;
+            })}
+          </div>
+        </div>
+      )}
+
+      <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #23232e", paddingTop: 8, lineHeight: 1.7 }}>
+        The workflow (submit photos, wait for review, activate, notify) and its mechanics are from Airbnb's Skipper post: durability by replay with checkpointed actions, hibernation on waitUntil (zero compute, state as a DB row), and the embedded-vs-central tradeoff where a shared orchestrator is a single point of failure for user-facing services. Timing and the three-service cluster are illustrative.
+        {" "}<a href="https://behindscale.com/articles/skipper-workflow-engine" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
+      </div>
+    </div>
+  );
+}
+
+function ContextBlock() {
+  const [open, setOpen] = useState(true);
+  const lbl = { fontSize: 10, color: ACCENT, letterSpacing: 1.2 };
+  if (!open) return <button onClick={() => setOpen(true)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0, margin: "10px 0 0", display: "block" }}>SHOW CONTEXT ▾</button>;
+  return (
+    <div style={{ background: "#14141c", border: "1px solid #23232e", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <div style={{ fontSize: 10, color: "#7a8090", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A multi-step process (an insurance claim, a listing publication) can span hours to days, so a crash partway through is expected, not rare. It can leave duplicate side effects or half-finished state.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Skipper is a library embedded in each service, storing state in the service's own database. Durability comes from replay: on restart the method runs again, skipping actions already checkpointed. Long waits hibernate to a DB row at zero compute, and no shared cluster means no single point of failure.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Advance the workflow to the wait and watch it hibernate. Crash the service and watch replay skip the saved steps. Then switch to a central orchestrator and crash it - and watch every workflow freeze at once.</div>
     </div>
   );
 }

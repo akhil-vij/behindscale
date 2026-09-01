@@ -1,0 +1,22 @@
+<svg viewBox="0 0 700 196" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="At start two database writes create the workflow and schedule a delayed timeout task; the workflow then runs in the service with no coordination; on normal completion the timeout fires harmlessly, and on a crash a scheduler picks it up after a lease and replays it"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker><marker id="rah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#DC2626"/></marker><marker id="gah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2E7D46"/></marker><marker id="cah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0E7490"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">PAY ONLY WHEN SOMETHING GOES WRONG</text>
+<rect x="20" y="44" width="200" height="54" rx="8" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.4"/>
+<text x="120" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2563EB" text-anchor="middle" font-weight="700">AT START: 2 DB WRITES</text>
+<text x="120" y="77" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="400">create the workflow +</text>
+<text x="120" y="89" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="400">schedule a delayed timeout</text>
+<line x1="220" y1="71" x2="256" y2="71" stroke="#52525B" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="258" y="44" width="200" height="54" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.4"/>
+<text x="358" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">RUNS IN THE SERVICE</text>
+<text x="358" y="77" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="400">ordinary method calls,</text>
+<text x="358" y="89" font-family="'Inter',system-ui,sans-serif" font-size="8.5" fill="#1A1A1F" text-anchor="middle" font-weight="400">no coordination</text>
+<line x1="458" y1="60" x2="500" y2="60" stroke="#2E7D46" stroke-width="1.4" marker-end="url(#gah)"/>
+<line x1="458" y1="84" x2="500" y2="120" stroke="#B45309" stroke-width="1.4" marker-end="url(#fah)"/>
+<rect x="502" y="44" width="182" height="34" rx="7" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="593" y="58" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#2E7D46" text-anchor="middle" font-weight="700">finishes normally:</text>
+<text x="593" y="71" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#52525B" text-anchor="middle" font-weight="400">timeout fires harmlessly</text>
+<rect x="502" y="108" width="182" height="44" rx="7" fill="#FDF3E7" stroke="#B45309" stroke-width="1.4"/>
+<text x="593" y="124" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#B45309" text-anchor="middle" font-weight="700">crashes mid-run:</text>
+<text x="593" y="137" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#1A1A1F" text-anchor="middle" font-weight="400">scheduler picks it up after</text>
+<text x="593" y="148" font-family="'Inter',system-ui,sans-serif" font-size="8" fill="#1A1A1F" text-anchor="middle" font-weight="400">a lease, and replays it</text>
+<text x="350" y="178" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">the delayed task is the safety net: the engine only does real work when a run is interrupted</text>
+</svg>
