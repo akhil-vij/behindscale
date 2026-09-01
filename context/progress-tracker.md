@@ -7522,6 +7522,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-01: **Pattern review Round 21 — Distributed Metadata Model**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/distributed-metadata-model.json`, slug/name/category
+  frozen — throughput). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[application-layer sharding](/patterns/application-layer-sharding)`
+  (Round 19; guard-green), no bold. Aliases: scale-out metadata service ·
+  metadata as the bottleneck · separate metadata from data path. New
+  authored artifact `content/artifacts/distributed-metadata-model.jsx`
+  (zero near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/distributed-metadata-model/one-master-vs-many.svg`
+  (viewBox 0 0 720 244, in-band, safe). No `file` field. Revision HTML not
+  placed. Visible DOM verified: 0 literal markdown, application-layer-
+  sharding anchor, figure img, mechanism teaser. Build (23 checks, 0
+  errors) + 260 tests green.
 - 2026-08-31: **Pattern review Round 20 — Single-Writer Ownership**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/single-writer-ownership.json`, slug/name/category
