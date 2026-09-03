@@ -4,6 +4,32 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Landing rewrite — Stage 0 (2026-09-03, branch
+  `landing-rewrite-stage0`).** The landing stopped describing behindscale
+  as a library and started selling the interactive experience. Copy /
+  structure / links only — no new features, components, or routes; the
+  single CTA still targets `/problems`, the hero load-shedding iframe and
+  the trust band are untouched. Changes (all in `src/pages/Landing.tsx`
+  except the head tags): new `<title>` + meta description in
+  `scripts/prerender.ts` `landingMeta()` (one shared `description` const
+  now feeds meta + og:description + the WebSite JSON-LD node; the old "a
+  library of…" framing is gone from every self-describing surface);
+  headline → "Real production systems, taken apart. You *break them, then
+  fix them.*" (gold-underline moved to the break→fix promise); reworded
+  hero sub with "crux" removed; a "See how →" link under the hero caption
+  into `/problems/blind-load-shedding` (load shedding = 5 companies);
+  a new "Built for Senior and Staff engineers" audience block between the
+  trust band and the preview; the "What's inside" header is now DERIVED
+  ("Nine walls. Each one hit by three to five companies." — count from
+  `preview.length`, range from each group's distinct-company count,
+  spelled as words up to twelve, with min===max and singular-company
+  edge handling) plus a one-line subhead; CTA + label vocabulary shifted
+  "breakdowns" → "systems". Every displayed count stays computed (41
+  articles, 23 wordmarks, 9 walls); "breakdowns" survives only as a
+  computed count on the shared Catalog / ProblemDetail / PatternDetail /
+  PatternIndex surfaces, out of this task's scope. Full `npm run build`
+  green; desktop + phone screenshots captured. See Deferred Work for two
+  parked doc/comment cleanups this surfaced.
 - **Rich problem-page template v3 prototype authored (2026-08-25).**
   Owner kicked off the problem-detail redesign (minimal → rich, one class
   at a time, starting with `ambiguous-failure-under-retry`). Agent
@@ -6722,6 +6748,24 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Deferred Work
 
+- **Doc/comment sync: retired `_hero` bundle reference (parked
+  2026-09-03, landing rewrite Stage 0).** `architecture.md` → Rendering
+  → "Site-level artifacts (navigation phase)" still describes the landing
+  hero as the bespoke `_hero` bundle at `/artifacts/_hero/`. That bundle
+  was retired; the hero now embeds the Priority-Aware Load Shedding
+  *pattern* artifact at `/artifacts/priority-aware-load-shedding/index.html`
+  (see `src/pages/Landing.tsx` `HERO_IFRAME_PATH` + its comment). The
+  same stale `_hero` path also lingers in the top-of-file structure
+  comment in `Landing.tsx`. Update both to the current path (and note the
+  old path 301-redirects in `vercel.json`) in a `docs:` pass. Cosmetic —
+  no runtime effect.
+- **Comment fix: stale "12" wordmark count in the landing (parked
+  2026-09-03, landing rewrite Stage 0).** The top-of-file structure
+  comment in `src/pages/Landing.tsx` says the trust band renders "12
+  canonical company wordmarks"; it actually renders every canonical
+  company (`canonicalCompanies(articles)`, 23 today) and always has —
+  the number is computed, the comment predates the company growth. Fix
+  the comment opportunistically; no code change.
 - **Tier 2: prose → artifact-state deep links** (`?view=` URL
   param protocol; parent→child postMessage). Surfaced during
   Unit 10's editorial review (2026-06-11). The article page
