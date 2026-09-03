@@ -1,0 +1,34 @@
+<svg viewBox="0 0 700 238" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="One central Cadence platform run by about 20 engineers, with over a thousand services from T0 (most critical) to T5 depending on it, so the engine is built once and teams write 40% less code"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">BUILD THE ENGINE ONCE</text>
+<rect x="210" y="42" width="280" height="44" rx="9" fill="#E6F5F3" stroke="#0D9488" stroke-width="1.6"/>
+<text x="350" y="62" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#0D9488" text-anchor="middle" font-weight="700">ONE CADENCE PLATFORM</text>
+<text x="350" y="77" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="400">one engine, run by a team of ~20</text>
+<rect x="40" y="120" width="96" height="34" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="88" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#2563EB" text-anchor="middle" font-weight="700">T0 service</text>
+<text x="88" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400">most critical</text>
+<line x1="88" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<rect x="148" y="120" width="96" height="34" rx="6" fill="#EEF3FE" stroke="#2563EB" stroke-width="1.3"/>
+<text x="196" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#2563EB" text-anchor="middle" font-weight="700">T1 service</text>
+<text x="196" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400"></text>
+<line x1="196" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<rect x="256" y="120" width="96" height="34" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.3"/>
+<text x="304" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#1A1A1F" text-anchor="middle" font-weight="700">T2 service</text>
+<text x="304" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400"></text>
+<line x1="304" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<rect x="364" y="120" width="96" height="34" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.3"/>
+<text x="412" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#1A1A1F" text-anchor="middle" font-weight="700">T3 service</text>
+<text x="412" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400"></text>
+<line x1="412" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<rect x="472" y="120" width="96" height="34" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.3"/>
+<text x="520" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#1A1A1F" text-anchor="middle" font-weight="700">T4 service</text>
+<text x="520" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400"></text>
+<line x1="520" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<rect x="580" y="120" width="96" height="34" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.3"/>
+<text x="628" y="135" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="9" fill="#1A1A1F" text-anchor="middle" font-weight="700">T5 service</text>
+<text x="628" y="148" font-family="'Inter',system-ui,sans-serif" font-size="7.5" fill="#52525B" text-anchor="middle" font-weight="400">least</text>
+<line x1="628" y1="120" x2="350" y2="88" stroke="#c9c9d0" stroke-width="1"/>
+<text x="350" y="104" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="700">over a thousand services depend on it, T0 down to T5</text>
+<rect x="120" y="180" width="460" height="26" rx="6" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.3"/>
+<text x="350" y="197" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#2E7D46" text-anchor="middle" font-weight="700">engine built once · workflows written fresh · teams write 40% less code</text>
+<text x="350" y="226" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">the hard machinery lives in the platform, not in every team's code</text>
+</svg>

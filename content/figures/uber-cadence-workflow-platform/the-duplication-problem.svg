@@ -1,0 +1,28 @@
+<svg viewBox="0 0 700 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A small unique-business-logic core ringed by common machinery (saving state, queues and timers, retries, failover, scaling, observability), rebuilt across a thousand services, so the duplicated ring is what does not scale"><defs><marker id="fah" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#52525B"/></marker></defs>
+<text x="16" y="22" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="11" fill="#8A8A94" text-anchor="start" font-weight="400" letter-spacing="0.5">WHAT ACTUALLY DOESN'T SCALE</text>
+<rect x="272" y="96" width="156" height="48" rx="8" fill="#EAF6EE" stroke="#2E7D46" stroke-width="1.6"/>
+<text x="350" y="116" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">unique business</text>
+<text x="350" y="131" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="10.5" fill="#2E7D46" text-anchor="middle" font-weight="700">logic + tests</text>
+<rect x="68" y="45" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="140" y="64" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">saving state</text>
+<line x1="212" y1="60" x2="272" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<rect x="488" y="45" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="560" y="64" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">queues + timers</text>
+<line x1="488" y1="60" x2="428" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<rect x="48" y="105" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="120" y="124" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">retries</text>
+<line x1="192" y1="120" x2="272" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<rect x="508" y="105" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="580" y="124" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">failover</text>
+<line x1="508" y1="120" x2="428" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<rect x="68" y="165" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="140" y="184" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">scaling</text>
+<line x1="212" y1="180" x2="272" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<rect x="488" y="165" width="144" height="30" rx="6" fill="#F2F2F4" stroke="#52525B" stroke-width="1.2"/>
+<text x="560" y="184" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#1A1A1F" text-anchor="middle" font-weight="700">observability</text>
+<line x1="488" y1="180" x2="428" y2="120" stroke="#c9c9d0" stroke-width="1.1"/>
+<text x="350" y="50" font-family="'Inter',system-ui,sans-serif" font-size="9" fill="#52525B" text-anchor="middle" font-weight="700">common machinery every service needs</text>
+<rect x="150" y="214" width="400" height="26" rx="6" fill="#FDF3E7" stroke="#B45309" stroke-width="1.3"/>
+<text x="350" y="231" font-family="'Inter',system-ui,sans-serif" font-size="9.5" fill="#B45309" text-anchor="middle" font-weight="700">x 1,000 services = 1,000 slightly different copies of the hard parts</text>
+<text x="350" y="258" font-family="'Inter',system-ui,sans-serif" font-size="10" fill="#52525B" text-anchor="middle" font-weight="700">the duplicated ring, not any one workflow, is what does not scale</text>
+</svg>

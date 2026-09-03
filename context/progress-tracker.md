@@ -7522,6 +7522,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-03: **Article review round — Uber Cadence Workflow Platform**
+  (10th article round; the CENTRAL pole of the workflow-orchestration
+  choice — pairs with Skipper, the embedded pole, and both share cruxTag
+  partial-completion-under-crashes and cross-reference). Enriched the
+  existing `content/articles/uber-cadence-workflow-platform.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/uber-cadence-workflow-platform/`, and the updated
+  article `docs/CORRECTIONS.md`. Revision HTML not placed. First article
+  with a stat placed in `tradeoffs` (99.9% ceiling) — confirmed
+  stats-value-in-prose supports problem/solution/tradeoffs/summary; all
+  three stats ground, no warnings. Refs verified incl related
+  skipper-workflow-engine and netflix-conductor-microservices-orchestrator.
+  RECURRING correction (10th article round): **7 of 9 figure fields
+  exceeded the Q10 word bands** (captions 65-72w vs 40, ariaLabels 29-39w
+  vs 20, one eyebrow 8w vs 6) — tightened all into band; captions were
+  long enough that it took several passes to get every caption under 40
+  (kept landing at 41-42). Rendered page verified: 3 figures, three stats
+  present, artifact embed, 0 literal markdown. Build (23 checks, 0 errors)
+  + 260 tests green.
 - 2026-09-02: **Pattern review Round 22 — Shared-Pool Multiplexing**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/shared-pool-multiplexing.json`, slug/name/category

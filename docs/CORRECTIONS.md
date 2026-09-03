@@ -3803,3 +3803,114 @@ dependents strip going red - the single point of failure the embedded model remo
 and an event log narrate each state. "Tier-0 services" became "user-facing services." Zero dashes,
 off-states at #4a4f60, parses clean. (The happy path is now visualized both by the happy-path-safety-
 net figure and interactively by stepping the timeline.)
+
+---
+
+## uber-cadence-workflow-platform - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full", de-reference approach. Verdict SHIP WITH FIXES. Second
+article of the partial-completion-under-crashes class (the central-orchestration answer, opposite
+Skipper's embedded one). Live page byte-for-byte the upload (no drift). Grounding is spotless on the
+Cadence facts against Ender Demirkaya's June 2023 Uber post: 12 billion executions and 270 billion
+actions a month, 99.9% availability, 40% less code (2021 survey), a team of 20, over a thousand
+services from T0 to T5, native-code workflows rather than a configuration format, the noisy-neighbor
+machinery (rate limits, hot-shard detection, per-domain tracking), versioning/replay/shadowing, 6+
+years of backward compatibility, the V2 branch, the 2022 reliability year, the Cassandra/Elasticsearch/
+Kafka/MySQL substrate, and the database as the recurring bottleneck. The Airbnb/Skipper comparison is
+behindscale's editorial framing, not in the Uber source. relatedArticles skipper, netflix-conductor.
+
+**Cross-reference decision (the headline call).** Unlike every prior article, this one is built as a
+Skipper counterpoint and the comparison is its thesis, so this was flagged for the owner rather than
+stripped by default. On "Go full" the de-reference approach was applied: Cadence now stands on its own
+in the summary, crux, problem, solution, and tradeoffs (the crux opens on the thousand-service
+duplication problem itself, not "the crux Airbnb's Skipper named"; the summary leads with Cadence's
+own bet; the blast-radius passages refer generically to "an embedded, library-per-service approach").
+Airbnb/Skipper mentions dropped from 11 to 1 in the prose - the single remaining reference is in the
+embedded-vs-centralized-orchestration pattern note, where naming both poles is the pattern's nature.
+The durable-workflows note was de-referenced too. The artifact keeps its side-by-side comparison (a
+legitimate interactive device) but the embedded column is now generic ("ENGINE IN EVERY SERVICE")
+rather than "SKIPPER'S ANSWER (AIRBNB)".
+
+**Em-dash overrun (the standout) - swept: 64 (37 JSON + 27 artifact) -> 0.** This article predated the
+sweep.
+
+**Sentence length - 9 over 40 words (a 58-word platform-machinery sentence and a 53-word summary
+sentence, plus 46/44/43/42/42/41/41) -> all <= 40.**
+
+**The "the post" habit - 5 references made plain (attributed to Uber).**
+
+**Full plain-language pass.** DSL -> "a special configuration format"; T0-T5 glossed; multi-tenancy ->
+"sharing one platform among many teams"; blast radius -> "shared fate"; hot-shard / per-domain /
+tasklist glossed; distributed cron / singleton -> "scheduled jobs, single-instance jobs"; substrate ->
+"the systems it runs on"; native-language SDKs -> "normal language through client libraries". The
+nonfunctional-requirements inventory became a list, and the determinism tradeoff kept the term but
+explained it.
+
+**Two list conversions.** The common-machinery ring (saving state; queues, timers, retries; failure
+recovery and failover; scaling and traffic management; observability) and the platform machinery
+(rate limits and hot-shard detection; load balancing and scaling; failure behavior), the latter
+absorbing the 58-word monster.
+
+**Images - 3 figures (the article shipped with none).** the-duplication-problem: a small
+business-logic core ringed by the common machinery every team rebuilds. the-central-bet: one platform
+and one team of 20 serving over a thousand tenants, engine built once. who-pays-ledger: the embedded-
+versus-central comparison table (engine copies, teams operating, code per team, shared blast radius,
+noisy-neighbor risk), where neither column wins every row.
+
+**Artifact - de-referenced, dashes, toggle, sim untouched.** Skipper/Airbnb removed in favor of a
+generic embedded label; Uber/Cadence kept as the subject. Dashes swept (23 -> 0); the off-state
+toggle #2a2a3a -> #4a4f60. The TwoAnswers side-by-side simulator (the verdict logic, the injections,
+the per-lane motion, and the mulberry32 RNG) is unchanged.
+
+**Recurring-defect scorecard:** em-dash overrun (fixed, the standout at 64); heavy cross-referencing
+(de-referenced, comparison kept only where it is the pattern's point); the "the post" habit (fixed);
+an off-state toggle (raised). The crux is structurally concrete and no band was out. Cadence grounding
+spotless. The article shipped with no figures, so three were added. P27 frozen fields byte-identical
+(title, cruxTag, the three stat values and placements, relatedArticles, tags, artifact.path; one
+dash-bearing stat label swept). Deliverables: corrected .json, swept .jsx, rebuilt preview .html,
+three .svg figures, this entry.
+
+Second article of the partial-completion-under-crashes class produced (Skipper and Cadence);
+netflix-conductor-microservices-orchestrator remains the unproduced sibling.
+
+---
+
+## uber-cadence-workflow-platform - Plain-language round 2 + tenant->service (2026-08-11)
+
+Owner ran a second plain-language pass and asked to use "service" instead of "tenant" throughout.
+Bands hold (summary 992, crux 591, problem 2,132, solution 2,679), dashes 0, longest sentence 36
+words, frozen intact, and "tenant" is now gone from the whole page.
+
+**Prose.** "where should durable execution live" -> "where should the durable execution of async
+workflows live"; "the hard parts belong in the platform" -> "in the central workflow platform"; the
+"never-ending discipline / limit on everything" clause split and reworded ("constant work" and "the
+shared database underneath caps how much the whole platform can handle"); "each assembles its own
+slightly different answer" -> "each team builds its own slightly different version of that safety
+machinery"; "the format either limits what a workflow can express" -> "limits the workflow"; "a blunt
+premise" -> "Uber states it plainly"; "few limits compared to plain software" -> "few additional
+constraints"; the four durability guarantees (state survives crashes, steps retry, timers fire,
+resumes) became a list; "resets that rewind a workflow" -> "roll a workflow back"; "every release
+stays backward compatible" -> "every release of Cadence is backward compatible"; "industrialize it" ->
+"invest heavily in managing it"; "makes noisy neighbors a permanent discipline" -> "guarding against
+one team hurting the others has to be constant work"; "becomes everyone's slowdown" -> "slows every
+other team down"; the determinism opener rewritten ("the code must be deterministic, meaning it makes
+the exact same decisions every time it runs"), and "a correctness hazard, not just a style choice" ->
+"can now cause a wrong result, not just messy code"; "compounds into drag" -> "slowly turns into a
+burden"; "inherits their inertia" -> "held back by how hard all of them are to change"; "buy back
+headroom" -> "win back some capacity"; the embedded-vs-central note's "backward-compatibility drag and
+a concentrated database bottleneck" reworded.
+
+**tenant -> service everywhere** (prose, notes, the stat label, the teaser, the figures, and the
+artifact).
+
+**Figure.** The who-pays-ledger figure's eyebrow changed from "THE SAME PROBLEM, TWO BILLS" to "THE
+SAME PROBLEM, TWO SOLUTIONS WITH DIFFERENT TRADE-OFFS," its caption now opens "The two solutions solve
+the same workflow-orchestration problem with different trade-offs," and the "all tenants" cell became
+"all services."
+
+**Artifact.** Title "Two answers to the same crash" -> "...same workflow crash"; the tagline reworded
+("the other builds one shared platform for a thousand of them"); the TRY line rewritten into clear
+separate sentences (both survive a worker crash; only the central design is hurt by a platform outage;
+an engine fix ships once centrally but a thousand times when embedded; only the central design has to
+police a noisy service); "EVERY TENANT STALLS TOGETHER" -> "EVERY SERVICE STALLS TOGETHER"; "from T0
+down" -> "from T0 to T5"; every "tenant" -> "service." The TwoAnswers simulator is unchanged.
