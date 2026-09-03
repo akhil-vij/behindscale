@@ -145,8 +145,13 @@ interface Meta {
 }
 
 function landingMeta(): Meta {
+  // Single source for the landing description: feeds <meta name="description">,
+  // og:description, and the WebSite JSON-LD node below. The library framing is
+  // deliberately gone -- the page now sells the interactive experience, so no
+  // surface that describes the page may fall back to the old "a library of..."
+  // line (decision D, landing rewrite Stage 0).
   const description =
-    'A library of top engineering blog posts dissected into structured summaries and interactive artifacts, grouped by the bottleneck each system was built to solve.'
+    'Top engineering blog posts from Stripe, Netflix, Uber and 20 others, dissected down to the one bottleneck that made each hard — with an interactive artifact for every system. Drag the load, cut the request, watch it break, flip the fix.'
 
   const organization = {
     '@type': 'Organization',
@@ -181,7 +186,7 @@ function landingMeta(): Meta {
   }
 
   return {
-    title: `${SITE_NAME} — engineering blog dissections by problem class`,
+    title: `${SITE_NAME} — real production systems, taken apart. You break them, then fix them.`,
     description,
     canonical: `${SITE_URL}/`,
     ogType: 'website',
