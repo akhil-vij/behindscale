@@ -7522,6 +7522,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-02: **Pattern review Round 22 — Shared-Pool Multiplexing**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/shared-pool-multiplexing.json`, slug/name/category
+  frozen — throughput). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and one inline
+  cross-link `[load-bearing cache](/patterns/load-bearing-cache)`
+  (Round 15; guard-green), no bold. Aliases: statistical multiplexing ·
+  workload consolidation · shared capacity pool. New authored artifact
+  `content/artifacts/shared-pool-multiplexing.jsx` (zero near-miss grays,
+  zero em-dashes, export-default), one figure
+  `content/figures/shared-pool-multiplexing/silos-vs-one-pool.svg`
+  (viewBox 0 0 720 246, in-band, safe). No `file` field. Revision HTML not
+  placed. Visible DOM verified: 0 literal markdown, load-bearing-cache
+  anchor, figure img, mechanism teaser. Build (23 checks, 0 errors) + 260
+  tests green.
 - 2026-09-01: **Article review round — Skipper Workflow Engine** (9th
   article round; the workflow/durability cluster — links to patterns
   durable-workflows, embedded-vs-centralized-orchestration,

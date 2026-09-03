@@ -1,16 +1,40 @@
 {
   "slug": "shared-pool-multiplexing",
   "name": "Shared-Pool Multiplexing",
-  "category": "throughput",
-  "definition": "Siloed provisioning wastes capacity by construction: each workload's dedicated storage must be sized for that workload's peak, so every valley — every off-peak hour, every idle weekend — is bought and unused, multiplied by the number of silos. The pattern pools the substrate instead: one shared storage pool under one control plane, serving workload classes with opposite shapes — latency-critical serving with hard peaks, and elastic batch work that can run whenever capacity is free. Provision the pool for the interactive peaks; schedule batch into the valleys; maintain per-tenant isolation as an actively enforced illusion of the control plane rather than a physical fact. Colossus states the doctrine at cluster scale (VM traffic, YouTube serving, and MapReduce sharing one exabyte pool) and repeats it at device scale: buy just enough flash to pull hot-data I/O density per gigabyte into what disks natively provide, spread newly written (statistically hottest) data across all drives, and rebalance data onto larger-capacity drives as it cools — every device class kept doing exactly what it is economical at.\n\nThe pattern's price is that isolation becomes a service-level obligation. Physical silos isolate by construction; a shared pool isolates by continuous enforcement — admission, placement, and scheduling must deliver the illusion for every tenant class simultaneously, and a failure of enforcement is a noisy-neighbor incident across workloads that were never supposed to meet. Boundary against load-bearing-cache: that pattern is about a performance layer that has silently become capacity; this one is about deliberately pooling capacity and harvesting its statistical slack.",
+  "oneLineDefinition": "Giving each workload its own storage means paying for every peak separately, so create one shared storage pool where background work runs whenever the busy workloads are idle.",
+  "definition": "Give each workload its own dedicated storage and you waste capacity by design. Each one has to be sized for its busiest moment, its peak. So every hour it is not busy - nights, weekends, any lull - is capacity you bought and are not using, and you pay that once for every workload.\n\nThe pattern creates one shared storage pool instead, run by one manager, holding two kinds of work that are busy at different times. One kind is user-facing and has to be fast; it gets very busy at peak hours and sits nearly idle the rest of the day. The other is background work with no deadline, which can run whenever there is spare room. You size the pool for the busy workload's peaks, and let the background work run in the time it leaves free. Each workload still feels like it has its own space, but that separation is now something the manager keeps up moment to moment, not a physical wall between separate machines.\n\n{{figure:silos-vs-one-pool}}\n\nThis works because the workloads are not all busy at the same time. So the pool only needs to be big enough for whatever is busy right now, which is far less than adding up every workload's peak. The background work quietly uses whatever is left over.\n\nThe price is that the workloads are no longer kept apart by the hardware itself. On separate machines they simply cannot touch each other; in one shared pool, the only thing keeping them apart is the manager, doing its job every moment. When that enforcement slips, one workload eats into another's capacity - a noisy-neighbor incident between workloads that were never meant to touch. This is a different move from a [load-bearing cache](/patterns/load-bearing-cache), where a speed-up layer slowly turned into capacity by accident; here you pool capacity on purpose, to use the spare room no single workload needs all the time.",
   "whenItApplies": [
-    "Multiple workload classes with complementary demand shapes — latency-critical peaks alongside deferrable batch — currently provisioned in separate silos each sized for its own peak",
-    "The pool is large enough for statistical multiplexing to hold (many tenants, uncorrelated peaks); small pools with correlated demand get coupling without the efficiency",
-    "A control plane exists (or will be built) that can enforce per-tenant isolation, admission, and placement continuously — the illusion has to be delivered, not assumed"
+    "Your workloads are busy at different times. When user-facing work that must be fast sits next to background work that can wait, and each runs in its own peak-sized silo today, pooling them puts the idle time to use.",
+    "The pool is big enough that peaks average out. With many workloads whose busy times do not line up, the pool can be much smaller than the sum of their peaks. But if you have only a few workloads and they all get busy at once, pooling saves nothing and just makes them fight over the same space.",
+    "You have a manager that can enforce the separation, all the time. Pooling only works if something continuously controls who gets admitted, where their data goes, and how much each can take - the isolation has to be actively delivered, not assumed."
   ],
   "tradeoffs": [
-    "Efficiency is bought with coupling: workloads that never shared fate now share a substrate, and the control plane's enforcement quality is the only thing between them",
-    "Provisioning discipline inverts — instead of per-team sizing decisions, one pool's capacity and admission policy must arbitrate everyone's peaks, a central planning burden silos never had",
-    "Device-tier multiplexing (flash sized to workload temperature) is a moving target: the right mix tracks shifting access patterns, making capacity planning a continuous control loop rather than a purchase"
-  ]
+    "Efficiency is bought with coupling: workloads that used to fail independently now share the same pool, and how well the manager enforces the split is the only thing keeping them apart.",
+    "Planning capacity gets harder, not easier. Instead of each team sizing its own silo, one pool's size and admission rules have to balance everyone's peaks at once - a central planning job the silos never required.",
+    "Mixing fast and cheap storage is a moving target. When you pool a fast, expensive tier with a slow, cheap one, the right ratio depends on how hot the data is - which keeps shifting, so capacity planning becomes an ongoing adjustment rather than a one-time purchase."
+  ],
+  "aliases": [
+    "statistical multiplexing",
+    "workload consolidation",
+    "shared capacity pool"
+  ],
+  "category": "throughput",
+  "artifact": {
+    "path": "/artifacts/shared-pool-multiplexing/index.html",
+    "teaser": "Every silo is sized for its own peak, so it sits idle the rest of the time - pool them and background work fills the gaps."
+  },
+  "figures": [
+    {
+      "slug": "silos-vs-one-pool",
+      "eyebrow": "SILOS, OR ONE POOL",
+      "caption": "Give each workload its own storage sized for its peak and it sits idle most of the time; pool them and let background work fill that idle time, so far less capacity is bought.",
+      "ariaLabel": "Each workload with its own peak-sized pool sits mostly idle; one shared pool lets background work fill the gaps."
+    }
+  ],
+  "mechanism": {
+    "caption": "FILL THE IDLE TIME",
+    "blurb": "At its core: give every workload its own storage and it sits idle whenever it is not busy, which is most of the time. Pool them under one manager so a workload with sharp busy peaks and flexible background jobs share the same capacity, and the background jobs use whatever those peaks leave free.",
+    "idea": "Give each workload its own storage and you have to size each one for its peak, so all the time in between - when it is not busy - is capacity you bought and never use. Pooling puts them together: one shared pool, run by one manager, holding a user-facing workload that must be fast and background work that can run anytime. Size the pool for the busy peaks, and the background work uses whatever is left free, so utilization stays high and you buy far less total capacity. It works because the workloads are not all busy at once - but the catch is that keeping them apart is now the manager's constant job, and if that slips, one greedy workload starves the others.",
+    "whatToTry": "Spread the workloads' busy times apart and watch the pool you need shrink, since they no longer all peak at once. Then watch the background work fill whatever the serving leaves idle."
+  }
 }
