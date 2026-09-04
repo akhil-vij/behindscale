@@ -26,10 +26,23 @@ every board-state change goes HERE.
 
 ## Board summary (as of round 32 — batch r31+r32 sync commit)
 
-41 articles LIVE · 23 sources · 14 crux classes · 51 pattern
-definitions · 41 artifacts. All rounds through r32 are deployed
-to production; the implementation agent pushes each round to
-`main` at landing, which Vercel deploys automatically.
+41 articles LIVE · 23 sources · 14 crux classes · 52 pattern
+definitions · 63 artifacts (41 article + 22 pattern). All rounds
+through r32 are deployed to production; the implementation agent
+pushes each round to `main` at landing, which Vercel deploys
+automatically.
+
+> Repo reconciliation (2026-09-04, implementation agent): counts
+> above re-verified against `content/`. Articles (41), sources (23),
+> cruxTag classes (14, names + per-class company counts), and the
+> company-concentration table all matched exactly. Corrected two
+> stale totals: pattern definitions 51→**52** (`content/patterns/`),
+> and artifacts 41→**63** - the article-artifact count is unchanged
+> at 41; the 22 pattern artifacts were added by the separate
+> implementation-side pattern-enrichment workstream (its own round
+> numbering, not the authoring rounds tracked in this ledger) and
+> had never been counted here. Narrative, accent, hunt, and
+> round-log sections were left to the authoring agents.
 
 ## CruxTag registry (14 classes)
 
@@ -95,7 +108,7 @@ exhausted-candidates list below), plus growing any singleton.
 | retry-budget | pre-r12 | LIVE; 2 companies as of r31 (AWS + LinkedIn) |
 
 Above lists every pattern surfaced round-by-round in DECISIONS. The
-full live library is **50 patterns** — the remainder (pre-r12
+full live library is **52 patterns** — the remainder (pre-r12
 mints: application-layer-sharding, batched-routing-by-destination,
 cell-architecture, checkpoint-bounded-scans, circuit-breaker,
 compile-time-boundary-enforcement,
