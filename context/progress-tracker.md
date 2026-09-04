@@ -7566,6 +7566,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-04: **Article review round — Netflix Conductor** (11th article
+  round; completes the workflow-orchestration TRIO — Conductor (earliest
+  central, vs choreography), Cadence (central), Skipper (embedded), all
+  three cruxTag partial-completion-under-crashes and cross-referenced).
+  Enriched the existing
+  `content/articles/netflix-conductor-microservices-orchestrator.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with FOUR figures +
+  artifact (first article round with 4 figures, not 3). Placed article,
+  artifact, four figure SVGs under
+  `content/figures/netflix-conductor-microservices-orchestrator/`, and the
+  updated article `docs/CORRECTIONS.md`. Revision HTML not placed. Refs
+  verified incl pattern choreography-vs-orchestration (which this article
+  is the canonical example of) and related skipper / cadence. RECURRING
+  correction (11th article round): **all 4 figures over the Q10 word bands,
+  11 of 12 fields** (captions 57-66w vs 40, ariaLabels 25-37w vs 20, one
+  eyebrow 7w vs 6) — tightened all into band (multiple passes; captions
+  kept landing at 41-44 before dropping under 40). KNOWN soft warnings
+  (left as authored): composite display stats `2.6M · 100 · 190` and
+  `retryCount: 3` are synthesized values, not verbatim prose. Rendered
+  page verified: 4 figures, three stats present, artifact embed, 0 literal
+  markdown. Build (23 checks, 0 errors) + 260 tests green.
 - 2026-09-03: **Article review round — Uber Cadence Workflow Platform**
   (10th article round; the CENTRAL pole of the workflow-orchestration
   choice — pairs with Skipper, the embedded pole, and both share cruxTag

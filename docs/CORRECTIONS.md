@@ -3914,3 +3914,115 @@ separate sentences (both survive a worker crash; only the central design is hurt
 an engine fix ships once centrally but a thousand times when embedded; only the central design has to
 police a noisy service); "EVERY TENANT STALLS TOGETHER" -> "EVERY SERVICE STALLS TOGETHER"; "from T0
 down" -> "from T0 to T5"; every "tenant" -> "service." The TwoAnswers simulator is unchanged.
+
+---
+
+## netflix-conductor-microservices-orchestrator - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full", de-reference approach. Verdict SHIP WITH FIXES. Third and
+final article of the partial-completion-under-crashes class (the ancestral central engine, and the case
+against choreography). Live page byte-for-byte the upload (no drift). Grounding is spotless against
+Viren Baraiya and Vikram Singh's December 2016 Netflix post: the days-long title-setup flows, the "Why
+not peer to peer choreography?" indictment and its three consequences, the Decider combining the
+blueprint with current state, dyno-queues on Dynomite with Elasticsearch indexing, the exact
+task-definition sample (retryCount 3, timeoutSeconds 1200, TIME_OUT_WF, retryLogic FIXED,
+retryDelaySeconds 600, responseTimeoutSeconds 3600), the control tasks (Decision, Fork, Join,
+Sub-Workflow, plus an SPI), polling workers with queue-depth autoscaling, the SWF genealogy and
+requirement set, the UI per-task detail, and the 2.6M/100/190/6/48 production stats. The
+choreography-versus-orchestration framing is Netflix's own. relatedArticles skipper, uber-cadence.
+
+**Registry voice in all three notes - de-registered.** "Third company, a decade early" ->
+"Conductor shows the durable-workflows pattern a decade before it became common"; "Third company, and
+the triptych completes: Skipper argues... Cadence argues..." -> a generic who-owns-the-process-state
+framing with the Skipper/Cadence names removed; "First mint, from the post's own..." -> "Netflix draws
+exactly this contrast in its 'Why not peer to peer choreography?' section." Skipper/Cadence
+cross-references are now absent from the article (the comparison is kept generically in the
+embedded-vs-central note and in the grounded choreography-vs-orchestration note).
+
+**Banned word removed.** "Worker idempotency is load-bearing and delegated" -> "The whole safety net
+quietly rests on the workers being idempotent, and that part is left to the workers."
+
+**Em-dash overrun (the standout) - swept: 54 (29 JSON + 25 artifact) -> 0.** Predated the sweep.
+
+**Sentence length - 6 over 40 words (a 65-word JSON-DSL sentence, plus 48/47/45/43/42) -> all <= 40.**
+
+**The "the post" habit - 6 references made plain (attributed to Netflix).**
+
+**Bands, near their limits, managed.** The crux was 7 under the ceiling and was kept under it after
+de-referencing (trimmed one word). The lean problem (1,316) and solution (2,540) were filled to 1,437
+and 3,167 by grounded list conversions rather than padding.
+
+**Full plain-language pass.** choreography and orchestration kept but explained; Decider glossed as
+"a state machine"; DSL -> "blueprint"/"JSON"; SWF -> "Amazon's SWF workflow service"; dyno-queues,
+Dynomite, and Elasticsearch glossed; SPI -> "a plug-in point"; idempotent -> "safe to run more than
+once"; backpressure -> "a backlog builds up in the queue rather than overwhelming them"; IMF -> "the
+film industry's IMF format"; the task-definition config spelled out in plain prose.
+
+**Three list conversions.** The Conductor requirements (which fill the lean problem), the built-in
+control tasks (which absorbed the 65-word monster), and the UI's per-task detail.
+
+**Images - 3 figures (the article shipped with none).** choreography-vs-orchestration: the process
+living nowhere under pub/sub versus owned by the Decider. the-decider: the blueprint plus the instance
+state computing the next step on each event. what-remains: a stalled flow after the encode worker dies,
+scattered across five services under choreography versus one screen under the orchestrator.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 25 em-dashes to 0; raised the off-state toggle
+#2a2a3a -> #4a4f60; two light glosses. The WhatRemains choreography-vs-orchestrator simulator
+(initial, advance, query, the verdict logic, and the task set) is unchanged, and it names no sibling
+article, so no de-reference was needed there.
+
+**Recurring-defect scorecard:** registry voice in all three notes (fixed); a banned word (removed);
+heavy cross-referencing (de-referenced); em-dash overrun (fixed, 54); the "the post" habit (fixed); an
+off-state toggle (raised); lean problem and solution (filled with grounded lists). The crux is concrete
+and grounding is spotless. The article shipped with no figures, so three were added. P27 frozen fields
+byte-identical (title, cruxTag, the three stat values and placements, relatedArticles, tags,
+artifact.path; two dash-bearing stat labels swept). Deliverables: corrected .json, swept .jsx, rebuilt
+preview .html, three .svg figures, this entry.
+
+This completes the partial-completion-under-crashes trio: Skipper (embedded), Cadence (central,
+modern), and Conductor (central, ancestral) are all now produced.
+
+---
+
+## netflix-conductor-microservices-orchestrator - Plain-language round + workflow figure + artifact graph (2026-08-11)
+
+Owner ran a plain-language pass, asked for a figure visualizing a sample blueprint/workflow, and asked
+to make the artifact more interactive. Bands hold (crux trimmed to 1,090 to stay under the ceiling),
+dashes 0, longest sentence 35 words, frozen intact, now four figures.
+
+**Prose.** "async task flows spanning several days across microservices"; "ad hoc" -> "wired together
+case by case"; "indictment" -> "sums up the problem"; "peer-to-peer choreography" glossed ("where
+services coordinate by passing messages to one another with no central conductor"); "a detective job"
+-> "something you piece together by hand"; "heavyweight by nature" -> "large and long-running by
+nature"; "locally reasonable and collectively unaccountable" -> "each choice made sense on its own,
+but together they left the whole process with no owner"; "the full wish list reads like a spec for the
+whole category" -> "reads like a description of what any workflow engine needs"; "transport" ->
+"transport layer"; the unexplained "versioned" dropped from its first mention; "the crash-and-stall
+handling every choreographed flow used to hand-roll" -> "the handling for failures and stalls... the
+kind of thing that, without an engine, every team had to build for itself"; "not an afterthought but
+the whole point" -> "not a nice extra bolted on at the end; it is the whole point"; "a roadmap the
+industry spent years walking" -> "a preview of features the industry would spend the next several
+years building"; "Choreography's virtues... concedes them by scope" -> "Choreography has real
+advantages, and Netflix grants them for the simple cases"; "the price arrives with complexity" -> "the
+downside shows up as the flows get complex"; "buys clarity by creating a center" -> "gives you that
+visibility by putting one engine at the center"; "Conductor is a single thing that must not" ->
+"Conductor becomes one [a single point of failure], and it must not fail"; "a programming language
+wearing a data costume" -> "dressed up as data"; "sub-second dispatch" -> "latency and sub-second
+dispatch"; and the "useful axis... who owns the process state" reworded into a plain question.
+
+**Structural fix.** The dangling "plus a plug-in point for custom ones" after the control-tasks list
+(which read as if it belonged to the Sub-Workflow bullet) became a clear fourth bullet.
+
+**New figure - sample-blueprint (a 4th figure, at the owner's request).** The title-setup workflow
+drawn as a graph: Inspect and Encode as worker tasks; a Fork running Subtitles and Thumbnails in
+parallel and a Join waiting for both, drawn as control tasks; then Publish. A dashed data-wiring arrow
+runs from Encode's output to Publish's input, and a legend distinguishes worker tasks from control
+tasks.
+
+**Artifact - more visual and interactive.** The flat five-box task row was replaced with a live
+workflow graph: the same DAG as the figure, with Subtitles and Thumbnails on a parallel Fork/Join
+branch, each node colored live by state (done, next, stalled, pending), the Fork and Join drawn as
+control nodes, and a one-line legend. The advance step now completes the parallel pair together, so the
+fork behaves like a fork. Title -> "What remains of an async workflow"; the tagline was reworded. All
+existing interactivity (the mode toggle, kill the encode worker, WHAT REMAINS query, trace by hand,
+re-emit the event) is preserved, and the kill/query/trace logic is unchanged.

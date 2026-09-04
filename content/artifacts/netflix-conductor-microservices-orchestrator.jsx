@@ -19,10 +19,10 @@ export default function WhatRemains() {
     if (y.stalled) {
       if (y.mode === "orc") { // task definition: timeout fires, Decider retries
         y.stalled = false; y.retries += 1; y.done[i] = true;
-      } else { y.eng += 1; return y; } // choreography: silence — nothing owns the stall
+      } else { y.eng += 1; return y; } // choreography: silence - nothing owns the stall
     } else if (i === 1 && y.killArmed) {
       y.killArmed = false; y.stalled = true; y.killedThisRun = true; return y;
-    } else { y.done[i] = true; }
+    } else { y.done[i] = true; if (i === 2) y.done[3] = true; }  // fork: subtitles and thumbnails complete together
     if (y.done.every(Boolean)) { y.finished = true; y.titles += 1; }
     return y;
   });
@@ -31,15 +31,15 @@ export default function WhatRemains() {
 
   const verdict = (() => {
     if (w.finished) {
-      if (w.killedThisRun && w.mode === "orc") return { c: GREEN, code: "THE ENGINE NOTICED SO NOBODY HAD TO", t: `The dead worker's task went silent; the task definition's timeout fired; the Decider — holding blueprint plus current state — rescheduled ENCODE (retry ${w.retries}/3) and the flow finished on its own. Retries, timeouts, and resumption are configuration here, not per-service code. Compare your engineer-minute meter across the two modes.` };
-      if (w.killedThisRun) return { c: AMBER, code: "RECOVERED — BY HAND, AS ALWAYS", t: `The title finished, but only because you traced the stall across services and re-emitted the lost event yourself. Nothing in the system owned the process, so recovery belonged to whoever went looking. Multiply your ${w.eng} engineer-minutes by every stalled flow in a catalog's worth of titles.` };
-      return { c: GREEN, code: "TITLE COMPLETE — THE HAPPY PATH TEACHES NOTHING", t: "Both modes run tasks fine when nothing breaks. Start another title and KILL THE ENCODE WORKER this time — the difference between these modes only shows itself when something goes silent." };
+      if (w.killedThisRun && w.mode === "orc") return { c: GREEN, code: "THE ENGINE NOTICED SO NOBODY HAD TO", t: `The dead worker's task went silent; the task definition's timeout fired; the Decider - holding blueprint plus current state - rescheduled ENCODE (retry ${w.retries}/3) and the flow finished on its own. Retries, timeouts, and picking back up are configuration here, not code in each service. Compare your engineer-minute meter across the two modes.` };
+      if (w.killedThisRun) return { c: AMBER, code: "RECOVERED - BY HAND, AS ALWAYS", t: `The title finished, but only because you traced the stall across services and re-emitted the lost event yourself. Nothing in the system owned the process, so recovery belonged to whoever went looking. Multiply your ${w.eng} engineer-minutes by every stalled flow in a catalog's worth of titles.` };
+      return { c: GREEN, code: "TITLE COMPLETE - THE HAPPY PATH TEACHES NOTHING", t: "Both modes run tasks fine when nothing breaks. Start another title and KILL THE ENCODE WORKER this time - the difference between these modes only shows itself when something goes silent." };
     }
-    if (w.stalled && w.mode === "cho") return { c: RED, code: "SOMETHING IS WRONG — AND NOTHING SAYS SO", t: `ENCODE's worker died mid-task; its completion event will never be emitted, and no component is waiting for it in any way that alarms. Progress has simply… stopped. Press WHAT REMAINS and see what the system can tell you. (Engineer-minutes are accruing: ${w.eng}.)` };
-    if (w.stalled && w.mode === "orc") return { c: VIOLET, code: "TASK SILENT — TIMEOUT ARMED", t: "The worker died, but the Decider holds the blueprint and the instance state, and the task definition carries responseTimeout and retryCount 3. Advance once more and watch the engine do what choreography made you do by hand." };
-    if (w.queried && w.mode === "cho" && !w.traced) return { c: RED, code: "UNKNOWN — THE PROCESS HAS NO OWNER", t: "The question 'what remains for this title?' has no component that can answer it. The state is smeared across five services' logs and databases and four topic backlogs. TRACE BY HAND to reconstruct it — and pay for the reconstruction." };
-    if (w.started) return { c: AMBER, code: w.mode === "cho" ? "EVENTS FLOWING — THE PROCESS EXISTS NOWHERE" : "DECIDER DRIVING — BLUEPRINT PLUS STATE", t: w.mode === "cho" ? "Each worker consumes an event and emits the next. Advance the work — and try WHAT REMAINS at any point, or kill the encode worker and see who notices." : "On every completion the Decider re-evaluates the instance against the blueprint and schedules what's next. WHAT REMAINS is a lookup now. Kill the encode worker and advance." };
-    return { c: AMBER, code: "A TITLE-SETUP WORKFLOW, TWO WAYS TO RUN IT", t: "inspect → encode → subtitles ∥ thumbnails → publish, several days long in real life. Pick a coordination mode and start the title. The button that matters is WHAT REMAINS FOR THIS TITLE? — the question Netflix couldn't answer." };
+    if (w.stalled && w.mode === "cho") return { c: RED, code: "SOMETHING IS WRONG - AND NOTHING SAYS SO", t: `ENCODE's worker died mid-task; its completion event will never be sent, and nothing is waiting for it in any way that raises an alarm. Progress has simply… stopped. Press WHAT REMAINS and see what the system can tell you. (Engineer-minutes are accruing: ${w.eng}.)` };
+    if (w.stalled && w.mode === "orc") return { c: VIOLET, code: "TASK SILENT - TIMEOUT ARMED", t: "The worker died, but the Decider holds the blueprint and the instance state, and the task definition carries responseTimeout and retryCount 3. Advance once more and watch the engine do what choreography made you do by hand." };
+    if (w.queried && w.mode === "cho" && !w.traced) return { c: RED, code: "UNKNOWN - THE PROCESS HAS NO OWNER", t: "The question 'what remains for this title?' has no component that can answer it. The state is smeared across five services' logs and databases and four topic backlogs. TRACE BY HAND to reconstruct it - and pay for the reconstruction." };
+    if (w.started) return { c: AMBER, code: w.mode === "cho" ? "EVENTS FLOWING - THE PROCESS EXISTS NOWHERE" : "DECIDER DRIVING - BLUEPRINT PLUS STATE", t: w.mode === "cho" ? "Each worker consumes an event and emits the next. Advance the work - and try WHAT REMAINS at any point, or kill the encode worker and see who notices." : "On every completion the Decider re-evaluates the instance against the blueprint and schedules what's next. WHAT REMAINS is a lookup now. Kill the encode worker and advance." };
+    return { c: AMBER, code: "A TITLE-SETUP WORKFLOW, TWO WAYS TO RUN IT", t: "inspect → encode → subtitles ∥ thumbnails → publish, several days long in real life. Pick a coordination mode and start the title. The button that matters is WHAT REMAINS FOR THIS TITLE? - the question Netflix couldn't answer." };
   })();
 
   const mono = "'JetBrains Mono','Fira Code',ui-monospace,monospace";
@@ -47,7 +47,7 @@ export default function WhatRemains() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#2a2a3a"}`, color: on ? "#ffb3b7" : "#8b90a0", background: on ? "rgba(229,9,20,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (on, dis) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.4 : 1, border: `1px solid ${on ? ACCENT : "#4a4f60"}`, color: on ? "#ffb3b7" : "#8b90a0", background: on ? "rgba(229,9,20,0.10)" : "#0c0d13", fontFamily: mono, fontSize: 11 }),
   };
   const console_ = w.queried
     ? w.mode === "orc"
@@ -55,19 +55,19 @@ export default function WhatRemains() {
       : w.traced
         ? `(reconstructed by hand)\n${remaining.map(t => `${t}: not done`).join("\n")}`
         : "UNKNOWN.\nThe process is embedded in 5 services.\nCheck: inspect-svc logs, encode-svc logs,\nsubtitle-svc DB, thumb-svc DB, 4 topic backlogs."
-    : "— no query yet —";
+    : "- no query yet -";
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>NETFLIX · CONDUCTOR — INTERACTIVE</div>
-      <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>What remains</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>The same five-task title setup, coordinated two ways. The difference isn't whether tasks run — it's whether the process exists anywhere you can ask.</p>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>NETFLIX · CONDUCTOR - INTERACTIVE</div>
+      <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>What remains of an async workflow</div>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>The same title-setup workflow, coordinated two ways. The difference is not whether the tasks run; it is whether the process is written down anywhere you can query.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
         <div style={{ ...S.panel, flex: "1 1 250px", minWidth: 250 }}>
           <div style={S.label}>COORDINATION MODE</div>
-          <button style={S.btn(w.mode === "cho", w.started && !w.finished)} disabled={w.started && !w.finished} onClick={() => setW(x => ({ ...initial("cho"), titles: x.titles }))}>CHOREOGRAPHY<div style={{ color: "#6b7080", fontSize: 10 }}>pub/sub — the process exists nowhere</div></button>
+          <button style={S.btn(w.mode === "cho", w.started && !w.finished)} disabled={w.started && !w.finished} onClick={() => setW(x => ({ ...initial("cho"), titles: x.titles }))}>CHOREOGRAPHY<div style={{ color: "#6b7080", fontSize: 10 }}>pub/sub - the process exists nowhere</div></button>
           <button style={S.btn(w.mode === "orc", w.started && !w.finished)} disabled={w.started && !w.finished} onClick={() => setW(x => ({ ...initial("orc"), titles: x.titles }))}>ORCHESTRATOR (DECIDER)<div style={{ color: "#6b7080", fontSize: 10 }}>blueprint + instance state, one owner</div></button>
           <div style={{ ...S.label, marginTop: 12 }}>RUN THE TITLE</div>
           <button style={S.btn(false, w.started && !w.finished)} disabled={w.started && !w.finished} onClick={() => setW(x => ({ ...initial(x.mode), titles: x.titles, started: true }))}>START TITLE SETUP</button>
@@ -90,20 +90,34 @@ export default function WhatRemains() {
               <div style={S.label}>MOVIE-{String(w.titles + 1).padStart(3, "0")} · {w.mode === "orc" ? "DECIDER: blueprint v1" : "pub/sub topics"}</div>
               <div style={{ fontSize: 11, color: AMBER, fontWeight: 700 }}>~{w.hours}h · ENG-MIN {w.eng}</div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
-              {TASKS.map((t, i) => (
-                <div key={t} style={{ flex: "1 1 100px", background: "#0c0d13", borderRadius: 6, padding: "8px 6px", textAlign: "center", border: `1px ${w.done[i] ? "solid " + GREEN : w.stalled && i === 1 ? "dashed " + RED : i === nextIdx && w.started && !w.finished ? "solid " + AMBER : "dashed #2a2f45"}` }}>
-                  <div style={{ fontWeight: 700, fontSize: 10 }}>{t}</div>
-                  <div style={{ fontSize: 9, color: w.done[i] ? GREEN : w.stalled && i === 1 ? RED : "#6b7080", marginTop: 2 }}>{w.done[i] ? "done" : w.stalled && i === 1 ? (w.mode === "cho" ? "…nothing? (silent)" : "silent — timeout armed") : i === nextIdx && w.started ? "up next" : "pending"}</div>
-                  {w.mode === "orc" && i === 1 && <div style={{ fontSize: 8.5, color: VIOLET, marginTop: 2 }}>retryCount {w.retries}/3 · timeout 1200s</div>}
-                </div>
-              ))}
-            </div>
+            {(() => {
+              const col = (i) => w.done[i] ? GREEN : (w.stalled && i === 1) ? RED : (i === nextIdx && w.started && !w.finished) ? AMBER : "#3a3f52";
+              const sub = (i) => w.done[i] ? "done" : (w.stalled && i === 1) ? (w.mode === "cho" ? "silent?" : "timeout") : (i === nextIdx && w.started) ? "next" : "pending";
+              const cc = w.done[1] ? VIOLET : "#3a3f52";
+              const nodes = [{ x: 8, y: 53, w: 88, i: 0, label: "INSPECT" }, { x: 112, y: 53, w: 88, i: 1, label: "ENCODE" }, { x: 266, y: 16, w: 96, i: 2, label: "SUBTITLES" }, { x: 266, y: 90, w: 96, i: 3, label: "THUMBNAILS" }, { x: 436, y: 53, w: 88, i: 4, label: "PUBLISH" }];
+              const edges = [[96, 68, 112, 68], [200, 68, 217, 68], [247, 62, 266, 31], [247, 74, 266, 105], [362, 31, 385, 62], [362, 105, 385, 74], [415, 68, 436, 68]];
+              return (
+                <svg viewBox="0 0 580 145" style={{ width: "100%", marginTop: 8 }}>
+                  {edges.map((e, k) => <line key={k} x1={e[0]} y1={e[1]} x2={e[2]} y2={e[3]} stroke="#3a3f52" strokeWidth="1.3" />)}
+                  <circle cx="232" cy="68" r="15" fill="#0c0d13" stroke={cc} strokeWidth="1.4" /><text x="232" y="71" fontSize="7.5" fontWeight="700" fill={cc} textAnchor="middle">FORK</text>
+                  <circle cx="400" cy="68" r="15" fill="#0c0d13" stroke={cc} strokeWidth="1.4" /><text x="400" y="71" fontSize="7.5" fontWeight="700" fill={cc} textAnchor="middle">JOIN</text>
+                  {nodes.map((n) => (
+                    <g key={n.i}>
+                      <rect x={n.x} y={n.y} width={n.w} height="30" rx="5" fill="#0c0d13" stroke={col(n.i)} strokeWidth="1.4" strokeDasharray={(w.stalled && n.i === 1) ? "4 3" : undefined} />
+                      <text x={n.x + n.w / 2} y={n.y + 14} fontSize="9" fontWeight="700" fill={col(n.i)} textAnchor="middle">{n.label}</text>
+                      <text x={n.x + n.w / 2} y={n.y + 25} fontSize="7.5" fill={col(n.i)} textAnchor="middle">{sub(n.i)}</text>
+                    </g>
+                  ))}
+                  {w.mode === "orc" && w.started && <text x="156" y="99" fontSize="7.5" fill={VIOLET} textAnchor="middle">retry {w.retries}/3 · 1200s timeout</text>}
+                  <text x="290" y="140" fontSize="7.5" fill="#6b7080" textAnchor="middle">FORK / JOIN are control tasks the engine runs; the boxes are worker tasks</text>
+                </svg>
+              );
+            })()}
             <div style={{ marginTop: 10, background: "#0b0e12", border: "1px solid #2a2a3a", borderRadius: 6, padding: 10, fontSize: 11, whiteSpace: "pre-line" }}>
               <span style={{ color: VIOLET }}>&gt; what remains for MOVIE-{String(w.titles + 1).padStart(3, "0")}?</span>{"\n"}
               <span style={{ color: w.queried ? (w.mode === "orc" || w.traced ? "#c8cdd8" : RED) : "#5c6874" }}>{console_}</span>
             </div>
-            <div style={{ fontSize: 10, color: "#6b7080", marginTop: 6 }}>TITLES COMPLETED: {w.titles} · TIME TO ANSWER (last query): <b style={{ color: w.tta === "instant" ? GREEN : w.tta ? AMBER : "#6b7080" }}>{w.tta || "—"}</b></div>
+            <div style={{ fontSize: 10, color: "#6b7080", marginTop: 6 }}>TITLES COMPLETED: {w.titles} · TIME TO ANSWER (last query): <b style={{ color: w.tta === "instant" ? GREEN : w.tta ? AMBER : "#6b7080" }}>{w.tta || "-"}</b></div>
           </div>
         </div>
       </div>
@@ -123,12 +137,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Netflix's days-long title-setup flows were choreographed through pub/sub — the process existed nowhere, only its echoes in five services — so when a flow stalled, nobody could answer 'what is remaining for this movie's setup to be complete?' Partial completion with no owner.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>Netflix's days-long title-setup flows were choreographed through pub/sub - the process existed nowhere, only its echoes in five services - so when a flow stalled, nobody could answer 'what is remaining for this movie's setup to be complete?' Partial completion with no owner.</div>
       <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Conductor: a JSON blueprint defines the flow, a Decider state machine computes what's next from blueprint plus instance state, per-task retries and timeouts are configuration, and 'what remains' becomes a lookup. 2.6M flows in year one.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run a title under choreography and press WHAT REMAINS — watch the system fail to answer its own question. Kill the encode worker: the flow stalls with no alarm; trace by hand and re-emit the event. Then do it all under the orchestrator and watch the same kill cost you nothing.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run a title under choreography and press WHAT REMAINS - watch the system fail to answer its own question. Kill the encode worker: the flow stalls with no alarm; trace by hand and re-emit the event. Then do it all under the orchestrator and watch the same kill cost you nothing.</div>
     </div>
   );
 }
