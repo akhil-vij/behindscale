@@ -56,6 +56,22 @@ async function until(fn: () => boolean, label: string, max = 20000): Promise<voi
   )
 }
 
+// The bridge coalesces `state` to a timer and posts it as an async message
+// event, so a DOM change can be visible a tick before its state message
+// lands: wait for the message that carries the fact being asserted.
+const lastState = () => messages.filter((m) => m.type === 'state').pop()
+async function awaitState(
+  pred: (s: Record<string, unknown>) => boolean,
+  label: string,
+): Promise<Record<string, unknown>> {
+  await until(() => {
+    const s = lastState()
+    return s !== undefined && pred(s)
+  }, `state message: ${label}`, 10_000)
+  return lastState()!
+}
+const heldOf = (s: Record<string, unknown>) => (Array.isArray(s.held) ? (s.held as boolean[]) : [])
+
 const cuesSeen = new Set<string>()
 const narrLog: string[] = []
 function assertCue(): void {
@@ -164,7 +180,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     expect(lvls()[1]!.classList.contains('locked2')).toBe(true)
     expect(messages.filter((m) => m.type === 'touched')).toHaveLength(1)
     expect(messages.some((m) => m.type === 'checkpoint' && m.kind === 'survived')).toBe(true)
-    const state = messages.filter((m) => m.type === 'state').pop()!
+    const state = await awaitState((st) => st.survived === true, 'survived')
     expect(state.survived).toBe(true)
     expect(state.decisions).toEqual({ id: 'key', mem: 'acid', read: 'master', cli: 'key', rep: 'saved', ret: 'ever' })
     expect(state.held).toEqual([false, false, false, false, false])
@@ -223,7 +239,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     lvls()[1]!.querySelector<HTMLElement>('.rerunbtn')!.click()
     await until(() => lvls()[1]!.querySelector<HTMLElement>('.done')!.style.display === 'inline', 'A2 held', MAX_WAIT)
     expect(cue()).toBe('')
-    const state = messages.filter((m) => m.type === 'state').pop()!
+    const state = await awaitState((st) => heldOf(st)[1] === true, 'A2 held')
     expect(state.held).toEqual([true, true, false, false, false])
     assertCue()
   })
@@ -303,7 +319,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     expect(text('#you-debrief-top')).toContain('You said: "Commit with the work so half-failures cannot exist."')
     expect(text('#you-debrief-top')).toContain('Your design is now the sixth column in the comparison below')
     expect(messages.some((m) => m.type === 'checkpoint' && m.kind === 'held')).toBe(true)
-    const state = messages.filter((m) => m.type === 'state').pop()!
+    const state = await awaitState((st) => heldOf(st).length === 5 && heldOf(st).every(Boolean), 'all held')
     expect(state.held).toEqual([true, true, true, true, true])
     expect(state.decisions).toMatchObject({ ret: 'day', params: 'refuse', after: 'reconcile' })
     expect(cue()).toBe('')
