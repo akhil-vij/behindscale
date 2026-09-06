@@ -1,0 +1,25 @@
+<svg class="anat" id="you-svg" viewBox="0 0 640 150" role="img" aria-label="Your design on the same skeleton: client, server, memory, bank - drawn from your decisions after a survived day">
+  <g id="you-fill">
+    <path class="replay" d="M 300 34 C 250 8, 150 8, 92 30"/>
+    <polygon class="rhead" points="88,32 98,26 98,34"/>
+    <text class="rlabel" id="you-d-rep" x="196" y="14">{{dRep}}</text>
+    <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+    <text class="nlabel" x="62" y="61">CLIENT</text>
+    <circle class="keydot" cx="116" cy="57" r="6"/>
+    <text class="klabel" id="you-d-key" x="150" y="82" text-anchor="start">{{dKey}}</text>
+    <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
+    <polygon class="ahead" points="248,57 240,53 240,61"/>
+    <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
+    <text class="nlabel" x="320" y="61">SERVER</text>
+    <line class="drop" x1="320" y1="74" x2="320" y2="88"/>
+    <rect class="state" x="250" y="88" width="140" height="26" rx="6"/>
+    <text class="slabel" id="you-d-state" x="320" y="105">{{dState}}</text>
+    <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
+    <polygon class="ahead" points="504,57 496,53 496,61"/>
+    <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
+    <text class="nlabel" x="569" y="61">BANK</text>
+    <line class="bx" x1="52" y1="120" x2="64" y2="132"/>
+    <line class="bx" x1="64" y1="120" x2="52" y2="132"/>
+    <text class="blabel" id="you-d-breaks" x="72" y="130">{{dBreaks}}</text>
+  </g>
+</svg>

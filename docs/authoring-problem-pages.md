@@ -143,6 +143,46 @@ Everything else on the page (the company rows, the pattern chips, the breakdown
 cards) is still auto-built from your articles. You only author what you want to
 override.
 
+### 4b. The rich blocks (the v7.3 port, 2026-09-06)
+
+`/problems/ambiguous-timeouts` is the first page with every rich block
+authored (`content/problems/ambiguous-failure-under-retry.json` is the
+worked example). Every block is optional and render-when-present; the shell
+hard-codes none of a wall's mechanics, so a second wall is authored the same
+way. One sentence per field on how a second wall uses it:
+
+| Field | What it renders | A second wall... |
+|---|---|---|
+| `figures[]` + `wall.figureSlug` | the no-JS stand-in for the try-it artifact, through the figures pipeline (`content/figures/<cruxTag>/<slug>.svg`, `<img>`-loaded inside `<noscript>`) | draws its own wall figure; the eight figure checks apply unchanged |
+| `stations[]` `{id, anchor, label, minutes, openEnded?, estimate?}` | the sticky station nav with its `· N MIN` budgets and scroll-spy; the list-page estimate is the sum of `estimate: true` budgets rounded up to 5 (no stored estimate) | sets its own budgets; the estimate follows |
+| `wall` `{prose[], figureSlug?, stats[], statsCaption?}` | "The wall": authored prose replaces the derived definition paragraph; the stat strip (each number company-attributed) | authors its own wall prose and stats |
+| `tryIt` `{artifactSlug, teaser, caption}` | the try-it artifact (960px breakout, bare) + its caption; the teaser is the frame title and the no-JS line | points at its own `content/artifacts/<slug>.jsx` |
+| `mission` `{artifactSlug, teaser, title, intro, stopblock?, stuckNote?}` | the build-it artifact + the page-flow stop block; **presence lights the /problems Playable badge** (teaser + estimate) | points at its own mission bundle that speaks protocol v1 |
+| `comparison` | the hint sheet: `spectrum` (points at `left` %), `legend`, `diagramRows[]` (inline SVGs from `content/problems/<cruxTag>/<svg>.svg`, company → article link), `you` (empty + filled SVGs; `{{slot}}`s filled from the wall module), `columns` + `matrixRows[]` (row `id` == youMapping key; a cell is a string or `{ns}` for the dashed-gap "not stated"), `questions[]` (answers per company, `ns` for not-stated, optional inline `figure`) | authors as many columns, rows, and questions as it has -- the shell counts nothing |
+| `decide` `{intro, rows[{if, then}], elsewhere?}` | "Which answer is yours" | its own constraint → article rows |
+| `steal` `{intro, items[{rule, text, qref?}]}` | "What to steal", each rule linking its question | its own rules |
+| `interview` `{asks[], shape, followupsIntro, followups[{ask, attack, held}], senior, staff, closing, redFlags[]}` | the five interview parts; one follow-up row per attack, each with a live tick | one row per attack its mission runs (the validator checks the count) |
+| `patterns` `{intro, order?}` | the intro line; chips stay DERIVED from the members, `order` only sequences them | optional |
+| `cards` `{title?, intro, teasers?}` | "Every article" cards (chronological) with a break-it line per member (override of the article's own teaser) | optional overrides |
+| `sources` `{intro, items[{label, articleSlug}]}` | the "Read the originals" line; URLs derive from the member articles | its own labels |
+
+Inline markup in every prose field: `**bold**`, `[text](/path)`,
+`[text](#anchor)`. Copy uses spaced hyphens, never em-dashes.
+
+**Per-wall code.** The one thing that is code, not content, is the
+`youMapping()` that turns the mission's emitted state into the YOU cells /
+diagram slots / ticks: `src/walls/<wall>.ts`, registered by cruxTag in
+`src/walls/index.ts`. The validator refuses a `comparison` whose row ids or
+`{{slot}}`s the wall module doesn't return, and warns when a comparison has no
+wall module (the YOU column would never fill).
+
+**Validation.** `npm run validate` checks every shape and cross-reference:
+member articles, pattern order, question refs, station anchors, inline SVG
+existence + the figure-svg-safe allowlist, YOU keys vs the wall module, and
+one interview row per attack. `npm test` runs the rules-parity and
+click-through suites; `npm run test:e2e` the browser suite (round-trip, text
+parity against the reference build, no-JS, prerender, mobile scroll chaining).
+
 ---
 
 ## 5. The end-to-end workflow
@@ -216,5 +256,7 @@ page that doesn't exist yet.
 - **Naming:** filename = `cruxTag` (see §2 table), page URL = the short slug
 - **Check:** `npm run validate`
 - **Author today:** `headline`, `lede`, `intro` (+ stored `edition`,
-  `firstSentAt`)
+  `firstSentAt`), and the rich blocks of §4b (`stations`, `wall`, `tryIt`,
+  `mission`, `comparison`, `decide`, `steal`, `interview`, `patterns`,
+  `cards`, `sources`, `figures`)
 - **Full spec:** `docs/problem-page-design.md`

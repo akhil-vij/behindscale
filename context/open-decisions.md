@@ -117,9 +117,57 @@ _None._
   new hues for one or more.
 - **Reply:** per accent — keep / swap-to-[hex] / defer.
 
+### 20. Problem-page protocol v1: ratify the `anchor` message
+
+- **Source:** the v7.3 port (2026-09-06). Three prototype behaviours cross
+  the iframe boundary once the mission is sandboxed: the failure cards'
+  `hint ↓` links (`#q1`…`#q6`), the debrief's "sixth column" link
+  (`#glance`), and the "→ the decision" jump (scrolls the deck group into
+  view). Inside a sandboxed frame those can't reach the page, so the port
+  added one message type beyond the ruled set: `{v:1, wall, type:'anchor',
+  id}` (host scrolls to `#id`) and `{…, frame:{top,height}}` (host centres
+  that region of the frame in content-height mode; ignored while the frame
+  is its own scrollport). Implemented; documented in
+  `src/pages/problem/useWallHost.ts`.
+- **What's needed:** ratify the addition (or rule the three jumps out of
+  scope and the port removes it).
+- **Reply:** ratify / remove.
+
 ---
 
 ## Lower priority
+
+### 21. v7.3 port: unspecified decisions to ratify
+
+- **Source:** the port (2026-09-06); each is implemented and listed in
+  the PR. None changes frozen copy.
+  - (a) The mission artifact keeps v7.3's shape (no context block) but
+    shows a **standalone-only footer backlink** ("From the full problem
+    page at behindscale.com →", hidden when embedded) to honour the
+    standalone-visitor contract. Keep / remove.
+  - (b) The try-it **context block folds when embedded** (the reference
+    page's on-page state; text parity holds) and **expands when opened
+    standalone**. Keep / always-fold / always-expand.
+  - (c) The **sizing mode keys off the mission frame's own width** (≤700px
+    → 90dvh scrollport) rather than the page viewport, so the frame and its
+    `@media (max-width:700px)` sticky RUN bar / toast never disagree (the
+    difference is a 700–740px viewport band). Keep / viewport-width.
+  - (d) **Pattern chips** on a rich page follow an authored
+    `patterns.order` (the reference's curated order); unlisted chips
+    follow A–Z. Keep / derive-only.
+  - (e) The **eyebrow year range** ("2017–2022") and the **22px h2 style**
+    now apply to every problem page (one template). Keep / rich-only.
+  - (f) `/problems` **Playable badge** is neutral ink (mono chip + "~35
+    min" + teaser); the problem-class magenta stays dark-side per the token
+    rule. Keep / restyle.
+  - (g) The **figure word counter** ignores standalone punctuation tokens
+    (a spaced hyphen is not a word) — a general validator change that let
+    the frozen 40-word caption pass; the wall figure's non-visible
+    aria-label was shortened into the 4–20 band. Keep / revert.
+  - (h) The **no-JS fallback line** per frame reads "<teaser> (interactive
+    - needs JavaScript)". Keep / reword.
+- **Reply:** per item — keep / change.
+
 
 ### 4. `conservative-auto-remediation` Pinterest cameo promotion
 

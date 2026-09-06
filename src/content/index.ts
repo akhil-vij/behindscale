@@ -115,6 +115,25 @@ export const problemEssayByCruxTag: ReadonlyMap<string, ProblemEssay> = new Map(
   Object.values(problemEssayModules).map((essay) => [essay.cruxTag, essay]),
 )
 
+// Inline diagrams for the rich problem pages (the comparison strip's
+// per-company rows, the YOU row's two states, a question's inline figure).
+// Stored at content/problems/<cruxTag>/<name>.svg and INLINED into the page
+// (not <img>-loaded like figures): they share the page's diagram classes +
+// tokens, and the YOU row's filled SVG carries {{slot}} placeholders the
+// host substitutes from the wall's youMapping(). Keyed `<cruxTag>/<name>`.
+// Build-time safety: the problem-essay check runs the figure-svg-safe rules
+// over every referenced file before it can ship.
+const problemSvgModules = import.meta.glob<string>(
+  '/content/problems/*/*.svg',
+  { query: '?raw', import: 'default', eager: true },
+)
+export const problemSvgByKey: ReadonlyMap<string, string> = new Map(
+  Object.entries(problemSvgModules).flatMap(([path, src]) => {
+    const m = path.match(/\/content\/problems\/([^/]+)\/([^/]+)\.svg$/)
+    return m ? [[`${m[1]}/${m[2]}`, src] as const] : []
+  }),
+)
+
 // patternStats is the aggregated counts surface that the pattern library
 // renders (frequency, articles, companies). Consumers (PatternCard,
 // PatternIndex, PatternDetail) read by slug and never know how the stats

@@ -1,0 +1,28 @@
+<svg viewBox="0 0 640 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A request from client to server can fail in three places: before reaching the server (safe to retry), during the operation (unknown state), or after completion when the response is lost (work is done). All three look like a timeout to the client." font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace">
+  <rect x="8" y="56" width="108" height="34" rx="7" fill="#F4F2EE" stroke="#D6D2CA" stroke-width="1.3"/>
+  <text x="62" y="77" font-size="11" fill="#52525B" text-anchor="middle" letter-spacing="0.3">CLIENT</text>
+  <rect x="506" y="56" width="126" height="34" rx="7" fill="#F4F2EE" stroke="#D6D2CA" stroke-width="1.3"/>
+  <text x="569" y="71" font-size="11" fill="#52525B" text-anchor="middle" letter-spacing="0.3">SERVER</text>
+  <text x="569" y="84" font-size="8.5" fill="#8A8A94" text-anchor="middle">does the work</text>
+  <line x1="126" y1="66" x2="496" y2="66" stroke="#8A8A94" stroke-width="1.3"/>
+  <polygon points="504,66 496,62 496,70" fill="#8A8A94"/>
+  <text x="310" y="56" font-size="9" fill="#8A8A94" text-anchor="middle" letter-spacing="0.4">POST /charge</text>
+  <line x1="496" y1="82" x2="136" y2="82" stroke="#8A8A94" stroke-width="1.3"/>
+  <polygon points="128,82 136,78 136,86" fill="#8A8A94"/>
+  <text x="310" y="96" font-size="9" fill="#8A8A94" text-anchor="middle" letter-spacing="0.4">RESPONSE</text>
+  <line x1="196" y1="34" x2="208" y2="46" stroke="#DC2626" stroke-width="1.6"/>
+  <line x1="208" y1="34" x2="196" y2="46" stroke="#DC2626" stroke-width="1.6"/>
+  <text x="202" y="24" font-size="10.5" font-weight="600" fill="#DC2626" text-anchor="middle">1</text>
+  <line x1="558" y1="102" x2="570" y2="114" stroke="#DC2626" stroke-width="1.6"/>
+  <line x1="570" y1="102" x2="558" y2="114" stroke="#DC2626" stroke-width="1.6"/>
+  <text x="580" y="113" font-size="10.5" font-weight="600" fill="#DC2626" text-anchor="middle">2</text>
+  <line x1="416" y1="104" x2="428" y2="116" stroke="#DC2626" stroke-width="1.6"/>
+  <line x1="428" y1="104" x2="416" y2="116" stroke="#DC2626" stroke-width="1.6"/>
+  <text x="440" y="115" font-size="10.5" font-weight="600" fill="#DC2626" text-anchor="middle">3</text>
+  <text x="202" y="140" font-size="9.5" fill="#DC2626" text-anchor="middle" letter-spacing="0.2">1 · NEVER ARRIVED</text>
+  <text x="202" y="152" font-size="9.5" fill="#15803D" text-anchor="middle">nothing happened - retry is safe</text>
+  <text x="564" y="132" font-size="9.5" fill="#DC2626" text-anchor="middle" letter-spacing="0.2">2 · DIED MID-WORK</text>
+  <text x="422" y="132" font-size="9.5" fill="#DC2626" text-anchor="middle" letter-spacing="0.2">3 · ANSWER LOST</text>
+  <text x="422" y="144" font-size="9" fill="#8A8A94" text-anchor="middle" letter-spacing="0.4">the work is DONE</text>
+  <text x="564" y="144" font-size="9" fill="#8A8A94" text-anchor="middle" letter-spacing="0.4">state unknown</text>
+</svg>

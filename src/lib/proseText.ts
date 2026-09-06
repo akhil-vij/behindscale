@@ -57,12 +57,12 @@ import { stripListMarkers } from './proseList'
 // (marker-placement-legal).
 const FIGURE_MARKER_RE = /\{\{figure:[a-z0-9]+(?:-[a-z0-9]+)*\}\}/g
 
-// Inline internal cross-link syntax `[text](/path)` -- mirrors the
-// renderer's INLINE matcher in src/components/Prose.tsx (internal only:
-// the target must start with `/`). proseText() replaces each with its
+// Inline internal cross-link syntax `[text](/path)` or `[text](#anchor)`
+// -- mirrors the renderer's INLINE matcher in src/components/Prose.tsx
+// (internal only: the target must start with `/` or `#`). proseText() replaces each with its
 // visible label so the link chrome never leaks into a description or
 // index. Kept in sync with Prose.tsx by construction.
-const INLINE_LINK_RE = /\[([^\]]+)\]\(\/[^)\s]+\)/g
+const INLINE_LINK_RE = /\[([^\]]+)\]\((?:\/|#)[^)\s]+\)/g
 
 // Inline bold `**text**` -- also mirrors the Prose.tsx INLINE matcher.
 // Unwrapped to the visible text so the `**` chrome never leaks into a

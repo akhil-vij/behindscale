@@ -1,0 +1,29 @@
+<svg class="anat" viewBox="0 0 640 150" role="img" aria-label="Shopify: key origin not stated, state records which steps ran in the payment service, only one request ever reaches the financial partner; a retry after 24 hours is uncovered">
+  <path class="replay ns" d="M 300 34 C 250 8, 150 8, 92 30"/>
+  <polygon class="rhead ns" points="88,32 98,26 98,34"/>
+  <text class="rlabel ns" x="196" y="14">not stated in the post</text>
+  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+  <text class="nlabel" x="62" y="61">CLIENT</text>
+  <circle class="keydot ns" cx="116" cy="57" r="6"/>
+  <text class="klabel" x="116" y="82">key origin: not stated</text>
+  <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
+  <polygon class="ahead" points="248,57 240,53 240,61"/>
+  <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
+  <text class="nlabel" x="320" y="55">PAYMENT SERVICE</text>
+  <text class="nsub" x="320" y="68">ULID keys</text>
+  <line class="drop" x1="320" y1="74" x2="320" y2="94"/>
+  <rect class="state" x="250" y="94" width="140" height="26" rx="6"/>
+  <text class="slabel" x="320" y="111">WHICH STEPS ALREADY RAN</text>
+  <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
+  <polygon class="ahead" points="504,57 496,53 496,61"/>
+  <text class="alabel" x="443" y="50">×1 ONLY, EVER</text>
+  <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
+  <text class="nlabel" x="569" y="55">FINANCIAL</text>
+  <text class="nsub" x="569" y="68">PARTNER</text>
+  <circle class="clockmark" cx="458" cy="107" r="10"/>
+  <line class="clockmark" x1="458" y1="107" x2="458" y2="101"/>
+  <line class="clockmark" x1="458" y1="107" x2="463" y2="107"/>
+  <line class="bx" x1="472" y1="100" x2="484" y2="112"/>
+  <line class="bx" x1="484" y1="100" x2="472" y2="112"/>
+  <text class="blabel" x="492" y="110">AFTER ~24H, UNCOVERED</text>
+</svg>

@@ -15,6 +15,16 @@ describe('figure-fields-nonempty (word bands)', () => {
     expect(figureFieldsNonempty.run(contentWith(figure('f')))).toEqual([])
   })
 
+  it('does not count standalone punctuation (a spaced hyphen) as a word', () => {
+    // 40 real words plus a lone " - " token: inside the 12-40 caption band.
+    const words = Array.from({ length: 40 }, (_, i) => `w${i}`)
+    const caption = `${words.slice(0, 20).join(' ')} - ${words.slice(20).join(' ')}`
+    const ariaLabel = 'one two · three → four'
+    expect(
+      figureFieldsNonempty.run(contentWith(figure('f', { caption, ariaLabel }))),
+    ).toEqual([])
+  })
+
   it('errors when eyebrow is fewer than 2 words', () => {
     const errors = figureFieldsNonempty.run(
       contentWith(figure('f', { eyebrow: 'HODOR' })),

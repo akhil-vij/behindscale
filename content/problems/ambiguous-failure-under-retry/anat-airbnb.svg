@@ -1,0 +1,26 @@
+<svg class="anat" viewBox="0 0 640 150" role="img" aria-label="Airbnb: key born at the client, state on the master database only, retries get the saved outcome; a lagging replica would cause a double charge">
+  <path class="replay" d="M 300 34 C 250 8, 150 8, 92 30"/>
+  <polygon class="rhead" points="88,32 98,26 98,34"/>
+  <text class="rlabel" x="196" y="14">RETRY GETS THE SAVED OUTCOME</text>
+  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+  <text class="nlabel" x="62" y="61">CLIENT</text>
+  <circle class="keydot" cx="116" cy="57" r="6"/>
+  <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
+  <polygon class="ahead" points="248,57 240,53 240,61"/>
+  <text class="alabel" x="185" y="50">SAME KEY, EVERY RETRY</text>
+  <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
+  <text class="nlabel" x="320" y="55">ORPHEUS</text>
+  <text class="nsub" x="320" y="68">library inside the service</text>
+  <line class="drop" x1="320" y1="74" x2="320" y2="88"/>
+  <rect class="state" x="250" y="88" width="140" height="26" rx="6"/>
+  <text class="slabel" x="320" y="105">MASTER DB ONLY</text>
+  <rect class="state faded" x="404" y="88" width="110" height="26" rx="6"/>
+  <text class="slabel faded" x="459" y="105">REPLICA</text>
+  <line class="bx" x1="452" y1="82" x2="466" y2="96"/>
+  <line class="bx" x1="466" y1="82" x2="452" y2="96"/>
+  <text class="blabel" x="404" y="130">SECONDS OF LAG = DOUBLE CHARGE</text>
+  <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
+  <polygon class="ahead" points="504,57 496,53 496,61"/>
+  <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
+  <text class="nlabel" x="569" y="61">BANK</text>
+</svg>

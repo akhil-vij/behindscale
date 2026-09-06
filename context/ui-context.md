@@ -53,6 +53,49 @@ tokens for visual continuity.
 | Artifact border     | `--art-border`        | `#1F2333` |
 | Artifact text       | `--art-text`          | `#C8CDD8` |
 | Artifact text muted | `--art-text-muted`    | `#6B7280` |
+| Interactive border  | `--art-border-interactive` | `#3a4158` |
+| Bright text         | `--art-text-bright`   | `#EDEFF3` |
+| Verdict red         | `--art-red`           | `#ef4444` |
+| Verdict amber       | `--art-amber`         | `#eab308` |
+| Verdict green       | `--art-green`         | `#22c55e` |
+| Problem-class accent| `--accent-problem`    | `#D946EF` |
+| Problem accent hover| `--accent-problem-hover` | `#E879F9` |
+
+Usage rules for the named dark tokens (problem page v7.3, 2026-09-06):
+
+- `--art-border-interactive` is for **buttons and inputs only**. Display
+  nodes (stage boxes, ghost boxes) keep `--art-border`; a display element
+  drawn with the interactive border reads as tappable.
+- `--art-text-bright` carries titles and the bill's BASELINE line.
+- `--art-red` / `--art-amber` / `--art-green` are the dark-side verdict set,
+  brighter than the light-shell semantics for contrast on `#08090D`. **Never
+  on light surfaces** -- the shell keeps `--state-error` / `--cat-amber` /
+  `--state-success`.
+- `--accent-problem` (magenta) marks **interactive controls, attention cues,
+  and the BUILD IT badge**; never the light shell, and never a
+  non-interactive dark element (magenta means clickable; the badge is the
+  one sanctioned exception).
+
+**The `#08090D` family is canonical** for every dark artifact (v5
+ratification 2026-08-29). Drift that actually exists in the shipped
+artifacts, as counted 2026-09-06: 40 artifacts hardcode the taste-doc
+literals (`#111118` / `#0c0d13` / `#2a2a3a` panels and borders), 22 use
+the `--art-*` values above (`#0F1118` / `#161922` / `#1F2333`), and one
+(`skipper-workflow-engine`) sits on its own grays (`#101018` / `#14141c` /
+`#23232e`). All but that one share the `#08090D` root. Migrate each
+artifact onto the `--art-*` values at its next touch; no third family.
+
+### Problem-page shell tokens (light)
+
+| Role                        | CSS Variable   | Value     |
+| --------------------------- | -------------- | --------- |
+| Hot row / hot answer border | `--hot-border` | `#EAD9C2` |
+| Hot row / hot answer fill   | `--hot-bg`     | `#FBF4EA` |
+| Window-bar fill             | `--bar-fill`   | `#E9E2D6` |
+
+The "hot" tint marks the row a reader spends the most time on (the
+"Still breaks when" matrix row, question 6) on the light shell; the
+window-bar fill is the solid bar in the protection-window figure.
 
 ### Pattern / tag accent ramp (shared, used for categorizing patterns)
 
@@ -113,6 +156,17 @@ traverse to the other.
   desktop that collapses above the feed on mobile. Each article card shows
   source attribution (eyebrow), title, a short summary, and **2–3 pattern
   chips** identifying the patterns this article embodies.
+- **Problem page (`/problems/:urlSlug`, rich state):** the same 680px
+  reading column; the two artifacts (try-it, build-it mission) break out
+  to 960px at **equal widths** and draw their own dark frames (the embed
+  runs bare). A sticky station nav under the header carries the time
+  budgets from content; on phones it becomes a single nowrap row with a
+  right-edge mask and the `· N MIN` budgets hidden. The mission iframe is
+  the scrollport under 700px (~90dvh, internal scrolling) so its sticky
+  RUN bar and damage toast work; at 700px and above it is content-height
+  from the artifact's `size` message. The YOU column and YOU diagram own
+  themselves with a 1.5px left rule (`--border-strong`) and a
+  `--bg-subtle` tint in neutral ink -- never magenta on the light shell.
 - **Article page (`/articles/:slug`):** centered reading column
   (max-width ~720px) for the summary; the interactive artifact breaks out to
   a wider container (max-width ~960px) and sits in a dark, rounded frame.

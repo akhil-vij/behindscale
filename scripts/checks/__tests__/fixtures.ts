@@ -105,6 +105,8 @@ export function makeContent(input: {
   // so artifact-bundle-exists passes unless a test overrides to simulate a
   // missing source.
   artifactSourceSlugs?: ReadonlySet<string>
+  // Preloaded inline problem-page SVGs, keyed `<cruxTag>/<name>`.
+  problemSvgs?: ReadonlyMap<string, { readonly path: string; readonly contents: string }>
 }): ContentSet {
   const problemEssays = input.problemEssays ?? []
   return {
@@ -134,5 +136,6 @@ export function makeContent(input: {
           .filter((h) => h.artifact != null)
           .map((h) => h.slug),
       ),
+    problemSvgs: input.problemSvgs ?? new Map(),
   }
 }

@@ -1,0 +1,32 @@
+<svg class="win" viewBox="0 0 640 196" role="img" aria-label="Five shapes of the protection window: policy-set, resource lifetime plus grace, lease plus cap, a fixed 24 hours, and size-bound">
+  <defs>
+    <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#D6D2CA" stroke-width="2.4"/>
+    </pattern>
+  </defs>
+  <text class="wlabel" x="8" y="30">Stripe</text>
+  <rect class="wbar" x="112" y="16" width="290" height="20" rx="5" fill="url(#hatch)"/>
+  <text class="wtag" x="412" y="30">POLICY-SET - MUST OUTLIVE RETRIES</text>
+
+  <text class="wlabel" x="8" y="66">AWS</text>
+  <rect class="wbar solid" x="112" y="52" width="380" height="20" rx="5"/>
+  <text class="wtag" x="118" y="66">RESOURCE LIFETIME</text>
+  <rect class="wbar" x="500" y="52" width="60" height="20" rx="5" fill="url(#hatch)"/>
+  <text class="wtag" x="566" y="66">+ GRACE</text>
+
+  <text class="wlabel" x="8" y="102">Airbnb</text>
+  <rect class="wbar solid" x="112" y="88" width="64" height="20" rx="5"/>
+  <text class="wtag" x="118" y="102">LEASE</text>
+  <rect class="wbar solid" x="188" y="88" width="120" height="20" rx="5"/>
+  <text class="wtag" x="196" y="102">TOTAL RETRY CAP</text>
+
+  <text class="wlabel" x="8" y="138">Shopify</text>
+  <rect class="wbar solid" x="112" y="124" width="150" height="20" rx="5"/>
+  <text class="wtag" x="118" y="138">~24 HOURS, USUALLY</text>
+
+  <text class="wlabel" x="8" y="174">Segment</text>
+  <polygon class="wbar solid" points="112,160 372,160 372,166 332,180 112,180"/>
+  <line class="wmark" x1="252" y1="154" x2="252" y2="186"/>
+  <text class="wtag" x="118" y="174">SIZE-BOUND - SHRINKS UNDER LOAD</text>
+  <text class="wtag" x="260" y="196" fill="#DC2626">PAGED IF &lt; 24H</text>
+</svg>

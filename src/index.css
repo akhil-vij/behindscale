@@ -25,6 +25,24 @@
   --art-border: #1F2333;
   --art-text: #C8CDD8;
   --art-text-muted: #6B7280;
+  /* v7.3 problem-page tokens (ui-context.md, 2026-09-06). Dark side:
+     interactive borders are buttons/inputs ONLY (display nodes keep
+     --art-border); bright text for titles + the bill BASELINE line; the
+     verdict set is brighter than the light-shell semantics for contrast on
+     #08090D and never appears on light surfaces; problem-class magenta is
+     interactive + attention cues + the BUILD IT badge, never the light
+     shell. */
+  --art-border-interactive: #3a4158;
+  --art-text-bright: #EDEFF3;
+  --art-red: #ef4444;
+  --art-amber: #eab308;
+  --art-green: #22c55e;
+  --accent-problem: #D946EF;
+  --accent-problem-hover: #E879F9;
+  /* Light-shell "hot" row/answer tint + the window-bar fill (problem page). */
+  --hot-border: #EAD9C2;
+  --hot-bg: #FBF4EA;
+  --bar-fill: #E9E2D6;
   /* Artifact "live" indicator green (the caption-bar status dot). Distinct
      from --state-success (a darker UI green); this is the artifact accent. */
   --art-live: #30a46c;

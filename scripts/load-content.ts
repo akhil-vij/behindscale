@@ -203,6 +203,7 @@ export function loadContent(): LoadResult {
   const figureHostList: Array<{ slug: string; figures: { slug: string }[] }> = [
     ...articles.map((a) => ({ slug: a.slug, figures: a.figures ?? [] })),
     ...patterns.map((p) => ({ slug: p.slug, figures: p.figures ?? [] })),
+    ...problemEssays.map((e) => ({ slug: e.cruxTag, figures: e.figures ?? [] })),
   ]
   for (const host of figureHostList) {
     for (const figure of host.figures) {
@@ -238,6 +239,30 @@ export function loadContent(): LoadResult {
     }
   }
 
+  // Inline problem-page SVGs: every .svg under content/problems/<cruxTag>/
+  // for each loaded essay. Read here (checks do no IO); the problem-essay
+  // check resolves the essay's references against this map.
+  const problemSvgs = new Map<string, { path: string; contents: string }>()
+  for (const essay of problemEssays) {
+    const dir = join(PROBLEMS_DIR, essay.cruxTag)
+    if (!existsSync(dir)) continue
+    for (const name of readdirSync(dir).sort()) {
+      if (!name.endsWith('.svg')) continue
+      const path = join(dir, name)
+      try {
+        problemSvgs.set(`${essay.cruxTag}/${name.slice(0, -'.svg'.length)}`, {
+          path,
+          contents: readFileSync(path, 'utf8'),
+        })
+      } catch (err) {
+        schemaErrors.push({
+          file: path,
+          message: `could not read inline SVG: ${(err as Error).message}`,
+        })
+      }
+    }
+  }
+
   return {
     content: {
       articles,
@@ -249,6 +274,7 @@ export function loadContent(): LoadResult {
       patternPaths,
       figureSvgs,
       artifactSourceSlugs,
+      problemSvgs,
     },
     schemaErrors,
     skippedFileCount,

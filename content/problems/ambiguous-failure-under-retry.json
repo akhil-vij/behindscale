@@ -1,4 +1,640 @@
 {
   "cruxTag": "ambiguous-failure-under-retry",
-  "lede": "The request timed out, which tells you it didn't answer — not whether it actually happened."
+  "lede": "The request timed out, which tells you it didn't answer - not whether it actually happened.",
+  "intro": [
+    "A request that fails cleanly is easy. The problem is the request that **vanishes**: the connection drops, the server dies mid-operation, or the answer is lost on its way back. In every case the caller holds the same evidence: nothing. The one recovery action available, retrying, is exactly the action that can repeat an operation that in fact succeeded. When the operation moves money, both wrong guesses are catastrophic: retry a success and you charge twice; write off a failure that succeeded and the customer paid for nothing.",
+    "This page follows five teams into the same wall. Stripe and AWS design the public contract; Airbnb and Shopify build the machinery inside their payment services; Segment catches duplicates from callers who can't cooperate. Their answers are lined up below so the differences are visible."
+  ],
+  "figures": [
+    {
+      "slug": "three-deaths",
+      "eyebrow": "THREE DEATHS, ONE SYMPTOM",
+      "caption": "Stripe's 2017 post states it first and cleanest: of the three ways a network call fails, only the first is harmless. Cases 2 and 3 are this whole problem class - and the client sees all three as the same timeout.",
+      "ariaLabel": "Three places a request can die: before the server, mid-work, or on the way back - all look like a timeout."
+    }
+  ],
+  "stations": [
+    {
+      "id": "tryit",
+      "anchor": "artifact",
+      "label": "TRY IT",
+      "minutes": 3,
+      "estimate": true
+    },
+    {
+      "id": "build",
+      "anchor": "artB",
+      "label": "BUILD IT",
+      "minutes": 15,
+      "estimate": true
+    },
+    {
+      "id": "compare",
+      "anchor": "hintsheet",
+      "label": "COMPARE",
+      "minutes": 10,
+      "estimate": true
+    },
+    {
+      "id": "decide",
+      "anchor": "decide",
+      "label": "DECIDE",
+      "minutes": 5,
+      "estimate": true
+    },
+    {
+      "id": "deeper",
+      "anchor": "cards",
+      "label": "GO DEEPER",
+      "minutes": 20,
+      "openEnded": true
+    },
+    {
+      "id": "interview",
+      "anchor": "interview",
+      "label": "INTERVIEW",
+      "minutes": 5
+    }
+  ],
+  "wall": {
+    "prose": [
+      "Every version of this problem reduces to one picture: a call that changes something crosses a network, and there are three places it can die. Only the first is safe to retry - and the caller can't tell the three apart, because all three look identical from the outside: a timeout.",
+      "Cause it yourself before reading anyone's answer: cut a $100 charge at each of the three points and decide what the client should do. The rescue tool is an **idempotency key** - a caller-chosen name for the operation, sent unchanged on every retry - and once you reach for it, you must also decide where the server keeps its memory of that name. Every bad ending is a failure one of the five posts names."
+    ],
+    "figureSlug": "three-deaths",
+    "stats": [
+      {
+        "value": "0.6%",
+        "label": "of all events arriving in a four-week window were duplicates the server had already received",
+        "source": "Segment · 2017"
+      },
+      {
+        "value": "a few seconds",
+        "label": "of replica lag is enough to turn a correct idempotent retry into a double charge",
+        "source": "Airbnb · 2019"
+      },
+      {
+        "value": "1-in-a-million",
+        "label": "failures happen many times a day at Shopify's payment volume - the ambiguity is a constant, not an edge case",
+        "source": "Shopify · 2022"
+      },
+      {
+        "value": "99.999%",
+        "label": "payment consistency achieved since the framework launched, while annual payment volume doubled - the payoff side of solving this wall",
+        "source": "AIRBNB · 2019"
+      }
+    ],
+    "statsCaption": "The cost of doing nothing, the sharpest way the fix itself breaks, why you can't ignore it at scale - and what solving it earns. Each number from the company that measured it."
+  },
+  "tryIt": {
+    "artifactSlug": "problem-ambiguous-timeouts-tryit",
+    "teaser": "One $100 charge, three places to cut it, and a ledger the client can't see. The only thing in doubt is what the retry finds.",
+    "caption": "The three cut points are the artifact's three cuts; the three places the key's memory can live are question 2 below. If you found the double charge in replica mode - that's Airbnb's production incident, and their artifact [lets you cause it with their real machinery](#cards)."
+  },
+  "mission": {
+    "artifactSlug": "problem-ambiguous-timeouts-mission",
+    "teaser": "You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.",
+    "title": "Build the defense",
+    "intro": "You caused the failure from the victim's seat. Now take the designer's: the six decisions below are yours, and the goal is a day of traffic, survived. Run it naive first - **the damage report is the syllabus**. Every failure card names the post that names that failure and points at exactly one decision. When your day is clean, five attacks hit the design that just worked - each one a real failure that one of the five companies wrote about.",
+    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it - that is the working knowledge. Everything below is for going deeper: the five real answers side by side ([the hint sheet](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
+    "stuckNote": "Stuck on a failure card? Every decision you just made is one of the six questions below - the five answers are the hint sheet, and reading Stripe mid-debug is how engineers actually meet these posts."
+  },
+  "comparison": {
+    "title": "The hint sheet: same wall, five answers",
+    "lede": "All five land on the same idea - give the operation a name, and make the system remember it - and then answer every hard question differently. Below: who carries the burden, the five systems drawn on one shared diagram, the same comparison as a table, and the full answers.",
+    "spectrum": {
+      "eyebrow": "Who carries the burden",
+      "points": [
+        {
+          "label": "Stripe",
+          "left": 6
+        },
+        {
+          "label": "AWS",
+          "left": 22,
+          "up": true
+        },
+        {
+          "label": "Airbnb",
+          "left": 46
+        },
+        {
+          "label": "Shopify",
+          "left": 64,
+          "up": true
+        },
+        {
+          "label": "Segment",
+          "left": 94
+        }
+      ],
+      "ends": [
+        "Caller cooperates",
+        "Server absorbs it all"
+      ],
+      "caption": "Stripe writes the contract into the API and the caller's key discipline is the whole guarantee. AWS keeps the caller's token but lets the SDK fill it in, so most callers cooperate without knowing it. Airbnb and Shopify push the machinery inside their own payment services. Segment's callers are phones in tunnels - they can't follow rules - so a downstream ledger quietly eats the duplicates. The strip below follows this line top to bottom: read down and watch the work move from the caller to the server."
+    },
+    "diagramTitle": "Six systems, one diagram - the sixth is yours",
+    "legend": [
+      {
+        "kind": "key",
+        "label": "Key born here"
+      },
+      {
+        "kind": "state",
+        "label": "Retry state lives here"
+      },
+      {
+        "kind": "reply",
+        "label": "What a duplicate gets"
+      },
+      {
+        "kind": "break",
+        "label": "What still breaks it"
+      }
+    ],
+    "diagramRows": [
+      {
+        "company": "Stripe",
+        "year": "2017",
+        "vantage": "API contract",
+        "articleSlug": "stripe-idempotency",
+        "svg": "anat-stripe",
+        "caption": "Contract in the API; discipline on the client.",
+        "open": true
+      },
+      {
+        "company": "AWS",
+        "year": "2021",
+        "vantage": "Cloud platform",
+        "articleSlug": "aws-idempotent-apis",
+        "svg": "anat-aws",
+        "caption": "Token and work in one commit."
+      },
+      {
+        "company": "Airbnb",
+        "year": "2019",
+        "vantage": "Inside the service",
+        "articleSlug": "airbnb-orpheus-idempotent-payments",
+        "svg": "anat-airbnb",
+        "caption": "State on the master, never a replica."
+      },
+      {
+        "company": "Shopify",
+        "year": "2022",
+        "vantage": "Running at volume",
+        "articleSlug": "shopify-resilient-payments",
+        "svg": "anat-shopify",
+        "caption": "One crossing per key, for about 24 hours."
+      },
+      {
+        "company": "Segment",
+        "year": "2017",
+        "vantage": "Pipeline",
+        "articleSlug": "segment-exactly-once-delivery",
+        "svg": "anat-segment",
+        "caption": "The ledger eats duplicates; the reply says nothing."
+      }
+    ],
+    "you": {
+      "name": "You",
+      "year": "now",
+      "vantage": "Your design",
+      "emptySvg": "you-empty",
+      "filledSvg": "you-filled",
+      "open": true
+    },
+    "stripNote": "Dashed amber and dashed gray marks mean the post doesn't say - drawn as gaps, never guessed. The table below is the same comparison at a glance; each row expands into the full answers.",
+    "matrixLead": "Start with the first row. Who the callers are decides almost everything below it.",
+    "columns": [
+      "Stripe",
+      "AWS",
+      "Airbnb",
+      "Shopify",
+      "Segment"
+    ],
+    "youColumn": {
+      "emptyLabel": "YOU · survive a day first",
+      "label": "YOU"
+    },
+    "matrixRows": [
+      {
+        "id": "who",
+        "label": "Who calls",
+        "lead": true,
+        "cells": [
+          "Other companies' developers",
+          "Developers and the SDKs they use",
+          "Airbnb's own services",
+          "Its own service, crossing to a payment partner",
+          "Anonymous SDKs and devices - they can't follow rules"
+        ]
+      },
+      {
+        "id": "key",
+        "label": "Key from",
+        "qref": "q1",
+        "cells": [
+          "Client",
+          "Caller, or SDK",
+          "Client",
+          {
+            "ns": "not stated"
+          },
+          "Client SDK"
+        ]
+      },
+      {
+        "id": "state",
+        "label": "State lives",
+        "qref": "q2",
+        "cells": [
+          "Server store",
+          "With the work",
+          "Master DB only",
+          "Service DB",
+          "Ledger per worker"
+        ]
+      },
+      {
+        "id": "crash",
+        "label": "Crash mid-way",
+        "qref": "q3",
+        "cells": [
+          "Depends on the implementation",
+          "Can't half-happen",
+          "3 all-or-nothing phases",
+          "Recovery steps",
+          "Repair from log"
+        ]
+      },
+      {
+        "id": "rep",
+        "label": "Replay returns",
+        "qref": "q4",
+        "cells": [
+          "Saved result",
+          "Same-meaning success",
+          "Saved outcome",
+          {
+            "ns": "not stated"
+          },
+          "Silence - dropped"
+        ]
+      },
+      {
+        "id": "win",
+        "label": "Window",
+        "qref": "q5",
+        "cells": [
+          "Policy-set",
+          "Resource lifetime + grace",
+          "Lease + retry cap",
+          "~24 hours",
+          "Size-bound"
+        ]
+      },
+      {
+        "id": "breaks",
+        "label": "Still breaks when",
+        "qref": "q6",
+        "hot": true,
+        "cells": [
+          "Key reused",
+          "Parameters change",
+          "Replica read",
+          "Window passes",
+          "Window thins"
+        ]
+      }
+    ],
+    "matrixCaption": "Cells marked not stated are exactly that - the post doesn't say, and we don't guess. Columns run from caller-side to server-side.",
+    "questions": [
+      {
+        "id": "q1",
+        "title": "Who names the operation?",
+        "why": "Only the caller knows intent - every post that takes a position lands there. The interesting differences are what happens when the caller can't, or won't.",
+        "answers": [
+          {
+            "company": "Stripe",
+            "year": "2017",
+            "text": "The client generates the key and sends it as an **Idempotency-Key header** on every request that changes something. Keeping keys straight is the client's job: reuse an old key for a new charge and you silently get the old charge's outcome back."
+          },
+          {
+            "company": "AWS",
+            "year": "2021",
+            "text": "The caller supplies a **ClientToken**; two requests with the same token are duplicates by definition. When the caller doesn't bother, the SDK and CLI generate one and reuse it across automatic retries - the application never knows a retry happened. AWS is explicit that identical parameters don't mean identical intent, which is why the token beats a fingerprint computed from the parameters."
+          },
+          {
+            "company": "Airbnb",
+            "year": "2019",
+            "text": "The client creates one unique key per request - and chooses its shape. **Request-level** keys (random per attempt) recognize a retry of one call. **Entity-level** keys (built from the thing acted on, like payment-1234-refund) guarantee a given refund happens only once ever, even across requests that never coordinated."
+          },
+          {
+            "company": "Shopify",
+            "year": "2022",
+            "ns": true,
+            "text": "The post tracks each attempt under an idempotency key but doesn't say who generates it. What it does say: the key format is a **ULID** - a key that sorts by time, so the database index stays compact. That choice alone cut insert time by 50%."
+          },
+          {
+            "company": "Segment",
+            "year": "2017",
+            "text": "The client SDK tags every event with a **messageId** - a plain random UUID, deliberately the smallest possible client obligation, so anyone in any language can send data. The API assigns one only when the client didn't."
+          }
+        ]
+      },
+      {
+        "id": "q2",
+        "title": "Where does the retry state live?",
+        "why": "The follow-up a good interviewer will ask - because where the key's memory lives can undo the guarantee. This is the third control in the artifact above.",
+        "answers": [
+          {
+            "company": "Stripe",
+            "text": "A store on the server that maps each key to the state of its request, checked on every request. How long to keep it is part of the API's **correctness contract**: the saved result must outlive any realistic retry window, or the replay case stops working."
+          },
+          {
+            "company": "AWS",
+            "text": "**With the work itself, in one all-or-nothing commit.** Token and resource changes land together or not at all - and the original request's parameters are stored alongside, so a reused token with changed parameters can be caught."
+          },
+          {
+            "company": "Airbnb",
+            "text": "**The main database only (the master) - never a read-only copy (a replica).** A copy runs a few seconds behind, and that lag turns a correct retry into a double charge. So Orpheus reads and writes key state on the master, and wins the lost capacity back by splitting the key tables across machines, by key."
+          },
+          {
+            "company": "Shopify",
+            "text": "In the payment service's own database, recording **which steps of the attempt already ran**. The ULID key format is itself a storage decision: keys that sort by time fit the way the database indexes them."
+          },
+          {
+            "company": "Segment",
+            "text": "An embedded **ledger on each worker's own disk (RocksDB)** - ~60 billion recent IDs in 1.5 TB. Messages are routed by ID, so each worker only answers \"seen this?\" for its own slice. The output log (a Kafka topic), not the ledger, is the source of truth."
+          }
+        ]
+      },
+      {
+        "id": "q3",
+        "title": "The server crashes mid-operation. What does the retry find?",
+        "why": "The hardest of the three failure cases - the key tells the server it's a retry, but what the server then does is where the real work lives.",
+        "answers": [
+          {
+            "company": "Stripe",
+            "text": "Names the problem, doesn't solve it - recovery is **\"heavily dependent on implementation.\"** If the database rolled back the partial attempt, re-run the whole thing. Otherwise the server must recover the partial state and continue from where it stopped."
+          },
+          {
+            "company": "AWS",
+            "text": "Designed so it **can't half-happen**: recording the token and making the changes are one all-or-nothing unit. Either the retry finds a completed request to replay, or it finds nothing and processes fresh. Each half-failure would break the contract in its own way, so the halves aren't allowed to separate."
+          },
+          {
+            "company": "Airbnb",
+            "text": "The request was built to be interruptible: **three all-or-nothing phases** : before the network call, the call itself, and after it. Each database phase is one transaction, and the rule is simple: no network calls inside a transaction, no transactions across a network call. Interrupt it anywhere and the system is in a state it can recover from. A time-limited lock on the key (a lease) stops two attempts running at once."
+          },
+          {
+            "company": "Shopify",
+            "text": "The key records which steps ran; a retry under the same key triggers **recovery steps that rebuild state first**, so only one request ever reaches the financial partner."
+          },
+          {
+            "company": "Segment",
+            "text": "Admits that its three steps (write the ledger, publish the output, acknowledge the input) cannot happen as one all-or-nothing unit. The fix is to pick one source of truth: on restart the worker **repairs the ledger from the output log**, which also serves as the durable record."
+          }
+        ]
+      },
+      {
+        "id": "q4",
+        "title": "What does a duplicate actually get back?",
+        "why": "Sounds like a detail; AWS makes it the whole argument - the reply's shape decides whether retrying can be the default.",
+        "answers": [
+          {
+            "company": "Stripe",
+            "text": "The **saved result** of the completed operation, replayed as if it were the first response."
+          },
+          {
+            "company": "AWS",
+            "text": "A **same-meaning success, every time** - even after someone else terminated the instance, the replay is a success whose body just says \"terminated.\" Returning an \"already exists\" error would technically be idempotent but forces the caller's code to branch, which is exactly what makes default retries hard to offer."
+          },
+          {
+            "company": "Airbnb",
+            "text": "The **saved final outcome**, handed back to any later retry - which costs a table that grows with traffic forever and is hard to trim or reshape later."
+          },
+          {
+            "company": "Shopify",
+            "ns": true,
+            "text": "Not stated beyond the guarantee itself: however many retries arrive, only one request reaches the financial partner."
+          },
+          {
+            "company": "Segment",
+            "text": "**Nothing.** The duplicate is dropped downstream and the client never learns it sent one - its callers couldn't act on the information anyway."
+          }
+        ]
+      },
+      {
+        "id": "q5",
+        "title": "How long does the protection last?",
+        "why": "Every key store is a clock nobody sees. Five different answers to when it runs out - and only one of them is a fixed number.",
+        "figure": {
+          "svg": "windows",
+          "caption": "The shape of each bound, not its length - the bars share no scale, because only Shopify's window is a number."
+        },
+        "answers": [
+          {
+            "company": "Stripe",
+            "text": "No number - but the principle is stated: retention must **outlive any realistic retry window**, and the retention policy is part of the API's correctness contract, not an operational afterthought."
+          },
+          {
+            "company": "AWS",
+            "text": "**The resource's lifetime plus an interval** after which a late retry would either have arrived or no longer be valid. Keep tokens too briefly and a late retry duplicates the resource; keep them forever and a future token can collide with an ancient one."
+          },
+          {
+            "company": "Airbnb",
+            "text": "Two clocks: a **lease** on each key while its request is in flight, set longer than the network call's timeout so a crashed server can't hold the key forever, and a **cap on total retry time** to stop runaway retrying."
+          },
+          {
+            "company": "Shopify",
+            "text": "**~24 hours, usually** - and the post frames the window length as a real dial: protection duration traded against the cost of tracking attempts. The retry window is a design decision, not an accident."
+          },
+          {
+            "company": "Segment",
+            "text": "**Bound by size, not time.** Each worker caps its ledger and deletes oldest-first, so a load spike shrinks the window instead of toppling the system - with a pager wired to fire if the window drops under 24 hours."
+          }
+        ]
+      },
+      {
+        "id": "q6",
+        "title": "What still breaks it?",
+        "hot": true,
+        "open": true,
+        "why": "The row interviewers spend the most time on. Each system's own post names the failure its guarantee doesn't cover - knowing these is what separates using the pattern from understanding it. The red marks in the diagrams above show where each one lives.",
+        "answers": [
+          {
+            "company": "Stripe",
+            "text": "**Client key hygiene.** Reuse an old key for a new charge and the server silently replays the old charge's outcome. The server cannot detect this; correctness depends on key discipline in every integrating codebase."
+          },
+          {
+            "company": "AWS",
+            "text": "**A reused token with changed parameters.** The safest reading is that the customer meant something different, so the service refuses with a validation error naming the mismatch - the guarantee protects intent, and changed parameters are a new intent."
+          },
+          {
+            "company": "Airbnb",
+            "text": "**The key’s memory under the guarantee.** Key state on a lagging copy brings back the very failure the key was meant to cure - so reads go to the master only. And a mislabeled error: mark a non-retryable failure retryable and the door to double payments reopens, with manual cleanup behind it."
+          },
+          {
+            "company": "Shopify",
+            "text": "**Time.** A retry arriving after the ~24-hour window is simply no longer covered. Aggressive timeouts make retries more frequent on purpose, which is only safe while the key machinery is watching."
+          },
+          {
+            "company": "Segment",
+            "text": "**Pressure on the window.** \"Almost\" exactly once is the honest name: under load the dedupe window shrinks by design, and the 24-hour floor is monitored, not guaranteed."
+          }
+        ]
+      }
+    ]
+  },
+  "decide": {
+    "intro": "The five systems aren't five competing opinions - they're five positions on the caller-to-server line above, each forced by who the callers are. Find your constraint on the left.",
+    "rows": [
+      {
+        "if": "You publish an API that other people's code calls, and you can ask callers to cooperate",
+        "then": "**[Stripe](/articles/stripe-idempotency)** for the contract itself, then **[AWS](/articles/aws-idempotent-apis)** for the two refinements that make it liveable: the SDK fills the token in, and the reply is a [same-meaning success](#q4) so callers never branch."
+      },
+      {
+        "if": "The callers are your own services, and the data underneath is split across machines and copied",
+        "then": "**[Airbnb](/articles/airbnb-orpheus-idempotent-payments)** - the deepest inside view: [three all-or-nothing phases](#q3), errors classified retryable or not, and key state kept on the [master, never a replica](#q2)."
+      },
+      {
+        "if": "One step of the operation crosses into an external partner and must happen exactly once",
+        "then": "**[Shopify](/articles/shopify-resilient-payments)** - record [which steps already ran](#q3), run recovery before retrying, and treat the [protection window as a dial](#q5) you set on purpose."
+      },
+      {
+        "if": "You can't change the callers at all - anonymous SDKs, third-party webhooks, devices",
+        "then": "**[Segment](/articles/segment-exactly-once-delivery)** - let duplicates through and remove duplicates downstream with a [ledger split across workers](#q2), sized so the [window shrinks under load](#q5) instead of the system falling over."
+      }
+    ],
+    "elsewhere": {
+      "title": "Same wall, other places",
+      "text": "Anywhere a call that changes something can time out: reserving inventory (over-sell), sending an email (the double send), delivering a webhook (now the receiver's problem), provisioning a machine (AWS's own case), posting a ledger entry. Ask the six questions. The answers move; the wall doesn't."
+    }
+  },
+  "steal": {
+    "intro": "Five rules that transfer out of these posts into any system you build. Each one is a row of the table, compressed.",
+    "items": [
+      {
+        "rule": "Identity is granted, not computed.",
+        "text": "A fingerprint of the parameters can't tell an accidental repeat from a caller who wants two identical operations. Only the caller knows intent, so the caller (or its SDK) names the operation.",
+        "qref": "q1"
+      },
+      {
+        "rule": "Commit the memory with the work - or design for the moment they part.",
+        "text": "AWS makes them one all-or-nothing unit; Airbnb slices the request into three all-or-nothing phases; Segment repairs its ledger from the output log after a crash. Nobody leaves the gap unhandled.",
+        "qref": "q3"
+      },
+      {
+        "rule": "The guarantee is only as strong as the key’s memory it sits on.",
+        "text": "Key state on a lagging copy brings back the exact failure it was built to cure - a few seconds of lag is a double charge. Name where the state lives.",
+        "qref": "q2"
+      },
+      {
+        "rule": "Decide what a duplicate hears.",
+        "text": "A saved result, a refusal, or silence are all defensible - but the reply's shape decides whether retry-by-default is safe for every caller. It's an API decision, not an accident.",
+        "qref": "q4"
+      },
+      {
+        "rule": "Every key store is a clock.",
+        "text": "Protection ends - by policy, lease, size, or ~24 hours. Pick the window on purpose, write it down, and page when it thins.",
+        "qref": "q5"
+      }
+    ]
+  },
+  "interview": {
+    "asks": [
+      "\"How do you prevent double payments?\"",
+      "\"The client's request timed out. Did the charge happen?\"",
+      "\"Design an idempotent API for creating orders.\""
+    ],
+    "shape": "The caller names the operation and sends the same name on every retry. The server remembers the name - and I'd say where: with the work in one commit, or in a separate store with recovery steps, read from the master only. A retry gets the saved result. The memory has a window, so I'd say how long, and what happens after it ends. Then I'd say what still gets through: a reused key, a replica read, a changed parameter, a retry after the window.",
+    "followupsIntro": "Every attack you held above is a question a good interviewer asks after \"use idempotency keys.\"",
+    "followups": [
+      {
+        "ask": "\"Same key, new charge - what happens?\"",
+        "attack": "1 · Stripe",
+        "held": "Nothing can - it's the caller's discipline"
+      },
+      {
+        "ask": "\"Reads move to a replica to save master capacity\"",
+        "attack": "2 · Airbnb",
+        "held": "Reads stay on the master"
+      },
+      {
+        "ask": "\"Traffic goes 10× for a week\"",
+        "attack": "3 · Segment",
+        "held": "A size-bound window, priced; or forever, priced in red"
+      },
+      {
+        "ask": "\"Same key, different amount\"",
+        "attack": "4 · AWS",
+        "held": "Refuse with a validation error"
+      },
+      {
+        "ask": "\"A retry arrives after the window\"",
+        "attack": "5 · Shopify",
+        "held": "Reconciliation - detection, not prevention"
+      }
+    ],
+    "senior": "\"I'd use idempotency keys.\"",
+    "staff": "\"Keys, committed with the charge, read from the master, saved result replayed, a 24-hour window, reconciliation after it - and here's what that costs: one database for work and record, results stored per operation, a standing reconciliation job.\"",
+    "closing": "The difference is the bill. Staff answers have one. The bill panel above is yours.",
+    "redFlags": [
+      "\"Hash the request to detect duplicates.\" → two identical real orders become one.",
+      "\"Read the key from a replica - it's read-only anyway.\" → seconds of lag is a double charge (Airbnb, 2019).",
+      "\"Keep keys forever so it can never happen.\" → storage without bound, and collisions years later (AWS, 2021).",
+      "\"Return an error on the retry - that's still idempotent.\" → half right: it is idempotent, and every caller now has to branch. A cost, not a mistake (AWS's own argument)."
+    ]
+  },
+  "patterns": {
+    "intro": "The reusable moves these five systems compose. Idempotency keys are the spine; the rest bound the failures the keys alone let through.",
+    "order": [
+      "idempotency-keys",
+      "atomic-phases",
+      "retry-with-backoff-and-jitter",
+      "retryable-error-classification",
+      "master-only-reads",
+      "single-writer-ownership",
+      "designated-source-of-truth",
+      "circuit-breaker",
+      "fault-isolation"
+    ]
+  },
+  "cards": {
+    "title": "Every article",
+    "intro": "The five source articles, each with its own interactive artifact - break one company's system at a time.",
+    "teasers": {
+      "stripe-idempotency": "Crash the same charge three ways - with and without an idempotency key.",
+      "segment-exactly-once-delivery": "Put a phone in a tunnel, spike the load, crash a worker mid-publish, then sneak an aged-out duplicate past the shrunken window.",
+      "airbnb-orpheus-idempotent-payments": "Cut a $100 charge after the bank moved the money, then choose what the retry does - Orpheus off, on, and on-but-reading-a-replica.",
+      "aws-idempotent-apis": "Retry a singleton workload into two instances, break the all-or-nothing link between token and work, and watch a parameter fingerprint swallow a customer's real intent.",
+      "shopify-resilient-payments": "Push a payment worker pool past the point where its queue starts to grow, then flip on each defense and watch which failure it actually bounds."
+    }
+  },
+  "sources": {
+    "intro": "Read the originals - every claim on this page traces to one of these five posts:",
+    "items": [
+      {
+        "label": "Stripe",
+        "articleSlug": "stripe-idempotency"
+      },
+      {
+        "label": "Segment",
+        "articleSlug": "segment-exactly-once-delivery"
+      },
+      {
+        "label": "Airbnb",
+        "articleSlug": "airbnb-orpheus-idempotent-payments"
+      },
+      {
+        "label": "AWS",
+        "articleSlug": "aws-idempotent-apis"
+      },
+      {
+        "label": "Shopify",
+        "articleSlug": "shopify-resilient-payments"
+      }
+    ]
+  }
 }
