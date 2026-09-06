@@ -4,6 +4,32 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-page v7.3 port — follow-up: artifact spacing + legibility
+  (2026-09-06, branch `fix/problem-tryit-reset-specificity`, after PR #2
+  merged).** Owner reported the try-it looking off on the PR preview and
+  the mission's text hard to read.
+  - **Bug:** the try-it's CSS reset was scoped as `#tryit-root *`, an ID
+    selector that outranks every class rule, so every padding and margin
+    in the artifact collapsed to zero (the reference's reset is a bare
+    `*`). Both artifacts now reset through `:where(#…-root) *` (zero
+    specificity); the mission's reset also regains `margin: 0; padding: 0`
+    to mirror the reference. Try-it geometry now matches the reference at
+    1440 / 1024 / 390 (960×902 vs 960×909, the fallback font's line
+    metrics); the mission's only remaining height difference is the GATE
+    note and FREE PLAY that the rulings left out.
+  - **Legibility pass (design change, both artifacts, CSS values only):**
+    muted gray `#6B7280` (3.9:1 on `--art-surface`) → local `#98A1B0`
+    (7.2:1); HTML labels floored at 10px (meter captions 9px); locked /
+    disabled options at opacity 0.7 / 0.5 (were 0.55 / 0.35, about 2:1);
+    the decision deck gets 6px option gaps, 7×10px option padding, 12px
+    group spacing, and line-height 1.4 on wrapped group labels. Copy,
+    markup, engine, motion, and layout rules untouched; mission content
+    height 1314 → 1475px at 960. Recorded in `ui-context.md` (drift note)
+    and open decision #22.
+  - **Screenshots:** the committed `handoff/screenshots/v7.3-port/` frames
+    were blank for every artifact state (a full-page capture does not
+    paint an out-of-process sandboxed iframe); regenerated with element
+    captures in a viewport tall enough for the element.
 - **Problem-page v7.3 port — IMPLEMENTED (2026-09-06, branch
   `problem-page-v7-3-port`, one PR, six commits per the brief's split:
   shell · try-it · mission · host · list · tests/CI).**
