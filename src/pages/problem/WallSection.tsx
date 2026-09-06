@@ -14,6 +14,7 @@ interface WallSectionProps {
   hostSlug: string
   hostTitle: string
   // Host-side embed control (undefined until the host hook mounts).
+  tryItWrapperId: string
   tryItHeight?: string
   onTryItMessage?: (data: unknown, reply: (message: unknown) => void) => void
 }
@@ -26,6 +27,7 @@ export default function WallSection({
   figure,
   hostSlug,
   hostTitle,
+  tryItWrapperId,
   tryItHeight,
   onTryItMessage,
 }: WallSectionProps) {
@@ -49,7 +51,7 @@ export default function WallSection({
             hostTitle={hostTitle}
             title={tryIt.teaser}
             bare
-            wrapperId="artifact"
+            wrapperId={tryItWrapperId}
             wrapperClassName="pp-breakout"
             height={tryItHeight ?? DEFAULT_TRYIT_HEIGHT}
             onMessage={onTryItMessage}

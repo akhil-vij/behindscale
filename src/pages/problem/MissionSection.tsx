@@ -10,6 +10,7 @@ interface MissionSectionProps {
   mission: ProblemMission
   hostSlug: string
   hostTitle: string
+  wrapperId: string
   // Host-side embed control (undefined until the host hook mounts).
   height?: string
   onMessage?: (data: unknown, reply: (message: unknown) => void) => void
@@ -21,6 +22,7 @@ export default function MissionSection({
   mission,
   hostSlug,
   hostTitle,
+  wrapperId,
   height,
   onMessage,
 }: MissionSectionProps) {
@@ -34,7 +36,7 @@ export default function MissionSection({
         hostTitle={hostTitle}
         title={mission.teaser}
         bare
-        wrapperId="artB"
+        wrapperId={wrapperId}
         wrapperClassName="pp-breakout mission"
         height={height ?? DEFAULT_MISSION_HEIGHT}
         onMessage={onMessage}

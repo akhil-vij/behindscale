@@ -20,8 +20,9 @@ import {
   InterviewSection,
   StealSection,
 } from './problem/GuideSections'
-import { EMPTY_YOU } from './problem/youState'
 import { pp } from './problem/inline'
+import { MISSION_WRAPPER_ID, TRYIT_WRAPPER_ID, useWallHost } from './problem/useWallHost'
+import { wallBySlug } from '../walls'
 import './problem-page.css'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -70,6 +71,19 @@ function formatMonthYear(iso: string): string {
 export default function ProblemDetail() {
   const { urlSlug } = useParams<{ urlSlug: string }>()
   const cruxTag = urlSlug ? cruxTagByUrlSlug.get(urlSlug) : undefined
+  const essayForHost = cruxTag ? problemEssayByCruxTag.get(cruxTag) : undefined
+
+  // The host side of the mission protocol (client-only effects; a class
+  // without a mission gets an inert hook). Called before the not-found
+  // branch so the hook order is stable.
+  const host = useWallHost({
+    cruxTag: cruxTag ?? '',
+    wall: cruxTag ? wallBySlug.get(cruxTag) : undefined,
+    stations: essayForHost?.stations,
+    hasMission: essayForHost?.mission !== undefined,
+    hasTryIt: essayForHost?.tryIt !== undefined,
+    missionWrapperId: MISSION_WRAPPER_ID,
+  })
 
   if (!cruxTag) {
     return (
@@ -135,7 +149,7 @@ export default function ProblemDetail() {
 
   const svg = (name: string) => problemSvgByKey.get(`${cruxTag}/${name}`)
   const wallFigure = essay?.figures?.find((f) => f.slug === essay.wall?.figureSlug)
-  const you = EMPTY_YOU
+  const you = host.you
 
   return (
     <main className="problem-page max-w-[680px] mx-auto px-5 pt-10 pb-[72px]">
@@ -150,7 +164,9 @@ export default function ProblemDetail() {
       {essay?.stations !== undefined && (
         <StationNav
           stations={essay.stations}
-          deckAnchor={essay.mission !== undefined ? 'artB' : undefined}
+          current={host.currentStation}
+          deckAnchor={essay.mission !== undefined ? MISSION_WRAPPER_ID : undefined}
+          deckJumpVisible={host.touched}
         />
       )}
 
@@ -171,6 +187,9 @@ export default function ProblemDetail() {
           figure={wallFigure}
           hostSlug={cruxTag}
           hostTitle={label}
+          tryItWrapperId={TRYIT_WRAPPER_ID}
+          tryItHeight={host.tryItHeight}
+          onTryItMessage={host.onTryItMessage}
         />
       ) : (
         <Section title="The wall">
@@ -192,6 +211,9 @@ export default function ProblemDetail() {
           mission={essay.mission}
           hostSlug={cruxTag}
           hostTitle={label}
+          wrapperId={MISSION_WRAPPER_ID}
+          height={host.missionHeight}
+          onMessage={host.onMissionMessage}
         />
       )}
 
