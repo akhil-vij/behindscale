@@ -4,6 +4,82 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-page v7.3 port — IMPLEMENTED (2026-09-06, branch
+  `problem-page-v7-3-port`, one PR, six commits per the brief's split:
+  shell · try-it · mission · host · list · tests/CI).**
+  `/problems/ambiguous-timeouts` now matches the approved reference build;
+  every string is prerendered; the shell hard-codes none of the wall's
+  mechanics. What landed:
+  - **Schema** (`src/types/problemEssay.ts`, all optional): `figures`,
+    `stations` (budgets from content; list estimate = `estimate` budgets
+    rounded up to 5 → "~35 min", no stored field), `wall`, `tryIt`,
+    `mission` (presence = Playable), `comparison` (spectrum / diagram rows
+    with inline SVGs / YOU row / matrix / questions), `decide`, `steal`,
+    `interview`, `patterns {intro, order}`, `cards {title, intro, teasers}`,
+    `sources`. Documented for authors in `docs/authoring-problem-pages.md`
+    §4b with the second-wall contract per field.
+  - **Validator**: `problem` ContentHost kind (figure host by cruxTag + one
+    artifact host per artifact slug, flat namespace); `problem-essay` gains
+    member / pattern-order / qref / station-anchor / inline-SVG (existence +
+    figure-svg-safe allowlist) / YOU-keys-vs-wall-module / one-row-per-
+    attack rules; bold + link checks cover essay prose (+ `/articles/`
+    targets); `problemSlug` error locator; the figure word counter no
+    longer counts a lone spaced hyphen as a word.
+  - **Wall module** `src/walls/ambiguous-timeouts.ts` (`youMapping()`
+    verbatim from the v7 host script) + `src/walls/index.ts` registry.
+  - **Artifacts**: `problem-ambiguous-timeouts-tryit.jsx` (Script 1) and
+    `problem-ambiguous-timeouts-mission.jsx` (Script 2, extracted verbatim
+    from the reference file; RULES block in
+    `problem-ambiguous-timeouts-rules.js`, FREE PLAY + proto-notes +
+    newsletter not ported). Both are thin React shells that render the
+    markup once and boot the frozen engines in an effect; bridges OBSERVE
+    the engine DOM (never patch) and speak protocol v1.
+  - **Protocol v1** (mission→host): `ready`, `state {decisions, held,
+    survived, bill}`, `checkpoint {caused|survived|held}`, `touched`,
+    `commit {text}`, `size {h}`, plus one addition the port needed:
+    `anchor {id} | {frame:{top,height}}` (the artifact's hint links and
+    "→ the decision" jumps target the host page). Host→mission: `init
+    {commit}`. `ArtifactEmbed` gained `onMessage` (source-gated), `height`,
+    `title`, `noscript`, wrapper id/class. The ready handshake re-announces
+    until answered and sizes re-post on a schedule (a cached frame can boot
+    before the page hydrates its listener).
+  - **Host** (`src/pages/problem/useWallHost.ts`): YOU column / diagram /
+    ticks from the wall module; `localStorage['bs:wall:<cruxTag>']` =
+    `{v:1, commit, checkpoints, lastDecisions}`; deck-jump reveal on
+    `touched`; sizing (frame width ≤700 → 90dvh scrollport, else content
+    height; no overscroll-behavior anywhere); scroll-spy with the FILE's
+    `rootMargin -20%/-70%`; one-time ⟷ scroll hints. No hash writes, no
+    scrollIntoView.
+  - **List**: `/problems` Playable badge + `~35 min` + teaser, off
+    `mission` presence.
+  - **Tests** (all green locally): §5.1 rules parity (576 decks → 12 clean,
+    bills line-for-line vs `tests/fixtures/DECKS-v6-1.md`); §5.2 jsdom
+    click-through (naive → AWS → commit → A1–A5 → debrief, protocol
+    messages asserted, zero console errors) + §5.3 cue exclusivity; §5.2
+    Playwright round-trip (ready → init → play → state → YOU fills →
+    commit → reload); §5.4 text parity (served page incl. both frames vs
+    `tests/fixtures/problem-page-v7.3.html`, 288 lines, only the §4G
+    decisions + excluded blocks differ); §5.5 no-JS; §5.6 prerender grep;
+    the ruling-a mobile scroll-chaining guard. First CI workflow
+    (`.github/workflows/ci.yml`: validate + vitest + Playwright in one job;
+    the e2e run is ~40s locally). `vite preview` now sends
+    `Access-Control-Allow-Origin: *` like production, so sandboxed frames
+    load their bundles under test. The stale smoke test was brought onto
+    the current IA.
+  - **Docs**: ui-context.md tokens + usage rules + measured drift note
+    (40 taste-literal / 22 `--art-*` / 1 own-grays artifact); this entry;
+    open-decisions items for the unspecified decisions.
+  - **Recorded deviations**: fallback mono stack in both frames (no
+    JetBrains Mono fetch); the wall figure's non-visible aria-label
+    tightened into the figure band; `matrixCaption` renders "not stated"
+    without italics (the inline subset has no italics); the mission has no
+    context block (as in v7.3; taste-doc contract) but gets a
+    standalone-only footer backlink; the try-it context block folds when
+    embedded and expands standalone. Brief-vs-file discrepancy honoured:
+    scroll-spy rootMargin -20%/-70% (file) not -40%/-55% (changelog).
+  - Screenshots at 1440 / 1024 / 390 of the eight states:
+    `handoff/screenshots/v7.3-port/`.
+
 - **Problem-page v7.3 port — go-ahead received with rulings
   (2026-09-06); implementation handed off.** Owner approved the Step 1
   report and ruled: (a) mission iframe <700px = ~90dvh internal scroll,
