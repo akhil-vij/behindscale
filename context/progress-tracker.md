@@ -4,6 +4,42 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-page v7.3 port — go-ahead received with rulings
+  (2026-09-06); implementation handed off.** Owner approved the Step 1
+  report and ruled: (a) mission iframe <700px = ~90dvh internal scroll,
+  ≥700px = content-height via `size` message; no
+  `overscroll-behavior: contain` (scroll must chain to the page) with a
+  Playwright mobile check; the host-command-bar fallback is NOT to be
+  built. (b) Add GitHub Actions in the PR (validate + vitest every push;
+  Playwright inline if <~5 min else nightly). (c) Fallback mono stack in
+  iframes; record as visual deviation; verify debrief/narrator fit at
+  390px. (d) Protocol: `size` message yes; drop `init.reducedMotion`;
+  `touched` is its OWN message type `{v, wall, type:'touched'}`, not a
+  checkpoint kind and not the stub's `artifact:interacted`. Also:
+  estimate computed from stations through DECIDE rounded up to nearest 5
+  (no stored `estimateMin`); ui-context.md gets the real drift note
+  (40 taste-literal / 22 `--art-*` artifacts under `#08090D` canonical),
+  NO `#0b0d12` deprecation line; scroll-spy uses the file's
+  `rootMargin -20%/-70%` (file wins over changelog); newsletter block
+  omitted. Full implementation prompt for the take-over agent:
+  `handoff/IMPLEMENTATION-PROMPT.md`, checked in alongside the handoff
+  materials at `handoff/repo-brief/`.
+
+- **Problem-page v7.3 port — Step 1 lookup report delivered
+  (2026-09-05).** Owner shared the approved v7.3 handoff (`files
+  (27).zip`: brief, reference build, CHANGELOG-v7.3, DECKS-v6-1, jsdom
+  click-through scripts). Per the brief, no code yet: the agent surveyed
+  the repo (ProblemDetail composition, artifact pipeline +
+  `artifact:interacted` postMessage precedent, ProblemEssay schema,
+  vitest/Playwright harness, zero client persistence, token state) and
+  delivered the Step 1 report in-chat, including the frictions needing
+  rulings (mission iframe vs sticky-RUN/toast viewport behavior,
+  React-wrapper for the frozen vanilla engine, `youMapping()` as a
+  per-wall module vs JSON, JetBrains Mono in sandboxed iframes,
+  no-CI-config vs "§5.1 in CI", protocol amendments: `touched`
+  checkpoint + `size` message, repo-truth note that `#0b0d12` exists
+  only in docs/design-spec.md). Awaiting go-ahead + rulings before §4.
+
 - **Landing rewrite — Stage 0 (2026-09-03, branch
   `landing-rewrite-stage0`).** The landing stopped describing behindscale
   as a library and started selling the interactive experience. Copy /
