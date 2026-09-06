@@ -176,6 +176,16 @@ diagram slots / ticks: `src/walls/<wall>.ts`, registered by cruxTag in
 `{{slot}}`s the wall module doesn't return, and warns when a comparison has no
 wall module (the YOU column would never fill).
 
+**Per-wall artifacts.** Each artifact is one self-contained `.jsx` with its
+stylesheet inline. Two rules learned the hard way (2026-09-06): scope the
+CSS reset as `:where(#<root>) * { margin: 0; padding: 0; box-sizing:
+border-box }` -- an `#id *` reset carries ID specificity and silently
+outranks every class rule's padding and margin -- and set muted labels in
+the local `--art-muted: #98A1B0` (the site's `#6B7280` is 3.9:1 on the dark
+surface, under the 4.5:1 floor for 9-11px text; open decision #22 holds
+the token question). Fonts stay the fallback mono stack; a sandboxed bundle
+fetches nothing.
+
 **Validation.** `npm run validate` checks every shape and cross-reference:
 member articles, pattern order, question refs, station anchors, inline SVG
 existence + the figure-svg-safe allowlist, YOU keys vs the wall module, and

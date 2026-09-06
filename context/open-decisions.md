@@ -168,6 +168,24 @@ _None._
     - needs JavaScript)". Keep / reword.
 - **Reply:** per item — keep / change.
 
+### 22. Artifact muted gray fails AA contrast on dark surfaces
+
+- **Source:** owner feedback on the v7.3 port (2026-09-06): the mission's
+  labels were hard to read. Measured: `--art-text-muted` `#6B7280` is
+  3.9:1 on `--art-surface` and 4.1:1 on `--art-bg` (AA asks 4.5:1 for text
+  under ~18px), and every dark artifact sets its 9–11px labels in it. The
+  two problem-page artifacts now carry a local `--art-muted: #98A1B0`
+  (7.2:1) plus a 10px label floor and gentler dimming (0.7 locked / 0.5
+  disabled); see the `ui-context.md` drift note. The other 65 artifacts
+  still use `#6B7280`.
+- **What's needed:** (a) ratify `#98A1B0` (or another value ≥ 4.5:1;
+  `#8B93A5` is 6.1:1) as the site token `--art-text-muted`, migrating
+  artifacts at their next touch under the existing drift rule, or (b)
+  keep the brighter gray problem-page-only. Also (c) whether the 10px
+  floor and the 0.7 / 0.5 dimming become artifact-wide conventions in the
+  style-guide prompt (`pipeline/prompts/`).
+- **Reply:** (a) or (b); (c) yes / no.
+
 
 ### 4. `conservative-auto-remediation` Pinterest cameo promotion
 

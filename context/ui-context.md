@@ -85,6 +85,16 @@ the `--art-*` values above (`#0F1118` / `#161922` / `#1F2333`), and one
 `#23232e`). All but that one share the `#08090D` root. Migrate each
 artifact onto the `--art-*` values at its next touch; no third family.
 
+**Muted text on dark surfaces (legibility, 2026-09-06):** `--art-text-muted`
+`#6B7280` measures 3.9:1 on `--art-surface` and 4.1:1 on `--art-bg`, under
+the 4.5:1 AA floor for the 9–11px labels the artifacts set in it. The two
+problem-page artifacts (`problem-ambiguous-timeouts-tryit` / `-mission`)
+therefore carry a local `--art-muted: #98A1B0` (7.2:1 on the surface),
+keep every HTML label at 10px or more (meter captions 9px), and dim locked
+/ disabled options to 0.7 / 0.5 instead of 0.55 / 0.35. That is a
+deliberate deviation from the table above, recorded as open decision #22
+(lift the token site-wide, or keep it per-artifact).
+
 ### Problem-page shell tokens (light)
 
 | Role                        | CSS Variable   | Value     |
