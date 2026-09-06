@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { articles, cruxtags, patternBySlug, urlSlugByCruxTag } from '../content'
+import {
+  articles,
+  cruxtags,
+  patternBySlug,
+  problemEssayByCruxTag,
+  urlSlugByCruxTag,
+} from '../content'
 import PatternChip from '../components/PatternChip'
 import SourceAttribution from '../components/SourceAttribution'
 import {
@@ -8,6 +14,7 @@ import {
   canonicalCompanies,
   companySourceSlugMap,
 } from '../lib/catalogGroups'
+import { estimateMinutes, formatEstimate } from '../lib/wallEstimate'
 import type { Article } from '../types'
 
 // Catalog page: the browsable workbench. Grouped primarily by
@@ -330,6 +337,7 @@ function GroupSection({ group }: GroupSectionProps) {
             SEEN AT {group.companies.join(' · ')}
           </div>
         )}
+        <PlayableRow cruxTag={group.slug} />
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-4">
         {group.articles.map((article) => (
@@ -339,6 +347,32 @@ function GroupSection({ group }: GroupSectionProps) {
         ))}
       </ul>
     </section>
+  )
+}
+
+// A wall with a playable mission gets a Playable badge, its break-it teaser,
+// and the computed time estimate (station budgets rounded up to 5 --
+// src/lib/wallEstimate). Data-driven off the essay's `mission` block, so a
+// second wall lights up by authoring that one field. The badge stays in the
+// light shell's neutral ink: the problem-class magenta is dark-side only.
+function PlayableRow({ cruxTag }: { cruxTag: string }) {
+  const essay = problemEssayByCruxTag.get(cruxTag)
+  if (essay?.mission === undefined) return null
+  const minutes = estimateMinutes(essay.stations ?? [])
+  return (
+    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span className="inline-flex items-center gap-1.5 rounded-md border border-border-strong bg-bg-surface px-2 py-[2px] font-mono text-[11px] uppercase tracking-[0.08em] text-text-primary">
+        <span aria-hidden="true">▶</span> Playable
+      </span>
+      {minutes !== null && (
+        <span className="font-mono text-xs text-text-muted">
+          {formatEstimate(minutes)}
+        </span>
+      )}
+      <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
+        {essay.mission.teaser}
+      </span>
+    </div>
   )
 }
 
