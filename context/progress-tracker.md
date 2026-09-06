@@ -4,6 +4,36 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-page v7.3 port — follow-up: the mission visible without
+  JavaScript + two orientation fixes (2026-09-06, branch
+  `feat/problem-mission-outline`).** An independent no-JS audit could not
+  see what the mission is: the decisions, events and attacks lived only
+  inside the sandboxed frame. Shell change; every string is content:
+  - `howItWorks[]` → the "how this page works" strip under the lede (the
+    `.eyebrow` style, ` · `-joined); `mission.decisionsSummary` + a
+    `{{decisions}}` marker in `mission.intro` → the shell composes "Six
+    decisions are yours — … — and the goal is a day of traffic, survived."
+    (count from the outline); `mission.outline {decisions, events,
+    attacks}` → the static "What's inside the mission" card (`.card`
+    surface, three columns, stacked on phones) above the frame AND the
+    same lists as plain text in the frame's `<noscript>` (new
+    `ArtifactEmbed.noscriptDetail`); `tryIt.noscript` → one sentence in the
+    try-it's fallback; `decide.rows[].highlights[]` → clicking a row lights
+    those columns in the at-a-glance table with the YOU column's grammar
+    (`.col-hl` added to that rule; no new colour), `window.scrollTo` with
+    the nav offset (measured -- the nav wraps to two lines at 1440) when
+    the table is off-screen (`useDecideHighlight`). The embed's
+    `<noscript>` also hides the prerendered frame (a dark empty box
+    without scripting) so the fallback sits in its place.
+  - Validator: shapes at load (`checkProblemEssay`), highlights vs
+    `comparison.columns` and the marker/summary pairing in the
+    `problem-essay` check; prose checks cover the new strings. Tests: a
+    predicate unit suite, check cases, e2e (no-JS content, prerender grep
+    for the six labels + five companies, the decide→column interaction);
+    the text-parity test strips the two new static blocks and rewrites the
+    one sentence, everything else still matches the reference line-for-
+    line. Copy is the task's, verbatim -- including its em dashes, which the
+    rest of the page avoids (spaced hyphens); flagged in the PR.
 - **Problem-page v7.3 port — follow-up: artifact spacing + legibility
   (2026-09-06, branch `fix/problem-tryit-reset-specificity`, after PR #2
   merged).** Owner reported the try-it looking off on the PR preview and
