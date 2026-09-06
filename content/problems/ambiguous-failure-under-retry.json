@@ -22,6 +22,13 @@
       "estimate": true
     },
     {
+      "id": "build",
+      "anchor": "artB",
+      "label": "BUILD IT",
+      "minutes": 15,
+      "estimate": true
+    },
+    {
       "id": "compare",
       "anchor": "hintsheet",
       "label": "COMPARE",
@@ -83,6 +90,14 @@
     "artifactSlug": "problem-ambiguous-timeouts-tryit",
     "teaser": "One $100 charge, three places to cut it, and a ledger the client can't see. The only thing in doubt is what the retry finds.",
     "caption": "The three cut points are the artifact's three cuts; the three places the key's memory can live are question 2 below. If you found the double charge in replica mode - that's Airbnb's production incident, and their artifact [lets you cause it with their real machinery](#cards)."
+  },
+  "mission": {
+    "artifactSlug": "problem-ambiguous-timeouts-mission",
+    "teaser": "You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.",
+    "title": "Build the defense",
+    "intro": "You caused the failure from the victim's seat. Now take the designer's: the six decisions below are yours, and the goal is a day of traffic, survived. Run it naive first - **the damage report is the syllabus**. Every failure card names the post that names that failure and points at exactly one decision. When your day is clean, five attacks hit the design that just worked - each one a real failure that one of the five companies wrote about.",
+    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it - that is the working knowledge. Everything below is for going deeper: the five real answers side by side ([the hint sheet](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
+    "stuckNote": "Stuck on a failure card? Every decision you just made is one of the six questions below - the five answers are the hint sheet, and reading Stripe mid-debug is how engineers actually meet these posts."
   },
   "comparison": {
     "title": "The hint sheet: same wall, five answers",

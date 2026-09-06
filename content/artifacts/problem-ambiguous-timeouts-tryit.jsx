@@ -285,8 +285,11 @@ function bootBridge() {
   ro = new ResizeObserver(function () { postSize(); });
   ro.observe(root);
  }
+ /* The host's listener may attach after this frame boots (cached assets
+  hydrate late), so the size is re-posted on a short schedule too. */
+ var timers = [250, 600, 1200, 2500, 5000, 10000].map(function (ms) { return setTimeout(postSize, ms); });
  postSize();
- return function () { if (ro) ro.disconnect(); };
+ return function () { if (ro) ro.disconnect(); timers.forEach(clearTimeout); };
 }
 
 export default function ProblemAmbiguousTimeoutsTryIt() {
