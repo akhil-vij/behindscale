@@ -67,6 +67,9 @@ interface ArtifactEmbedProps {
   onMessage?: (data: unknown, reply: (message: unknown) => void) => void
   // One-line no-JS fallback rendered where the iframe sits.
   noscript?: string
+  // Optional detail after that line, as HTML the caller has already escaped
+  // (the mission's static outline as plain lists). Same dashed frame.
+  noscriptDetail?: string
   // Wrapper element attributes (an anchor id for in-page nav, extra classes).
   wrapperId?: string
   wrapperClassName?: string
@@ -84,6 +87,7 @@ export default function ArtifactEmbed({
   title,
   onMessage,
   noscript,
+  noscriptDetail,
   wrapperId,
   wrapperClassName,
 }: ArtifactEmbedProps) {
@@ -191,12 +195,15 @@ export default function ArtifactEmbed({
 
   // The no-JS line goes through innerHTML so server and client agree
   // byte-for-byte: browsers with scripting on keep <noscript> content as
-  // raw text, which is exactly what React compares on hydration.
+  // raw text, which is exactly what React compares on hydration. The
+  // prerendered <iframe> still loads without scripting (a dark, empty
+  // frame), so the same <noscript> hides it and the fallback takes its place.
+  const hideFrame = wrapperId !== undefined ? `<style>#${wrapperId} iframe{display:none}</style>` : ''
   const noscriptEl =
     noscript !== undefined ? (
       <noscript
         dangerouslySetInnerHTML={{
-          __html: `<p class="artifact-noscript">${escapeHtml(noscript)}</p>`,
+          __html: `${hideFrame}<div class="artifact-noscript"><p>${escapeHtml(noscript)}</p>${noscriptDetail ?? ''}</div>`,
         }}
       />
     ) : null

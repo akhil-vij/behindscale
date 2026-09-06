@@ -18,6 +18,9 @@ interface ComparisonSectionProps {
   // Inline SVG sources keyed by name (content/problems/<cruxTag>/<name>.svg).
   svg: (name: string) => string | undefined
   you: YouState
+  // Columns (company display names) currently pointed at by a selected
+  // "Which answer is yours" row; they take the YOU column's grammar.
+  highlightColumns?: readonly string[]
 }
 
 const EMPTY_CELL = '—'
@@ -26,7 +29,11 @@ export default function ComparisonSection({
   comparison: c,
   svg,
   you,
+  highlightColumns = [],
 }: ComparisonSectionProps) {
+  const lit = new Set(highlightColumns)
+  const colClass = (col: string | undefined) =>
+    col !== undefined && lit.has(col) ? 'col-hl' : undefined
   return (
     <section>
       <h2 className="pp-h2" id="hintsheet">
@@ -130,7 +137,7 @@ export default function ComparisonSection({
                 At a glance
               </th>
               {c.columns.map((col) => (
-                <th key={col} scope="col">
+                <th key={col} scope="col" data-col={col} className={colClass(col)}>
                   {col}
                 </th>
               ))}
@@ -150,7 +157,9 @@ export default function ComparisonSection({
                   )}
                 </td>
                 {row.cells.map((cell, j) => (
-                  <td key={j}>{renderCell(cell)}</td>
+                  <td key={j} data-col={c.columns[j]} className={colClass(c.columns[j])}>
+                    {renderCell(cell)}
+                  </td>
                 ))}
                 <td id={`you-c-${row.id}`}>
                   {you.filled ? (you.cells[row.id] ?? EMPTY_CELL) : EMPTY_CELL}

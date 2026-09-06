@@ -16,6 +16,7 @@ export type {
   ProblemWallStat,
   ProblemTryIt,
   ProblemMission,
+  ProblemMissionOutline,
   ProblemComparison,
   ProblemDiagramRow,
   ProblemYouRow,

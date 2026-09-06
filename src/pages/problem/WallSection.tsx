@@ -56,6 +56,9 @@ export default function WallSection({
             height={tryItHeight ?? DEFAULT_TRYIT_HEIGHT}
             onMessage={onTryItMessage}
             noscript={`${tryIt.teaser} (interactive - needs JavaScript)`}
+            noscriptDetail={
+              tryIt.noscript !== undefined ? `<p>${escapeHtml(tryIt.noscript)}</p>` : undefined
+            }
           />
           <p className="fig-cap">{pp(tryIt.caption)}</p>
         </>

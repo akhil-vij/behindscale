@@ -13,11 +13,23 @@ export function problemEssayProseFields(
   const push = (name: string, text: string | undefined) => {
     if (text !== undefined) out.push([name, text])
   }
+  e.howItWorks?.forEach((t, i) => push(`howItWorks[${i}]`, t))
   e.intro?.forEach((p, i) => push(`intro[${i}]`, p))
   e.wall?.prose.forEach((p, i) => push(`wall.prose[${i}]`, p))
   push('wall.statsCaption', e.wall?.statsCaption)
   push('tryIt.caption', e.tryIt?.caption)
+  push('tryIt.noscript', e.tryIt?.noscript)
   push('mission.intro', e.mission?.intro)
+  push('mission.decisionsSummary', e.mission?.decisionsSummary)
+  const o = e.mission?.outline
+  if (o !== undefined) {
+    o.decisions.forEach((d, i) => {
+      push(`mission.outline.decisions[${i}].label`, d.label)
+      d.options.forEach((opt, j) => push(`mission.outline.decisions[${i}].options[${j}]`, opt))
+    })
+    o.events.forEach((t, i) => push(`mission.outline.events[${i}]`, t))
+    o.attacks.forEach((a, i) => push(`mission.outline.attacks[${i}].text`, a.text))
+  }
   push('mission.stopblock', e.mission?.stopblock)
   push('mission.stuckNote', e.mission?.stuckNote)
   const c = e.comparison
