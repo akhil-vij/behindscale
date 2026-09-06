@@ -8,4 +8,25 @@ export type {
 } from './pattern-library'
 export type { CruxTagEntry, CruxTagRegistry } from './cruxtag'
 export type { Figure } from './figure'
-export type { ProblemEssay, ProblemExtraSection } from './problemEssay'
+export type {
+  ProblemEssay,
+  ProblemExtraSection,
+  ProblemStation,
+  ProblemWall,
+  ProblemWallStat,
+  ProblemTryIt,
+  ProblemMission,
+  ProblemComparison,
+  ProblemDiagramRow,
+  ProblemYouRow,
+  ProblemMatrixRow,
+  ProblemMatrixCell,
+  ProblemQuestion,
+  ProblemAnswer,
+  ProblemDecide,
+  ProblemSteal,
+  ProblemInterview,
+  ProblemPatternsSection,
+  ProblemCards,
+  ProblemSources,
+} from './problemEssay'

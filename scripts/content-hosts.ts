@@ -108,6 +108,46 @@ export function contentHosts(content: ContentSet): ContentHost[] {
     })
   }
 
+  // Problem essays (v7.3 rich pages, 2026-09-06). Two registrations per
+  // essay:
+  //   - a FIGURE host keyed by cruxTag (content/figures/<cruxTag>/...), for
+  //     the no-JS wall figure (`wall.figureSlug`) and any {{figure:...}}
+  //     marker in the intro / wall prose. `wall.figureSlug` is surfaced to
+  //     the marker checks as a synthetic marker field so the eight figure
+  //     checks apply unchanged (no new figure machinery).
+  //   - one ARTIFACT host per artifact (tryIt, mission), each under its own
+  //     slug in the flat namespace (Approach A) -- a problem page carries
+  //     two artifacts, so the essay itself cannot be "the" artifact host.
+  for (const e of content.problemEssays) {
+    const markerFields: Array<readonly [string, string]> = [
+      ['intro', (e.intro ?? []).join('\n\n')],
+      ['wall.prose', (e.wall?.prose ?? []).join('\n\n')],
+    ]
+    if (e.wall?.figureSlug !== undefined) {
+      markerFields.push(['wall.figureSlug', `{{figure:${e.wall.figureSlug}}}`])
+    }
+    const forbidden: Array<readonly [string, string]> = []
+    if (e.headline !== undefined) forbidden.push(['headline', e.headline])
+    if (e.lede !== undefined) forbidden.push(['lede', e.lede])
+    hosts.push({
+      slug: e.cruxTag,
+      kind: 'problem',
+      ref: { problemSlug: e.cruxTag },
+      figures: e.figures ?? [],
+      markerFields,
+      forbiddenFields: forbidden,
+    })
+    for (const a of [e.tryIt, e.mission]) {
+      if (a === undefined) continue
+      hosts.push({
+        slug: a.artifactSlug,
+        kind: 'problem',
+        ref: { problemSlug: e.cruxTag },
+        artifact: { path: `/artifacts/${a.artifactSlug}/index.html`, teaser: a.teaser },
+      })
+    }
+  }
+
   return hosts
 }
 

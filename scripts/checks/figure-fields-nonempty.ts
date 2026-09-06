@@ -20,10 +20,14 @@ const CAPTION_MAX = 40
 const ARIA_MIN = 4
 const ARIA_MAX = 20
 
+// A "word" carries at least one letter or digit. Standalone punctuation
+// tokens -- the spaced hyphen the house style mandates (CORRECTIONS P12,
+// "- " instead of an em-dash), a lone "·" or "→" -- are not words and must
+// not push a caption over its band.
 function wordCount(s: string): number {
   const trimmed = s.trim()
   if (trimmed.length === 0) return 0
-  return trimmed.split(/\s+/).length
+  return trimmed.split(/\s+/).filter((t) => /[\p{L}\p{N}]/u.test(t)).length
 }
 
 // "All caps" means every letter is uppercase. Digits, spaces, and

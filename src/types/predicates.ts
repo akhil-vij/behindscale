@@ -238,13 +238,13 @@ export function checkArticle(value: unknown): Result {
   return ok
 }
 
-// Problem-essay schema (docs/problem-page-design.md §5/§9). Every field
-// except `cruxTag` is optional -- an absent field means "render the derived
-// placeholder". This predicate validates SHAPE only; cross-references
-// (cruxTag resolves to a registry entry, filename match, uniqueness) live in
-// the `problem-essay` check. Only the LIVE fields are validated here; richer
-// blocks (metricGrid, vantageRows, deepDive, ...) gain their rules when their
-// renderers land. `extraSections` is validated shallowly (field stub).
+// Problem-essay schema (docs/problem-page-design.md §5/§9; v7.3 rich
+// blocks 2026-09-06). Every field except `cruxTag` is optional -- an absent
+// field means "render the derived placeholder". This predicate validates
+// SHAPE only; cross-references (cruxTag resolves to a registry entry,
+// filename match, uniqueness, member/pattern/svg/artifact resolution) live
+// in the `problem-essay` check. `extraSections` is validated shallowly
+// (field stub).
 export function checkProblemEssay(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   if (typeof value.cruxTag !== 'string') {
@@ -294,6 +294,376 @@ export function checkProblemEssay(value: unknown): Result {
         return fail(`\`extraSections[${i}].blocks\` expected array`)
       }
     }
+  }
+  if (value.figures !== undefined) {
+    const figuresResult = checkFiguresField(value.figures, 'problem essay')
+    if (!figuresResult.ok) return figuresResult
+  }
+  // -- v7.3 rich blocks. Each helper returns the first failure it finds. --
+  const richChecks: ReadonlyArray<readonly [string, (v: unknown) => Result]> = [
+    ['stations', checkProblemStations],
+    ['wall', checkProblemWall],
+    ['tryIt', checkProblemTryIt],
+    ['mission', checkProblemMission],
+    ['comparison', checkProblemComparison],
+    ['decide', checkProblemDecide],
+    ['steal', checkProblemSteal],
+    ['interview', checkProblemInterview],
+    ['patterns', checkProblemPatternsSection],
+    ['cards', checkProblemCards],
+    ['sources', checkProblemSources],
+  ]
+  for (const [field, check] of richChecks) {
+    if (value[field] === undefined) continue
+    const result = check(value[field])
+    if (!result.ok) return fail(`\`${field}\`: ` + result.reason)
+  }
+  return ok
+}
+
+// -- helpers for the v7.3 rich blocks ------------------------------------
+
+function nonEmptyString(v: unknown): v is string {
+  return typeof v === 'string' && v.trim().length > 0
+}
+
+function nonEmptyStringArray(v: unknown): v is string[] {
+  return isStringArray(v) && v.every((s) => s.trim().length > 0)
+}
+
+// Fields that must be non-empty strings when present (optional) or always
+// (required). Returns the first failing field's reason, else ok.
+function checkStringFields(
+  obj: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[] = [],
+): Result {
+  for (const key of required) {
+    if (!nonEmptyString(obj[key])) return fail(`\`${key}\` expected non-empty string`)
+  }
+  for (const key of optional) {
+    if (obj[key] !== undefined && !nonEmptyString(obj[key])) {
+      return fail(`\`${key}\` expected non-empty string when present`)
+    }
+  }
+  return ok
+}
+
+function checkOptionalBool(obj: Record<string, unknown>, key: string): Result {
+  if (obj[key] !== undefined && typeof obj[key] !== 'boolean') {
+    return fail(`\`${key}\` expected boolean when present`)
+  }
+  return ok
+}
+
+function checkProblemStations(value: unknown): Result {
+  if (!Array.isArray(value) || value.length === 0) return fail('expected non-empty array')
+  const ids = new Set<string>()
+  for (let i = 0; i < value.length; i++) {
+    const s = value[i]
+    if (!isObject(s)) return fail(`[${i}] expected object`)
+    const r = checkStringFields(s, ['id', 'anchor', 'label'])
+    if (!r.ok) return fail(`[${i}]: ${r.reason}`)
+    if (!KEBAB_CASE.test(s.id as string)) return fail(`[${i}].id expected kebab-case`)
+    if (ids.has(s.id as string)) return fail(`[${i}].id "${s.id}" duplicates an earlier station`)
+    ids.add(s.id as string)
+    if (
+      s.minutes !== null &&
+      (typeof s.minutes !== 'number' || !Number.isInteger(s.minutes) || s.minutes < 0)
+    ) {
+      return fail(`[${i}].minutes expected non-negative integer or null`)
+    }
+    for (const key of ['openEnded', 'estimate']) {
+      const b = checkOptionalBool(s, key)
+      if (!b.ok) return fail(`[${i}]: ${b.reason}`)
+    }
+    if (s.estimate === true && s.minutes === null) {
+      return fail(`[${i}] counts toward the estimate but has no minutes`)
+    }
+  }
+  return ok
+}
+
+function checkProblemWall(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyStringArray(value.prose) || value.prose.length === 0) {
+    return fail('`prose` expected non-empty array of non-empty strings')
+  }
+  const r = checkStringFields(value, [], ['figureSlug', 'statsCaption'])
+  if (!r.ok) return r
+  if (value.figureSlug !== undefined && !KEBAB_CASE.test(value.figureSlug as string)) {
+    return fail('`figureSlug` expected kebab-case')
+  }
+  if (value.stats !== undefined) {
+    if (!Array.isArray(value.stats)) return fail('`stats` expected array when present')
+    for (let i = 0; i < value.stats.length; i++) {
+      const st = value.stats[i]
+      if (!isObject(st)) return fail(`\`stats[${i}]\` expected object`)
+      const sr = checkStringFields(st, ['value', 'label', 'source'])
+      if (!sr.ok) return fail(`\`stats[${i}]\`: ${sr.reason}`)
+    }
+  }
+  return ok
+}
+
+function checkProblemTryIt(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  const r = checkStringFields(value, ['artifactSlug', 'teaser', 'caption'])
+  if (!r.ok) return r
+  if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')
+  return ok
+}
+
+function checkProblemMission(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  const r = checkStringFields(
+    value,
+    ['artifactSlug', 'teaser', 'title', 'intro'],
+    ['stopblock', 'stuckNote'],
+  )
+  if (!r.ok) return r
+  if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')
+  return ok
+}
+
+const LEGEND_KINDS = new Set(['key', 'state', 'reply', 'break'])
+
+function checkProblemComparison(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  const r = checkStringFields(
+    value,
+    ['title', 'lede', 'diagramTitle'],
+    ['stripNote', 'matrixLead', 'matrixCaption'],
+  )
+  if (!r.ok) return r
+
+  // spectrum
+  const sp = value.spectrum
+  if (!isObject(sp)) return fail('`spectrum` expected object')
+  const spr = checkStringFields(sp, ['eyebrow', 'caption'])
+  if (!spr.ok) return fail(`\`spectrum\`: ${spr.reason}`)
+  if (!Array.isArray(sp.points) || sp.points.length === 0) {
+    return fail('`spectrum.points` expected non-empty array')
+  }
+  for (let i = 0; i < sp.points.length; i++) {
+    const pt = sp.points[i]
+    if (!isObject(pt) || !nonEmptyString(pt.label)) {
+      return fail(`\`spectrum.points[${i}]\` expected { label, left, up? }`)
+    }
+    if (typeof pt.left !== 'number' || pt.left < 0 || pt.left > 100) {
+      return fail(`\`spectrum.points[${i}].left\` expected number 0-100`)
+    }
+    const b = checkOptionalBool(pt, 'up')
+    if (!b.ok) return fail(`\`spectrum.points[${i}]\`: ${b.reason}`)
+  }
+  if (!nonEmptyStringArray(sp.ends) || sp.ends.length !== 2) {
+    return fail('`spectrum.ends` expected [left, right] non-empty strings')
+  }
+
+  // legend
+  if (!Array.isArray(value.legend)) return fail('`legend` expected array')
+  for (let i = 0; i < value.legend.length; i++) {
+    const item = value.legend[i]
+    if (!isObject(item) || !nonEmptyString(item.label)) {
+      return fail(`\`legend[${i}]\` expected { kind, label }`)
+    }
+    if (typeof item.kind !== 'string' || !LEGEND_KINDS.has(item.kind)) {
+      return fail(`\`legend[${i}].kind\` expected one of key|state|reply|break`)
+    }
+  }
+
+  // diagram rows
+  if (!Array.isArray(value.diagramRows) || value.diagramRows.length === 0) {
+    return fail('`diagramRows` expected non-empty array')
+  }
+  for (let i = 0; i < value.diagramRows.length; i++) {
+    const row = value.diagramRows[i]
+    if (!isObject(row)) return fail(`\`diagramRows[${i}]\` expected object`)
+    const rr = checkStringFields(row, ['company', 'year', 'vantage', 'svg', 'caption'], ['articleSlug'])
+    if (!rr.ok) return fail(`\`diagramRows[${i}]\`: ${rr.reason}`)
+    if (!KEBAB_CASE.test(row.svg as string)) return fail(`\`diagramRows[${i}].svg\` expected kebab-case`)
+    const b = checkOptionalBool(row, 'open')
+    if (!b.ok) return fail(`\`diagramRows[${i}]\`: ${b.reason}`)
+  }
+
+  // you row
+  const you = value.you
+  if (!isObject(you)) return fail('`you` expected object')
+  const yr = checkStringFields(you, ['name', 'year', 'vantage', 'emptySvg', 'filledSvg'])
+  if (!yr.ok) return fail(`\`you\`: ${yr.reason}`)
+  for (const key of ['emptySvg', 'filledSvg']) {
+    if (!KEBAB_CASE.test(you[key] as string)) return fail(`\`you.${key}\` expected kebab-case`)
+  }
+  const yb = checkOptionalBool(you, 'open')
+  if (!yb.ok) return fail(`\`you\`: ${yb.reason}`)
+
+  // matrix
+  if (!nonEmptyStringArray(value.columns) || value.columns.length === 0) {
+    return fail('`columns` expected non-empty array of non-empty strings')
+  }
+  if (!isObject(value.youColumn)) return fail('`youColumn` expected object')
+  const ycr = checkStringFields(value.youColumn, ['emptyLabel', 'label'])
+  if (!ycr.ok) return fail(`\`youColumn\`: ${ycr.reason}`)
+  if (!Array.isArray(value.matrixRows) || value.matrixRows.length === 0) {
+    return fail('`matrixRows` expected non-empty array')
+  }
+  const rowIds = new Set<string>()
+  for (let i = 0; i < value.matrixRows.length; i++) {
+    const row = value.matrixRows[i]
+    if (!isObject(row)) return fail(`\`matrixRows[${i}]\` expected object`)
+    const rr = checkStringFields(row, ['id', 'label'], ['qref'])
+    if (!rr.ok) return fail(`\`matrixRows[${i}]\`: ${rr.reason}`)
+    if (!/^[a-z][a-zA-Z0-9]*$/.test(row.id as string)) {
+      return fail(`\`matrixRows[${i}].id\` expected an identifier (matches a youMapping key)`)
+    }
+    if (rowIds.has(row.id as string)) return fail(`\`matrixRows[${i}].id\` "${row.id}" duplicates an earlier row`)
+    rowIds.add(row.id as string)
+    if (!Array.isArray(row.cells) || row.cells.length !== value.columns.length) {
+      return fail(`\`matrixRows[${i}].cells\` expected ${value.columns.length} entries (one per column)`)
+    }
+    for (let j = 0; j < row.cells.length; j++) {
+      const cell = row.cells[j]
+      const okCell =
+        nonEmptyString(cell) || (isObject(cell) && nonEmptyString(cell.ns))
+      if (!okCell) return fail(`\`matrixRows[${i}].cells[${j}]\` expected string or { ns }`)
+    }
+    for (const key of ['lead', 'hot']) {
+      const b = checkOptionalBool(row, key)
+      if (!b.ok) return fail(`\`matrixRows[${i}]\`: ${b.reason}`)
+    }
+  }
+
+  // questions
+  if (!Array.isArray(value.questions) || value.questions.length === 0) {
+    return fail('`questions` expected non-empty array')
+  }
+  const qIds = new Set<string>()
+  for (let i = 0; i < value.questions.length; i++) {
+    const q = value.questions[i]
+    if (!isObject(q)) return fail(`\`questions[${i}]\` expected object`)
+    const qr = checkStringFields(q, ['id', 'title'], ['why'])
+    if (!qr.ok) return fail(`\`questions[${i}]\`: ${qr.reason}`)
+    if (!KEBAB_CASE.test(q.id as string)) return fail(`\`questions[${i}].id\` expected kebab-case`)
+    if (qIds.has(q.id as string)) return fail(`\`questions[${i}].id\` "${q.id}" duplicates an earlier question`)
+    qIds.add(q.id as string)
+    if (q.figure !== undefined) {
+      if (!isObject(q.figure) || !nonEmptyString(q.figure.svg) || !KEBAB_CASE.test(q.figure.svg)) {
+        return fail(`\`questions[${i}].figure\` expected { svg (kebab-case), caption? }`)
+      }
+      if (q.figure.caption !== undefined && !nonEmptyString(q.figure.caption)) {
+        return fail(`\`questions[${i}].figure.caption\` expected non-empty string when present`)
+      }
+    }
+    if (!Array.isArray(q.answers) || q.answers.length === 0) {
+      return fail(`\`questions[${i}].answers\` expected non-empty array`)
+    }
+    for (let j = 0; j < q.answers.length; j++) {
+      const a = q.answers[j]
+      if (!isObject(a)) return fail(`\`questions[${i}].answers[${j}]\` expected object`)
+      const ar = checkStringFields(a, ['company', 'text'], ['year'])
+      if (!ar.ok) return fail(`\`questions[${i}].answers[${j}]\`: ${ar.reason}`)
+      const b = checkOptionalBool(a, 'ns')
+      if (!b.ok) return fail(`\`questions[${i}].answers[${j}]\`: ${b.reason}`)
+    }
+    for (const key of ['open', 'hot']) {
+      const b = checkOptionalBool(q, key)
+      if (!b.ok) return fail(`\`questions[${i}]\`: ${b.reason}`)
+    }
+  }
+  // Every matrix qref must name a question.
+  for (const row of value.matrixRows as Record<string, unknown>[]) {
+    if (row.qref !== undefined && !qIds.has(row.qref as string)) {
+      return fail(`\`matrixRows\` row "${row.id}" qref "${row.qref}" names no question`)
+    }
+  }
+  return ok
+}
+
+function checkProblemDecide(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyString(value.intro)) return fail('`intro` expected non-empty string')
+  if (!Array.isArray(value.rows) || value.rows.length === 0) return fail('`rows` expected non-empty array')
+  for (let i = 0; i < value.rows.length; i++) {
+    const row = value.rows[i]
+    if (!isObject(row)) return fail(`\`rows[${i}]\` expected object`)
+    const r = checkStringFields(row, ['if', 'then'])
+    if (!r.ok) return fail(`\`rows[${i}]\`: ${r.reason}`)
+  }
+  if (value.elsewhere !== undefined) {
+    if (!isObject(value.elsewhere)) return fail('`elsewhere` expected object when present')
+    const r = checkStringFields(value.elsewhere, ['title', 'text'])
+    if (!r.ok) return fail(`\`elsewhere\`: ${r.reason}`)
+  }
+  return ok
+}
+
+function checkProblemSteal(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyString(value.intro)) return fail('`intro` expected non-empty string')
+  if (!Array.isArray(value.items) || value.items.length === 0) return fail('`items` expected non-empty array')
+  for (let i = 0; i < value.items.length; i++) {
+    const item = value.items[i]
+    if (!isObject(item)) return fail(`\`items[${i}]\` expected object`)
+    const r = checkStringFields(item, ['rule', 'text'], ['qref'])
+    if (!r.ok) return fail(`\`items[${i}]\`: ${r.reason}`)
+  }
+  return ok
+}
+
+function checkProblemInterview(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyStringArray(value.asks) || value.asks.length === 0) {
+    return fail('`asks` expected non-empty array of non-empty strings')
+  }
+  const r = checkStringFields(value, ['shape', 'followupsIntro', 'senior', 'staff', 'closing'])
+  if (!r.ok) return r
+  if (!Array.isArray(value.followups) || value.followups.length === 0) {
+    return fail('`followups` expected non-empty array')
+  }
+  for (let i = 0; i < value.followups.length; i++) {
+    const f = value.followups[i]
+    if (!isObject(f)) return fail(`\`followups[${i}]\` expected object`)
+    const fr = checkStringFields(f, ['ask', 'attack', 'held'])
+    if (!fr.ok) return fail(`\`followups[${i}]\`: ${fr.reason}`)
+  }
+  if (!nonEmptyStringArray(value.redFlags)) {
+    return fail('`redFlags` expected array of non-empty strings')
+  }
+  return ok
+}
+
+function checkProblemPatternsSection(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyString(value.intro)) return fail('`intro` expected non-empty string')
+  if (value.order !== undefined) {
+    if (!nonEmptyStringArray(value.order)) return fail('`order` expected array of pattern slugs when present')
+    if (new Set(value.order).size !== value.order.length) return fail('`order` must not repeat a slug')
+  }
+  return ok
+}
+
+function checkProblemCards(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  const r = checkStringFields(value, ['intro'], ['title'])
+  if (!r.ok) return r
+  if (value.teasers !== undefined) {
+    if (!isObject(value.teasers)) return fail('`teasers` expected object (articleSlug -> line) when present')
+    for (const [slug, line] of Object.entries(value.teasers)) {
+      if (!nonEmptyString(line)) return fail(`\`teasers.${slug}\` expected non-empty string`)
+    }
+  }
+  return ok
+}
+
+function checkProblemSources(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!nonEmptyString(value.intro)) return fail('`intro` expected non-empty string')
+  if (!Array.isArray(value.items) || value.items.length === 0) return fail('`items` expected non-empty array')
+  for (let i = 0; i < value.items.length; i++) {
+    const item = value.items[i]
+    if (!isObject(item)) return fail(`\`items[${i}]\` expected object`)
+    const r = checkStringFields(item, ['label', 'articleSlug'])
+    if (!r.ok) return fail(`\`items[${i}]\`: ${r.reason}`)
   }
   return ok
 }

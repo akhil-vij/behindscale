@@ -45,15 +45,25 @@ export interface ContentSet {
   // See scripts/content-hosts.ts (artifactHosts) and
   // docs/pattern-artifacts-design.md §6.
   readonly artifactSourceSlugs: ReadonlySet<string>
+  // Preloaded inline diagram SVGs for the rich problem pages, keyed
+  // `<cruxTag>/<name>` (content/problems/<cruxTag>/<name>.svg). Every file
+  // in an essay's directory is loaded; the problem-essay check verifies the
+  // referenced ones exist and pass the figure-svg-safe rules.
+  readonly problemSvgs: ReadonlyMap<
+    string,
+    { readonly path: string; readonly contents: string }
+  >
 }
 
 export interface CheckError {
-  // Exactly one of these three should typically be set so the runner
+  // Exactly one of these locators should typically be set so the runner
   // can resolve to a file path for output. Resolution priority:
-  // file > articleSlug > patternSlug. `file` is the escape hatch for
+  // file > articleSlug > patternSlug > problemSlug. `file` is the escape hatch for
   // cross-cutting checks that don't fit either slug bucket.
   readonly articleSlug?: string
   readonly patternSlug?: string
+  // A problem essay, by its cruxTag (resolves to content/problems/<cruxTag>.json).
+  readonly problemSlug?: string
   readonly file?: string
   // One-line problem description (no leading "fix:" prefix; the runner
   // handles formatting).

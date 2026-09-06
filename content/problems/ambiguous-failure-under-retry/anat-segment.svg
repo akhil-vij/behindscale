@@ -1,0 +1,27 @@
+<svg class="anat" viewBox="0 0 640 144" role="img" aria-label="Segment: messageId born in the client SDK, state in a RocksDB ledger on each worker, duplicates are silently dropped; the window shrinks under load">
+  <path class="replay ns" d="M 300 34 C 250 8, 150 8, 92 30"/>
+  <polygon class="rhead ns" points="88,32 98,26 98,34"/>
+  <text class="rlabel ns" x="196" y="14">nothing - the duplicate is dropped</text>
+  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+  <text class="nlabel" x="62" y="55">PHONE</text>
+  <text class="nsub" x="62" y="68">can't follow rules</text>
+  <circle class="keydot" cx="116" cy="57" r="6"/>
+  <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
+  <polygon class="ahead" points="248,57 240,53 240,61"/>
+  <text class="alabel" x="185" y="50">EVENT + messageId</text>
+  <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
+  <text class="nlabel" x="320" y="55">DEDUPE WORKER</text>
+  <text class="nsub" x="320" y="68">same ID, same worker</text>
+  <line class="drop" x1="320" y1="74" x2="320" y2="88"/>
+  <rect class="state" x="250" y="88" width="140" height="26" rx="6"/>
+  <text class="slabel" x="320" y="105">ON-DISK LEDGER · 60B IDs</text>
+  <line class="bx" x1="256" y1="120" x2="268" y2="132"/>
+  <line class="bx" x1="268" y1="120" x2="256" y2="132"/>
+  <text class="blabel" x="276" y="130">WINDOW SHRINKS UNDER LOAD</text>
+  <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
+  <polygon class="ahead" points="504,57 496,53 496,61"/>
+  <text class="alabel" x="443" y="50">NEW ONLY</text>
+  <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
+  <text class="nlabel" x="569" y="55">OUTPUT LOG</text>
+  <text class="nsub" x="569" y="68">source of truth</text>
+</svg>

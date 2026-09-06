@@ -104,6 +104,18 @@ function findOffRepoRefs(src: string): Violation[] {
   return out
 }
 
+// Every violation the allowlist finds in one SVG source, as messages. Shared
+// with the problem-essay check, which runs the same bar over the rich
+// problem pages' INLINE diagrams (content/problems/<cruxTag>/*.svg) --
+// stricter there if anything, since those are inlined into the page rather
+// than <img>-sandboxed.
+export function svgSafetyViolations(src: string): string[] {
+  const out: string[] = []
+  for (const rule of CHECKS) if (rule.test(src)) out.push(rule.message)
+  for (const v of findOffRepoRefs(src)) out.push(v.message)
+  return out
+}
+
 export const figureSvgSafe: Check = {
   name: 'figure-svg-safe',
   run: (content) => {

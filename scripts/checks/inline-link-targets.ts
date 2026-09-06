@@ -11,8 +11,10 @@
 // not resolved here.
 
 import type { Check, CheckError } from '../types'
+import { problemEssayProseFields } from '../problem-essay-prose'
 
 const PATTERN_LINK = /\[[^\]]+\]\(\/patterns\/([a-z0-9-]+)\)/g
+const ARTICLE_LINK = /\[[^\]]+\]\(\/articles\/([a-z0-9-]+)\)/g
 
 export const inlineLinkTargets: Check = {
   name: 'inline-link-targets',
@@ -23,7 +25,7 @@ export const inlineLinkTargets: Check = {
     const scan = (
       where: string,
       text: string,
-      ref: { patternSlug: string } | { articleSlug: string },
+      ref: { patternSlug: string } | { articleSlug: string } | { problemSlug: string },
     ) => {
       PATTERN_LINK.lastIndex = 0
       let m: RegExpExecArray | null
@@ -47,6 +49,26 @@ export const inlineLinkTargets: Check = {
     for (const a of content.articles) {
       scan('problem', a.problem, { articleSlug: a.slug })
       scan('solution', a.solution, { articleSlug: a.slug })
+    }
+    // Problem-essay prose (v7.3 port): `/patterns/<slug>` links resolve the
+    // same way; `/articles/<slug>` links must name a real article too.
+    const articleSlugs = new Set(content.articles.map((a) => a.slug))
+    for (const e of content.problemEssays) {
+      for (const [name, text] of problemEssayProseFields(e)) {
+        scan(name, text, { problemSlug: e.cruxTag })
+        ARTICLE_LINK.lastIndex = 0
+        let m: RegExpExecArray | null
+        while ((m = ARTICLE_LINK.exec(text)) !== null) {
+          const slug = m[1]!
+          if (!articleSlugs.has(slug)) {
+            errors.push({
+              problemSlug: e.cruxTag,
+              message: `${name}: inline link points to /articles/${slug}, which is not a known article (dead link)`,
+              fix: ['link only articles that exist; never guess a slug'],
+            })
+          }
+        }
+      }
     }
 
     return errors

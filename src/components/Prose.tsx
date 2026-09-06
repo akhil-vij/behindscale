@@ -43,36 +43,54 @@ interface ProseProps {
 //     navigation is introduced and the site stays static-by-construction.
 //     `/patterns/<slug>` targets are guarded against 404 by the build-time
 //     `inline-link-targets` check. See docs/Corrections_pattern.md PP-54.
-//   - `**text**`       -> <strong>. Non-nested (the inner run has no `*`); the
-//     build-time `bold-markers-balanced` check rejects an odd number of `**`
-//     in any Prose field so an unbalanced marker can never leak literal
-//     asterisks. proseText() strips `**` for descriptions/indexes.
-const INLINE = /\[([^\]]+)\]\((\/[^)\s]+)\)|\*\*([^*]+)\*\*/g
+//     `[text](#anchor)` (added with the v7.3 problem-page port) -> a plain
+//     same-page <a href="#anchor"> -- the browser's own fragment jump, no
+//     router involvement.
+//   - `**text**`       -> <strong>. The inner run has no `*` but MAY carry a
+//     link (`**[Stripe](/articles/x)**` renders a bold link), so the strong
+//     content is rendered through the same pass once; the build-time
+//     `bold-markers-balanced` check rejects an odd number of `**` in any
+//     Prose field so an unbalanced marker can never leak literal asterisks.
+//     proseText() strips `**` for descriptions/indexes.
+const INLINE = /\[([^\]]+)\]\(((?:\/|#)[^)\s]+)\)|\*\*([^*]+)\*\*/g
 
-function renderInline(text: string): ReactNode {
+const DEFAULT_LINK_CLASS =
+  'text-accent-primary underline underline-offset-2 hover:text-accent-hover'
+
+// Exported for the problem-page shell, which renders the same inline subset
+// over its authored copy with its own link styling.
+export function renderInline(
+  text: string,
+  linkClassName: string = DEFAULT_LINK_CLASS,
+): ReactNode {
   // fast path: nothing to transform
-  if (!text.includes('](/') && !text.includes('**')) return text
+  if (!text.includes('](') && !text.includes('**')) return text
   const nodes: ReactNode[] = []
   let last = 0
   let k = 0
-  INLINE.lastIndex = 0
+  // A fresh instance per call: the bold branch recurses, and a shared global
+  // regex would have its lastIndex reset by the nested pass.
+  const re = new RegExp(INLINE.source, 'g')
   let m: RegExpExecArray | null
-  while ((m = INLINE.exec(text)) !== null) {
+  while ((m = re.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index))
     if (m[1] !== undefined) {
+      const target = m[2]!
       nodes.push(
-        <Link
-          key={k++}
-          to={m[2]!}
-          className="text-accent-primary underline underline-offset-2 hover:text-accent-hover"
-        >
-          {m[1]}
-        </Link>,
+        target.startsWith('#') ? (
+          <a key={k++} href={target} className={linkClassName}>
+            {m[1]}
+          </a>
+        ) : (
+          <Link key={k++} to={target} className={linkClassName}>
+            {m[1]}
+          </Link>
+        ),
       )
     } else {
       nodes.push(
         <strong key={k++} className="font-semibold text-text-primary">
-          {m[3]}
+          {renderInline(m[3]!, linkClassName)}
         </strong>,
       )
     }

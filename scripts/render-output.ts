@@ -162,6 +162,13 @@ function resolveFile(err: CheckError, content: ContentSet): string {
       `<unknown pattern slug: ${err.patternSlug}>`
     )
   }
+  if (err.problemSlug !== undefined) {
+    return (
+      content.problemEssayPaths.get(err.problemSlug) ??
+      `<unknown problem essay: ${err.problemSlug}>`
+    )
+  }
+
   return '<no file>'
 }
 

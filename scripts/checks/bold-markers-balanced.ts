@@ -6,13 +6,14 @@
 // "no literal markdown leak" invariant for bold, the sibling of
 // `inline-link-targets` for links.
 //
-// Scope: the Prose-rendered fields -- pattern definitions and article
-// problem/solution. whenItApplies/tradeoffs are NOT Prose-rendered
+// Scope: the Prose-rendered fields -- pattern definitions, article
+// problem/solution, and every inline-markup field of a problem essay. whenItApplies/tradeoffs are NOT Prose-rendered
 // (tradeoffs use boldLead, whenItApplies is a plain grid), so `**` there
 // would never render as bold; this check flags it in those fields too so
 // stray markers don't slip in unrendered.
 
 import type { Check, CheckError } from '../types'
+import { problemEssayProseFields } from '../problem-essay-prose'
 
 const WELL_FORMED_BOLD = /\*\*[^*]+\*\*/g
 
@@ -24,7 +25,7 @@ export const boldMarkersBalanced: Check = {
     const scan = (
       where: string,
       text: string,
-      ref: { patternSlug: string } | { articleSlug: string },
+      ref: { patternSlug: string } | { articleSlug: string } | { problemSlug: string },
     ) => {
       // Remove every well-formed `**text**` pair, then any surviving `**`
       // is unbalanced or malformed (empty, or wrapping a `*`).
@@ -46,6 +47,13 @@ export const boldMarkersBalanced: Check = {
     for (const a of content.articles) {
       scan('problem', a.problem, { articleSlug: a.slug })
       scan('solution', a.solution, { articleSlug: a.slug })
+    }
+    // Rich problem-page copy (v7.3 port) renders through the same inline
+    // markup; every essay prose field gets the same guarantee.
+    for (const e of content.problemEssays) {
+      for (const [name, text] of problemEssayProseFields(e)) {
+        scan(name, text, { problemSlug: e.cruxTag })
+      }
     }
 
     return errors

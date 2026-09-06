@@ -1,0 +1,28 @@
+<svg class="anat" viewBox="0 0 640 144" role="img" aria-label="AWS: ClientToken from the caller or SDK, token and changes committed as one ACID unit, retries get a same-meaning success; a reused token with changed parameters is refused">
+  <path class="replay" d="M 300 34 C 250 8, 150 8, 92 30"/>
+  <polygon class="rhead" points="88,32 98,26 98,34"/>
+  <text class="rlabel" x="196" y="14">SAME-MEANING SUCCESS, EVERY TIME</text>
+  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+  <text class="nlabel" x="62" y="55">CALLER / SDK</text>
+  <text class="nsub" x="62" y="68">SDK fills the token in</text>
+  <circle class="keydot" cx="116" cy="57" r="6"/>
+  <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
+  <polygon class="ahead" points="248,57 240,53 240,61"/>
+  <text class="alabel" x="185" y="50">ClientToken</text>
+  <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
+  <text class="nlabel" x="320" y="61">EC2</text>
+  <line class="drop" x1="320" y1="74" x2="320" y2="88"/>
+  <rect class="acid" x="250" y="88" width="264" height="30" rx="8"/>
+  <rect class="state" x="258" y="93" width="110" height="20" rx="5"/>
+  <text class="slabel" x="313" y="107">TOKEN + PARAMS</text>
+  <rect class="state" x="376" y="93" width="130" height="20" rx="5"/>
+  <text class="slabel" x="441" y="107">THE CHANGES</text>
+  <text class="alabel" x="382" y="132">ONE ALL-OR-NOTHING COMMIT</text>
+  <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
+  <polygon class="ahead" points="504,57 496,53 496,61"/>
+  <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
+  <text class="nlabel" x="569" y="61">INSTANCE</text>
+  <line class="bx" x1="52" y1="86" x2="64" y2="98"/>
+  <line class="bx" x1="64" y1="86" x2="52" y2="98"/>
+  <text class="blabel" x="72" y="96">SAME TOKEN, NEW PARAMS → REFUSED</text>
+</svg>
