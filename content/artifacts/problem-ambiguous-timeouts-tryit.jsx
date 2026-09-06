@@ -25,13 +25,13 @@ const WALL = 'ambiguous-failure-under-retry'
 const CSS = `
 :root {
  --art-bg: #08090D; --art-surface: #0F1118; --art-surface-2: #161922;
- --art-border: #1F2333; --art-text: #C8CDD8; --art-muted: #6B7280;
+ --art-border: #1F2333; --art-text: #C8CDD8; --art-muted: #98A1B0; /* legibility: #6B7280 is 3.9:1 on --art-surface; this is 7.2:1 for the 9-10px labels */
  --art-border-interactive: #3a4158; --art-text-bright: #EDEFF3;
  --art-red: #ef4444; --art-amber: #eab308; --art-green: #22c55e;
  --accent-problem: #D946EF; --accent-problem-hover: #E879F9;
  --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-#tryit-root * { margin: 0; padding: 0; box-sizing: border-box; }
+:where(#tryit-root) * { margin: 0; padding: 0; box-sizing: border-box; }
 #tryit-root b { color: var(--art-text-bright); font-weight: 600; }
 .artifact { background: var(--art-bg); color: var(--art-text); border: 1px solid var(--art-border); border-radius: 12px; padding: 20px; margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; width: 100%; position: relative; }
 .art-eyebrow { color: var(--art-muted); font-size: 10px; letter-spacing: 2px; }
@@ -51,7 +51,7 @@ const CSS = `
 .abtn { display: block; width: 100%; text-align: left; padding: 7px 9px; margin-top: 6px; border-radius: 6px; cursor: pointer; border: 1px solid var(--art-border-interactive); color: var(--art-text); background: var(--art-surface); font-family: inherit; font-size: 11px; }
 .abtn small { display: block; font-size: 10px; line-height: 1.5; color: var(--art-muted); margin-top: 1px; font-weight: 400; }
 .abtn:hover:not(:disabled) { border-color: var(--art-text); }
-.abtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.abtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .abtn.cut { border-color: #ef4444; color: #ef4444; }
 .abtn.cut.sel { background: rgba(239,68,68,0.16); font-weight: 700; }
 .abtn.shelf { border-color: #eab308; color: #eab308; }

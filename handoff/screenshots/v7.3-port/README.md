@@ -18,3 +18,10 @@ default path; state carries across the captures in order.
 
 Fonts are the fallback mono stack (no JetBrains Mono fetch inside the
 sandboxed frames), a recorded visual deviation from the reference build.
+
+Re-captured 2026-09-06 (branch `fix/problem-tryit-reset-specificity`) after
+the try-it reset fix and the legibility pass: every artifact-state frame is
+an element capture inside a viewport tall enough for it — a full-page
+capture leaves an out-of-process sandboxed iframe unpainted, which is why
+the first set was blank. The phone mission frames keep a 780px viewport so
+the 90dvh scrollport shows as a phone sees it.
