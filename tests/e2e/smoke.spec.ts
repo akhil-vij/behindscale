@@ -5,11 +5,16 @@ import { test, expect } from '@playwright/test'
 // cheaply -- after each navigation we assert the URL is correct AND that
 // a page-specific element rendered (so a silent crash to a blank page
 // fails the test, not just routing).
-test('navigates / -> article -> pattern via chip -> patterns via navbar without crash', async ({
+//
+// Brought onto the current IA with the first CI workflow (2026-09-06): the
+// article feed lives at /problems (the 2026-07-08 landing phase moved it off
+// `/`), the pattern page's evidence strip is "The same move, N ways", and
+// the patterns index H1 leads with "System Design Patterns".
+test('navigates /problems -> article -> pattern via chip -> patterns via navbar without crash', async ({
   page,
 }) => {
-  // 1. Load the article index.
-  await page.goto('/')
+  // 1. Load the problems workbench (the article feed).
+  await page.goto('/problems')
   await expect(page.getByRole('navigation')).toBeVisible()
   await expect(
     page.getByRole('link', {
@@ -93,7 +98,9 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   )
   await expect(artifactIframe).toHaveAttribute('sandbox', 'allow-scripts')
 
-  // 3. Click the Atomic Phases pattern chip -> /patterns/:slug.
+  // 3. Click the Idempotency Keys pattern chip -> /patterns/:slug (the
+  // Stripe article's spine pattern; its Unit 11 rework left it with two
+  // patterns, so the old Atomic Phases chip is no longer on this page).
   // The chip is in the "Patterns in this article" section near the
   // bottom; Playwright auto-scrolls it into view before clicking, so
   // we record window.scrollY as a sanity check that we navigate from a
@@ -103,13 +110,13 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   // We want to click the bottom chip (the one with the per-article
   // note), so scroll past the top chip and use .last() to grab the
   // bottom-section instance.
-  await page.getByRole('link', { name: 'Atomic Phases' }).last().scrollIntoViewIfNeeded()
+  await page.getByRole('link', { name: 'Idempotency Keys' }).last().scrollIntoViewIfNeeded()
   const yBeforeNav = await page.evaluate(() => window.scrollY)
   expect(yBeforeNav).toBeGreaterThan(0)
-  await page.getByRole('link', { name: 'Atomic Phases' }).last().click()
-  await expect(page).toHaveURL(/\/patterns\/atomic-phases$/)
+  await page.getByRole('link', { name: 'Idempotency Keys' }).last().click()
+  await expect(page).toHaveURL(/\/patterns\/idempotency-keys$/)
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Atomic Phases' }),
+    page.getByRole('heading', { level: 1, name: 'Idempotency Keys' }),
   ).toBeVisible()
   await expect(
     page.getByRole('heading', { level: 2, name: 'Definition' }),
@@ -118,7 +125,7 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
     page.getByRole('heading', { level: 2, name: 'When it applies' }),
   ).toBeVisible()
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Seen in' }),
+    page.getByRole('heading', { level: 2, name: /The same move, \d+ ways/ }),
   ).toBeVisible()
   // Scroll resets to top on route change so cross-route navigation
   // doesn't land mid-page (the ScrollToTop component in AppRoutes.tsx).
@@ -129,11 +136,11 @@ test('navigates / -> article -> pattern via chip -> patterns via navbar without 
   await page.getByRole('navigation').getByRole('link', { name: 'Patterns' }).click()
   await expect(page).toHaveURL(/\/patterns$/)
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Patterns' }),
+    page.getByRole('heading', { level: 1, name: /System Design Patterns/ }),
   ).toBeVisible()
-  // The single sample PatternCard renders.
+  // A pattern card renders (the seed pattern).
   await expect(
-    page.getByRole('heading', { level: 3, name: 'Atomic Phases' }),
+    page.getByRole('link', { name: 'Atomic Phases' }).first(),
   ).toBeVisible()
 })
 

@@ -1,0 +1,42 @@
+# CI (owner ruling b, problem-page v7.3 port, 2026-09-06): the repo's first
+# workflow. Every push and pull request runs the content validator, the
+# vitest suites (schema + check tests, the §5.1 rules-parity and §5.2/§5.3
+# click-through suites), and the Playwright suite against a fresh production
+# build -- the whole run is well under five minutes, so Playwright shares
+# the job instead of a nightly schedule.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-test-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Content validation
+        run: npm run validate
+      - name: Unit + parity + click-through suites
+        run: npm test
+      - name: Playwright browsers
+        run: npx playwright install --with-deps chromium
+      - name: Playwright (builds + serves the production bundle)
+        run: npm run test:e2e
+        env:
+          CI: 'true'
+      - name: Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 7
