@@ -31,7 +31,7 @@ const CSS = `
  --accent-problem: #D946EF; --accent-problem-hover: #E879F9;
  --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-#tryit-root * { margin: 0; padding: 0; box-sizing: border-box; }
+:where(#tryit-root) * { margin: 0; padding: 0; box-sizing: border-box; }
 #tryit-root b { color: var(--art-text-bright); font-weight: 600; }
 .artifact { background: var(--art-bg); color: var(--art-text); border: 1px solid var(--art-border); border-radius: 12px; padding: 20px; margin: 0; font-family: var(--mono); font-size: 12px; line-height: 1.5; width: 100%; position: relative; }
 .art-eyebrow { color: var(--art-muted); font-size: 10px; letter-spacing: 2px; }

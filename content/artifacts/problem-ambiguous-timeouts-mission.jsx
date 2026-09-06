@@ -46,7 +46,7 @@ const CSS = `
  --accent-problem: #D946EF; --accent-problem-hover: #E879F9;
  --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
  }
- #mission-root * { box-sizing: border-box; }
+ :where(#mission-root) * { margin: 0; padding: 0; box-sizing: border-box; }
  #mission-root button { font-family: inherit; }
  #mission-root b { color: var(--art-text-bright); font-weight: 600; }
  .art-foot { color:var(--art-muted); font-size:10px; margin-top:12px; border-top:1px solid var(--art-border); padding-top:8px; line-height:1.7; }
