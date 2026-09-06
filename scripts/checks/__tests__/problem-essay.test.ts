@@ -141,6 +141,30 @@ describe('problem-essay check', () => {
       expect(errs[0]?.message).toContain('steal.items[0].qref "q42"')
     })
 
+    it('errors when a decide row highlights a column the comparison lacks', () => {
+      const errs = problemEssayCheck.run(
+        richContent((e) => {
+          e.decide!.rows[0]!.highlights = ['Stripe', 'Google']
+        }),
+      )
+      expect(errs).toHaveLength(1)
+      expect(errs[0]?.message).toContain('decide.rows[0].highlights "Google" is not a comparison column')
+      expect(errs[0]?.fix?.[0]).toContain('Stripe, AWS, Airbnb, Shopify, Segment')
+    })
+
+    it('warns (not errors) when rows highlight columns but the essay has no comparison', () => {
+      const errs = problemEssayCheck
+        .run(
+          richContent((e) => {
+            delete e.comparison
+          }),
+        )
+        .filter((x) => x.message.includes('highlights'))
+      expect(errs.length).toBeGreaterThan(0)
+      expect(errs.every((x) => x.severity === 'warning')).toBe(true)
+      expect(errs[0]?.message).toContain('no comparison table to highlight')
+    })
+
     it('errors when a station targets an anchor the page will not render', () => {
       const errs = problemEssayCheck.run(
         richContent((e) => {

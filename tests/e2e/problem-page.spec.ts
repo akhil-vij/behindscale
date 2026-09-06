@@ -11,11 +11,16 @@ import { join } from 'node:path'
 //   §5.2  the real iframe round-trip: ready -> init -> play -> state -> the
 //         YOU column fills -> commit -> reload -> persistence restores
 //   §5.4  text parity: the served page's innerText (both frames included)
-//         vs the reference build, with only the three §4G copy decisions
-//         and the excluded blocks allowed to differ
-//   §5.5  no-JS: the copy renders, each frame position shows its one-line
-//         fallback, the noscript wall figure shows
-//   §5.6  prerender: three known sentences in dist/problems/ambiguous-timeouts.html
+//         vs the reference build, with only the three §4G copy decisions,
+//         the excluded blocks, and the 2026-09-06 orientation follow-up
+//         (the "how this page works" strip, the composed decisions
+//         sentence, the mission outline card) allowed to differ
+//   §5.5  no-JS: the copy renders, each frame position shows its fallback
+//         (the mission's carries the static outline), the noscript wall
+//         figure shows
+//   §5.6  prerender: known sentences, the six decision labels and the five
+//         attack companies in dist/problems/ambiguous-timeouts.html
+//   decide: a "Which answer is yours" row highlights its column(s)
 //   ruling a: mobile scroll chaining at the mission frame's edges
 //
 // The two Playwright limits the smoke suite documents (no synthetic pointer
@@ -138,6 +143,10 @@ test.describe('§5.2 real iframe round-trip', () => {
 // caller splices the frame's own innerText into. Runs in the page.
 const MAIN_TEXT_WITH_MARKERS = () => {
   const main = document.querySelector('main')!
+  // The orientation follow-up's two static blocks (items 1 and 3a) have no
+  // counterpart in the reference build; item 2 is a rewrite handled below.
+  main.querySelector('#howitworks')?.remove()
+  main.querySelector('#mission-outline')?.remove()
   const frames = Array.from(main.querySelectorAll('iframe'))
   const markers: HTMLElement[] = []
   frames.forEach((f, i) => {
@@ -170,13 +179,21 @@ const EXCLUDED_FIXTURE_LINES = new Set([
 ])
 const EXCLUDED_FIXTURE_PREFIXES = ['PROTOTYPE v6 - priced design space.', 'GATE (future):']
 
-// The three §4G copy decisions, applied to the fixture text so the two
-// sides must then match exactly.
+// The Build intro's first sentence, rewritten by the orientation follow-up
+// (item 2): the shell composes it from `mission.decisionsSummary`.
+const BUILD_INTRO_OLD =
+  "Now take the designer's: the six decisions below are yours, and the goal is a day of traffic, survived."
+const BUILD_INTRO_NEW =
+  "Now take the designer's. Six decisions are yours — who names the operation, where its memory lives, which copy of the database answers, what the client does on a timeout, what a duplicate hears, and how long the memory lasts — and the goal is a day of traffic, survived."
+
+// The three §4G copy decisions (+ the follow-up's rewritten sentence),
+// applied to the fixture text so the two sides must then match exactly.
 function applyCopyDecisions(lines: string[]): string[] {
   const out: string[] = []
   for (let i = 0; i < lines.length; i++) {
     let l = lines[i]!
     if (l === 'INTERVIEW') l = 'INTERVIEW · 5 MIN' // decision 3 (nav budget)
+    l = l.replace(BUILD_INTRO_OLD, BUILD_INTRO_NEW) // follow-up item 2
     l = l.replace(
       'The three cut points are the wall figure above; the three places',
       "The three cut points are the artifact's three cuts; the three places",
@@ -259,11 +276,36 @@ test.describe('§5.5 no-JS', () => {
     await expect(page.getByText('Six systems, one diagram - the sixth is yours')).toBeVisible()
     await expect(page.getByText('Every key store is a clock.')).toBeVisible()
     await expect(page.getByText('The difference is the bill. Staff answers have one.')).toBeVisible()
-    // One fallback line per artifact position, in the frames' wrappers.
+    // The orientation follow-up: the strip, the composed sentence, the
+    // outline card -- all static.
+    await expect(page.locator('#howitworks')).toHaveText('Cause it · Build it · Survive a day · Compare with five real systems')
+    await expect(page.getByText(BUILD_INTRO_NEW, { exact: false })).toBeVisible()
+    const outline = page.locator('#mission-outline')
+    await expect(outline).toContainText("What's inside the mission", { ignoreCase: true })
+    await expect(outline).toContainText('Your six decisions')
+    await expect(outline).toContainText('Identity — nobody names it · the server hashes the parameters · the caller sends a key')
+    await expect(outline).toContainText('The day, six events')
+    await expect(outline).toContainText('Five attacks, from the posts')
+    await expect(outline).toContainText('Stripe 2017, a reused key · Airbnb 2019, reads moved to a replica')
+    await expect(outline).toContainText('your design becomes the sixth column in the comparison below.')
+    // One fallback per artifact position, in the frames' wrappers; the
+    // mission's carries the same outline as plain text.
     const fallbacks = page.locator('.artifact-noscript')
     await expect(fallbacks).toHaveCount(2)
+    // The prerendered frames are hidden without scripting (no dark empty box
+    // above the fallback).
+    await expect(page.locator('#artifact iframe')).toBeHidden()
+    await expect(page.locator('#artB iframe')).toBeHidden()
     await expect(page.locator('#artifact .artifact-noscript')).toBeVisible()
-    await expect(page.locator('#artB .artifact-noscript')).toBeVisible()
+    await expect(page.locator('#artifact .artifact-noscript')).toContainText(
+      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, server dies mid-work, reply lost — and choose what the client does next.',
+    )
+    const missionFallback = page.locator('#artB .artifact-noscript')
+    await expect(missionFallback).toBeVisible()
+    await expect(missionFallback).toContainText('This is an interactive mission. Without JavaScript, here is what it asks you to decide, what happens during the day, and what attacks your design.')
+    await expect(missionFallback).toContainText('Window — one minute · about 24 hours · size-bound · forever')
+    await expect(missionFallback).toContainText('Routine traffic · a dropped request · a crash mid-charge · a lost reply · two identical orders · a late retry')
+    await expect(missionFallback).toContainText('Shopify 2022, a retry after the window')
     // The noscript wall figure: eyebrow, the SVG, caption.
     await expect(page.locator('figure.pp-figure img')).toBeVisible()
     await expect(page.locator('figure.pp-figure')).toContainText('Three deaths, one symptom', { ignoreCase: true })
@@ -286,6 +328,54 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   // YOU column's empty state are in the HTML too.
   expect(html).toContain('runs after a survived day')
   expect(html).toContain('YOU · survive a day first')
+  // The mission is visible without JavaScript: the six decision labels and
+  // the five attack companies are static text (the outline card + noscript).
+  for (const label of ['Identity', 'Memory', 'Reads', 'Client on a timeout', 'Reply to a duplicate', 'Window']) {
+    expect(html, label).toContain(`${label} — `)
+  }
+  for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a replica', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {
+    expect(html, attack).toContain(attack)
+  }
+  expect(html).toContain('Cause it · Build it · Survive a day · Compare with five real systems')
+})
+
+// ---- decide rows -> at-a-glance columns ----------------------------------------
+
+test.describe('decide: a "Which answer is yours" row highlights its column(s)', () => {
+  test('click lights the header + every cell; same row clears; another row switches; the table scrolls into view', async ({ page }) => {
+    await page.goto(PAGE)
+    await page.waitForLoadState('networkidle')
+    const rows = page.locator('.decide .drow')
+    await expect(rows).toHaveCount(4)
+    const lit = () => page.locator('#glance .col-hl').evaluateAll((els) => els.map((el) => el.getAttribute('data-col')))
+    await expect.poll(lit).toEqual([])
+
+    // Row 1 -> Stripe + AWS: the two headers and every cell in both columns.
+    await rows.nth(0).scrollIntoViewIfNeeded()
+    const before = await page.evaluate(() => window.scrollY)
+    await rows.nth(0).click()
+    await expect(rows.nth(0)).toHaveAttribute('aria-pressed', 'true')
+    const rowCount = await page.locator('#glance tbody tr').count()
+    await expect.poll(async () => (await lit()).filter((c) => c === 'Stripe').length).toBe(rowCount + 1)
+    await expect.poll(async () => (await lit()).filter((c) => c === 'AWS').length).toBe(rowCount + 1)
+    await expect.poll(async () => new Set(await lit())).toEqual(new Set(['Stripe', 'AWS']))
+    // The table sat above the viewport (the guide follows the hint sheet), so
+    // the page scrolled up to it -- through window.scrollTo, offset for the nav.
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(before)
+    await expect.poll(() => page.locator('#glance').evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0)
+
+    // Same row again clears; another row switches.
+    await rows.nth(0).click()
+    await expect(rows.nth(0)).toHaveAttribute('aria-pressed', 'false')
+    await expect.poll(lit).toEqual([])
+    await rows.nth(1).click()
+    await expect.poll(async () => new Set(await lit())).toEqual(new Set(['Airbnb']))
+    await rows.nth(3).click()
+    await expect.poll(async () => new Set(await lit())).toEqual(new Set(['Segment']))
+    // A link inside a row still navigates rather than toggling.
+    const href = await rows.nth(2).locator('a').first().getAttribute('href')
+    expect(href).toMatch(/^\/articles\//)
+  })
 })
 
 // ---- ruling a: mobile scroll chaining ---------------------------------------------
