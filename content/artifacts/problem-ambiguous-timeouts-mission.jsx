@@ -41,6 +41,8 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     paintDeck() rebuilds the deck -- on a decision click, and after attacks
 //     4/5 add a row (focus the new row's default) -- so keyboard focus is not
 //     dropped to the top.
+//   B2-8 (F21): .narr min-height 44px -> 77px (three lines) so the box no
+//     longer grows 1->3 lines between events and shoves the stage.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -95,7 +97,11 @@ const CSS = `
  .evchip.clean { border-color:#22c55e; color:#22c55e; }
  .evchip.hurt { border-color:#ef4444; color:#ef4444; }
 
- .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:44px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
+ /* B2-8 (F21): min-height = three lines so the box never grows 1->3 lines
+    between events and shoves the stage 13-19px. Effective font is 12.5px (a
+    later rule overrides the 11.5px here): 3 x 12.5 x 1.55 ~= 58px content +
+    16px padding + 2px border ~= 76px (border-box); 77px pins 1-3 lines flat. */
+ .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
