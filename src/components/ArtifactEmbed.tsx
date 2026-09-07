@@ -7,7 +7,12 @@ import { track } from '@vercel/analytics'
 //   1. Load failure -- the bundle is missing (compile skipped) or
 //      unreachable (network, 404). Detected here in the parent via a
 //      HEAD probe AND iframe.onerror. Some browsers fire iframe.onload
-//      even on 404s, so the HEAD probe is the reliable signal.
+//      even on 404s, so the HEAD probe is the reliable signal. Because a
+//      HEAD can flap (a transient 503 was observed in the wild while the
+//      artifact rendered fine), the probe retries once after 1.5s and only
+//      shows the error after two consecutive failures; and for the protocol
+//      artifacts a proof-of-life message from the frame within 8s overrides
+//      a failed HEAD entirely (B2-12/F25).
 //   2. Render exception -- the artifact compiled fine but throws at
 //      React render time. Caught by the iframe-internal ErrorBoundary
 //      injected by scripts/compile-artifacts.ts.
@@ -94,34 +99,65 @@ export default function ArtifactEmbed({
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [loadFailed, setLoadFailed] = useState(false)
+  // A source-gated message from the iframe proves it booted; for the protocol
+  // artifacts (mission, try-it) this is the "proof of life within 8s" that
+  // overrides a flapping HEAD (B2-12/F25).
+  const aliveRef = useRef(false)
+  const isProtocol = onMessage !== undefined
   // Latest handler without re-subscribing the listener on every render.
   const onMessageRef = useRef(onMessage)
   onMessageRef.current = onMessage
 
-  // HEAD probe -- catches load failures the iframe's onerror misses.
+  // Availability probe (B2-12/F25) -- catches load failures iframe.onerror
+  // misses, without hiding a working artifact on a transient HEAD blip. Retry
+  // once after 1.5s on a non-2xx or network error; only fail after two
+  // consecutive failures. For a protocol artifact, a proof-of-life message
+  // within 8s of mount overrides even two failed HEADs (an article artifact
+  // sends no such message, so for it two failures are the signal). The HEAD
+  // result is logged either way.
   useEffect(() => {
     let canceled = false
-    fetch(artifactPath, { method: 'HEAD' })
-      .then((res) => {
-        if (canceled) return
-        if (!res.ok) {
-          console.warn(
-            `[artifact] load failed for ${artifactPath}: HTTP ${res.status}`,
-          )
-          setLoadFailed(true)
-        }
-      })
-      .catch((err) => {
-        if (canceled) return
-        console.warn(
-          `[artifact] load failed for ${artifactPath}: ${(err as Error).message}`,
+    const RETRY_MS = 1500
+    const READY_GRACE_MS = 8000
+    const mountedAt = Date.now()
+    const timers: ReturnType<typeof setTimeout>[] = []
+
+    const onFailure = (attempt: number) => {
+      if (attempt < 2) {
+        timers.push(setTimeout(() => { if (!canceled) probe(2) }, RETRY_MS))
+        return
+      }
+      if (isProtocol) {
+        const remaining = Math.max(0, READY_GRACE_MS - (Date.now() - mountedAt))
+        timers.push(
+          setTimeout(() => {
+            if (!canceled && !aliveRef.current) setLoadFailed(true)
+          }, remaining),
         )
+      } else {
         setLoadFailed(true)
-      })
+      }
+    }
+    const probe = (attempt: number) => {
+      fetch(artifactPath, { method: 'HEAD' })
+        .then((res) => {
+          if (canceled) return
+          if (res.ok) return
+          console.warn(`[artifact] HEAD ${res.status} for ${artifactPath} (attempt ${attempt})`)
+          onFailure(attempt)
+        })
+        .catch((err) => {
+          if (canceled) return
+          console.warn(`[artifact] HEAD error for ${artifactPath} (attempt ${attempt}): ${(err as Error).message}`)
+          onFailure(attempt)
+        })
+    }
+    probe(1)
     return () => {
       canceled = true
+      timers.forEach(clearTimeout)
     }
-  }, [artifactPath])
+  }, [artifactPath, isProtocol])
 
   // artifact_viewed via IntersectionObserver.
   useEffect(() => {
@@ -164,6 +200,10 @@ export default function ArtifactEmbed({
     const handleMessage = (event: MessageEvent) => {
       const frame = iframeRef.current
       if (!frame || event.source !== frame.contentWindow) return
+      // Proof of life for the availability probe (B2-12/F25): a message from
+      // this frame means it booted, so cancel any pending/shown HEAD error.
+      aliveRef.current = true
+      setLoadFailed(false)
       const handler = onMessageRef.current
       if (!handler) return
       handler(event.data, (message) => {
