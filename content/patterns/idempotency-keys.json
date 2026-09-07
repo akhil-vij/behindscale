@@ -1,16 +1,40 @@
 {
   "slug": "idempotency-keys",
   "name": "Idempotency Keys",
-  "definition": "A client-supplied stable identifier that the server uses to deduplicate retries of the same logical operation. The first request creates a record of the outcome under the key; subsequent requests with the same key return that recorded outcome rather than re-executing the work. Same key in, same outcome out, regardless of how many times the request is sent.\n\nIdempotency keys are the user-facing contract that makes safe retry possible. They sit above the wire protocol -- the network can drop, the server can crash, the client can time out and retry, and as long as both sides agree on the key, the outcome is deterministic. The implementation underneath (atomic phase commits, dedup storage, etc.) is a separate concern; the pattern is the agreement on the identifier.",
+  "oneLineDefinition": "A unique label the client attaches to a request, so the server tells a retry from a new request and does the work only once, no matter how often the same request is retried.",
+  "definition": "An idempotency key is a unique label the client attaches to a request. The first time the server sees that label, it does the work and saves the result under it. If the same label arrives again - a retry - the server does not redo the work; it just returns the saved result. Same label in, same result out, no matter how many times the request is sent.\n\n{{figure:one-key-one-charge}}\n\nThis is what makes it safe to retry an operation that must not happen twice, such as:\n\n- charging a customer's card\n- placing an order or booking a seat\n- creating a new account or record\n- moving money from one account to another\n- sending a one-off notification or email\n\nWhen a request fails, the client cannot always tell whether it went through - the network may have dropped the reply, or the server may have crashed after doing the work. So the client retries, and the key guarantees the work is not repeated. It is one piece of safe retrying, alongside deciding [which failures are worth retrying](/patterns/retryable-error-classification) and controlling [how often clients retry](/patterns/retry-with-backoff-and-jitter).\n\nThe key itself is just an agreement between the client and the server: as long as both use the same key, the outcome is the same, no matter what the network did in between - dropped replies, timeouts, a crash and restart. How the server actually stores results and avoids doing the work twice - for example by committing the operation in safe [atomic phases](/patterns/atomic-phases) - is a separate problem. The pattern is the agreement on the identifier, not the implementation behind it.\n\nOne thing the client owns: it must generate the key, and generate it carefully. The server trusts the key to mean this exact operation. So use a fresh key for each new operation - reuse an old one for something new, and you silently get the old result back.",
   "whenItApplies": [
-    "Any non-idempotent operation that may be retried -- payment charges, resource creation, irreversible state changes.",
-    "APIs where the caller is responsible for retry policy and the server cannot trust the network.",
-    "Workflows that span multiple systems where partial completion on retry would diverge state."
+    "The operation is unsafe to repeat, but might be retried. Anything that causes real harm if it runs twice - charging a card, creating a resource, any change you cannot undo - needs a key before it is safe to retry.",
+    "The caller drives the retries and the network is unreliable. When the client decides when to retry, and the server cannot assume a request arrives exactly once, the key is how the server tells repeats apart.",
+    "The work spans several systems and can be left half-done. When an operation touches multiple systems, a retry that redoes only some of the steps leaves them out of sync - a shared key lets each step recognize it has already run."
   ],
   "tradeoffs": [
-    "Requires durable storage of (key -> outcome) records with TTLs that outlive realistic retry windows.",
-    "Adds per-request bookkeeping cost: every request reads and (on first execution) writes a key record.",
-    "Key reuse is a real hazard -- a client that reuses an old key for a new logical operation gets the old outcome, silently. Key generation discipline (UUIDs, monotonic IDs, scope-prefixed) becomes part of the contract."
+    "You have to store every key and its result, durably. The server needs a saved record of each key's outcome, kept at least as long as a client might realistically keep retrying, or a late retry finds nothing and runs again.",
+    "Every request gets slightly expensive: it has to look up its key first, and the first attempt also writes a record - small per request, but on every single one.",
+    "Reusing a key by mistake fails silently. If a client sends a new operation under an old key, it quietly gets the old result and never runs. So how clients generate keys - a fresh, unique one for each real operation - becomes part of the contract."
   ],
-  "category": "consistency"
+  "aliases": [
+    "safe retry",
+    "request deduplication",
+    "exactly-once delivery"
+  ],
+  "category": "consistency",
+  "artifact": {
+    "path": "/artifacts/idempotency-keys/index.html",
+    "teaser": "Retry a charge with no key and you pay twice; retry it with a key and the server charges you once."
+  },
+  "figures": [
+    {
+      "slug": "one-key-one-charge",
+      "eyebrow": "ONE KEY, ONE CHARGE",
+      "caption": "Without a key, a retried request runs again and charges twice; with a stable key on both tries, the server recognizes the repeat and replays the first outcome, so the work happens exactly once.",
+      "ariaLabel": "Without a key, a retry double-charges; with the same key, the server replays the first outcome once."
+    }
+  ],
+  "mechanism": {
+    "caption": "RETRY WITHOUT REDOING",
+    "blurb": "At its core: when a client retries a request, the server needs to tell whether it is a genuine new request or a repeat of one it already handled. A stable key the client attaches with the request answers that: the first one runs and is saved, and every retry with the same key just replays the saved result.",
+    "idea": "When a request fails, the client often cannot tell if it actually went through, so it retries - and for something like a charge, running it twice is a real problem. An idempotency key fixes this. The client attaches a unique label to the request; the server does the work once and saves the result under that label. Any later request carrying the same label gets the saved result back instead of running again, so the charge happens exactly once no matter how many retries arrive. The key is just an agreement on an identifier - how the server stores and dedupes underneath is a separate problem, and the client's one job is to use a fresh key for each genuinely new operation.",
+    "whatToTry": "Turn the key off and hit retry a few times - each retry is a fresh charge, so one payment becomes two or three. Turn the key on and retry all you want; the server recognizes the repeat and the charge stays at one."
+  }
 }
