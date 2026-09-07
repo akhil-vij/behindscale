@@ -22,6 +22,7 @@ import {
 } from './problem/GuideSections'
 import { pp } from './problem/inline'
 import { MISSION_WRAPPER_ID, TRYIT_WRAPPER_ID, useWallHost } from './problem/useWallHost'
+import { useDecideHighlight } from './problem/useDecideHighlight'
 import { wallBySlug } from '../walls'
 import './problem-page.css'
 
@@ -84,6 +85,8 @@ export default function ProblemDetail() {
     hasTryIt: essayForHost?.tryIt !== undefined,
     missionWrapperId: MISSION_WRAPPER_ID,
   })
+  // "Which answer is yours" -> the at-a-glance table's column highlight.
+  const decideHighlight = useDecideHighlight(essayForHost?.decide?.rows)
 
   if (!cruxTag) {
     return (
@@ -161,6 +164,14 @@ export default function ProblemDetail() {
       </h1>
       {essay?.lede && <p className="lede mt-3">{essay.lede}</p>}
 
+      {/* "How this page works": the reader's path, one eyebrow line between
+          the lede and the station nav (orientation for the no-JS read). */}
+      {essay?.howItWorks !== undefined && essay.howItWorks.length > 0 && (
+        <p className="eyebrow mb-4" id="howitworks">
+          {essay.howItWorks.join(' · ')}
+        </p>
+      )}
+
       {essay?.stations !== undefined && (
         <StationNav
           stations={essay.stations}
@@ -212,13 +223,19 @@ export default function ProblemDetail() {
           hostSlug={cruxTag}
           hostTitle={label}
           wrapperId={MISSION_WRAPPER_ID}
+          comparisonColumns={essay.comparison?.columns.length}
           height={host.missionHeight}
           onMessage={host.onMissionMessage}
         />
       )}
 
       {essay?.comparison !== undefined ? (
-        <ComparisonSection comparison={essay.comparison} svg={svg} you={you} />
+        <ComparisonSection
+          comparison={essay.comparison}
+          svg={svg}
+          you={you}
+          highlightColumns={decideHighlight.highlightColumns}
+        />
       ) : (
         <Section title={`Same wall, ${systemLabel}`}>
           {members.length === 0 ? (
@@ -260,7 +277,13 @@ export default function ProblemDetail() {
         </Section>
       )}
 
-      {essay?.decide !== undefined && <DecideSection decide={essay.decide} />}
+      {essay?.decide !== undefined && (
+        <DecideSection
+          decide={essay.decide}
+          activeRow={decideHighlight.activeRow}
+          onSelect={decideHighlight.select}
+        />
+      )}
       {essay?.steal !== undefined && <StealSection steal={essay.steal} />}
       {essay?.interview !== undefined && (
         <InterviewSection interview={essay.interview} you={you} />

@@ -9,6 +9,7 @@
 //     rows) is a MEMBER of the class;
 //   - every `patterns.order` slug is a pattern a member embodies;
 //   - every question reference (`steal[].qref`) names a question;
+//   - every `decide[].highlights` name is a `comparison.columns` header;
 //   - every station anchor targets a section the page will render;
 //   - every inline SVG the comparison references exists under
 //     content/problems/<cruxTag>/ and passes the figure-svg-safe allowlist;
@@ -121,6 +122,26 @@ export const problemEssay: Check = {
         err(`steal.items[${i}].qref "${it.qref}" names no comparison question`, [
           'use one of the comparison.questions[].id values',
         ])
+      })
+
+      // -- decide highlights vs the comparison columns --
+      const columns = essay.comparison?.columns ?? []
+      essay.decide?.rows.forEach((row, i) => {
+        if (row.highlights === undefined) return
+        if (essay.comparison === undefined) {
+          err(
+            `decide.rows[${i}].highlights names columns but this essay has no comparison table to highlight`,
+            ['add the comparison block, or drop `highlights` from the row'],
+            'warning',
+          )
+          return
+        }
+        for (const name of row.highlights) {
+          if (columns.includes(name)) continue
+          err(`decide.rows[${i}].highlights "${name}" is not a comparison column`, [
+            `use the header names in comparison.columns: ${columns.join(', ')}`,
+          ])
+        }
       })
 
       // -- station anchors --

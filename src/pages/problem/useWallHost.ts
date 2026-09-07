@@ -95,7 +95,7 @@ const MAX_FRAME_PX = 20000
 const SCROLLPORT_MAX_WIDTH = 700
 const SCROLLPORT_HEIGHT = '90dvh'
 // Sticky station nav height, so anchor jumps land below it.
-const NAV_OFFSET_PX = 44
+export const NAV_OFFSET_PX = 44
 
 interface Message {
   v?: unknown

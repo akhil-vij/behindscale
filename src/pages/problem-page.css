@@ -127,7 +127,9 @@ body { overflow-x: clip; }
 .problem-page .tick-held { color: var(--state-success); }
 .problem-page .matrix-caption { font-size: 13px; color: var(--text-muted); margin: 8px 0 0; }
 /* YOU column ownership: neutral ink, 1.5px left rule + surface tint (R8). */
-.problem-page #you-th, .problem-page td[id^="you-c-"] { border-left: 1.5px solid var(--border-strong); background: var(--bg-subtle); }
+/* The same grammar marks the column(s) a "Which answer is yours" row points
+   at while that row is selected (.col-hl on the header + every cell). */
+.problem-page #you-th, .problem-page td[id^="you-c-"], .problem-page table.matrix .col-hl { border-left: 1.5px solid var(--border-strong); background: var(--bg-subtle); }
 
 /* ---------- full answers ---------- */
 .problem-page details.q { border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-surface); margin: 12px 0; overflow: hidden; }

@@ -1,10 +1,21 @@
+import type { KeyboardEvent, MouseEvent } from 'react'
 import type { ProblemDecide, ProblemInterview, ProblemSteal } from '../../types'
 import { pp } from './inline'
 import type { YouState } from './youState'
 
 // "Which answer is yours": constraint -> article rows, then the other-places
-// note.
-export function DecideSection({ decide }: { decide: ProblemDecide }) {
+// note. A row with `highlights` is selectable (click, or Enter / Space on the
+// focused row): it lights its column(s) in the at-a-glance table above --
+// see useDecideHighlight. Links inside the row keep navigating.
+export function DecideSection({
+  decide,
+  activeRow = null,
+  onSelect,
+}: {
+  decide: ProblemDecide
+  activeRow?: number | null
+  onSelect?: (row: number) => void
+}) {
   return (
     <section>
       <h2 className="pp-h2" id="decide">
@@ -12,12 +23,34 @@ export function DecideSection({ decide }: { decide: ProblemDecide }) {
       </h2>
       <p className="pp-p">{pp(decide.intro)}</p>
       <div className="decide">
-        {decide.rows.map((row, i) => (
-          <div key={i} className="drow">
-            <div className="if">{pp(row.if)}</div>
-            <div className="then">{pp(row.then)}</div>
-          </div>
-        ))}
+        {decide.rows.map((row, i) => {
+          const selectable = row.highlights !== undefined && onSelect !== undefined
+          const onClick = (e: MouseEvent<HTMLDivElement>) => {
+            if ((e.target as HTMLElement).closest('a')) return
+            onSelect?.(i)
+          }
+          const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+            if (e.target !== e.currentTarget) return
+            if (e.key !== 'Enter' && e.key !== ' ') return
+            e.preventDefault()
+            onSelect?.(i)
+          }
+          return (
+            <div
+              key={i}
+              className={selectable ? 'drow cursor-pointer' : 'drow'}
+              role={selectable ? 'button' : undefined}
+              tabIndex={selectable ? 0 : undefined}
+              aria-pressed={selectable ? activeRow === i : undefined}
+              data-highlights={row.highlights?.join('|')}
+              onClick={selectable ? onClick : undefined}
+              onKeyDown={selectable ? onKeyDown : undefined}
+            >
+              <div className="if">{pp(row.if)}</div>
+              <div className="then">{pp(row.then)}</div>
+            </div>
+          )
+        })}
       </div>
       {decide.elsewhere !== undefined && (
         <>

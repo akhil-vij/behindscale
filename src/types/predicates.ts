@@ -263,6 +263,11 @@ export function checkProblemEssay(value: unknown): Result {
       return fail('`lede` expected non-empty string when present')
     }
   }
+  if (value.howItWorks !== undefined) {
+    if (!nonEmptyStringArray(value.howItWorks) || value.howItWorks.length === 0) {
+      return fail('`howItWorks` expected non-empty array of non-empty strings when present')
+    }
+  }
   if (value.intro !== undefined) {
     if (!isStringArray(value.intro) || value.intro.some((p) => p.trim().length === 0)) {
       return fail('`intro` expected array of non-empty strings when present')
@@ -408,21 +413,67 @@ function checkProblemWall(value: unknown): Result {
 
 function checkProblemTryIt(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
-  const r = checkStringFields(value, ['artifactSlug', 'teaser', 'caption'])
+  const r = checkStringFields(value, ['artifactSlug', 'teaser', 'caption'], ['noscript'])
   if (!r.ok) return r
   if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')
   return ok
 }
+
+// Where the shell composes the "<N> decisions are yours — ... — and the goal
+// is a day of traffic, survived." sentence inside `mission.intro`.
+const DECISIONS_MARKER = '{{decisions}}'
 
 function checkProblemMission(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   const r = checkStringFields(
     value,
     ['artifactSlug', 'teaser', 'title', 'intro'],
-    ['stopblock', 'stuckNote'],
+    ['stopblock', 'stuckNote', 'decisionsSummary'],
   )
   if (!r.ok) return r
   if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')
+  if (value.outline !== undefined) {
+    const o = checkProblemMissionOutline(value.outline)
+    if (!o.ok) return fail(`\`outline\`: ${o.reason}`)
+  }
+  const markers = (value.intro as string).split(DECISIONS_MARKER).length - 1
+  if (value.decisionsSummary !== undefined) {
+    if (value.outline === undefined) {
+      return fail('`decisionsSummary` needs `outline` (the sentence counts `outline.decisions`)')
+    }
+    if (markers !== 1) {
+      return fail(`\`intro\` must carry the ${DECISIONS_MARKER} marker exactly once when \`decisionsSummary\` is present (found ${markers})`)
+    }
+  } else if (markers > 0) {
+    return fail(`\`intro\` carries ${DECISIONS_MARKER} but there is no \`decisionsSummary\` to compose`)
+  }
+  return ok
+}
+
+function checkProblemMissionOutline(value: unknown): Result {
+  if (!isObject(value)) return fail('expected object')
+  if (!Array.isArray(value.decisions) || value.decisions.length === 0) {
+    return fail('`decisions` expected non-empty array')
+  }
+  for (let i = 0; i < value.decisions.length; i++) {
+    const d = value.decisions[i]
+    if (!isObject(d) || !nonEmptyString(d.label)) return fail(`\`decisions[${i}]\` expected { label, options[] }`)
+    if (!nonEmptyStringArray(d.options) || d.options.length === 0) {
+      return fail(`\`decisions[${i}].options\` expected non-empty array of non-empty strings`)
+    }
+  }
+  if (!nonEmptyStringArray(value.events) || value.events.length === 0) {
+    return fail('`events` expected non-empty array of non-empty strings')
+  }
+  if (!Array.isArray(value.attacks) || value.attacks.length === 0) {
+    return fail('`attacks` expected non-empty array')
+  }
+  for (let i = 0; i < value.attacks.length; i++) {
+    const a = value.attacks[i]
+    if (!isObject(a)) return fail(`\`attacks[${i}]\` expected object`)
+    const ar = checkStringFields(a, ['company', 'year', 'text'])
+    if (!ar.ok) return fail(`\`attacks[${i}]\`: ${ar.reason}`)
+  }
   return ok
 }
 
@@ -588,6 +639,9 @@ function checkProblemDecide(value: unknown): Result {
     if (!isObject(row)) return fail(`\`rows[${i}]\` expected object`)
     const r = checkStringFields(row, ['if', 'then'])
     if (!r.ok) return fail(`\`rows[${i}]\`: ${r.reason}`)
+    if (row.highlights !== undefined && (!nonEmptyStringArray(row.highlights) || row.highlights.length === 0)) {
+      return fail(`\`rows[${i}].highlights\` expected non-empty array of non-empty strings when present`)
+    }
   }
   if (value.elsewhere !== undefined) {
     if (!isObject(value.elsewhere)) return fail('`elsewhere` expected object when present')

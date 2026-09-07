@@ -27,6 +27,11 @@ export interface ProblemEssay {
   headline?: string
   // One-line italic teaser shown under the title.
   lede?: string
+  // "How this page works": the reader's path in three or four short items
+  // ("Cause it", "Build it", ...), rendered as one mono eyebrow line under
+  // the lede with " · " separators. Orientation for the no-JS / indexed
+  // read of the page (2026-09-06 follow-up).
+  howItWorks?: string[]
   // Opening prose paragraphs shown between the nav and "The wall". Inline
   // markup: `**bold**`, `[text](/path)`, `[text](#anchor)`.
   intro?: string[]
@@ -131,18 +136,40 @@ export interface ProblemTryIt {
   teaser: string
   // Caption under the artifact (inline markup allowed).
   caption: string
+  // One plain sentence for the no-JS fallback, after the teaser line: what
+  // the artifact lets the reader do.
+  noscript?: string
 }
 
 export interface ProblemMission {
   artifactSlug: string
   // The break-it teaser shown on the /problems list beside the Playable badge.
   teaser: string
-  // Section heading + intro paragraph above the artifact.
+  // Section heading + intro paragraph above the artifact. With
+  // `decisionsSummary` present, the intro carries a `{{decisions}}` marker
+  // where the shell composes "<N> decisions are yours — <summary> — and the
+  // goal is a day of traffic, survived." (N from `outline.decisions`).
   title: string
   intro: string
+  // The clause naming the decisions ("who names the operation, where its
+  // memory lives, ..."); requires `outline` and the intro marker.
+  decisionsSummary?: string
+  // The static outline of what the mission holds: rendered as the
+  // "What's inside the mission" card above the artifact and, as plain text,
+  // inside the artifact's <noscript>. What a crawler / no-JS reader sees.
+  outline?: ProblemMissionOutline
   // The page-flow pause block after the artifact, and the "stuck?" note.
   stopblock?: string
   stuckNote?: string
+}
+
+export interface ProblemMissionOutline {
+  // The decision groups: label + the options, in deck order.
+  decisions: { label: string; options: string[] }[]
+  // The day's events, in order.
+  events: string[]
+  // The attacks: company, year, and a short description.
+  attacks: { company: string; year: string; text: string }[]
 }
 
 export interface ProblemSpectrumPoint {
@@ -245,7 +272,10 @@ export interface ProblemComparison {
 
 export interface ProblemDecide {
   intro: string
-  rows: { if: string; then: string }[]
+  // `highlights`: the comparison columns (company display names, as in
+  // `comparison.columns`) a click on the row highlights in the at-a-glance
+  // table. A row may name several.
+  rows: { if: string; then: string; highlights?: string[] }[]
   elsewhere?: { title: string; text: string }
 }
 
