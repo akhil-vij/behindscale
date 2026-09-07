@@ -191,8 +191,14 @@ body { overflow-x: clip; }
 .problem-page .sources { font-size: 13.5px; color: var(--text-muted); margin: 26px 0 6px; }
 
 /* ---------- scroll hints (one-time ⟷, right-edge fade) ---------- */
+/* B2-13 (F12): the 560px anatomy diagrams and 620px matrix keep their scroll
+   wrapper (scaling to a 324px box drops the 9px labels to ~4.6px - illegible;
+   the legible fix is a vertical relayout, deferred to the Batch 1 design
+   spec). So the hint has to read: a centered pill, visible on load (the JS
+   adds .scrollhint when the container overflows), clear of the right-edge
+   fade mask, and never gated on hover. */
 .problem-page .scrollhint { position: relative; }
-.problem-page .scrollhint::after { content: "\27f7"; position: absolute; right: 8px; top: 6px; color: var(--text-muted); font-size: 14px; pointer-events: none; }
+.problem-page .scrollhint::after { content: "\27f7 scroll"; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 9px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; pointer-events: none; z-index: 2; }
 
 /* ---------- phone ---------- */
 @media (max-width: 700px) {

@@ -21,8 +21,14 @@ export default function StationNav({
   deckJumpVisible = false,
 }: StationNavProps) {
   return (
-    <nav className="ppnav" aria-label="Stations on this page">
-      {stations.map((s) => (
+    <>
+      {/* B2-10 (F23): the minute budgets are the mission's time cost; with JS
+          off there is no mission to run, so hide them. */}
+      <noscript
+        dangerouslySetInnerHTML={{ __html: '<style>.ppnav .navmin{display:none}</style>' }}
+      />
+      <nav className="ppnav" aria-label="Stations on this page">
+        {stations.map((s) => (
         <a
           key={s.id}
           href={`#${s.anchor}`}
@@ -43,6 +49,7 @@ export default function StationNav({
           ↑ your decisions
         </a>
       )}
-    </nav>
+      </nav>
+    </>
   )
 }

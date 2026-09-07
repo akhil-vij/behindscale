@@ -93,7 +93,7 @@ function cruxTagMatches(
 }
 
 export default function Catalog() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [sourceFilter, setSourceFilter] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
@@ -106,6 +106,25 @@ export default function Catalog() {
     const q = searchParams.get('q')
     if (q !== null) setQuery(q)
   }, [searchParams])
+
+  // B2-9.5 (F22): reflect the search into ?q=, debounced, so a search is
+  // shareable and back/forward-able like the company chip's ?source=. replace
+  // (not push) keeps keystrokes out of history; ?source= is preserved.
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          const trimmed = query.trim()
+          if (trimmed) next.set('q', trimmed)
+          else next.delete('q')
+          return next
+        },
+        { replace: true },
+      )
+    }, 300)
+    return () => clearTimeout(handle)
+  }, [query, setSearchParams])
 
   const companies = useMemo(() => canonicalCompanies(articles), [])
   const companySlug = useMemo(() => companySourceSlugMap(articles), [])

@@ -121,6 +121,11 @@ export default function ComparisonSection({
           {you.commit !== undefined ? `You said: "${you.commit}"` : ''}
         </p>
       </details>
+      {/* B2-10 (F23): the YOU row promises "your design draws itself here after
+          a survived day" until the mission fills it; hide it with JS off. */}
+      <noscript
+        dangerouslySetInnerHTML={{ __html: '<style>#you-row{display:none}</style>' }}
+      />
 
       {c.stripNote !== undefined && (
         <p className="strip-note">{pp(c.stripNote)}</p>

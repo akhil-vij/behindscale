@@ -12,7 +12,44 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 // PLAY (#freebtn / #freenote / ?free) is not ported (FREE is a constant
 // false; the sequence gates stay as written), and the amber proto-notes are
 // dropped. This React shell renders the markup once and boots the engine in
-// an effect; it touches none of the frozen code.
+// an effect.
+//
+// Sanctioned edits (Batch 2, 2026-09-07 browser-audit fixes) -- each is a
+// behaviour fix the batch brief names; the reference problem-page-v7.3.html
+// is left untouched:
+//   B2-1 (F6): a restore(decisions,survived,held) entry point on the engine
+//     (returned to the bridge) reconstructs a saved design without animating;
+//     the bridge calls it once from init, then emits state. The reset button
+//     now posts a reset message and its narration changed.
+//   B2-3 (F8): the stage clock label map gains size:'size-bound' -- WINDOW's
+//     "bounded by size" option had no label and printed "keeps: undefined".
+//     Audit of the other stage label maps (all complete vs GROUPS): CLIENT
+//     {giveup,blind,key}, identity {none,hash,key}, reply {err|saved}. The
+//     memory box draws storerec via the acid branch (a visual simplification,
+//     not an undefined-label bug) -- left as-is, out of B2-3's scope.
+//   B2-4 (F14): each dbl stamp during an attack (curLvl>0) adds to DOUBLES
+//     via bumpAttackDouble(); a "today + attacks" sub-line (#meternote) shows
+//     once any attack has run; freshDay (new day) and reset clear both. Side
+//     effect: the host's write-once `caused` checkpoint (observes the meter
+//     sum) can now also trip on an attack-caused double, not only a day.
+//   B2-5 (F15): the speed button reads the CURRENT speed (1× at 1x, 2× at
+//     2.2x, magenta outline only at 2x), not the target; the first-day
+//     auto-switch appends "Replays now run at 2×; the button sets it back."
+//     to the DAY SURVIVED/OVER line; reset returns to 1× unless the user
+//     chose a speed.
+//   B2-7 (F17): focusDeckSel(k) re-focuses a group's selected option after
+//     paintDeck() rebuilds the deck -- on a decision click, and after attacks
+//     4/5 add a row (focus the new row's default) -- so keyboard focus is not
+//     dropped to the top.
+//   B2-8 (F21): .narr min-height 44px -> 77px (three lines) so the box no
+//     longer grows 1->3 lines between events and shoves the stage.
+//   B2-9 (F22): E3's DBL_CRASH card src "Stripe" -> "Stripe 2017"; the
+//     MEMORY deck label q "Q2" -> "Q3" (READS keeps Q2); the standalone
+//     footer backlink is same-tab (target dropped). Other year-less card
+//     srcs are conversational teaching notes, listed in the PR, left as-is.
+//   B2-11 (F24): STEP-promote + RUN-demote-to-ghost is now one reduced-motion
+//     CSS rule (the JS inline STEP styling moved into it), so exactly one
+//     control reads as primary under reduced motion.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -24,10 +61,15 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 // never patch) and posts:
 //   ready · state {decisions, held, survived, bill} · checkpoint
 //   {caused|survived|held} · touched (first deck interaction) · commit
-//   {text} · size {h} · anchor {id} | {frame:{top,height}}
-// and receives init {commit}. The commit box stays inside the artifact
-// (its grammar is frozen); persistence is the host's. The reader's skip is
-// in-memory for the page's lifetime (the sandbox has no sessionStorage).
+//   {text} · size {h} · anchor {id} | {frame:{top,height}} · reset (the
+//   reset button; the host clears the saved design)
+// and receives init {commit, decisions, survived, held}. On init with a
+// survived saved design the bridge makes the ONE host->mission call that
+// mutates engine state -- engine.restore(decisions, survived, held), then
+// emitState() -- and is observe-only otherwise. The commit box stays inside
+// the artifact (its grammar is frozen); persistence is the host's. The
+// reader's skip is in-memory for the page's lifetime (the sandbox has no
+// sessionStorage).
 //
 // Fonts: the fallback mono stack (no runtime JetBrains Mono fetch) -- a
 // visual deviation from the reference, recorded in the PR. The .artB root
@@ -62,7 +104,11 @@ const CSS = `
  .evchip.clean { border-color:#22c55e; color:#22c55e; }
  .evchip.hurt { border-color:#ef4444; color:#ef4444; }
 
- .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:44px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
+ /* B2-8 (F21): min-height = three lines so the box never grows 1->3 lines
+    between events and shoves the stage 13-19px. Effective font is 12.5px (a
+    later rule overrides the 11.5px here): 3 x 12.5 x 1.55 ~= 58px content +
+    16px padding + 2px border ~= 76px (border-box); 77px pins 1-3 lines flat. */
+ .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
@@ -121,6 +167,8 @@ const CSS = `
  .meter .n { font-size:16px; font-weight:700; color:var(--art-muted); }
  .meter .n.bad { color:#ef4444; } .meter .n.good { color:#22c55e; } .meter .n.warn { color:#eab308; }
  .meter .t { font-size:9px; color:var(--art-muted); letter-spacing:.5px; }
+ .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); margin-top:2px; display:none; }
+ .meternote.on { display:block; }
 
  .log { margin-top:12px; display:grid; gap:8px; max-height:280px; overflow-y:auto; }
  .bcard { border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
@@ -160,6 +208,12 @@ const CSS = `
  @media (prefers-reduced-motion: reduce) {
  #artB[data-cue="deck"] .deck, #artB[data-cue="run"] .runbtn, #artB[data-cue="group"] .kg.cue-target, .bpulse, .shake { animation: none !important; }
  .averdict { transition: none !important; transform: none !important; }
+ /* B2-11 (F24): one rule, one state - under reduced motion STEP is the
+    control that works, so it is the promoted (outlined) button and RUN drops
+    to the ghost style; two primaries no longer compete. */
+ #artB .runbtn { background:none; border:1px solid var(--art-border-interactive); color:var(--art-muted); font-weight:600; }
+ #artB .runbtn:hover { background:none; color:var(--art-text); }
+ #artB #stepbtn { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  }
   .billpanel { margin-top:10px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:10px 12px; font-size:11px; line-height:1.6; }
   .billhead { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; margin-bottom:6px; }
@@ -201,13 +255,14 @@ const MARKUP = `
   <div class="ctlrow">
    <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
    <button class="bghost" id="stepbtn">STEP</button>
-   <button class="bghost" id="fastbtn">2×</button>
+   <button class="bghost" id="fastbtn">1×</button>
    <button class="bghost" id="resetbtn">reset</button>
    <div class="meters">
    <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
    <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
    <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
    </div>
+   <div class="meternote" id="meternote"></div>
   </div>
   <div id="dmgtoast" role="status"></div>
   </div>
@@ -238,7 +293,7 @@ const MARKUP = `
 
 
  </div>
- <div class="art-foot" id="mission-foot" style="display:none;"><a href="https://www.behindscale.com/problems/ambiguous-timeouts" target="_blank" rel="noopener noreferrer">From the full problem page at behindscale.com →</a></div>
+ <div class="art-foot" id="mission-foot" style="display:none;"><a href="https://www.behindscale.com/problems/ambiguous-timeouts">From the full problem page at behindscale.com →</a></div>
 </div>
 `
 
@@ -252,6 +307,7 @@ function bootEngine() {
   var ROWS_ADDED = { params:false, after:false };
     var FREE = false; /* FREE PLAY is prototype-only and not ported; the sequence gates below stay verbatim */
  var speed = 1, userChoseSpeed = false, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
+ var attackDbl = 0, anyAttackRun = false; /* B2-4: attack damage counted into the meters + the "today + attacks" note */
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  var lvlDone = [false,false,false,false,false];
@@ -264,7 +320,7 @@ function bootEngine() {
   ['none','nobody - a request is just its parameters'],
   ['hash','the server - hash the parameters'],
   ['key','the caller - sends a key it generated']] },
- { k:'mem', q:'Q2', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
+ { k:'mem', q:'Q3', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
   ['none','nowhere - keep no record'],
   ['store','a separate store, written after the work'],
   ['storerec','a separate store, plus recovery steps that rebuild state on retry'],
@@ -323,9 +379,14 @@ function bootEngine() {
   if (sg){ sg.classList.remove('sflash'); void sg.getBoundingClientRect(); sg.classList.add('sflash'); }
   var kg = document.getElementById('kg-'+b.dataset.k);
   if (!kg.classList.contains('cue-target')){ kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg'); }
+  focusDeckSel(b.dataset.k); /* B2-7 (F17): paintDeck() rebuilt the deck - keep focus on the chosen option */
   });
  });
  }
+ /* B2-7 (F17): focus the selected option of a deck group after a repaint, so
+    keyboard focus survives the deck rebuild (and lands on a newly added
+    attack row's default option). */
+ function focusDeckSel(k){ var nb=document.querySelector('#deck button[data-k="'+k+'"].sel'); if(nb && nb.focus) nb.focus(); }
 
  /* ---------- stage geometry (fixed bands, nothing floats) ---------- */
  var GH = {
@@ -369,6 +430,7 @@ function bootEngine() {
  renderBank();
  if (cls==='dbl') dwellUntil = Date.now() + 900; /* R3: dwell is real time, never /speed */
  if (cls==='dbl'){ var b=$('#bankbox'); b.classList.add('shake'); setTimeout(function(){b.classList.remove('shake');},900); }
+ if (cls==='dbl' && curLvl>0) bumpAttackDouble(); /* B2-4: a double stamped during an attack counts in the meters */
  return bankEntries[bankEntries.length-1];
  }
  function bankAmend(entry, txt, cls){ entry.txt=txt; entry.cls=cls; renderBank(); }
@@ -451,7 +513,7 @@ function bootEngine() {
   var gRet = el('g',{id:'sg-ret'},S);
   el('circle',{cx:G.clock.cx,cy:G.clock.cy,r:12,fill:'none',stroke:'#8A8A94','stroke-width':1.4},gRet);
   el('line',{x1:G.clock.cx,y1:G.clock.cy,x2:G.clock.cx,y2:G.clock.cy-8,stroke:'#8A8A94','stroke-width':1.4,id:'clockhand'},gRet);
-  el('text',{class:'nsub',x:G.clock.cx,y:G.clock.cy+28},gRet,'keeps: '+({min:'1 min',day:'~24 h',ever:'forever'}[K.ret]));
+  el('text',{class:'nsub',x:G.clock.cx,y:G.clock.cy+28},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
  }
  }
  function memNote(txt){ var m=document.getElementById('memrow'); if(m) m.textContent = txt; }
@@ -595,7 +657,7 @@ function bootEngine() {
   if (t==='DBL_CRASH'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash after charging');
   say('EVENT 3/6','The retry arrives as a stranger - the server has no way to recognize it.');
   var r=await animRequest('plain'); await chargeBank(r,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE (CRASH + UNRECOGNIZED RETRY)','First attempt charged before dying; the retry charged again.','Stripe: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
+  card('bad','DOUBLE CHARGE (CRASH + UNRECOGNIZED RETRY)','First attempt charged before dying; the retry charged again.','Stripe 2017: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
   return {cls:'bad'}; }
   if (t==='DBL_GAP'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash before memory write');
   say('EVENT 3/6','The work finished - but the crash landed <b>before the separate store recorded it</b>. Memory and work parted ways.');
@@ -674,7 +736,19 @@ function bootEngine() {
  function chips(){ var h=''; EVMETA.forEach(function(m,i){ h+='<div class="evchip" data-i="'+i+'">'+m.chip+'</div>'; }); $('#evchips').innerHTML=h; }
  function meters(dmg){
  function set(id,v,badCls){ var e=$(id); e.textContent=v; e.className='n '+((v===0||v==='OK')?'good':badCls); }
- set('#m-dbl',dmg.dbl,'bad'); set('#m-lost',dmg.lost,'bad'); set('#m-tick',dmg.tick,'warn');
+ /* B2-4: DOUBLES shows the day's doubles PLUS any counted during attacks. */
+ set('#m-dbl',dmg.dbl + attackDbl,'bad'); set('#m-lost',dmg.lost,'bad'); set('#m-tick',dmg.tick,'warn');
+ updateMeterNote();
+ }
+ /* B2-4: each dbl stamp during an attack adds to DOUBLES; the sub-line marks
+    the meters as "today + attacks" once any attack has run. */
+ function updateMeterNote(){ var n=$('#meternote'); if(!n) return; if(anyAttackRun){ n.textContent='today + attacks'; n.classList.add('on'); } else { n.classList.remove('on'); } }
+ function markAttackRun(){ anyAttackRun = true; updateMeterNote(); }
+ function bumpAttackDouble(){
+ attackDbl++; anyAttackRun = true;
+ var v = (dayDamage ? dayDamage.dbl : 0) + attackDbl;
+ var e = $('#m-dbl'); e.textContent = v; e.className = 'n ' + (v===0 ? 'good' : 'bad');
+ updateMeterNote();
  }
  function lock(on){ $('#artB').classList.toggle('locked', on); $('#runbtn').disabled=on; $('#stepbtn').disabled=on; }
 
@@ -690,6 +764,7 @@ function bootEngine() {
  dayDamage = dayTokens(K); evIdx = 0; bankEntries = [];
  $('#log').innerHTML=''; chips(); drawStage(); layerAnim = el('g',{});
  ['#m-dbl','#m-lost','#m-tick'].forEach(function(s){ $(s).textContent='-'; $(s).className='n'; });
+ attackDbl = 0; anyAttackRun = false; updateMeterNote(); /* B2-4: a new day resets the meters to today */
  }
  function renderBill(bill){
   var host=$('#bill'); if(!host) return;
@@ -704,17 +779,19 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='1\u00D7'; }
+ var autoFast = false;
+ if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='2\u00D7'; autoFast=true; } /* B2-5: the button reads the CURRENT speed (2\u00D7), not the target */
+ var speedNote = autoFast ? ' Replays now run at 2\u00D7; the button sets it back.' : '';
  if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry an identity but the server keeps no record - recognition never actually happens.','Stripe: the server ties the key to state ON ITS SIDE - the key alone is half the machine.','mem');
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
-  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized on the right. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>');
+  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized on the right. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>'+speedNote);
   card('good','DAY SURVIVED','Zero double charges, zero lost sales, zero mystery tickets. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';
  } else {
-  say('DAY OVER','Read the damage. Every card points at one of your decisions. The five answers below are the hint sheet - adjust and run again.');
+  say('DAY OVER','Read the damage. Every card points at one of your decisions. The five answers below are the hint sheet - adjust and run again.'+speedNote);
  }
  }
  async function runAll(){
@@ -860,7 +937,7 @@ function bootEngine() {
    brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer - re-run and watch it break, then fix it.',
    attack: async function(){
     say('ATTACK 4','Same key as this morning - but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared - defaulted to the naive answer.');
-    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck();
+    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck(); focusDeckSel('params'); /* B2-7 */
     var d = await animParamsMismatch(); d.remove();
    },
    rerun: async function(){
@@ -894,7 +971,7 @@ function bootEngine() {
      return;
     }
     say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten - on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
-    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck();
+    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck(); focusDeckSel('after'); /* B2-7 */
     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
@@ -907,7 +984,7 @@ function bootEngine() {
      return { held:false };
     }
     if (!ROWS_ADDED.after){
-     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck();
+     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck(); focusDeckSel('after'); /* B2-7 */
      say('ATTACK 5','Your window has an edge now - so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
      var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
@@ -977,6 +1054,7 @@ function bootEngine() {
       if (FREE && escMode>=0 && escMode!==i) escAbandon();
    running=true; lock(true);
    escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); await LEVELS[i].attack();
+   markAttackRun(); /* B2-4: an attack has run - the meters now read "today + attacks" */
    lock(false); running=false;
    escEnter(i);
   });});
@@ -986,6 +1064,7 @@ function bootEngine() {
    running=true; lock(true);
    curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{});
    var res = await LEVELS[i].rerun();
+   markAttackRun(); /* B2-4: a re-run is an attack running - keep the note on */
    lock(false); running=false;
    if (res.showAccept && l1Tried){ var a=$$('#lvls .lvl')[i].querySelector('.acceptbtn'); if(a) a.style.display=''; }
    escExit(i, !!res.held);
@@ -1039,25 +1118,64 @@ function bootEngine() {
  }
  function debrief(){ buildDebrief(); }
 
+ /* ---------- restore (B2-1/F6) ----------
+    The one host->mission call that mutates engine state: rebuild a saved
+    design without animating. Set K (incl. attack-added rows present in the
+    saved decisions), repaint the deck + stage; if it survived, show the
+    bill, reveal the attacks, mark the held ones and unlock the next, and
+    label RUN "AGAIN". The host calls this once from the init handler, then
+    emits state so the YOU column / diagram / ticks fill. */
+ function restore(decisions, survived, held){
+ decisions = decisions || {};
+ ['id','mem','read','cli','rep','ret','params','after'].forEach(function(k){
+  if (decisions[k] != null) K[k] = decisions[k];
+ });
+ ROWS_ADDED.params = decisions.params != null;
+ ROWS_ADDED.after = decisions.after != null;
+ paintDeck(); drawStage();
+ if (!survived) return;
+ won = true; runsDone = 1;
+ dayDamage = dayTokens(K);
+ meters(dayDamage);
+ renderBill(dayDamage.win ? dayDamage.bill : null);
+ buildLevels();
+ $('#escwrap').style.display='';
+ held = held || [];
+ var lvls = $$('#lvls .lvl');
+ for (var i=0;i<LEVELS.length;i++){
+  if (held[i]){
+   lvlDone[i]=true;
+   if (lvls[i]){ lvls[i].querySelector('.done').style.display='inline'; lvls[i].classList.remove('locked2'); }
+   if (lvls[i+1]) lvls[i+1].classList.remove('locked2');
+  }
+ }
+ if (lvlDone.every(Boolean)) buildDebrief();
+ $('#runbtn').innerHTML='RUN AGAIN ▶';
+ $('#artB').dataset.cue='';
+ say('RESTORED','Your design from last time. Run it again, or go straight to the attacks.');
+ }
+
  $('#runbtn').addEventListener('click', runAll);
  $('#stepbtn').addEventListener('click', stepOne);
- $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '1\u00D7' : '2\u00D7'; });
+ $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '2\u00D7' : '1\u00D7'; }); /* B2-5: label is the CURRENT speed */
  $('#resetbtn').addEventListener('click', function(){
  if (running) return;
  K={ id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' }; ROWS_ADDED={params:false,after:false}; delete K.params; delete K.after;
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
+ if(!userChoseSpeed){ speed=1; $('#fastbtn').classList.remove('on'); $('#fastbtn').textContent='1×'; } /* B2-5: reset returns to 1× unless the user chose a speed */
  var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
- freshDay(); paintDeck(); say('READY','Naive decisions restored. Run the day.');
+ freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ $('#stepbtn').style.borderColor='#D946EF'; $('#stepbtn').style.color='#E879F9'; say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); }
+ if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
  else say('READY','Your decisions start naive on purpose. RUN the day as-is first: <b>the damage report is the syllabus.</b>');
+ return { restore: restore };
 }
 
 // ---- the host bridge (this port) -----------------------------------------
-function bootBridge() {
+function bootBridge(engine) {
  'use strict';
  var $ = function(s){ return document.querySelector(s); };
  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -1214,6 +1332,12 @@ function bootBridge() {
   deckEl.removeEventListener('click', once);
  });
 
+ /* ---- reset: the reset button clears the saved design on the host
+    (B2-1/F6). The engine's own listener resets the DOM first; this fires
+    after, so the host drops decisions/survived/held while keeping commit. ---- */
+ var resetEl = $('#resetbtn');
+ if (resetEl) resetEl.addEventListener('click', function(){ post({ type: 'reset' }); });
+
  /* ---- anchors: in-page targets live in the host document ---- */
  document.addEventListener('click', function(e){
   var t = e.target;
@@ -1256,6 +1380,14 @@ function bootBridge() {
   if (d.type === 'init'){
    inited = true;
    if (typeof d.commit === 'string' && d.commit.trim()){ stored = { text: d.commit }; showLocked(stored); }
+   /* the ONE host->mission call that mutates engine state: rebuild a saved,
+      survived design without animating, then emit state so the YOU column,
+      diagram and ticks fill (B2-1/F6). */
+   if (d.survived && d.decisions && engine && typeof engine.restore === 'function'){
+    engine.restore(d.decisions, true, Array.isArray(d.held) ? d.held : []);
+    filled = true;
+    emitState();
+   }
   }
  }
  window.addEventListener('message', onMessage);
@@ -1279,8 +1411,8 @@ function bootBridge() {
 
 export default function ProblemAmbiguousTimeoutsMission() {
  useEffect(function () {
-  bootEngine();
-  return bootBridge();
+  var engine = bootEngine();
+  return bootBridge(engine);
  }, []);
  return (
   <>
