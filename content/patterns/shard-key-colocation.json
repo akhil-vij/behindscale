@@ -1,16 +1,40 @@
 {
   "slug": "shard-key-colocation",
   "name": "Shard-Key Colocation",
-  "category": "consistency",
-  "definition": "When sharding, place every row that must be read or committed together on the same shard, by two coordinated choices: shard the full set of tables that reference each other (not just the big one), and partition them all by the same key — the entity whose boundary matches the application's transaction and query patterns. Transactionality guarantees stop at a single host; colocation is how a sharded system keeps the transactions it actually needs without distributed coordination.\n\nThe failure case the pattern prevents is quiet corruption at the seams: a parent row on one shard, its children on another, and a delete that succeeds on one side while the update on the other fails. The design work is choosing the colocation entity — the workspace, the guild, the user — such that real queries stay inside it and load spreads acceptably across instances of it.",
+  "oneLineDefinition": "When you shard a database across machines, keep data that is used together on the same machine, by sharding all the related tables by one shared key - like the user or workspace.",
+  "definition": "Sharding splits a database across many machines. The catch is that a database can only promise a transaction - a set of changes that all succeed or all fail together - within a single machine. So if two rows that must change together end up on different machines, a change can half-succeed: it commits on one machine and fails on the other, leaving the data inconsistent. Shard-key colocation avoids that by keeping data that is used together on the same machine.\n\nGetting there takes two matching choices:\n\n- **shard the tables together** - shard the whole set of tables that reference each other, not just the one big table\n- **split them by one key** - partition them all by the same key, the one whose natural boundary matches how the application reads and changes data\n\nPick the user, the workspace, or the account, and every row belonging to one of them lands on one machine. When your own code controls the sharding - see [application-layer sharding](/patterns/application-layer-sharding) - this sharding key is the main thing you are choosing.\n\n{{figure:colocate-related-rows}}\n\nDo this and the queries and transactions you actually run stay inside one machine, where they are fast and safe - no coordinating a change across machines, no pulling a query's data from several of them. Get it wrong and you are back to those cross-machine operations for everyday work, or worse, the silent corruption of related data drifting out of sync. The real work is choosing that key well: real queries should stay inside one entity, and no single entity should be so large it overloads its machine.",
   "whenItApplies": [
-    "Horizontally sharding a relational schema where foreign-key-related tables participate in shared transactions",
-    "Choosing a partition key for a multi-tenant product, where the tenant boundary usually is the transaction boundary",
-    "Any sharded system where cross-shard joins or two-phase commits would otherwise become the common path"
+    "You are sharding a relational database whose tables link to each other. When related tables (joined by foreign keys) take part in the same transactions, they need to land on the same machine or those transactions break.",
+    "You are picking a shard key for a multi-tenant product. Usually the tenant - the customer or workspace - is exactly the boundary your transactions and queries stay within, which makes it the natural key to shard by.",
+    "Without colocation, your everyday queries would have to span machines. In any sharded system where the normal path would otherwise mean joining across machines or coordinating a commit across them, colocating removes the scatter-and-gather cost."
   ],
   "tradeoffs": [
-    "The shards inherit the colocation entity's skew: uniform buckets by count are not uniform by weight when one tenant outweighs thousands",
-    "The partition key becomes architectural commitment — a product pivot away from the chosen entity turns colocation into impedance",
-    "Everything transitively related must shard together, dragging small tables into the scheme to protect the transactions of large ones"
-  ]
+    "The shards inherit the entity's uneven sizes: splitting by count looks even, but if one tenant is bigger than a thousand others, its machine carries far more load than the rest.",
+    "The key you pick is very hard to change later. It is baked into the whole layout, so if the product shifts and the old key no longer matches how people use it, colocation stops helping and starts fighting you.",
+    "Everything connected has to shard together, even tiny tables. A small lookup table that a big table's transactions touch has to be sharded by the same key too, so the scheme pulls in more tables than you might expect."
+  ],
+  "aliases": [
+    "colocate related data",
+    "partition key choice",
+    "single-shard transactions"
+  ],
+  "category": "consistency",
+  "artifact": {
+    "path": "/artifacts/shard-key-colocation/index.html",
+    "teaser": "Scatter a workspace's rows across shards and a delete can strand its comments; colocate them and the transaction stays on one machine."
+  },
+  "figures": [
+    {
+      "slug": "colocate-related-rows",
+      "eyebrow": "KEEP RELATED ROWS TOGETHER",
+      "caption": "Shard related rows by different keys and a workspace's parent and children land on different shards, so a transaction across them can half-succeed; partition them all by the same key and they stay on one shard, where transactions are safe.",
+      "ariaLabel": "Left, a workspace's rows scattered across shards, a transaction can half-succeed; right, all its rows on one shard."
+    }
+  ],
+  "mechanism": {
+    "caption": "ONE ENTITY, ONE SHARD",
+    "blurb": "At its core: a database can keep a transaction atomic (all-or-nothing) only within one machine. So if related data is spread across shards, a transaction over them can half-fail and corrupt the data. Shard all the related tables by the same key, and each entity's rows stay on one machine, where transactions are safe.",
+    "idea": "When you shard a database, a transaction that must be atomic (all-or-nothing) only stays atomic within a single machine. Spread the rows a transaction touches across different shards and it can partly succeed - a parent row deleted on one machine while its child rows, stranded on another, never get updated. That is silent corruption. Colocation prevents it: shard the whole group of related tables together, and partition them all by one key - a user, a workspace, an account - so every row for a given one of those lands on the same machine. Then the queries and transactions you actually run stay on a single shard, fast and safe, with no cross-machine coordination.",
+    "whatToTry": "Shard the rows by row id and run a transaction across a workspace - it lands on several machines, one fails, and you get orphaned rows. Colocate by workspace instead and the same transaction stays on one machine and commits cleanly."
+  }
 }
