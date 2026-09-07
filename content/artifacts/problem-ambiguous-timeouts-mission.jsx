@@ -43,6 +43,10 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     dropped to the top.
 //   B2-8 (F21): .narr min-height 44px -> 77px (three lines) so the box no
 //     longer grows 1->3 lines between events and shoves the stage.
+//   B2-9 (F22): E3's DBL_CRASH card src "Stripe" -> "Stripe 2017"; the
+//     MEMORY deck label q "Q2" -> "Q3" (READS keeps Q2); the standalone
+//     footer backlink is same-tab (target dropped). Other year-less card
+//     srcs are conversational teaching notes, listed in the PR, left as-is.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -280,7 +284,7 @@ const MARKUP = `
 
 
  </div>
- <div class="art-foot" id="mission-foot" style="display:none;"><a href="https://www.behindscale.com/problems/ambiguous-timeouts" target="_blank" rel="noopener noreferrer">From the full problem page at behindscale.com →</a></div>
+ <div class="art-foot" id="mission-foot" style="display:none;"><a href="https://www.behindscale.com/problems/ambiguous-timeouts">From the full problem page at behindscale.com →</a></div>
 </div>
 `
 
@@ -307,7 +311,7 @@ function bootEngine() {
   ['none','nobody - a request is just its parameters'],
   ['hash','the server - hash the parameters'],
   ['key','the caller - sends a key it generated']] },
- { k:'mem', q:'Q2', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
+ { k:'mem', q:'Q3', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
   ['none','nowhere - keep no record'],
   ['store','a separate store, written after the work'],
   ['storerec','a separate store, plus recovery steps that rebuild state on retry'],
@@ -644,7 +648,7 @@ function bootEngine() {
   if (t==='DBL_CRASH'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash after charging');
   say('EVENT 3/6','The retry arrives as a stranger - the server has no way to recognize it.');
   var r=await animRequest('plain'); await chargeBank(r,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE (CRASH + UNRECOGNIZED RETRY)','First attempt charged before dying; the retry charged again.','Stripe: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
+  card('bad','DOUBLE CHARGE (CRASH + UNRECOGNIZED RETRY)','First attempt charged before dying; the retry charged again.','Stripe 2017: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
   return {cls:'bad'}; }
   if (t==='DBL_GAP'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash before memory write');
   say('EVENT 3/6','The work finished - but the crash landed <b>before the separate store recorded it</b>. Memory and work parted ways.');

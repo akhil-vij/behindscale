@@ -10,6 +10,11 @@ import { useEffect } from 'react'
 // Pure stage machine (taste doc: sequences take zero intervals); the
 // OUTCOMES table is the step function, assertable headless.
 //
+// Sanctioned edit (Batch 2, B2-9.3/F22): the footer backlink shows only when
+// standalone (id="tryit-backlink", default hidden; the embed gate reveals it)
+// and is same-tab (target dropped). Embedded it pointed at the current page
+// and target=_blank was a sandbox no-op. Reference untouched.
+//
 // Host protocol (v1, see src/pages/ProblemDetail.tsx): this artifact posts
 // {v:1, wall, type:'size', h} so the host can size the frame to its
 // content. Embedded (window.parent !== window) it keeps the context block
@@ -164,7 +169,7 @@ const MARKUP = `
 
  <div class="art-foot">
   The three failure points and their one safe case are Stripe's; the crash that separates the work from its record, and the all-or-nothing commit that forbids it, are AWS's; the replica-lag double charge is Airbnb's own scenario; the window that shrinks under load instead of failing is Segment's; the recovery-steps framing is Shopify's. The $100, the single-row ledger, and the timings are illustrative - the failure modes are the posts'.
-  <a href="https://www.behindscale.com/problems/ambiguous-timeouts" target="_blank" rel="noopener noreferrer">From the full problem page at behindscale.com →</a>
+  <a href="https://www.behindscale.com/problems/ambiguous-timeouts" id="tryit-backlink" style="display:none;">From the full problem page at behindscale.com →</a>
  </div>
 </div>
 `
@@ -272,6 +277,10 @@ function bootBridge() {
   var ctx = document.getElementById('artctx'), show = document.getElementById('ctxshow');
   if (ctx) ctx.style.display = '';
   if (show) show.style.display = 'none';
+  // B2-9.3 (F22): the backlink shows only standalone (same tab). Embedded on
+  // the problem page it would point at the page you're on, and target=_blank
+  // is a no-op in the sandbox -- so it stays hidden inside the page.
+  var bl = document.getElementById('tryit-backlink'); if (bl) bl.style.display = '';
  }
  function post(msg) {
   try { window.parent.postMessage(Object.assign({ v: 1, wall: WALL }, msg), '*'); } catch (e) {}
