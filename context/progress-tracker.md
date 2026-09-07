@@ -7734,6 +7734,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-07: **Pattern review Round 26 — Independent Observability**.
+  Enrichment of the pre-existing minimal pattern
+  (`content/patterns/independent-observability.json`, slug/name/category
+  frozen — category **observability**, FIRST observability-category round).
+  Added authored `oneLineDefinition`, readability-passed definition with one
+  figure marker and two inline cross-links `[failure domain](/patterns/fault-isolation)`
+  and `[dead man's switch](/patterns/dead-mans-switch)` — both guard-green
+  (the dead-man's link text carries an apostrophe and renders correctly).
+  Aliases: circular dependency · out-of-band monitoring · monitoring that
+  shares fate. New authored artifact
+  `content/artifacts/independent-observability.jsx` (zero near-miss grays,
+  zero em-dashes, export-default), one figure
+  `content/figures/independent-observability/inside-vs-outside.svg` (viewBox
+  0 0 720 244, in-band, safe). No `file` field. Revision HTML not placed.
+  This is the pattern the three observer-fate articles (Airbnb, Roblox,
+  Datadog) all cite — now a rich page. Branch workflow: on
+  `round/independent-observability-enrichment` off a fast-forwarded main
+  (PR #7 / shard-key-colocation merged as 901fe8c). Visible DOM verified: 0
+  literal markdown, both anchors, figure img, mechanism teaser. Build (23
+  checks, 0 errors) + 307 tests green.
 - 2026-09-07: **Pattern review Round 25 — Shard-Key Colocation**. Enrichment
   of the pre-existing minimal pattern
   (`content/patterns/shard-key-colocation.json`, slug/name/category frozen —
