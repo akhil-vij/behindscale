@@ -7734,6 +7734,25 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-07: **Pattern review Round 25 — Shard-Key Colocation**. Enrichment
+  of the pre-existing minimal pattern
+  (`content/patterns/shard-key-colocation.json`, slug/name/category frozen —
+  category **consistency**, third consecutive consistency round). Added
+  authored `oneLineDefinition`, readability-passed definition with one figure
+  marker, two `**bold**` list-item leads (shard the tables together / split
+  them by one key), and one inline cross-link
+  `[application-layer sharding](/patterns/application-layer-sharding)`
+  (Round 19; guard-green). Aliases: colocate related data · partition key
+  choice · single-shard transactions. New authored artifact
+  `content/artifacts/shard-key-colocation.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/shard-key-colocation/colocate-related-rows.svg` (viewBox
+  0 0 720 244, in-band — caption exactly 40w, safe). No `file` field.
+  Revision HTML not placed. Branch workflow: on
+  `round/shard-key-colocation-enrichment` off a fast-forwarded main (PR #6 /
+  master-only-reads merged as b15fcd4). Visible DOM verified: 0 literal
+  markdown, both bold leads, anchor, figure img, mechanism teaser. Build (23
+  checks, 0 errors) + 307 tests green.
 - 2026-09-07: **Pattern review Round 24 — Master-Only Reads**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/master-only-reads.json`,
   slug/name/category frozen — category **consistency**). Added authored
