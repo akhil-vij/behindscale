@@ -15,6 +15,11 @@ import { useEffect } from 'react'
 // and is same-tab (target dropped). Embedded it pointed at the current page
 // and target=_blank was a sandbox no-op. Reference untouched.
 //
+// Sanctioned edit (Batch 2, B2-13/F12): the wire keeps its scroll wrapper on
+// phone with an on-load "⟷ scroll" hint. A vertical (GH/GV) relayout would be
+// the legible fix but is a geometry rewrite of this static SVG whose cut zones
+// the frozen engine binds by id -- deferred to the Batch 1 design spec.
+//
 // Host protocol (v1, see src/pages/ProblemDetail.tsx): this artifact posts
 // {v:1, wall, type:'size', h} so the host can size the frame to its
 // content. Embedded (window.parent !== window) it keeps the context block
@@ -84,8 +89,16 @@ const CSS = `
 .art-meter .val.unk { color: #eab308; }
 .art-foot { color: var(--art-muted); font-size: 10px; margin-top: 12px; border-top: 1px solid var(--art-border); padding-top: 8px; line-height: 1.7; }
 .art-foot a { color: var(--art-text); text-decoration: underline; }
-.stagewrap { overflow-x: auto; margin-top: 12px; }
+.stagewrap { overflow-x: auto; margin-top: 12px; position: relative; }
 svg.stage { width: 100%; min-width: 480px; height: auto; display: block; }
+/* B2-13 (F12): the 640-wide wire keeps its scroll wrapper on phone (scaling
+   to ~324px drops the 8.5px labels to ~4.3px - illegible; a vertical relayout,
+   like the mission's GH/GV, is a geometry rewrite of this static wire whose
+   cut zones the frozen engine binds by id, so it is deferred to the Batch 1
+   design spec). The hint reads on load, centered, not on hover. */
+@media (max-width: 700px) {
+ .stagewrap::after { content: "\\27f7 scroll"; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); background: var(--art-surface); border: 1px solid var(--art-border-interactive); border-radius: 999px; padding: 1px 8px; color: var(--art-muted); font-family: var(--mono); font-size: 10px; pointer-events: none; }
+}
 svg.stage text { font-family: var(--mono); }
 .s-node { fill: var(--art-surface); stroke: var(--art-border); stroke-width: 1.3; }
 .s-nlabel { font-size: 11px; fill: var(--art-text); text-anchor: middle; letter-spacing: 0.03em; }
