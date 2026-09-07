@@ -21,6 +21,12 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     (returned to the bridge) reconstructs a saved design without animating;
 //     the bridge calls it once from init, then emits state. The reset button
 //     now posts a reset message and its narration changed.
+//   B2-3 (F8): the stage clock label map gains size:'size-bound' -- WINDOW's
+//     "bounded by size" option had no label and printed "keeps: undefined".
+//     Audit of the other stage label maps (all complete vs GROUPS): CLIENT
+//     {giveup,blind,key}, identity {none,hash,key}, reply {err|saved}. The
+//     memory box draws storerec via the acid branch (a visual simplification,
+//     not an undefined-label bug) -- left as-is, out of B2-3's scope.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -464,7 +470,7 @@ function bootEngine() {
   var gRet = el('g',{id:'sg-ret'},S);
   el('circle',{cx:G.clock.cx,cy:G.clock.cy,r:12,fill:'none',stroke:'#8A8A94','stroke-width':1.4},gRet);
   el('line',{x1:G.clock.cx,y1:G.clock.cy,x2:G.clock.cx,y2:G.clock.cy-8,stroke:'#8A8A94','stroke-width':1.4,id:'clockhand'},gRet);
-  el('text',{class:'nsub',x:G.clock.cx,y:G.clock.cy+28},gRet,'keeps: '+({min:'1 min',day:'~24 h',ever:'forever'}[K.ret]));
+  el('text',{class:'nsub',x:G.clock.cx,y:G.clock.cy+28},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
  }
  }
  function memNote(txt){ var m=document.getElementById('memrow'); if(m) m.textContent = txt; }
