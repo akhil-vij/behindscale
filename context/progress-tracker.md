@@ -7734,6 +7734,22 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-07: **Pattern review Round 24 — Master-Only Reads**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/master-only-reads.json`,
+  slug/name/category frozen — category **consistency**). Added authored
+  `oneLineDefinition`, readability-passed definition with one figure marker
+  and two inline cross-links `[idempotency record](/patterns/idempotency-keys)`
+  (Round 23) and `[sharding the primary](/patterns/application-layer-sharding)`
+  (Round 19) — both guard-green. Aliases: primary-only reads · read your
+  writes · avoid stale replica reads. New authored artifact
+  `content/artifacts/master-only-reads.jsx` (zero near-miss grays, zero
+  em-dashes, export-default), one figure
+  `content/figures/master-only-reads/where-reads-go.svg` (viewBox 0 0 720
+  246, in-band, safe). No `file` field. Revision HTML not placed. Branch
+  workflow: on `round/master-only-reads-enrichment` off a fast-forwarded
+  main (PR #5 / idempotency-keys merged as 131f70e). Visible DOM verified:
+  0 literal markdown, both anchors, figure img, mechanism teaser. Build (23
+  checks, 0 errors) + 307 tests green.
 - 2026-09-07: **Pattern review Round 23 — Idempotency Keys**. Enrichment of
   the pre-existing minimal pattern (`content/patterns/idempotency-keys.json`,
   slug/name/category frozen — category **consistency**, first non-resilience/

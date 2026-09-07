@@ -1,16 +1,40 @@
 {
   "slug": "master-only-reads",
   "name": "Master-Only Reads",
-  "category": "consistency",
-  "definition": "Serve every production read from the primary; replicas exist for failover, backups, and offline export, never for traffic. The rule buys read-your-writes determinism by construction: replica lag cannot corrupt application logic if no application logic ever observes a replica. Adopters state it as law learned two ways — as a policy against a whole class of intermittent, cache-entangled lag bugs, or as the fix for a specific correctness hole where stale reads of coordination state (idempotency records, locks, leases) re-create the very failure the state exists to prevent.\n\nBoundary against read-replica scaling: that pattern spends consistency to buy read throughput and accepts lag as a managed quantity; this one refuses the trade, and recovers throughput elsewhere — typically by sharding the primary, which is why the two patterns travel together. The strongest applications are correctness-critical reads: state whose staleness changes a decision, not just a display.",
+  "oneLineDefinition": "Send every read to the primary database, never to a replica (a copy that lags behind it), so no read is ever stale - replicas exist only for failover and backups.",
+  "definition": "Send every read your production system makes to the primary database - the one that takes writes - and never to a replica. A replica is a copy that lags a little behind the primary, so reading one can hand back data that is slightly out of date. If no part of your application ever reads a replica, that staleness can never cause a bug. The replicas still exist, but only for failover, backups, and offline exports - never to serve live traffic.\n\n{{figure:where-reads-go}}\n\nThis matters most for reads that drive a decision, not just a display. Some data exists only to control what the system does next, such as:\n\n- has this payment already been charged?\n- does another process already hold this lock or lease?\n- has this exact message already been processed?\n- is this username, seat, or order id already taken?\n- is there enough balance to allow this withdrawal?\n\nRead any of these from a lagging replica and you can get the wrong answer - the [idempotency record](/patterns/idempotency-keys) that was just written looks absent, so the payment runs a second time. The very state that exists to prevent a mistake, read stale, causes it.\n\nThe usual reason to read from replicas is to spread read load, accepting a little staleness as the price. Master-only reads refuse that trade for correctness-critical data, and get the lost read capacity back a different way - usually by [sharding the primary](/patterns/application-layer-sharding), which is why the two moves tend to go together. Keep this rule where staleness would change a decision; where a read only feeds a display, a slightly stale replica is fine.",
   "whenItApplies": [
-    "Coordination and correctness state — idempotency keys, leases, dedupe records — where a stale read causes a wrong action, not a stale page",
-    "Sharded fleets where per-primary load is already bounded, making replica read offload unnecessary",
-    "Systems whose lag bugs have proven intermittent and expensive to diagnose, and whose owners prefer paying in hardware"
+    "The read decides an action, not just what to show. For state like idempotency records, locks, or dedupe records, a stale read causes a wrong action - a double charge, a lost lock - not just a slightly old page.",
+    "The primary is already sharded, so its load is manageable. When the data is split across many primaries and no single one is overloaded, you do not need replicas to take read traffic off them.",
+    "Lag bugs have already burned you and are hard to catch. When stale-read bugs show up rarely and take forever to diagnose, and the team would rather spend on hardware than chase them, banning replica reads outright is worth it."
   ],
   "tradeoffs": [
-    "Read capacity equals primary capacity: scaling reads means splitting shards or upgrading machines, not adding replicas",
-    "The replica fleet becomes pure insurance — real hardware serving zero requests on the average day",
-    "Reads that could genuinely tolerate staleness (analytics, feeds) pay full price unless carved out through a separate path"
-  ]
+    "Read capacity is capped at the primary: since reads never touch a replica, the only way to serve more reads is to split into more shards or buy bigger machines, not to add replicas.",
+    "Your replicas cost money but serve no traffic. They are real machines you pay for that sit idle on a normal day, there only to take over if the primary fails or to hold a backup.",
+    "Reads that could live with stale data pay full price too. Analytics, dashboards, and feeds do not need fresh data, but under a blanket rule they hit the primary anyway - unless you carve out a separate path just for them."
+  ],
+  "aliases": [
+    "primary-only reads",
+    "read your writes",
+    "avoid stale replica reads"
+  ],
+  "category": "consistency",
+  "artifact": {
+    "path": "/artifacts/master-only-reads/index.html",
+    "teaser": "A retry reads a lagging replica, sees no charge, and charges again - read the primary instead and it never happens."
+  },
+  "figures": [
+    {
+      "slug": "where-reads-go",
+      "eyebrow": "WHERE THE READS GO",
+      "caption": "Reading from replicas spreads the load but a lagging replica can return stale data; master-only reads send every read to the primary, so reads are always current and the replicas sit idle, kept only for failover.",
+      "ariaLabel": "Left, reads spread across primary and replicas, one possibly stale; right, all reads hit the primary, replicas idle."
+    }
+  ],
+  "mechanism": {
+    "caption": "READ THE PRIMARY, ALWAYS",
+    "blurb": "At its core: a replica lags the primary, so a read from it can be stale - and for data that drives a decision, like whether a payment already happened, stale means wrong. Send every such read to the primary and the staleness bug simply cannot happen.",
+    "idea": "A replica is a copy of the database that lags a little behind the primary. Reading from it spreads read load, which is usually fine - but the data can be a few seconds out of date. For something you only show on a screen, that is fine. For data that decides what the system does next, it is not. The classic case: a payment is recorded on the primary, a retry checks a replica that has not caught up, sees no record, and charges again. Master-only reads send every read to the primary, so no read is ever stale. The cost is that reads no longer scale by adding replicas, so you scale by sharding the primary instead, and the replicas are kept only for failover.",
+    "whatToTry": "Read from the replica and run the retry check during the lag window - it misses the just-written record and double-charges. Switch to reading the primary and the same check always sees the record, so it charges once."
+  }
 }
