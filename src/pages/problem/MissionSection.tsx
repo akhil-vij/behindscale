@@ -1,6 +1,6 @@
 import type { ProblemMission, ProblemMissionOutline } from '../../types'
 import ArtifactEmbed from '../../components/ArtifactEmbed'
-import { escapeHtml, pp } from './inline'
+import { pp } from './inline'
 
 // "Build the defense": the intro (with the decisions sentence the shell
 // composes at the `{{decisions}}` marker), the static "What's inside the
@@ -30,8 +30,11 @@ interface MissionSectionProps {
 
 const DEFAULT_MISSION_HEIGHT = '900px'
 const DECISIONS_MARKER = '{{decisions}}'
-const NOSCRIPT_LEAD =
-  'This is an interactive mission. Without JavaScript, here is what it asks you to decide, what happens during the day, and what attacks your design.'
+// B2-10 (F23): with JS off, the "What's inside the mission" outline card above
+// the frame already lists the decisions/events/attacks, so the frame's no-JS
+// block drops the duplicate lists and just points back at that card.
+const OUTLINE_NOSCRIPT_POINTER =
+  `<p>See "What's inside the mission" above for the decisions, the day's events, and the attacks.</p>`
 
 export default function MissionSection({
   mission,
@@ -87,13 +90,27 @@ export default function MissionSection({
         height={height ?? DEFAULT_MISSION_HEIGHT}
         onMessage={onMessage}
         noscript={`${mission.teaser} (interactive - needs JavaScript)`}
-        noscriptDetail={outline !== undefined ? outlineNoscriptHtml(outline) : undefined}
+        noscriptDetail={outline !== undefined ? OUTLINE_NOSCRIPT_POINTER : undefined}
       />
+      {/* B2-10 (F23): with JS off the stop block's "you can stop here" promise
+          is replaced by the reading pointer; the "stuck?" note is hidden. */}
       {mission.stopblock !== undefined && (
-        <div className="stopblock">{pp(mission.stopblock)}</div>
+        <>
+          <div className="stopblock" id="mission-stopblock">{pp(mission.stopblock)}</div>
+          <noscript
+            dangerouslySetInnerHTML={{
+              __html: `<style>#mission-stopblock{display:none}</style><div class="stopblock">This page has an interactive mission; without JavaScript, the comparison below is the reading.</div>`,
+            }}
+          />
+        </>
       )}
       {mission.stuckNote !== undefined && (
-        <p className="stuck-note">{pp(mission.stuckNote)}</p>
+        <>
+          <p className="stuck-note" id="mission-stuck">{pp(mission.stuckNote)}</p>
+          <noscript
+            dangerouslySetInnerHTML={{ __html: `<style>#mission-stuck{display:none}</style>` }}
+          />
+        </>
       )}
     </section>
   )
@@ -123,20 +140,6 @@ function attackLine(a: ProblemMissionOutline['attacks'][number]): string {
 }
 function closingLine(comparisonColumns: number): string {
   return `Survive the day and the attacks, and your design becomes the ${ordinalWord(comparisonColumns + 1)} column in the comparison below.`
-}
-
-// The same three lists as plain text for the frame's <noscript> (already
-// escaped; the embed inserts it after its one-line fallback).
-function outlineNoscriptHtml(o: ProblemMissionOutline): string {
-  const items = o.decisions
-    .map((d) => `<li>${escapeHtml(`${d.label} — ${d.options.join(' · ')}`)}</li>`)
-    .join('')
-  return [
-    `<p>${escapeHtml(NOSCRIPT_LEAD)}</p>`,
-    `<p>${escapeHtml(decisionsHeading(o))}</p><ul>${items}</ul>`,
-    `<p>${escapeHtml(eventsHeading(o))}</p><p>${escapeHtml(o.events.join(' · '))}</p>`,
-    `<p>${escapeHtml(attacksHeading(o))}</p><p>${escapeHtml(o.attacks.map(attackLine).join(' · '))}</p>`,
-  ].join('')
 }
 
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve']
