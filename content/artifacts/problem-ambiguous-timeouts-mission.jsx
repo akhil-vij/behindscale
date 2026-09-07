@@ -27,6 +27,11 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     {giveup,blind,key}, identity {none,hash,key}, reply {err|saved}. The
 //     memory box draws storerec via the acid branch (a visual simplification,
 //     not an undefined-label bug) -- left as-is, out of B2-3's scope.
+//   B2-4 (F14): each dbl stamp during an attack (curLvl>0) adds to DOUBLES
+//     via bumpAttackDouble(); a "today + attacks" sub-line (#meternote) shows
+//     once any attack has run; freshDay (new day) and reset clear both. Side
+//     effect: the host's write-once `caused` checkpoint (observes the meter
+//     sum) can now also trip on an attack-caused double, not only a day.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -140,6 +145,8 @@ const CSS = `
  .meter .n { font-size:16px; font-weight:700; color:var(--art-muted); }
  .meter .n.bad { color:#ef4444; } .meter .n.good { color:#22c55e; } .meter .n.warn { color:#eab308; }
  .meter .t { font-size:9px; color:var(--art-muted); letter-spacing:.5px; }
+ .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); margin-top:2px; display:none; }
+ .meternote.on { display:block; }
 
  .log { margin-top:12px; display:grid; gap:8px; max-height:280px; overflow-y:auto; }
  .bcard { border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
@@ -227,6 +234,7 @@ const MARKUP = `
    <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
    <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
    </div>
+   <div class="meternote" id="meternote"></div>
   </div>
   <div id="dmgtoast" role="status"></div>
   </div>
@@ -271,6 +279,7 @@ function bootEngine() {
   var ROWS_ADDED = { params:false, after:false };
     var FREE = false; /* FREE PLAY is prototype-only and not ported; the sequence gates below stay verbatim */
  var speed = 1, userChoseSpeed = false, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
+ var attackDbl = 0, anyAttackRun = false; /* B2-4: attack damage counted into the meters + the "today + attacks" note */
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  var lvlDone = [false,false,false,false,false];
@@ -388,6 +397,7 @@ function bootEngine() {
  renderBank();
  if (cls==='dbl') dwellUntil = Date.now() + 900; /* R3: dwell is real time, never /speed */
  if (cls==='dbl'){ var b=$('#bankbox'); b.classList.add('shake'); setTimeout(function(){b.classList.remove('shake');},900); }
+ if (cls==='dbl' && curLvl>0) bumpAttackDouble(); /* B2-4: a double stamped during an attack counts in the meters */
  return bankEntries[bankEntries.length-1];
  }
  function bankAmend(entry, txt, cls){ entry.txt=txt; entry.cls=cls; renderBank(); }
@@ -693,7 +703,19 @@ function bootEngine() {
  function chips(){ var h=''; EVMETA.forEach(function(m,i){ h+='<div class="evchip" data-i="'+i+'">'+m.chip+'</div>'; }); $('#evchips').innerHTML=h; }
  function meters(dmg){
  function set(id,v,badCls){ var e=$(id); e.textContent=v; e.className='n '+((v===0||v==='OK')?'good':badCls); }
- set('#m-dbl',dmg.dbl,'bad'); set('#m-lost',dmg.lost,'bad'); set('#m-tick',dmg.tick,'warn');
+ /* B2-4: DOUBLES shows the day's doubles PLUS any counted during attacks. */
+ set('#m-dbl',dmg.dbl + attackDbl,'bad'); set('#m-lost',dmg.lost,'bad'); set('#m-tick',dmg.tick,'warn');
+ updateMeterNote();
+ }
+ /* B2-4: each dbl stamp during an attack adds to DOUBLES; the sub-line marks
+    the meters as "today + attacks" once any attack has run. */
+ function updateMeterNote(){ var n=$('#meternote'); if(!n) return; if(anyAttackRun){ n.textContent='today + attacks'; n.classList.add('on'); } else { n.classList.remove('on'); } }
+ function markAttackRun(){ anyAttackRun = true; updateMeterNote(); }
+ function bumpAttackDouble(){
+ attackDbl++; anyAttackRun = true;
+ var v = (dayDamage ? dayDamage.dbl : 0) + attackDbl;
+ var e = $('#m-dbl'); e.textContent = v; e.className = 'n ' + (v===0 ? 'good' : 'bad');
+ updateMeterNote();
  }
  function lock(on){ $('#artB').classList.toggle('locked', on); $('#runbtn').disabled=on; $('#stepbtn').disabled=on; }
 
@@ -709,6 +731,7 @@ function bootEngine() {
  dayDamage = dayTokens(K); evIdx = 0; bankEntries = [];
  $('#log').innerHTML=''; chips(); drawStage(); layerAnim = el('g',{});
  ['#m-dbl','#m-lost','#m-tick'].forEach(function(s){ $(s).textContent='-'; $(s).className='n'; });
+ attackDbl = 0; anyAttackRun = false; updateMeterNote(); /* B2-4: a new day resets the meters to today */
  }
  function renderBill(bill){
   var host=$('#bill'); if(!host) return;
@@ -996,6 +1019,7 @@ function bootEngine() {
       if (FREE && escMode>=0 && escMode!==i) escAbandon();
    running=true; lock(true);
    escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); await LEVELS[i].attack();
+   markAttackRun(); /* B2-4: an attack has run - the meters now read "today + attacks" */
    lock(false); running=false;
    escEnter(i);
   });});
@@ -1005,6 +1029,7 @@ function bootEngine() {
    running=true; lock(true);
    curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{});
    var res = await LEVELS[i].rerun();
+   markAttackRun(); /* B2-4: a re-run is an attack running - keep the note on */
    lock(false); running=false;
    if (res.showAccept && l1Tried){ var a=$$('#lvls .lvl')[i].querySelector('.acceptbtn'); if(a) a.style.display=''; }
    escExit(i, !!res.held);
