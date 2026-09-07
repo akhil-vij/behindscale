@@ -120,20 +120,32 @@ test.describe('§5.2 real iframe round-trip', () => {
       v: 1,
       commit: 'Commit with the work so half-failures cannot exist.',
       checkpoints: { caused: false, survived: true, held: false },
-      lastDecisions: { id: 'key', mem: 'acid', read: 'master', cli: 'key', rep: 'saved', ret: 'ever' },
+      // B2-1 (F6): the restorable design moved under `saved` (distinct from the
+      // write-once checkpoints); `held` is persisted here too, sourced from state.
+      saved: {
+        decisions: { id: 'key', mem: 'acid', read: 'master', cli: 'key', rep: 'saved', ret: 'ever' },
+        survived: true,
+      },
     })
     const types = await page.evaluate(() =>
       (window as unknown as { __msgs: Array<{ type: string }> }).__msgs.map((m) => m.type).filter((t) => t !== 'size'),
     )
     expect(types).toEqual(expect.arrayContaining(['ready', 'touched', 'checkpoint', 'state', 'commit']))
 
-    // Reload: the sentence returns to the page and to the artifact via init.
+    // Reload: B2-1 (F6) restores the design without animating -- the sentence
+    // returns to the page and the artifact, AND the YOU column refills from the
+    // restored decisions (it no longer resets to "survive a day first").
     await page.reload()
     const mission2 = await waitForMission(page)
     await expect(page.locator('#you-commit-foot')).toHaveText('You said: "Commit with the work so half-failures cannot exist."')
     await expect(mission2.locator('#cmt-locked')).toContainText('"Commit with the work so half-failures cannot exist."', { timeout: 20_000 })
-    // The YOU column is per-session (a fresh engine), as in the reference.
-    await expect(page.locator('#you-th')).toHaveText(/survive a day first/i)
+    // The restored design refills the YOU column, and the mission shows the
+    // restored survived state (attacks revealed, RESTORED narration).
+    await expect(page.locator('#you-th')).toHaveText('YOU', { timeout: 20_000 })
+    await expect(page.locator('#you-c-state')).toHaveText('With the work, one commit, master only')
+    await expect(page.locator('#you-c-win')).toHaveText('Forever')
+    await expect(mission2.locator('#escwrap')).toBeVisible()
+    await expect(mission2.locator('#narr')).toContainText('RESTORED')
   })
 })
 
@@ -198,10 +210,18 @@ function applyCopyDecisions(lines: string[]): string[] {
       'The three cut points are the wall figure above; the three places',
       "The three cut points are the artifact's three cuts; the three places",
     ) // decision 2 (caption)
+    if (l === '2×') l = '1×' // B2-5 (F15): the speed button now reads the current speed
+    // B2-9.2 (F22): MEMORY's deck label Q-number Q2 -> Q3 (it renders as its own
+    // line after the label; READS keeps its own Q2).
+    if (l === 'Q2' && (lines[i - 1] ?? '').startsWith('MEMORY')) l = 'Q3'
     // decision 1: the YOU row's vantage "You" -> "Your design" (the .vant
     // cell is uppercased by CSS, so innerText reads "YOU"; the line after
     // "You", "now").
     if (l === 'YOU' && lines[i - 1] === 'now' && lines[i - 2] === 'You') l = 'YOUR DESIGN'
+    // B2-9.3 (F22): the "From the full problem page" backlink is hidden when the
+    // artifact is embedded on the page, so the served page never shows it.
+    l = l.replace(/ ?From the full problem page at behindscale\.com →/, '')
+    if (l === '') continue // a line that was only the (now-removed) backlink drops out
     out.push(l)
   }
   return out
@@ -302,10 +322,12 @@ test.describe('§5.5 no-JS', () => {
     )
     const missionFallback = page.locator('#artB .artifact-noscript')
     await expect(missionFallback).toBeVisible()
-    await expect(missionFallback).toContainText('This is an interactive mission. Without JavaScript, here is what it asks you to decide, what happens during the day, and what attacks your design.')
-    await expect(missionFallback).toContainText('Window — one minute · about 24 hours · size-bound · forever')
-    await expect(missionFallback).toContainText('Routine traffic · a dropped request · a crash mid-charge · a lost reply · two identical orders · a late retry')
-    await expect(missionFallback).toContainText('Shopify 2022, a retry after the window')
+    // B2-10 (F23): the mission fallback dropped its duplicate lists (the
+    // "What's inside the mission" card above already carries them) and keeps
+    // one line plus a pointer to that card.
+    await expect(missionFallback).toContainText(
+      'See "What\'s inside the mission" above for the decisions, the day\'s events, and the attacks.',
+    )
     // The noscript wall figure: eyebrow, the SVG, caption.
     await expect(page.locator('figure.pp-figure img')).toBeVisible()
     await expect(page.locator('figure.pp-figure')).toContainText('Three deaths, one symptom', { ignoreCase: true })
@@ -328,10 +350,12 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   // YOU column's empty state are in the HTML too.
   expect(html).toContain('runs after a survived day')
   expect(html).toContain('YOU · survive a day first')
-  // The mission is visible without JavaScript: the six decision labels and
-  // the five attack companies are static text (the outline card + noscript).
+  // The mission is visible without JavaScript: the six decision labels and the
+  // five attack companies are static text in the outline card. B2-10 (F23)
+  // dropped the noscript's duplicate lists, so the contiguous "<label> —
+  // <options>" now lives only in the card, which wraps the label in a span.
   for (const label of ['Identity', 'Memory', 'Reads', 'Client on a timeout', 'Reply to a duplicate', 'Window']) {
-    expect(html, label).toContain(`${label} — `)
+    expect(html, label).toContain(`>${label}</span> — `)
   }
   for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a replica', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {
     expect(html, attack).toContain(attack)
