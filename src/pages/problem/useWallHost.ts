@@ -250,6 +250,24 @@ export function useWallHost(input: WallHostInput): WallHost {
     return () => offs.forEach((off) => off())
   }, [])
 
+  // B2-6 (F16): a same-page #hash link that points at a <details> (the matrix
+  // row labels and the steal list link to the question rows) opens that row
+  // on click, so it doesn't land closed. The mission's own hint links arrive
+  // as anchor messages and open their target in onMissionMessage.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null
+      const a = target?.closest?.('a[href^="#"]')
+      if (!a) return
+      const id = a.getAttribute('href')?.slice(1)
+      if (!id) return
+      const el = document.getElementById(id)
+      if (el instanceof HTMLDetailsElement) el.open = true
+    }
+    document.addEventListener('click', onClick)
+    return () => document.removeEventListener('click', onClick)
+  }, [])
+
   const persist = useCallback(
     (patch: (r: WallRecord) => WallRecord) => {
       const next = patch(recordRef.current)
@@ -345,6 +363,9 @@ export function useWallHost(input: WallHostInput): WallHost {
           if (typeof m.id === 'string') {
             const el = document.getElementById(m.id)
             if (!el) return
+            // B2-6 (F16): open the target row (a <details>) before scrolling,
+            // so a hint lands on an open question, not a closed one.
+            if (el instanceof HTMLDetailsElement) el.open = true
             scrollPageTo(el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET_PX)
             return
           }
