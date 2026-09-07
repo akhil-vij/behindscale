@@ -7734,6 +7734,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-07: **Pattern review Round 23 — Idempotency Keys**. Enrichment of
+  the pre-existing minimal pattern (`content/patterns/idempotency-keys.json`,
+  slug/name/category frozen — category **consistency**, first non-resilience/
+  throughput enrichment round). Added authored `oneLineDefinition`,
+  readability-passed definition with one figure marker and THREE inline
+  cross-links `[which failures are worth retrying](/patterns/retryable-error-classification)`
+  (Round 17), `[how often clients retry](/patterns/retry-with-backoff-and-jitter)`
+  (Round 4), `[atomic phases](/patterns/atomic-phases)` (Round 5) — all
+  guard-green. Aliases: safe retry · request deduplication · exactly-once
+  delivery. New authored artifact `content/artifacts/idempotency-keys.jsx`
+  (zero near-miss grays, zero em-dashes, export-default), one figure
+  `content/figures/idempotency-keys/one-key-one-charge.svg` (viewBox
+  0 0 720 236, in-band, safe). No `file` field. Revision HTML not placed.
+  FIRST round under the **branch-based workflow** (owner directive
+  2026-09-07): done on branch `round/idempotency-keys-enrichment` off a
+  fast-forwarded main (which now carries the concurrent v7.3 problem-page
+  port — Prose/proseText extended with `#anchor` links, bold-links, and
+  problem-essay prose fields; test suite grew to 307/31 files), landed via
+  PR rather than a direct push to main. Visible DOM verified: 0 literal
+  markdown, all three anchors, figure img, mechanism teaser. Build (23
+  checks, 0 errors) + 307 tests green.
 - 2026-09-04: **Article review round — Netflix Conductor** (11th article
   round; completes the workflow-orchestration TRIO — Conductor (earliest
   central, vs choreography), Cadence (central), Skipper (embedded), all
