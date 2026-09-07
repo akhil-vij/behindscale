@@ -12,11 +12,16 @@
 // cells) and the `{{slot}}` placeholders in the YOU row's filled SVG
 // (`dKey`, `dState`, `dRep`, `dBreaks`). The shell fills by key and knows
 // nothing about payments, six decisions, or five attacks.
+//
+// Sanctioned edit (Batch 2, B2-2/F7): the all-held branch of `breaks`
+// (#you-c-breaks) and `dBreaks` (the sixth diagram's red mark) now keep
+// "Key reused" -- attack 1 is accepted, not fixed, so naming nothing after
+// acceptance contradicted Stripe's own post. The reference is untouched.
 
 import type { WallModule, WallDecisions } from './index'
 
 const ATTACK_PHRASES = ['Key reused', 'Replica reads', 'Traffic 10×', 'Parameters change', 'Retry after the window']
-const ALL_HELD = 'Nothing the five posts name - see the bill for what it costs'
+const ALL_HELD = 'Key reused - always, by design (Stripe 2017). Nothing else the five posts name.'
 
 type Table = Record<string, string>
 
@@ -37,7 +42,7 @@ export function youMapping(K: WallDecisions, held: readonly boolean[]): Record<s
     dKey: ({ none: 'nobody names it', hash: 'a parameter fingerprint', key: 'the caller names it' } as Table)[K.id || 'none'],
     dState: state.toUpperCase(),
     dRep: hasMem ? (K.rep === 'saved' ? 'A DUPLICATE GETS THE SAVED RESULT' : 'A DUPLICATE GETS "ALREADY PROCESSED"') : 'NO REPLAY - NO MEMORY',
-    dBreaks: held.every(Boolean) ? 'NOTHING THE FIVE POSTS NAME - SEE THE BILL' : ('STILL BREAKS: ' + notHeld.join(' · ').toUpperCase()),
+    dBreaks: held.every(Boolean) ? 'STILL BREAKS: KEY REUSED - BY DESIGN' : ('STILL BREAKS: ' + notHeld.join(' · ').toUpperCase()),
   }
 }
 
