@@ -37,6 +37,10 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     auto-switch appends "Replays now run at 2×; the button sets it back."
 //     to the DAY SURVIVED/OVER line; reset returns to 1× unless the user
 //     chose a speed.
+//   B2-7 (F17): focusDeckSel(k) re-focuses a group's selected option after
+//     paintDeck() rebuilds the deck -- on a decision click, and after attacks
+//     4/5 add a row (focus the new row's default) -- so keyboard focus is not
+//     dropped to the top.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -356,9 +360,14 @@ function bootEngine() {
   if (sg){ sg.classList.remove('sflash'); void sg.getBoundingClientRect(); sg.classList.add('sflash'); }
   var kg = document.getElementById('kg-'+b.dataset.k);
   if (!kg.classList.contains('cue-target')){ kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg'); }
+  focusDeckSel(b.dataset.k); /* B2-7 (F17): paintDeck() rebuilt the deck - keep focus on the chosen option */
   });
  });
  }
+ /* B2-7 (F17): focus the selected option of a deck group after a repaint, so
+    keyboard focus survives the deck rebuild (and lands on a newly added
+    attack row's default option). */
+ function focusDeckSel(k){ var nb=document.querySelector('#deck button[data-k="'+k+'"].sel'); if(nb && nb.focus) nb.focus(); }
 
  /* ---------- stage geometry (fixed bands, nothing floats) ---------- */
  var GH = {
@@ -909,7 +918,7 @@ function bootEngine() {
    brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer - re-run and watch it break, then fix it.',
    attack: async function(){
     say('ATTACK 4','Same key as this morning - but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared - defaulted to the naive answer.');
-    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck();
+    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck(); focusDeckSel('params'); /* B2-7 */
     var d = await animParamsMismatch(); d.remove();
    },
    rerun: async function(){
@@ -943,7 +952,7 @@ function bootEngine() {
      return;
     }
     say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten - on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
-    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck();
+    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck(); focusDeckSel('after'); /* B2-7 */
     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
@@ -956,7 +965,7 @@ function bootEngine() {
      return { held:false };
     }
     if (!ROWS_ADDED.after){
-     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck();
+     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck(); focusDeckSel('after'); /* B2-7 */
      say('ATTACK 5','Your window has an edge now - so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
      var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
