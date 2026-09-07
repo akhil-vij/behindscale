@@ -32,6 +32,11 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     once any attack has run; freshDay (new day) and reset clear both. Side
 //     effect: the host's write-once `caused` checkpoint (observes the meter
 //     sum) can now also trip on an attack-caused double, not only a day.
+//   B2-5 (F15): the speed button reads the CURRENT speed (1× at 1x, 2× at
+//     2.2x, magenta outline only at 2x), not the target; the first-day
+//     auto-switch appends "Replays now run at 2×; the button sets it back."
+//     to the DAY SURVIVED/OVER line; reset returns to 1× unless the user
+//     chose a speed.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -227,7 +232,7 @@ const MARKUP = `
   <div class="ctlrow">
    <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
    <button class="bghost" id="stepbtn">STEP</button>
-   <button class="bghost" id="fastbtn">2×</button>
+   <button class="bghost" id="fastbtn">1×</button>
    <button class="bghost" id="resetbtn">reset</button>
    <div class="meters">
    <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
@@ -746,17 +751,19 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='1\u00D7'; }
+ var autoFast = false;
+ if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='2\u00D7'; autoFast=true; } /* B2-5: the button reads the CURRENT speed (2\u00D7), not the target */
+ var speedNote = autoFast ? ' Replays now run at 2\u00D7; the button sets it back.' : '';
  if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry an identity but the server keeps no record - recognition never actually happens.','Stripe: the server ties the key to state ON ITS SIDE - the key alone is half the machine.','mem');
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
-  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized on the right. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>');
+  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized on the right. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>'+speedNote);
   card('good','DAY SURVIVED','Zero double charges, zero lost sales, zero mystery tickets. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';
  } else {
-  say('DAY OVER','Read the damage. Every card points at one of your decisions. The five answers below are the hint sheet - adjust and run again.');
+  say('DAY OVER','Read the damage. Every card points at one of your decisions. The five answers below are the hint sheet - adjust and run again.'+speedNote);
  }
  }
  async function runAll(){
@@ -1122,11 +1129,12 @@ function bootEngine() {
 
  $('#runbtn').addEventListener('click', runAll);
  $('#stepbtn').addEventListener('click', stepOne);
- $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '1\u00D7' : '2\u00D7'; });
+ $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '2\u00D7' : '1\u00D7'; }); /* B2-5: label is the CURRENT speed */
  $('#resetbtn').addEventListener('click', function(){
  if (running) return;
  K={ id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' }; ROWS_ADDED={params:false,after:false}; delete K.params; delete K.after;
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
+ if(!userChoseSpeed){ speed=1; $('#fastbtn').classList.remove('on'); $('#fastbtn').textContent='1×'; } /* B2-5: reset returns to 1× unless the user chose a speed */
  var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
  freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
