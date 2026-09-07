@@ -12,7 +12,15 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 // PLAY (#freebtn / #freenote / ?free) is not ported (FREE is a constant
 // false; the sequence gates stay as written), and the amber proto-notes are
 // dropped. This React shell renders the markup once and boots the engine in
-// an effect; it touches none of the frozen code.
+// an effect.
+//
+// Sanctioned edits (Batch 2, 2026-09-07 browser-audit fixes) -- each is a
+// behaviour fix the batch brief names; the reference problem-page-v7.3.html
+// is left untouched:
+//   B2-1 (F6): a restore(decisions,survived,held) entry point on the engine
+//     (returned to the bridge) reconstructs a saved design without animating;
+//     the bridge calls it once from init, then emits state. The reset button
+//     now posts a reset message and its narration changed.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -24,10 +32,15 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 // never patch) and posts:
 //   ready · state {decisions, held, survived, bill} · checkpoint
 //   {caused|survived|held} · touched (first deck interaction) · commit
-//   {text} · size {h} · anchor {id} | {frame:{top,height}}
-// and receives init {commit}. The commit box stays inside the artifact
-// (its grammar is frozen); persistence is the host's. The reader's skip is
-// in-memory for the page's lifetime (the sandbox has no sessionStorage).
+//   {text} · size {h} · anchor {id} | {frame:{top,height}} · reset (the
+//   reset button; the host clears the saved design)
+// and receives init {commit, decisions, survived, held}. On init with a
+// survived saved design the bridge makes the ONE host->mission call that
+// mutates engine state -- engine.restore(decisions, survived, held), then
+// emitState() -- and is observe-only otherwise. The commit box stays inside
+// the artifact (its grammar is frozen); persistence is the host's. The
+// reader's skip is in-memory for the page's lifetime (the sandbox has no
+// sessionStorage).
 //
 // Fonts: the fallback mono stack (no runtime JetBrains Mono fetch) -- a
 // visual deviation from the reference, recorded in the PR. The .artB root
@@ -1039,6 +1052,43 @@ function bootEngine() {
  }
  function debrief(){ buildDebrief(); }
 
+ /* ---------- restore (B2-1/F6) ----------
+    The one host->mission call that mutates engine state: rebuild a saved
+    design without animating. Set K (incl. attack-added rows present in the
+    saved decisions), repaint the deck + stage; if it survived, show the
+    bill, reveal the attacks, mark the held ones and unlock the next, and
+    label RUN "AGAIN". The host calls this once from the init handler, then
+    emits state so the YOU column / diagram / ticks fill. */
+ function restore(decisions, survived, held){
+ decisions = decisions || {};
+ ['id','mem','read','cli','rep','ret','params','after'].forEach(function(k){
+  if (decisions[k] != null) K[k] = decisions[k];
+ });
+ ROWS_ADDED.params = decisions.params != null;
+ ROWS_ADDED.after = decisions.after != null;
+ paintDeck(); drawStage();
+ if (!survived) return;
+ won = true; runsDone = 1;
+ dayDamage = dayTokens(K);
+ meters(dayDamage);
+ renderBill(dayDamage.win ? dayDamage.bill : null);
+ buildLevels();
+ $('#escwrap').style.display='';
+ held = held || [];
+ var lvls = $$('#lvls .lvl');
+ for (var i=0;i<LEVELS.length;i++){
+  if (held[i]){
+   lvlDone[i]=true;
+   if (lvls[i]){ lvls[i].querySelector('.done').style.display='inline'; lvls[i].classList.remove('locked2'); }
+   if (lvls[i+1]) lvls[i+1].classList.remove('locked2');
+  }
+ }
+ if (lvlDone.every(Boolean)) buildDebrief();
+ $('#runbtn').innerHTML='RUN AGAIN ▶';
+ $('#artB').dataset.cue='';
+ say('RESTORED','Your design from last time. Run it again, or go straight to the attacks.');
+ }
+
  $('#runbtn').addEventListener('click', runAll);
  $('#stepbtn').addEventListener('click', stepOne);
  $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '1\u00D7' : '2\u00D7'; });
@@ -1048,16 +1098,17 @@ function bootEngine() {
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
  var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
- freshDay(); paintDeck(); say('READY','Naive decisions restored. Run the day.');
+ freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
  });
 
  chips(); drawStage(); paintDeck();
  if (REDUCED){ $('#stepbtn').style.borderColor='#D946EF'; $('#stepbtn').style.color='#E879F9'; say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); }
  else say('READY','Your decisions start naive on purpose. RUN the day as-is first: <b>the damage report is the syllabus.</b>');
+ return { restore: restore };
 }
 
 // ---- the host bridge (this port) -----------------------------------------
-function bootBridge() {
+function bootBridge(engine) {
  'use strict';
  var $ = function(s){ return document.querySelector(s); };
  var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
@@ -1214,6 +1265,12 @@ function bootBridge() {
   deckEl.removeEventListener('click', once);
  });
 
+ /* ---- reset: the reset button clears the saved design on the host
+    (B2-1/F6). The engine's own listener resets the DOM first; this fires
+    after, so the host drops decisions/survived/held while keeping commit. ---- */
+ var resetEl = $('#resetbtn');
+ if (resetEl) resetEl.addEventListener('click', function(){ post({ type: 'reset' }); });
+
  /* ---- anchors: in-page targets live in the host document ---- */
  document.addEventListener('click', function(e){
   var t = e.target;
@@ -1256,6 +1313,14 @@ function bootBridge() {
   if (d.type === 'init'){
    inited = true;
    if (typeof d.commit === 'string' && d.commit.trim()){ stored = { text: d.commit }; showLocked(stored); }
+   /* the ONE host->mission call that mutates engine state: rebuild a saved,
+      survived design without animating, then emit state so the YOU column,
+      diagram and ticks fill (B2-1/F6). */
+   if (d.survived && d.decisions && engine && typeof engine.restore === 'function'){
+    engine.restore(d.decisions, true, Array.isArray(d.held) ? d.held : []);
+    filled = true;
+    emitState();
+   }
   }
  }
  window.addEventListener('message', onMessage);
@@ -1279,8 +1344,8 @@ function bootBridge() {
 
 export default function ProblemAmbiguousTimeoutsMission() {
  useEffect(function () {
-  bootEngine();
-  return bootBridge();
+  var engine = bootEngine();
+  return bootBridge(engine);
  }, []);
  return (
   <>

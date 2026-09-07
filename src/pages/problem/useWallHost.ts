@@ -12,14 +12,23 @@ import { EMPTY_YOU, type YouState } from './youState'
 // Protocol (mission -> host), every message `{v:1, wall, type, ...}`; the
 // embed already gates on event.source === iframe.contentWindow, and this hook
 // ignores anything with v !== 1 or the wrong wall:
-//   ready       -> reply init {commit} (the stored sentence)
+//   ready       -> reply init {commit, decisions, survived, held}: the stored
+//                  sentence plus the restorable design (B2-1/F6). The engine
+//                  reconstructs a survived design without animating, then
+//                  emits state. This init is the one host->mission message
+//                  that mutates engine state; every other touch is observe-only.
 //   state       -> {decisions, held, survived, bill}: youMapping() fills the
 //                  YOU cells / diagram slots / ticks once survived; a
-//                  survived:false after a fill is the mission's reset
+//                  survived:false after a fill is the mission's reset. The
+//                  design (decisions + partial held) persists on every
+//                  survived state -- checkpoint:held fires only at the full
+//                  debrief, so `held` is sourced here, not from the checkpoint.
 //   checkpoint  -> {kind: caused|survived|held}: persisted booleans -- what a
-//                  future account merge counts
+//                  future account merge counts (write-once; reset never clears)
 //   touched     -> first deck interaction: reveals the "↑ your decisions"
 //                  deck-jump (UI state, deliberately not a checkpoint)
+//   reset       -> the reset button: clears the saved design (decisions,
+//                  survived, held), keeping commit and the checkpoints
 //   commit      -> {text}: persisted; shown under the YOU diagram
 //   size        -> {h}: content height, applied in content-height mode
 //   anchor      -> {id} scrolls the page to #id (the artifact's hint links
@@ -36,15 +45,28 @@ import { EMPTY_YOU, type YouState } from './youState'
 // overscroll-behavior anywhere -- page scroll chains at the frame's edges.
 //
 // Storage: one record per wall, localStorage['bs:wall:<cruxTag>'] ->
-// {v:1, commit, checkpoints:{caused,survived,held}, lastDecisions}. Read at
-// mount, written on commit/checkpoint/state, every access in try/catch
-// (private mode). A signed-in merge later is a copy of this record.
+// {v:1, commit, checkpoints:{caused,survived,held}, saved:{decisions,
+// survived,held}}. Read at mount, written on commit/checkpoint/state,
+// every access in try/catch (private mode). A signed-in merge later is a
+// copy of this record.
+//
+// `checkpoints` is write-once (the account-merge signal); reset never
+// touches it. `saved` is the restorable design (B2-1/F6): the decisions,
+// whether they survived a day, and which attacks held -- reset clears it,
+// keeping `commit`. Legacy records that stored `lastDecisions` migrate on
+// read into `saved` (survived inferred from the checkpoint, held empty).
+
+export interface WallSaved {
+  decisions: Record<string, string>
+  survived: boolean
+  held: boolean[]
+}
 
 export interface WallRecord {
   v: 1
   commit?: string
   checkpoints: { caused: boolean; survived: boolean; held: boolean }
-  lastDecisions?: Record<string, string>
+  saved?: WallSaved
 }
 
 const EMPTY_RECORD: WallRecord = {
@@ -62,22 +84,45 @@ export function readWallRecord(cruxTag: string): WallRecord {
     if (!raw) return EMPTY_RECORD
     const parsed = JSON.parse(raw) as Partial<WallRecord> | null
     if (!parsed || parsed.v !== 1) return EMPTY_RECORD
+    const checkpoints = {
+      caused: parsed.checkpoints?.caused === true,
+      survived: parsed.checkpoints?.survived === true,
+      held: parsed.checkpoints?.held === true,
+    }
     return {
       v: 1,
       commit: typeof parsed.commit === 'string' ? parsed.commit : undefined,
-      checkpoints: {
-        caused: parsed.checkpoints?.caused === true,
-        survived: parsed.checkpoints?.survived === true,
-        held: parsed.checkpoints?.held === true,
-      },
-      lastDecisions:
-        parsed.lastDecisions && typeof parsed.lastDecisions === 'object'
-          ? parsed.lastDecisions
-          : undefined,
+      checkpoints,
+      saved: normalizeSaved(parsed as unknown as Record<string, unknown>, checkpoints.survived),
     }
   } catch {
     return EMPTY_RECORD
   }
+}
+
+// Parse the restorable design, migrating legacy records that stored the
+// decisions under `lastDecisions` (pre-B2-1) into the `saved` shape.
+function normalizeSaved(
+  parsed: Record<string, unknown>,
+  checkpointSurvived: boolean,
+): WallSaved | undefined {
+  const s = parsed.saved as Partial<WallSaved> | undefined
+  if (s && typeof s.decisions === 'object' && s.decisions !== null) {
+    return {
+      decisions: s.decisions as Record<string, string>,
+      survived: s.survived === true,
+      held: Array.isArray(s.held) ? s.held.map(Boolean) : [],
+    }
+  }
+  const legacy = parsed.lastDecisions
+  if (legacy && typeof legacy === 'object') {
+    return {
+      decisions: legacy as Record<string, string>,
+      survived: checkpointSurvived,
+      held: [],
+    }
+  }
+  return undefined
 }
 
 function writeWallRecord(cruxTag: string, record: WallRecord): void {
@@ -143,7 +188,10 @@ export function useWallHost(input: WallHostInput): WallHost {
     if (!cruxTag) return
     const record = readWallRecord(cruxTag)
     recordRef.current = record
-    if (record.commit !== undefined) {
+    // The "You said" foot under the YOU diagram only makes sense once the
+    // design has survived (the diagram is otherwise empty). A commit with no
+    // survived design stays in the artifact's own commit box (via init).
+    if (record.commit !== undefined && record.saved?.survived) {
       setYou((prev) => ({ ...prev, commit: record.commit }))
     }
   }, [cruxTag])
@@ -221,14 +269,35 @@ export function useWallHost(input: WallHostInput): WallHost {
       if (!m || m.v !== 1 || m.wall !== cruxTag) return
       switch (m.type) {
         case 'ready': {
-          reply({ v: 1, wall: cruxTag, type: 'init', commit: recordRef.current.commit })
+          const saved = recordRef.current.saved
+          reply({
+            v: 1,
+            wall: cruxTag,
+            type: 'init',
+            commit: recordRef.current.commit,
+            // The restorable design (B2-1/F6). Sent only when it survived; the
+            // engine reconstructs it without animating, then emits state.
+            decisions: saved?.survived ? saved.decisions : undefined,
+            survived: saved?.survived === true,
+            held: saved?.survived ? saved.held : undefined,
+          })
           return
         }
         case 'state': {
           const decisions = (m.decisions ?? {}) as Record<string, string>
           const held = Array.isArray(m.held) ? (m.held as unknown[]).map(Boolean) : []
           const survived = m.survived === true
-          persist((r) => ({ ...r, lastDecisions: decisions }))
+          // Persist the restorable design on every survived state -- this is
+          // where the partial `held` array lives (checkpoint:held only fires
+          // once, at the full debrief; noted in the B2-1 changelog). A
+          // non-survived state drops the saved design but keeps commit.
+          persist((r) =>
+            survived
+              ? { ...r, saved: { decisions, survived: true, held } }
+              : r.saved
+                ? { ...r, saved: undefined }
+                : r,
+          )
           setYou((prev) => {
             if (survived) {
               const cells = wallRef.current ? wallRef.current.youMapping(decisions, held) : {}
@@ -254,6 +323,16 @@ export function useWallHost(input: WallHostInput): WallHost {
         }
         case 'touched': {
           setTouched(true)
+          return
+        }
+        case 'reset': {
+          // The mission's reset button (B2-1/F6): clear the saved design
+          // (decisions, survived, held), keeping commit and the write-once
+          // checkpoints. The YOU diagram empties, so its "You said" foot
+          // hides too, but the sentence persists (record.commit + the
+          // artifact's own commit box).
+          persist((r) => (r.saved ? { ...r, saved: undefined } : r))
+          setYou((prev) => ({ ...prev, filled: false, cells: {}, held: [], commit: undefined }))
           return
         }
         case 'size': {
