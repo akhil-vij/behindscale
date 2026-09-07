@@ -47,6 +47,9 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     MEMORY deck label q "Q2" -> "Q3" (READS keeps Q2); the standalone
 //     footer backlink is same-tab (target dropped). Other year-less card
 //     srcs are conversational teaching notes, listed in the PR, left as-is.
+//   B2-11 (F24): STEP-promote + RUN-demote-to-ghost is now one reduced-motion
+//     CSS rule (the JS inline STEP styling moved into it), so exactly one
+//     control reads as primary under reduced motion.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -205,6 +208,12 @@ const CSS = `
  @media (prefers-reduced-motion: reduce) {
  #artB[data-cue="deck"] .deck, #artB[data-cue="run"] .runbtn, #artB[data-cue="group"] .kg.cue-target, .bpulse, .shake { animation: none !important; }
  .averdict { transition: none !important; transform: none !important; }
+ /* B2-11 (F24): one rule, one state - under reduced motion STEP is the
+    control that works, so it is the promoted (outlined) button and RUN drops
+    to the ghost style; two primaries no longer compete. */
+ #artB .runbtn { background:none; border:1px solid var(--art-border-interactive); color:var(--art-muted); font-weight:600; }
+ #artB .runbtn:hover { background:none; color:var(--art-text); }
+ #artB #stepbtn { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  }
   .billpanel { margin-top:10px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:10px 12px; font-size:11px; line-height:1.6; }
   .billhead { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; margin-bottom:6px; }
@@ -1160,7 +1169,7 @@ function bootEngine() {
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ $('#stepbtn').style.borderColor='#D946EF'; $('#stepbtn').style.color='#E879F9'; say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); }
+ if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
  else say('READY','Your decisions start naive on purpose. RUN the day as-is first: <b>the damage report is the syllabus.</b>');
  return { restore: restore };
 }
