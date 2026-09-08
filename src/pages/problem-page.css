@@ -89,6 +89,12 @@ body { overflow-x: clip; }
 .problem-page .anat-head .yr { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
 .problem-page .anat-head .vant { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 .problem-page .anat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* §3b (F12/A1): the vertical (DV) diagram, shown under 700px when the row has
+   one (a file drop). The hidden variant is display:none -- out of the a11y tree
+   AND innerText, so labels are never doubled. Until the vertical SVGs land,
+   .has-vert is absent and the horizontal + its scroll pill stay. */
+.problem-page .anat-vert { display: none; }
+.problem-page .anat-vert svg { width: 100%; height: auto; display: block; }
 .problem-page svg.anat { width: 100%; min-width: 560px; height: auto; display: block; }
 .problem-page svg.anat text { font-family: var(--font-mono); }
 .problem-page .keydot { fill: var(--cat-amber); }
@@ -228,4 +234,8 @@ body { overflow-x: clip; }
   .problem-page .spectrum-label:first-of-type { transform: translateX(-10%); }
   .problem-page .spectrum-label:last-of-type { transform: translateX(-90%); }
   .problem-page .matrix-wrap, .problem-page .anat-scroll { -webkit-mask-image: linear-gradient(90deg, black 94%, transparent); mask-image: linear-gradient(90deg, black 94%, transparent); }
+  /* §3b: when a vertical diagram exists, it replaces the scrolling horizontal
+     one under 700px (so no pill, no horizontal scroll). */
+  .problem-page .anat-row.has-vert .anat-scroll { display: none; }
+  .problem-page .anat-row.has-vert .anat-vert { display: block; }
 }

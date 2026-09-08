@@ -263,6 +263,25 @@ export function useWallHost(input: WallHostInput): WallHost {
     return () => offs.forEach((off) => off())
   }, [])
 
+  // §3b (F12/A1): when a vertical comparison SVG is present (a file drop), the
+  // variant that is display:none at the current breakpoint is already out of
+  // the a11y tree and innerText; mirror it with aria-hidden so assistive tech
+  // and the text-parity test see each label once. No-op until the vertical
+  // SVGs are dropped in (no .anat-row.has-vert exists otherwise).
+  useEffect(() => {
+    if (typeof window.matchMedia === 'undefined') return
+    const mq = window.matchMedia('(max-width: 700px)')
+    const apply = () => {
+      for (const row of Array.from(document.querySelectorAll('.anat-row.has-vert'))) {
+        row.querySelector('.anat-scroll')?.setAttribute('aria-hidden', String(mq.matches))
+        row.querySelector('.anat-vert')?.setAttribute('aria-hidden', String(!mq.matches))
+      }
+    }
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
+  }, [you.filled])
+
   // B2-6 (F16): a same-page #hash link that points at a <details> (the matrix
   // row labels and the steal list link to the question rows) opens that row
   // on click, so it doesn't land closed. The mission's own hint links arrive
