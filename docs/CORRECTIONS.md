@@ -4026,3 +4026,356 @@ control nodes, and a one-line legend. The advance step now completes the paralle
 fork behaves like a fork. Title -> "What remains of an async workflow"; the tagline was reworded. All
 existing interactivity (the mode toggle, kill the encode worker, WHAT REMAINS query, trace by hand,
 re-emit the event) is preserved, and the kill/query/trace logic is unchanged.
+
+---
+
+## slack-incident-2-22-22 - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full". Verdict SHIP WITH FIXES. Founding document of a new
+class, metastable failure (degraded state outlives its trigger). Live page byte-for-byte the upload
+(no drift). Grounding is spotless against Laura Nolan's April 2022 Slack postmortem (with Sanford,
+Scheinblum, Sullivan): the 25% Consul steps, Mcrib/Mcrouter/Memcached roles, the group-DM scatter
+query on the sharded-by-user keyspace, the verbatim 'cascading failure state' quote, the throttle-and-
+relapse recovery, the miss-only + replica-read fix, the Mcrib 'its efficiency made the broader system
+behave in a less safe way' quote, the HotOS metastable citation, and Richard Cook's section 4.
+
+**Conditional slug (round-24 protocol).** Checked the live page: all three pattern slugs
+(load-bearing-cache, conservative-auto-remediation, priority-aware-load-shedding) match the live
+pattern names, so the conditional slug was already aligned. Removed the leftover authoring parenthetical
+"(Conditional slug per the round-24 protocol: agent aligns to the live pattern name.)" from the note.
+
+**Bands - two big overruns fixed.** summary 1,452 -> 1,047 and crux 1,493 -> 1,059 (both trimmed by
+~400 while keeping the mechanism); cruxSummary 11 words -> 13; solution was tightened under its floor
+in the process, so a grounded sentence (the network-partition risk Slack flagged, and the Mcrib
+control-loop change) was added, landing it at 2,522.
+
+**Registry voice - de-registered.** The crux opened "A new class, and this postmortem is its founding
+document. Every prior failure class in the library ends when its cause ends" -> "This failure did not
+end when its cause did." All three notes' openers ("Minted from the incident's structural lesson,"
+"Recurs as its own anti-instance," "Recurs in the storm rather than in the design phase") were made
+plain.
+
+**Banned word.** "monitored as the load-bearing component it is" -> "watched as the essential component
+it is." The pattern name "Load-Bearing Cache" and its slug are the real, frozen behindscale pattern and
+were kept.
+
+**Cross-reference trimmed.** "the same architecture dissected in this library's Vitess article" removed;
+the Vitess layer is referred to plainly (slack-vitess-datastores stays in relatedArticles).
+
+**Em-dash overrun (the standout) - swept: 60 (40 JSON + 20 artifact) -> 0.**
+
+**Sentence length - 15 over 40 words (a 62-word note, a 61-word solution sentence, four at 55, plus
+54/50/49/45x2/44/43x3/42x4) -> all <= 40**, including restructuring so the 39-word verbatim Nolan quote
+stands as its own sentence.
+
+**The "the post" habit - 5 references made plain (Nolan, the postmortem, Slack).**
+
+**Full plain-language pass.** Consul / Mcrib / Mcrouter / Memcached glossed; sharded-by-user ->
+"organized (sharded) by user"; scatter query explained; metastable kept and explained; goodput ->
+"useful throughput"; superlinear -> "out of proportion to the miss rate"; immutable / long TTL -> "data
+that never changes, kept for a long time"; hysteresis -> "held back until it is sure."
+
+**Images - 3 figures (the article shipped with none).** the-scatter-amplifier: a warm cache doing one
+lookup versus a cold miss scattering to every shard. shed-and-recover: throttling below the tipping
+point, then climbing back in small steps, with a too-big jump relapsing over the line. the-metastable-
+loop: the self-feeding cycle, with the paused Consul trigger sitting outside it and not touching it, so
+the only exits are shedding load or adding capacity.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 20 em-dashes to 0; raised the off-state toggle
+#2a2a3a -> #4a4f60; goodput -> "useful throughput." The TwoTwentyTwo live simulation (the step()
+dbLoad math, the collapse condition, the verdict logic, and the retry-load feedback) is unchanged.
+
+**Recurring-defect scorecard:** over-band summary and crux (trimmed hundreds); registry voice in the
+crux and all three notes (de-registered); a banned word in prose (removed, slug kept); the round-24
+conditional-slug leftover (resolved, parenthetical removed); a cross-article reference (removed);
+em-dash overrun (fixed, 60); the "the post" habit (fixed); an under-floor cruxSummary (fixed); an
+off-state toggle (raised). Grounding spotless. The article shipped with no figures, so three were
+added. P27 frozen fields byte-identical (title, cruxTag, the three pattern slugs, relatedArticles, the
+two stat values and placements, tags, url, artifact.path). Deliverables: corrected .json, swept .jsx,
+rebuilt preview .html, three .svg figures, this entry.
+
+Founding article of the metastable-failure class; its relatedArticles list
+aws-timeouts-retries-backoff-jitter and google-colossus-ssd-placement (colossus already produced) as
+neighbors.
+
+---
+
+## slack-incident-2-22-22 - Whole-article clarity pass (2026-08-11)
+
+Owner found the summary hard to follow from cold, so the summary was rewritten to introduce each thing
+as it comes and describe the named systems by what they do; then, on request, the same read-from-cold
+standard was carried through the crux, problem, solution, tradeoffs, and notes. The system names are
+kept (this is the body, where they belong) but each now gets a plain gloss on first use and the dense
+pile-ups are broken up: Vitess -> "the database (Slack calls its database layer Vitess)"; the cache
+tier introduced as "a large cache, which holds copies of recently used data"; Mcrouter and Mcrib
+introduced one at a time by what they do; Consul -> "a system that keeps a live list of which machines
+are up"; "sharded by user" -> "split up by user," with "each split is called a 'shard'"; "scatter
+query" -> "the expensive query" / "check every split at once"; "superlinear" -> "far faster than the
+share of requests that missed the cache"; the HotOS reference -> "a term from a paper Slack cites";
+"replicas / primaries" -> "the database's read-only copies, not just the main copy"; "backoff and
+jitter" -> "wait longer and longer between tries, plus a random extra bit"; "churn / flush / node" ->
+"emptied and replaced very fast / wipe / server." Bands all in range (summary 1,049, crux 1,096,
+problem 2,533, solution 2,578); dashes 0; longest sentence 40 words; grounding and P27 frozen fields
+unchanged. Figures and artifact unchanged this round.
+
+---
+
+## google-colossus-ssd-placement - Review + full produce (2026-08-11)
+
+Full review then produced on owner "Go full" (owner reviewing tomorrow, alongside the Slack outage
+piece). Verdict SHIP WITH FIXES; the cold-reader clarity standard from the Slack round was applied
+throughout. Live page byte-for-byte the upload (no drift). Grounding is spotless against Larry
+Greenfield and Seth Pollen's March 2025 Google Cloud post: the 50/25 TB/s and 600M IOPS figures, the
+10+ exabyte filesystems, curators and D servers, the L4 read cache and writeback, the CacheSack paper,
+the per-category online simulation, the verbatim "This is tricky! At file creation time..." line, the
+capacity-planning double duty, and the Hyperdisk ML / Spanner / Cloud Storage / BigQuery examples.
+(Google's own title is "Colossus under the hood..."; behindscale's editorial title is frozen.)
+relatedArticles google-colossus and slack-incident-2-22-22; a neighbor of the metastable class.
+
+**Bands - two overruns fixed.** summary 1,133 -> 1,048; crux 1,639 -> 1,084 (trimmed ~555 and
+de-registered); problem 2,770 -> 2,489; solution 4,163 -> 4,125 (kept under the ceiling, with the
+products turned into a list). cruxSummary re-plained to "Where a file should live depends on how it
+will be used, not yet known."
+
+**Registry voice - de-registered.** The crux opened deep in catalog voice ("This is the second
+capability-face ruling on Colossus... it opens the library's fourteenth class rather than extending the
+fifth: r30's post...") -> it now opens on the placement problem itself. All three notes' openers
+("Minted here," "Same-company recurrence from the scaling article," "Same-company recurrence, one level
+down the stack: the scaling article's lesson...") were made plain, and the "the scaling article"
+cross-references to google-colossus were removed (referred to plainly as "the earlier lesson").
+
+**The "the post" habit - 9 references made plain (Google, Google's post, the article).**
+
+**Em-dash overrun (the standout) - swept: 79 (51 JSON + 28 artifact) -> 0.**
+
+**Sentence length - 22 over 40 words (an 83-word products sentence, a 73-word capacity sentence, 67/66
+in the crux, 63 in the summary, 56, 54x3, and more) -> all <= 40.** The 83-word products sentence
+became a four-item list.
+
+**Cold-reader clarity pass (the Slack standard).** SSD and HDD glossed on first use ("fast flash
+storage (SSD)" / "spinning hard drives (HDD)"); L4 introduced by what it does; "read cache" -> "a fast
+copy of hot data kept on SSD"; curators -> "the part of Colossus that handles file creation";
+"insertion policy" -> "when to add data"; IOPS -> "reads-per-second"; "categories" -> "groups";
+"capacity oracle" -> "telling Google how much SSD to buy"; exabytes glossed; "hot-at-birth /
+hot-again-later" -> "busy at birth / busy again later."
+
+**One list conversion.** The four Google Cloud product examples (Hyperdisk ML, Spanner, Cloud Storage,
+BigQuery), which absorbed the 83-word monster.
+
+**Images - 3 figures (the article shipped with none).** the-timing-trap: placement is decided at
+creation, when Colossus can see only the app and the file name, while the access pattern arrives later.
+read-cache-vs-writeback: the reactive read cache versus the predictive writeback, each covering the
+other's blind spot. simulate-to-decide: features sort a file into a group, L4 watches the group's real
+traffic, simulates competing SSD-duration rules, and the winner places new files, while the same
+simulation sizes how much SSD to buy.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 28 em-dashes to 0; raised the btn off-state
+#2a2a3a -> #4a4f60 (the five chrome borders left as-is); two light glosses ("saturate the spindles" ->
+"overwhelm the hard drives," "blow the budget" -> "blow the cost budget"). The Colossus placement
+simulator (workloads by regimes, the load and cost math, the verdicts) is unchanged.
+
+**Recurring-defect scorecard:** over-band summary and crux (crux trimmed ~555); registry voice in the
+crux and all three notes (de-registered); cross-article "the scaling article" references (removed); the
+"the post" habit (fixed, 9); em-dash overrun (fixed, 79); 22 long sentences (split, including an 83-word
+monster into a list); cold-reader clarity applied throughout. Grounding spotless. The article shipped
+with no figures, so three were added. P27 frozen fields byte-identical (title, cruxTag, the three
+pattern slugs, relatedArticles, the two stat values and placements, tags, url, artifact.path).
+Deliverables: corrected .json, swept .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+---
+
+## aws-timeouts-retries-backoff-jitter - Review + full produce (2026-08-11)
+
+Full review then produced (owner reviewing all three of Slack, Colossus, and this one tomorrow;
+produced to match). Verdict SHIP WITH FIXES; the cold-reader clarity standard was applied. Live page
+byte-for-byte the upload (no drift). Grounding: the AWS source URL now redirects to the restructured
+builder.aws.com landing page, so the live source text could not be fetched; verified against Marc
+Brooker's well-documented 2019 article instead. The "selfish retry" framing, timeouts chosen from the
+latency distribution, health-gated retries, the token bucket shipped in the 2016 AWS SDK, EC2
+RunInstances client tokens for idempotency, backoff correlation, and jitter-on-all-periodic-work with
+the EBS/Lambda examples are all canonical Brooker/AWS facts, and the behindscale rendering introduces
+nothing that contradicts them. relatedArticles stripe-idempotency, shopify-resilient-payments,
+doordash-aperture-global-failure-mitigation, slack-incident-2-22-22, linkedin-hodor-overload-protection;
+a neighbor of the metastable class.
+
+**Bands - all were in range (the best-conditioned article of the recent batch).** summary 966 ->
+1,000; crux 645 -> 717; problem 2,049 -> 2,064; solution 3,050 -> 2,999. All held.
+
+**The "the article" habit - 6 self-references made plain** ("the article points to..." -> "Amazon
+has a separate analysis"; "the observation that elevates the article" -> "the idea that lifts the
+piece"; "the article's contribution/quiet position/insists" -> "Amazon's..."), plus the artifact
+footer "the article's" -> "Amazon's." (The context-block UI label "if you arrived here without the
+article" is standard across all artifacts and was kept.)
+
+**Registry voice - de-registered.** "the pattern's operational doctrine from its origin company" ->
+"stated as operating doctrine by the company that popularized it"; "Second company, same contract" ->
+"Same contract, two companies."
+
+**Cross-reference handling.** The retry-with-backoff note's Stripe mention ("With Stripe the pattern
+recurs from the API-provider side") was de-referenced to a generic "The same pattern shows up on the
+API-provider side too." The idempotency-keys note's Stripe connection was kept, because the pattern
+itself is that EC2 RunInstances' client token and Stripe's Idempotency-Key header are the same
+mechanism (same approach as Cadence's embedded-vs-central note). Two Stripe mentions remain, both the
+legitimate idempotency-pattern connection (the note and the grounding footer).
+
+**Em-dash overrun (the standout) - swept: 52 (31 JSON + 21 artifact) -> 0.**
+
+**Sentence length - 7 over 40 words (a 74-word summary sentence, a 55-word crux sentence, plus
+50/47/47/44/42) -> all <= 40.** The 74-word summary sentence (Amazon's four answers) became a
+four-item list.
+
+**Cold-reader clarity pass (the Slack/Colossus standard).** "transient faults" -> "brief random
+failures"; exponential backoff glossed ("waiting longer and longer between tries"); "correlation" ->
+"everything lining up"; "brownout" glossed ("a partial slowdown"); "idempotent" glossed ("safe to
+repeat" / "take effect only once"); the token bucket explained inline; "latency distribution" -> "how
+long the dependency's calls actually take"; "cron jobs" -> "scheduled jobs"; "amplification" -> "extra
+load."
+
+**Images - 3 figures (the article shipped with none).** the-selfish-retry: a whole fleet retrying an
+overloaded server at once, with failures and retries feeding each other into a storm. correlation-and-
+jitter: backoff's synchronized waves versus jitter's steady trickle, drawn as two load traces. the-
+token-bucket: retry freely while tokens last, a slow fixed rate once they run out, so the extra load a
+client can add is capped no matter how long the outage lasts.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 21 em-dashes to 0; raised the btn off-state
+#2a2a3a -> #4a4f60; the footer "the article's" -> "Amazon's"; three light glosses ("correlation" ->
+"everything lining up," "amplification" -> "extra load"). The SelfishRetry live simulation (the
+mulberry32 RNG, the brownout and backoff/jitter/budget mechanics, the token-bucket math, and the
+verdicts) is unchanged.
+
+**Recurring-defect scorecard:** the "the article" habit (fixed, 6 plus the footer); registry voice in
+two notes (de-registered); a Stripe cross-reference (de-referenced; the idempotency connection kept);
+em-dash overrun (fixed, 52); 7 long sentences (split, including a 74-word monster into a list);
+cold-reader clarity applied. All bands were in range. Grounding verified against canonical content (the
+source has moved). The article shipped with no figures, so three were added. P27 frozen fields
+byte-identical (title, cruxTag, the three pattern slugs, relatedArticles, the two stat values and
+placements, tags, url, artifact.path). Deliverables: corrected .json, swept .jsx, rebuilt preview
+.html, three .svg figures, this entry.
+
+---
+
+## reddit-piday-outage - Review + full produce (2026-08-11)
+
+Full review then produced (owner reviewing all four of Slack, Colossus, AWS, and this one tomorrow).
+Verdict SHIP WITH FIXES; the cold-reader clarity standard was applied. Live page byte-for-byte the
+upload (no drift). Grounding: the Reddit source (r/RedditEng) blocks scrapers, so it was verified
+against the public record instead - multiple independent write-ups confirm every claim: 314 minutes on
+Pi Day 2023, the Kubernetes 1.23-to-1.24 upgrade, Calico route reflectors selected by the
+node-role.kubernetes.io/master label, the 1.20 master-to-control-plane rename and 1.24's removal of the
+old label, the configuration set up by a departed team and documented nowhere, the outdated restore
+runbook rewritten live with the TLS and AWS-capacity traps, the "inconsistency" root cause, and the
+1%-to-100% readmission. (Note: this is a NEW class, unrecorded-config-outlives-its-authors, not
+observer-fate; relatedArticles roblox-return-to-service and gitlab-database-decomposition.)
+
+**Bands - two big overruns fixed.** summary 1,372 -> 1,044; crux 1,656 -> 1,038 (trimmed ~620 and
+de-registered); problem 2,487 -> 2,592; solution 3,887 -> 4,106 (kept under the ceiling, with two list
+conversions). cruxSummary re-plained.
+
+**Registry voice - de-registered.** The crux opened "A new class, and its founding document is
+unusually explicit about deserving one. The post hands you a perfect proximate cause..." -> "The
+proximate cause is precise." All four notes' openers ("Minted from..." twice, "Recurs in the direction
+nobody practices," and the load-bearing-cache note's "Second company for the round-28 mint, one round
+later:") were made plain, and the "(Conditional per the mint's merge-or-discard status; agent aligns.)"
+protocol parenthetical was removed.
+
+**Banned word.** "load-bearing" removed from all prose (summary, tradeoff 0, two notes, and the
+artifact verdict and context block) -> "critical setup," "critical state," "carry real load." The
+pattern name "Load-Bearing Cache" and its slug are the real, frozen behindscale pattern and were kept.
+
+**The "the post" habit - 12 references made plain** (9 JSON, 3 artifact), attributed to Reddit or the
+postmortem.
+
+**Em-dash overrun (the standout) - swept: 95 (56 JSON + 39 artifact) -> 0.**
+
+**Sentence length - 16 over 40 words (a 104-word Calico-and-fix-forward monster, plus
+80/76/65x2/64/55/51/50x2/49x2/48/47/46/41) -> all <= 40.** The 104-word monster became the fix-forward
+list.
+
+**Cold-reader clarity pass (the Slack/Colossus/AWS standard).** The named systems were kept but
+glossed: route reflectors -> "a few servers that relay routes to everyone else"; Calico -> "the
+cluster's networking layer"; etcd -> "the cluster's shared source of truth"; Consul, Open Policy Agent,
+CRI-O, admission webhooks, TLS certificates, and the autoscaler all glossed; "node" -> "server";
+"schema migrations" -> "migrates the cluster's data"; "thundering herd" -> "stampede"; and the class
+term "load-bearing configuration" -> "critical configuration." "Pets, not cattle" was kept as Reddit's
+own phrase.
+
+**Two list conversions.** The fix-forward attempts (which absorbed the 104-word monster) and the
+remediation cure.
+
+**Images - 3 figures (the article shipped with none).** committed-nowhere: the configuration lived only
+inside the running cluster and in a departed team's memory, in no repository, so no code review,
+checklist, or changelog could reveal it. the-vanished-label: Kubernetes 1.24 deleted the master label,
+so Calico's selector matched no servers, the relays vanished, every route dropped, and the cluster went
+dark. the-restore-trap: with no way to downgrade, recovery needed a full restore from an outdated,
+never-tested guide rewritten live, and an any-server / same-server mismatch caused certificate errors
+that stalled it.
+
+**Artifact - dashes, toggle, sim untouched.** Swept 37 em-dashes to 0; raised the btn off-state
+#2a2a3a -> #4a4f60; "The post's verdict" -> "The postmortem's verdict"; two "load-bearing" prose uses
+reworded; a couple of cold-reader glosses. The PiDay incident simulator (the reveal and readmit
+verdicts, the thundering-herd and 1-to-100 readmission logic) is unchanged.
+
+**Recurring-defect scorecard:** over-band summary and crux (crux trimmed ~620); registry voice in the
+crux and all four notes plus a round-28 protocol note (de-registered); a banned word in prose (removed,
+slug and pattern name kept); the "the post" habit (fixed, 12); em-dash overrun (fixed, 95); 16 long
+sentences (split, including a 104-word monster into a list); cold-reader clarity applied. Grounding
+verified against the public record (the source blocks scrapers). The article shipped with no figures,
+so three were added. P27 frozen fields byte-identical (title, cruxTag, the four pattern slugs,
+relatedArticles, the three stat values and placements, tags, url, artifact.path). Deliverables:
+corrected .json, swept .jsx, rebuilt preview .html, three .svg figures, this entry.
+
+---
+
+## slack-incident-2-22-22 - Clarity round (owner line-edits) (2026-08-12)
+
+The day-after clarity pass on the produced Slack article, working through the owner's line-by-line
+notes. All bands held (summary re-trimmed to 1,044 after the clarifications lengthened it; crux 1,085,
+problem 2,588, solution 2,561); dashes stayed at 0; longest sentence 40 words.
+
+**Summary.** Dropped the "What makes Nolan's write-up a classic:" framing for the owner's exact line
+("Slack's team stopped the maintenance..."). "enough of the cache was empty for a hidden trap to spring"
+-> "empty to expose an expensive query it normally hid." The group-DM lookup sentence split into two
+plain ones. The unclear "capped new connections... eased back up slowly after one too-large jump
+relapsed" rewritten to say what was capped (how many apps could start at once) and what relapsed
+(raising that cap too far). The mechanism sentences were re-tightened to hold the band.
+
+**Crux.** "and by then, Nolan writes, it made no difference" -> the owner's "Slack paused the upgrade
+early but by then, it made no difference." "The only ways out are from outside" -> "The only way is to
+fix it from outside."
+
+**Problem.** The two layers (database, cache) are now a bullet list, per request. "a server that leaves
+and comes back is wiped first, so it never serves out-of-date data" -> "If a server later rejoins,
+Mcrib empties it first, so it can never hand back data that went stale while it was away." "The trap was
+waiting in how the data was arranged" -> "The danger was hidden in how one kind of data was stored."
+"The timeouts were the trap closing" -> "Those timeouts were what sealed the loop."
+
+**Solution.** "The first attempt to relax it taught the class's other lesson" -> "Easing that limit for
+the first time taught the other hard lesson of this class." "walked back up to normal" -> "raised back
+to normal in steps." "The learnings are where the postmortem earns its reputation" -> "The lessons are
+the best part of the write-up." Removed ", which is the whole class in one sentence." "Mcrib is examined
+without blame and with precision" -> "Slack looks closely at Mcrib, and does not pin the outage on it."
+
+**Tradeoffs.** "The trigger is history; the loop is the enemy" -> "The trigger is already in the past;
+the loop is the thing you have to break." "watched as the essential component it is" -> "monitored as
+closely as any other critical part of the system." "its efficiency becomes an amplifier under exactly
+the conditions it was built for" -> "its very speed makes things worse in exactly the situation it was
+built for." "the too-large limit increase caused a relapse" -> "raising the limit too far in one step
+brought the outage back" (in the tradeoff and the load-shedding note). "Near a tipping point, both
+directions are cliffs" -> "both directions are dangerous: shed too little and you stay down, restore too
+fast and you relapse." The retries conclusion reworded to plain language.
+
+**New figure (a 4th).** cache-routing-layer, the diagram the owner asked for: Mcrouter spreading
+startup requests across the cache servers, Mcrib picking which servers are in use by watching Consul's
+live list of up machines, and Mcrib swapping in an empty spare when a server drops off that list.
+
+**Artifact.** The TRY text ("learn the fact this failure class is named for. Throttle your way back,
+relapse once on purpose, fix the amplifier, and walk home") rewritten as plain steps. "new connections"
+-> "new logins" for consistency with the summary. And the simulation pacing was slowed so the
+metastable "THE TRIGGER IS GONE, THE OUTAGE ISN'T" phase is reachable and stays on screen instead of
+snapping past: per-step cache drop 35 -> 28, per-tick hit-rate recovery +6 -> +3 and decline -8 -> -4,
+the retry/database-load ramp 0.6 -> 0.4, and the tick interval 650ms -> 850ms. The cache hit rate now
+moves about half as fast and database load climbs more gradually. The JSON teaser was aligned to the
+same plain wording.
+
+P27 frozen fields byte-identical. Deliverables: updated .json, updated .jsx, rebuilt preview .html, the
+new cache-routing-layer .svg (the three existing figures unchanged), this entry.

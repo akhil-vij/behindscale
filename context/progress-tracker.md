@@ -7734,6 +7734,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-08: **Article review round — Slack Incident 2-22-22** (12th article
+  round). Enriched the existing `content/articles/slack-incident-2-22-22.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with FOUR figures +
+  artifact. Placed article, artifact, four figure SVGs under
+  `content/figures/slack-incident-2-22-22/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Stats ground correctly
+  (25%, every shard). Refs verified: patterns load-bearing-cache /
+  conservative-auto-remediation / priority-aware-load-shedding, related
+  slack-vitess-datastores / aws-timeouts-retries-backoff-jitter /
+  google-colossus-ssd-placement, cruxTag degraded-state-outlives-its-trigger.
+  RECURRING correction (worst yet): **all 4 figures over the Q10 word bands,
+  11 of 12 fields** (captions 59-68w vs 40, ariaLabels 31-42w vs 20, three
+  eyebrows 8-10w vs 6) — tightened all into band; the dense captions took
+  three trim passes to get every one under 40 (kept landing at 41-45).
+  Branch workflow: on `round/slack-incident-2-22-22-enrichment` off a
+  fast-forwarded main (my Round 26 merged as PR #8; concurrent
+  problem-page-batch2 merged as PR #9, main at 2194d69). NOTE: the
+  concurrent v7 session switched the shared working checkout to its own
+  branch mid-session; caught it, re-based my branch off updated main, tree
+  clean. Rendered page verified: 4 figures, both stats present, artifact
+  embed, 0 literal markdown. Build (23 checks, 0 errors) + 307 tests green.
 - 2026-09-07: **Pattern review Round 26 — Independent Observability**.
   Enrichment of the pre-existing minimal pattern
   (`content/patterns/independent-observability.json`, slug/name/category
