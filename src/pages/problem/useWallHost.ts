@@ -139,8 +139,11 @@ const MIN_FRAME_PX = 320
 const MAX_FRAME_PX = 20000
 const SCROLLPORT_MAX_WIDTH = 700
 const SCROLLPORT_HEIGHT = '90dvh'
-// Sticky station nav height, so anchor jumps land below it.
-export const NAV_OFFSET_PX = 44
+// Sticky station nav clearance, so anchor jumps land below it -- matches the
+// CSS scroll-margin-top (nav 44 + 16 breathing at >=700px; 40 + 12 under). The
+// exact per-breakpoint value is computed at scroll time; this is the fallback
+// useDecideHighlight uses when it can't measure the live nav (§4, F4/F5).
+export const NAV_OFFSET_PX = 60
 
 interface Message {
   v?: unknown
@@ -366,7 +369,9 @@ export function useWallHost(input: WallHostInput): WallHost {
             // B2-6 (F16): open the target row (a <details>) before scrolling,
             // so a hint lands on an open question, not a closed one.
             if (el instanceof HTMLDetailsElement) el.open = true
-            scrollPageTo(el.getBoundingClientRect().top + window.pageYOffset - NAV_OFFSET_PX)
+            // Match the CSS scroll-margin-top: 60 at >=700px, 52 under (§4).
+            const navClear = window.innerWidth <= SCROLLPORT_MAX_WIDTH ? 52 : 60
+            scrollPageTo(el.getBoundingClientRect().top + window.pageYOffset - navClear)
             return
           }
           const frame = m.frame as { top?: unknown; height?: unknown } | undefined

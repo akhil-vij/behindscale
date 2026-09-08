@@ -10,6 +10,11 @@
 body { overflow-x: clip; }
 
 .problem-page { line-height: 1.65; }
+
+/* §4 (F4/F5): every in-page anchor clears the sticky nav (44 + 16 breathing;
+   40 + 12 under 700px). Covers the station anchors, #hintsheet, #glance, and
+   the deck target of the mission's conditional scroll. */
+.problem-page [id] { scroll-margin-top: 60px; }
 .problem-page h2.pp-h2 { font-size: 22px; letter-spacing: -0.01em; font-weight: 700; margin: 48px 0 10px; color: var(--text-primary); }
 .problem-page h3.pp-h3 { font-size: 17px; font-weight: 600; margin: 26px 0 8px; color: var(--text-primary); }
 .problem-page .pp-p { color: var(--text-secondary); margin-bottom: 14px; }
@@ -19,7 +24,11 @@ body { overflow-x: clip; }
 .problem-page .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 
 /* ---------- station nav (sticky, scroll-spy) ---------- */
-.problem-page nav.ppnav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg-base) 94%, transparent); backdrop-filter: blur(4px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; margin: 0 0 18px; padding: 10px 0; border-bottom: 1px solid var(--border-default); display: flex; gap: 14px; flex-wrap: wrap; }
+.problem-page nav.ppnav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg-base) 94%, transparent); backdrop-filter: blur(4px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; margin: 0 0 18px; padding: 10px 0; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; overflow-x: auto; min-height: 44px;
+  /* §4 (F4/F5): span the 960 breakout, one line at >=700px. Centering is
+     margin-based (not the transform the artifact breakouts use): a transformed
+     ancestor would drop position:sticky to static and kill the nav's top:0. */
+  width: min(960px, calc(100vw - 40px)); margin-left: calc((100% - min(960px, calc(100vw - 40px))) / 2); }
 .problem-page nav.ppnav a { color: var(--text-secondary); text-decoration: none; }
 .problem-page nav.ppnav a:hover { color: var(--text-primary); }
 .problem-page nav.ppnav a.nav-here { color: var(--text-primary) !important; font-weight: 600; }
@@ -111,7 +120,11 @@ body { overflow-x: clip; }
 .problem-page .matrix-lead { font-size: 14px; color: var(--text-secondary); margin-top: 14px; }
 
 /* ---------- matrix ---------- */
-.problem-page .matrix-wrap { overflow-x: auto; margin: 22px 0 6px; -webkit-overflow-scrolling: touch; }
+.problem-page .matrix-wrap { overflow-x: auto; margin: 22px 0 6px; -webkit-overflow-scrolling: touch;
+  /* §4 (F4): span the 960 breakout so the YOU column is fully visible at 1440
+     with zero horizontal scroll. Margin-based centering (no transform) keeps
+     the frozen first column's position:sticky alive. */
+  width: min(960px, calc(100vw - 40px)); margin-left: calc((100% - min(960px, calc(100vw - 40px))) / 2); }
 .problem-page table.matrix { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 13px; line-height: 1.45; color: var(--text-primary); }
 .problem-page table.matrix.interview { min-width: 520px; }
 .problem-page table.matrix th, .problem-page table.matrix td { padding: 9px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-default); }
@@ -130,6 +143,11 @@ body { overflow-x: clip; }
 /* The same grammar marks the column(s) a "Which answer is yours" row points
    at while that row is selected (.col-hl on the header + every cell). */
 .problem-page #you-th, .problem-page td[id^="you-c-"], .problem-page table.matrix .col-hl { border-left: 1.5px solid var(--border-strong); background: var(--bg-subtle); }
+/* §4 (F4): freeze the first column at ALL widths (desktop overlay scrollbars
+   were the audit's exact failure, not just phone). Opaque bg so scrolled cells
+   pass under it; hot rows keep their tint. */
+.problem-page table.matrix td:first-child, .problem-page table.matrix th:first-child { position: sticky; left: 0; z-index: 2; background: var(--bg-surface); }
+.problem-page table.matrix tr.hot td:first-child { background: var(--hot-bg); }
 
 /* ---------- full answers ---------- */
 .problem-page details.q { border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-surface); margin: 12px 0; overflow: hidden; }
@@ -202,11 +220,12 @@ body { overflow-x: clip; }
 
 /* ---------- phone ---------- */
 @media (max-width: 700px) {
-  .problem-page nav.ppnav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, black 92%, transparent); mask-image: linear-gradient(90deg, black 92%, transparent); }
+  /* §4 (F5): under 700px the nav is a single scrolling row, 40px, budgets
+     hidden; the right-edge fade cues the overflow. */
+  .problem-page nav.ppnav { min-height: 40px; white-space: nowrap; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, black 92%, transparent); mask-image: linear-gradient(90deg, black 92%, transparent); }
   .problem-page nav .navmin { display: none; }
+  .problem-page [id] { scroll-margin-top: 52px; }
   .problem-page .spectrum-label:first-of-type { transform: translateX(-10%); }
   .problem-page .spectrum-label:last-of-type { transform: translateX(-90%); }
-  .problem-page table.matrix td:first-child, .problem-page table.matrix th:first-child { position: sticky; left: 0; background: var(--bg-surface); z-index: 2; }
-  .problem-page table.matrix tr.hot td:first-child { background: var(--hot-bg); }
   .problem-page .matrix-wrap, .problem-page .anat-scroll { -webkit-mask-image: linear-gradient(90deg, black 94%, transparent); mask-image: linear-gradient(90deg, black 94%, transparent); }
 }
