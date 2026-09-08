@@ -51,6 +51,20 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     CSS rule (the JS inline STEP styling moved into it), so exactly one
 //     control reads as primary under reduced motion.
 //
+// Sanctioned edits (Batch 1, 2026-09-08 layout spec) -- markup/CSS moves plus
+// the four allowed engine touches; the RULES block, GROUPS/LEVELS, copy and the
+// checkpoint contract are unchanged:
+//   §1 (F1/F2/F13): the single .brow is now a two-column .mission-grid --
+//     col-left (deck -> commit -> attacks/debrief) scrolls, col-right
+//     (evchips -> narration -> stage -> controls -> bill -> log) is the sticky
+//     working column on desktop (position:sticky; top:12px). The phone damage
+//     toast is deleted (markup + bridge logic); the log sits under the stage.
+//     "-> the decision" is now cueDecision(): a cue, not a page scroll, unless
+//     the group is fully off-screen (A2).
+//   §2 (F10/F11): phone collapses the grid to one re-ordered column and the
+//     deck groups become a one-open-at-a-time accordion (openGroup engine
+//     state, A3); the control row is not sticky. [in the §2 commit]
+//
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
 // belongs where the mission unlocks after the naive run (finishDay -> won).
@@ -112,9 +126,20 @@ const CSS = `
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
- /* ===== layout: deck | stage ===== */
- .brow { display:flex; gap:12px; flex-wrap:wrap; }
- .deck { flex:0 1 250px; min-width:236px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
+ /* ===== layout (§1/§2): two columns — the run's OUTPUTS live in the right,
+    sticky column (stage + meters + newest card stay in view); the reader's
+    ACTIONS live in the left, scrolling column (deck, commit, attacks, debrief).
+    Phone collapses to one re-ordered column (§2). ===== */
+ .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:20px; align-items:start; }
+ .col-left, .col-right { display:flex; flex-direction:column; gap:10px; min-width:0; }
+ /* top:12px is an in-frame gap: sticky can't reference the host nav across the
+    iframe boundary, so the "56px clears the nav" of the spec becomes a small
+    internal offset (nav-overlap at the very top is a recorded compromise). The
+    frame is a bounded scrollport on desktop (host sets min(content,100dvh-56));
+    align-self:start keeps the column at content height so it can stick. */
+ .col-right { position:sticky; top:12px; align-self:start; max-height:calc(100dvh - 24px); }
+ .col-right .log { flex:1 1 auto; min-height:150px; max-height:none; }
+ .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
  #artB[data-cue="deck"] .deck { animation:deckpulse 1.6s ease infinite alternate; }
  @keyframes deckpulse { from { border-color:var(--art-border); } to { border-color:var(--accent-problem); box-shadow:0 0 14px rgba(217,70,239,.18);} }
  .deck-title { color:var(--art-text); font-size:10px; letter-spacing:1.6px; margin-bottom:2px; }
@@ -133,9 +158,10 @@ const CSS = `
  @keyframes gflash { 0%,100% { background:transparent; } 35% { background:rgba(217,70,239,.14); border-radius:8px; } }
  .locked .seg button { pointer-events:none; opacity:.7; }
 
- .stagecol { flex:1 1 420px; min-width:380px; }
+ /* §1: the desktop stage fits its ~508px column (viewBox 640x336 -> ~508x267),
+    so no horizontal scroll and no 560px floor. */
  .bstagewrap { overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
- svg#bstage { display:block; width:100%; min-width:560px; height:auto; }
+ svg#bstage { display:block; width:100%; min-width:0; height:auto; }
  svg#bstage text { font-family:var(--mono); }
  .nodebox { fill:var(--art-surface-2); stroke:var(--art-border); stroke-width:1.4; }
  .nlab { fill:var(--art-text); font-size:12px; text-anchor:middle; letter-spacing:.5px; font-weight:600; }
@@ -201,8 +227,12 @@ const CSS = `
  #artB[data-cue="run"] .runbtn { animation: runpulse 1.4s ease infinite alternate; }
  @keyframes runpulse { from { box-shadow: 0 0 0 rgba(217,70,239,0); } to { box-shadow: 0 0 18px rgba(217,70,239,.55); } }
  @media (max-width: 700px) {
- svg#bstage { min-width: 0; }
  .bstagewrap { overflow-x: visible; }
+ /* §1: collapse the two columns to one and unstick the right column so phone
+    isn't a broken desktop; §2 sets the final order + control row. */
+ .mission-grid { display:flex; flex-direction:column; gap:12px; }
+ .col-right { position:static; max-height:none; }
+ .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
  .ctlrow { position: sticky; bottom: 8px; background: var(--art-bg); border: 1px solid var(--art-border); border-radius: 10px; padding: 8px; z-index: 5; }
  }
  @media (prefers-reduced-motion: reduce) {
@@ -231,11 +261,6 @@ const CSS = `
  .debrief, .narr, .lvl .lq, #cmt-locked { font-size: 12.5px; max-width: 68ch; }
  .esc-head .esc-rest { font-size: 11.5px; letter-spacing: 0.2px; }
  .kgl .addtag { color: var(--art-amber); font-size: 10px; letter-spacing: 1px; margin-left: 6px; }
- #dmgtoast { display: none; }
- @media (max-width: 700px) {
- #dmgtoast { display: block; position: sticky; bottom: 66px; z-index: 6; background: var(--art-surface-2); border: 1px solid var(--art-border-interactive); border-radius: 8px; padding: 7px 10px; font-size: 10.5px; color: var(--art-text); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .25s; }
- #dmgtoast.on { opacity: 1; pointer-events: auto; }
- }
 `
 
 const MARKUP = `
@@ -245,50 +270,49 @@ const MARKUP = `
  <div class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></div>
  <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.</div>
 
- <div class="evchips" id="evchips"></div>
- <div class="narr" id="narr" aria-live="polite"></div>
+ <div class="mission-grid">
+  <div class="col-left">
+   <div class="deck" id="deck" aria-label="Your six design decisions"></div>
 
- <div class="brow">
-      <div class="deck" id="deck" aria-label="Your six design decisions"></div>
-  <div class="stagecol">
-  <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
-  <div class="ctlrow">
-   <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
-   <button class="bghost" id="stepbtn">STEP</button>
-   <button class="bghost" id="fastbtn">1×</button>
-   <button class="bghost" id="resetbtn">reset</button>
-   <div class="meters">
-   <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
-   <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
-   <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
+   <div class="billpanel" id="cmtbox" style="display:none;">
+    <div class="billhead">BEFORE YOU READ ANYONE'S ANSWER</div>
+    <div id="cmt-ask">
+     <div style="color:#C8CDD8;margin-bottom:6px;">In one sentence: why this design?</div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <input id="cmt-input" maxlength="200" style="flex:1;min-width:200px;background:#0F1118;border:1px solid var(--art-border-interactive);border-radius:6px;color:var(--art-text);font-family:inherit;font-size:11px;padding:7px 9px;" aria-label="Why this design, in one sentence">
+      <button class="bghost" id="cmt-lock" style="border-color:#D946EF;color:#E879F9;">Lock it in</button>
+      <button class="bghost" id="cmt-skip" style="border:none;text-decoration:underline;">Skip</button>
+     </div>
+    </div>
+    <div id="cmt-locked" style="display:none;color:#C8CDD8;"></div>
    </div>
-   <div class="meternote" id="meternote"></div>
-  </div>
-  <div id="dmgtoast" role="status"></div>
-  </div>
- </div>
 
- <div class="billpanel" id="bill" style="display:none;"></div>
-
-    <div class="billpanel" id="cmtbox" style="display:none;">
-  <div class="billhead">BEFORE YOU READ ANYONE'S ANSWER</div>
-  <div id="cmt-ask">
-   <div style="color:#C8CDD8;margin-bottom:6px;">In one sentence: why this design?</div>
-   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-    <input id="cmt-input" maxlength="200" style="flex:1;min-width:200px;background:#0F1118;border:1px solid var(--art-border-interactive);border-radius:6px;color:var(--art-text);font-family:inherit;font-size:11px;padding:7px 9px;" aria-label="Why this design, in one sentence">
-    <button class="bghost" id="cmt-lock" style="border-color:#D946EF;color:#E879F9;">Lock it in</button>
-    <button class="bghost" id="cmt-skip" style="border:none;text-decoration:underline;">Skip</button>
+   <div class="esc" id="escwrap" style="display:none;">
+    <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest"> - YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
+    <div id="lvls"></div>
+    <div class="debrief" id="debrief"></div>
    </div>
   </div>
-  <div id="cmt-locked" style="display:none;color:#C8CDD8;"></div>
- </div>
 
-    <div class="log" id="log"></div>
-
- <div class="esc" id="escwrap" style="display:none;">
-  <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest"> - YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
-  <div id="lvls"></div>
-  <div class="debrief" id="debrief"></div>
+  <div class="col-right">
+   <div class="evchips" id="evchips"></div>
+   <div class="narr" id="narr" aria-live="polite"></div>
+   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
+   <div class="ctlrow">
+    <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
+    <button class="bghost" id="stepbtn">STEP</button>
+    <button class="bghost" id="fastbtn">1×</button>
+    <button class="bghost" id="resetbtn">reset</button>
+    <div class="meters">
+    <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
+    <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
+    <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
+    </div>
+    <div class="meternote" id="meternote"></div>
+   </div>
+   <div class="billpanel" id="bill" style="display:none;"></div>
+   <div class="log" id="log"></div>
+  </div>
  </div>
 
 
@@ -619,10 +643,43 @@ function bootEngine() {
  var d=document.createElement('div'); d.className='bcard '+cls;
  d.innerHTML='<span class="code">'+(curEv>=0?('E'+(curEv+1)+' \u00B7 '):(curLvl>0?('A'+curLvl+' \u00B7 '):''))+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
  $('#log').prepend(d);
- d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){
-  var kg = document.getElementById('kg-'+k.dataset.knob);
-  if (kg){ var kr=kg.getBoundingClientRect(); window.scrollTo({top: kr.top + window.pageYOffset - (window.innerHeight-kr.height)/2, behavior:'smooth'}); kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg'); }
- });});
+ d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){ cueDecision(k.dataset.knob); }); });
+ }
+ /* F13 (A2): "→ the decision" no longer scrolls the page by default. It
+    cues the target group (data-cue="group" + .cue-target for 1.6s), then
+    restores the prior cue. During an attack it never steals the attack's own
+    cue: a different group only .flashg's. It scrolls only when the group is
+    fully outside the viewport, and then flashes on ARRIVAL (scrollend, 400ms
+    fallback) -- never mid-scroll; window.scrollTo, never scrollIntoView. On
+    desktop the deck is beside the stage in the sticky layout, so the group is
+    usually already on screen and nothing scrolls. On phone the frame is
+    content-height, so the group reads as on-screen here and the host does the
+    page scroll from the bridge's anchor message (§2 opens the accordion
+    first). */
+ function cueDecision(knob){
+  var kg = document.getElementById('kg-'+knob); if (!kg) return;
+  var artB = $('#artB');
+  var attackActive = escMode >= 0;
+  var attackGroup = (attackActive && LEVELS[escMode]) ? LEVELS[escMode].group : null;
+  var isAttackGroup = !!attackGroup && ('kg-'+attackGroup) === kg.id;
+  var useCue = !attackActive || isAttackGroup;
+  function flash(){
+   if (useCue){
+    var saved = artB.dataset.cue;
+    kg.classList.add('cue-target'); artB.dataset.cue = 'group';
+    setTimeout(function(){ if (artB.dataset.cue === 'group') artB.dataset.cue = saved; kg.classList.remove('cue-target'); }, 1600);
+   } else {
+    kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg');
+   }
+  }
+  var r = kg.getBoundingClientRect();
+  var offscreen = r.bottom <= 0 || r.top >= window.innerHeight;
+  if (!offscreen){ flash(); return; }
+  var done = false;
+  function arrive(){ if (done) return; done = true; window.removeEventListener('scrollend', arrive); flash(); }
+  window.addEventListener('scrollend', arrive);
+  setTimeout(arrive, 400); /* fallback: Safari < 16 has no scrollend */
+  window.scrollTo({ top: Math.max(0, r.top + window.pageYOffset - window.innerHeight * 0.3), behavior:'smooth' });
  }
  function idKind(){ return K.id==='key'?'key': K.id==='hash'?'hash':'plain'; }
 
@@ -1281,16 +1338,6 @@ function bootBridge(engine) {
   });
  }
 
- /* ---- R4: phone damage toast - clones each new failure card's first line (v7.3 script) ---- */
- var toast = $('#dmgtoast'), toastT = null;
- if (toast){
-  toast.addEventListener('click', function(){
-   var log=$('#log'); if(!log) return;
-   window.scrollTo({ top: log.getBoundingClientRect().top + window.pageYOffset - 70, behavior:'smooth' });
-   toast.classList.remove('on');
-  });
- }
-
  /* ---- signals: observe, never patch, the frozen engine ---- */
  function observe(el, cb, opts){ if (!el) return; var o = new MutationObserver(cb); o.observe(el, opts); cleanups.push(function(){ o.disconnect(); }); }
  observe($('#bill'), function(){ refresh(); emitState(); maybeShowCommit(); }, { attributes:true, childList:true });
@@ -1306,18 +1353,6 @@ function bootBridge(engine) {
   emitState();
  }, { attributes:true, attributeFilter:['style'] });
  observe($('#deck'), function(){ tagRows(); if (filled) emitState(); }, { childList:true });
- observe($('#log'), function(ms){
-  if (!toast || window.innerWidth >= 700) return;
-  ms.forEach(function(m){
-   if (!m.addedNodes.length) return;
-   var c = m.addedNodes[0];
-   if (!c.classList || !c.classList.contains('bcard') || !(c.classList.contains('bad')||c.classList.contains('warn'))) return;
-   var code = c.querySelector('.code');
-   toast.textContent = (code ? code.textContent : 'damage') + ' - tap for the report';
-   toast.classList.add('on');
-   clearTimeout(toastT); toastT = setTimeout(function(){ toast.classList.remove('on'); }, 4000);
-  });
- }, { childList:true });
  /* caused: the first finished day with damage (the meters leave "-") */
  observe($('.meters'), function(){
   var d = parseInt($('#m-dbl').textContent, 10), l = parseInt($('#m-lost').textContent, 10), t = parseInt($('#m-tick').textContent, 10);

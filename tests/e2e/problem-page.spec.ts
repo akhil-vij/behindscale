@@ -56,6 +56,27 @@ async function waitForMission(page: Page): Promise<Frame> {
   return f
 }
 
+// Set the AWS winning deck (the §5.2 path) and run one day to survival, at 2×.
+// Leaves the attacks revealed (#escwrap visible), RUN re-enabled.
+async function surviveDay(mission: Frame, page: Page): Promise<void> {
+  const click = (k: string, v: string) => frameClick(mission, `#deck button[data-k="${k}"][data-v="${v}"]`)
+  await click('id', 'key')
+  await click('mem', 'acid')
+  await click('cli', 'key')
+  await click('rep', 'saved')
+  await click('ret', 'ever')
+  await frameClick(mission, '#fastbtn')
+  await frameClick(mission, '#runbtn')
+  await page.locator('#artB iframe').scrollIntoViewIfNeeded()
+  await mission.waitForFunction(
+    () =>
+      !(document.getElementById('runbtn') as HTMLButtonElement).disabled &&
+      document.getElementById('escwrap')!.style.display !== 'none',
+    null,
+    { timeout: 120_000 },
+  )
+}
+
 test.describe('§5.2 real iframe round-trip', () => {
   test('ready -> init, a survived day fills YOU, commit persists across reload', async ({ page }) => {
     test.setTimeout(180_000)
@@ -269,14 +290,19 @@ test.describe('§5.4 text parity with the reference build', () => {
       ),
     )
 
-    // Order-sensitive, line-for-line. On a mismatch, report the first
-    // divergence with context so the regression is legible.
-    const n = Math.max(servedLines.length, fixtureLines.length)
+    // Batch 1 §1 reorders the mission's internal layout (the two-column working
+    // surface), so parity is now a MULTISET check: the same lines with the same
+    // counts, order-independent. This still catches any added, removed, or
+    // DOUBLED line (the hidden-vertical-SVG concern) -- it only tolerates the
+    // deliberate reorder. Report the first sorted divergence with context.
+    const sortedServed = [...servedLines].sort()
+    const sortedFixture = [...fixtureLines].sort()
+    const n = Math.max(sortedServed.length, sortedFixture.length)
     for (let i = 0; i < n; i++) {
-      if (servedLines[i] !== fixtureLines[i]) {
+      if (sortedServed[i] !== sortedFixture[i]) {
         const ctxLines = (arr: string[]) => arr.slice(Math.max(0, i - 2), i + 3).map((l, k) => `${k === Math.min(i, 2) ? '>' : ' '} ${l}`).join('\n')
         throw new Error(
-          `text parity diverges at line ${i}\n--- served:\n${ctxLines(servedLines)}\n--- reference:\n${ctxLines(fixtureLines)}`,
+          `text parity diverges (multiset) at index ${i}\n--- served:\n${ctxLines(sortedServed)}\n--- reference:\n${ctxLines(sortedFixture)}`,
         )
       }
     }
@@ -404,47 +430,118 @@ test.describe('decide: a "Which answer is yours" row highlights its column(s)', 
 
 // ---- ruling a: mobile scroll chaining ---------------------------------------------
 
-test.describe('mobile: the mission frame is the scrollport and page scroll chains at its edges', () => {
+test.describe('mobile (§2): the mission frame is content-height and the page (not the frame) scrolls', () => {
   test.use({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true })
 
-  test('90dvh frame, no overscroll-behavior: contain, wheel past either edge moves the page', async ({ page }) => {
+  test('content-height frame (no 90dvh inner scroll), scroll chaining stays on', async ({ page }) => {
     test.setTimeout(90_000)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
     const iframe = page.locator('#artB iframe')
-    await expect.poll(() => iframe.evaluate((el) => (el as HTMLElement).style.height)).toBe('90dvh')
+    // §2: the 90dvh scrollport is gone -- the frame takes its natural (content)
+    // height, a px value from the size message, so the page scrolls, not the
+    // frame. RUN is then reachable by scrolling the PAGE, never a box inside it.
+    await expect.poll(() => iframe.evaluate((el) => (el as HTMLElement).style.height)).toMatch(/^\d+px$/)
+    const innerScroll = await mission.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight,
+    )
+    expect(innerScroll).toBeLessThanOrEqual(2)
 
+    // Scroll chaining stays on (no overscroll-behavior: contain/none anywhere).
     const overscroll = await mission.evaluate(() => [
       getComputedStyle(document.documentElement).overscrollBehaviorY,
       getComputedStyle(document.body).overscrollBehaviorY,
       getComputedStyle(document.getElementById('artB')!).overscrollBehaviorY,
     ])
     expect(overscroll.every((v) => v !== 'contain' && v !== 'none')).toBe(true)
+  })
+})
 
-    // Bring the frame's top to the viewport's top, then scroll the frame to
-    // its own bottom; a further wheel over the frame must move the page.
-    const top = await iframe.evaluate((el) => el.getBoundingClientRect().top + window.scrollY)
-    await page.evaluate((y) => window.scrollTo(0, y), top)
-    await mission.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))
-    await page.waitForTimeout(200)
-    const box = (await iframe.boundingBox())!
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-    const before = await page.evaluate(() => window.scrollY)
-    await page.mouse.wheel(0, 600)
-    await page.waitForTimeout(400)
-    const after = await page.evaluate(() => window.scrollY)
-    expect(after).toBeGreaterThan(before)
+test.describe('desktop (§1): the sticky working column keeps the stage in view', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
 
-    // And back: frame at its top, wheel up over it, the page moves up.
-    await page.evaluate((y) => window.scrollTo(0, y + 40), top)
-    await mission.evaluate(() => window.scrollTo(0, 0))
-    await page.waitForTimeout(200)
-    const box2 = (await iframe.boundingBox())!
-    await page.mouse.move(box2.x + box2.width / 2, Math.max(10, box2.y + 40))
-    const before2 = await page.evaluate(() => window.scrollY)
-    await page.mouse.wheel(0, -600)
-    await page.waitForTimeout(400)
-    const after2 = await page.evaluate(() => window.scrollY)
-    expect(after2).toBeLessThan(before2)
+  test('F1/F2: the frame is a bounded scrollport; the newest card sits beside the stage', async ({ page }) => {
+    test.setTimeout(150_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    // §1: on desktop the frame is a bounded scrollport, min(content, 100dvh-56),
+    // NOT content-height -- that is what lets the right column's sticky engage.
+    await expect
+      .poll(() => page.locator('#artB iframe').evaluate((el) => (el as HTMLElement).style.height))
+      .toContain('min(')
+    await surviveDay(mission, page)
+    // Scroll chaining stays on for the desktop scroll-in-scroll too.
+    const overscroll = await mission.evaluate(() => [
+      getComputedStyle(document.documentElement).overscrollBehaviorY,
+      getComputedStyle(document.getElementById('artB')!).overscrollBehaviorY,
+    ])
+    expect(overscroll.every((v) => v !== 'contain' && v !== 'none')).toBe(true)
+    // F2: the newest card is visible in the frame at the same time as the stage
+    // (both live in the sticky right column now -- no toast needed).
+    const together = await mission.evaluate(() => {
+      const vh = window.innerHeight
+      const vis = (r: DOMRect) => Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0))
+      const stage = document.getElementById('bstage')!.getBoundingClientRect()
+      const card = document.querySelector('#log .bcard')!.getBoundingClientRect()
+      return vis(stage) >= stage.height * 0.8 && vis(card) > 0
+    })
+    expect(together).toBe(true)
+  })
+
+  test.describe('F1 in numbers, 1440x757', () => {
+    test.use({ viewport: { width: 1440, height: 757 } })
+
+    test('scrolling the left column to A5 keeps the stage >=80% visible when watch is clicked', async ({ page }) => {
+      test.setTimeout(120_000)
+      // Pre-seed a survived design with A1..A4 held, so restore() unlocks A5's
+      // "watch" without replaying every attack (the design is real; only the
+      // starting point is seeded).
+      await page.addInitScript(() => {
+        localStorage.setItem(
+          'bs:wall:ambiguous-failure-under-retry',
+          JSON.stringify({
+            v: 1,
+            commit: 'seed',
+            checkpoints: { caused: true, survived: true, held: false },
+            saved: {
+              decisions: { id: 'key', mem: 'acid', read: 'master', cli: 'key', rep: 'saved', ret: 'ever' },
+              survived: true,
+              held: [true, true, true, true, false],
+            },
+          }),
+        )
+      })
+      await page.goto(PAGE)
+      const mission = await waitForMission(page)
+      await expect(mission.locator('#escwrap')).toBeVisible()
+      await mission.locator('#lvls .lvl').nth(4).locator('.watch').waitFor({ state: 'visible' })
+      // Let the size handshake settle (the mission re-posts size on a short
+      // schedule), then assert the frame height is stable -- no runaway
+      // resize loop from the sticky column / dvh recompute.
+      await page.waitForTimeout(1600)
+      const frameH = () => page.locator('#artB iframe').evaluate((el) => el.getBoundingClientRect().height)
+      const h1 = await frameH()
+      await page.waitForTimeout(600)
+      expect(Math.abs((await frameH()) - h1)).toBeLessThanOrEqual(1)
+      // Scroll the LEFT column (inside the frame) down to A5 -- instant scroll
+      // inside the frame's own scrollport (scrollIntoViewIfNeeded's stability
+      // wait fights the frame's periodic size re-posts).
+      await mission.evaluate(() => {
+        const w = document.querySelectorAll('#lvls .lvl')[4]?.querySelector('.watch') as HTMLElement | null
+        w?.scrollIntoView({ block: 'center' })
+      })
+      await mission.waitForTimeout(300)
+      const stageVisible = () =>
+        mission.evaluate(() => {
+          const s = document.getElementById('bstage')!.getBoundingClientRect()
+          const vh = window.innerHeight
+          return (Math.min(s.bottom, vh) - Math.max(s.top, 0)) / s.height
+        })
+      expect(await stageVisible()).toBeGreaterThanOrEqual(0.8)
+      // Click watch: the attack plays on a stage that is still on screen (F1).
+      await frameClick(mission, '#lvls .lvl:nth-child(5) .watch')
+      await mission.waitForTimeout(300)
+      expect(await stageVisible()).toBeGreaterThanOrEqual(0.8)
+    })
   })
 })

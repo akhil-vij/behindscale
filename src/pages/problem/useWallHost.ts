@@ -37,12 +37,15 @@ import { EMPTY_YOU, type YouState } from './youState'
 //                  frame is its own scrollport
 // Try-it -> host: size only.
 //
-// Sizing (owner ruling a): under 700px the mission iframe is the scrollport
-// (~90dvh, internal scrolling) so its sticky RUN bar, damage toast, and
-// scroll-to-log work as designed; at 700px and above the frame is
-// content-height from `size`. The mode keys off the frame's OWN width (the
-// artifact's own breakpoint), so the frame and the host never disagree. No
-// overscroll-behavior anywhere -- page scroll chains at the frame's edges.
+// Sizing (Batch 1 §1/§2 -- inverted from the reference): at 700px and ABOVE the
+// frame is a bounded scrollport, height min(content, 100dvh - 56px), so the
+// right working column's position:sticky engages and the log absorbs the
+// leftover while the left column scrolls inside the frame. UNDER 700px the frame
+// is content-height (natural) and the host page scrolls -- the old 90dvh inner
+// scroll is gone. The mode keys off the frame's OWN width (the artifact's own
+// breakpoint), so the frame and the host agree. No overscroll-behavior anywhere
+// -- page scroll chains at the frame's edges (the desktop scroll-in-scroll lives
+// or dies on that hand-off).
 //
 // Storage: one record per wall, localStorage['bs:wall:<cruxTag>'] ->
 // {v:1, commit, checkpoints:{caused,survived,held}, saved:{decisions,
@@ -137,8 +140,14 @@ function writeWallRecord(cruxTag: string, record: WallRecord): void {
 // can't make the page unbounded).
 const MIN_FRAME_PX = 320
 const MAX_FRAME_PX = 20000
+// §1/§2: the frame is a bounded scrollport on DESKTOP (>=700) so the right
+// column's position:sticky engages; PHONE (<700) is content-height (natural,
+// the host page scrolls) -- the inversion of the pre-Batch-1 model. Desktop
+// height = min(content, 100dvh - 56px): when the left column is shorter than
+// that the frame is content-height and sticky is inert (the spec's normal-flow
+// case); when taller, it caps and the frame scrolls internally.
 const SCROLLPORT_MAX_WIDTH = 700
-const SCROLLPORT_HEIGHT = '90dvh'
+const DESKTOP_MAX_HEIGHT = 'calc(100dvh - 56px)'
 // Sticky station nav clearance, so anchor jumps land below it -- matches the
 // CSS scroll-margin-top (nav 44 + 16 breathing at >=700px; 40 + 12 under). The
 // exact per-breakpoint value is computed at scroll time; this is the fallback
@@ -199,12 +208,13 @@ export function useWallHost(input: WallHostInput): WallHost {
     }
   }, [cruxTag])
 
-  // Scrollport mode keys off the mission wrapper's width.
+  // Scrollport (bounded) mode keys off the mission wrapper's width: DESKTOP
+  // (>=700) is the bounded scrollport now, phone is content-height (§1/§2).
   useEffect(() => {
     if (!hasMission || typeof ResizeObserver === 'undefined') return
     const el = document.getElementById(missionWrapperId)
     if (!el) return
-    const apply = () => setScrollport(el.getBoundingClientRect().width <= SCROLLPORT_MAX_WIDTH)
+    const apply = () => setScrollport(el.getBoundingClientRect().width >= SCROLLPORT_MAX_WIDTH)
     apply()
     const ro = new ResizeObserver(apply)
     ro.observe(el)
@@ -403,7 +413,9 @@ export function useWallHost(input: WallHostInput): WallHost {
 
   const missionHeight = hasMission
     ? scrollport
-      ? SCROLLPORT_HEIGHT
+      ? missionSize !== undefined
+        ? `min(${missionSize}px, ${DESKTOP_MAX_HEIGHT})`
+        : DESKTOP_MAX_HEIGHT
       : missionSize !== undefined
         ? `${missionSize}px`
         : undefined
