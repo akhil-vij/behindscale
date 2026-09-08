@@ -307,3 +307,38 @@ test('Unit 10: every compiled artifact bundle contains the postMessage emitter',
     ).toBe(true)
   }
 })
+
+// §5 (F3): the landing hero sizes its iframe from the artifact's posted height
+// (D2 — post natural height, page applies min 380, no max), not a fixed value.
+test('§5 (F3): the hero iframe sizes itself from the artifact-posted height (min 380)', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    ;(window as unknown as { __heroSizes: number[] }).__heroSizes = []
+    window.addEventListener('message', (e) => {
+      const d = e.data as { type?: string; h?: number } | null
+      if (d && d.type === 'artifact:size' && typeof d.h === 'number')
+        (window as unknown as { __heroSizes: number[] }).__heroSizes.push(d.h)
+    })
+  })
+  await page.goto('/')
+  const hero = page.locator('iframe[title*="Priority-blind load shedding"]')
+  await hero.waitFor()
+  // The artifact posts its natural height...
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __heroSizes: number[] }).__heroSizes.length))
+    .toBeGreaterThan(0)
+  // ...and the page applies it to the iframe, clamped to >= 380 (no max).
+  await expect
+    .poll(async () => {
+      const h = await hero.evaluate((el) => parseInt((el as HTMLElement).style.height, 10))
+      return Number.isFinite(h) ? h : 0
+    })
+    .toBeGreaterThanOrEqual(380)
+  // The applied height is the posted height (clamped), not the fixed default.
+  const posted = await page.evaluate(() =>
+    Math.max(...(window as unknown as { __heroSizes: number[] }).__heroSizes),
+  )
+  const applied = await hero.evaluate((el) => parseInt((el as HTMLElement).style.height, 10))
+  expect(Math.abs(applied - Math.max(380, posted))).toBeLessThanOrEqual(2)
+})

@@ -99,6 +99,32 @@ export default function PatternShedding() {
     return () => clearInterval(id);
   }, []);
 
+  // §5 (F3): post natural height to the host on load + every internal relayout
+  // (the landing hero sizes its iframe from this; min 380, no max — the caption
+  // promise "flip SHED SMART" then always points at a visible toggle). Other
+  // embeds (the pattern page) ignore it. Harmless if the parent is unreachable.
+  useEffect(() => {
+    function postSize() {
+      try {
+        var h = Math.max(
+          document.documentElement.scrollHeight,
+          document.body ? document.body.scrollHeight : 0,
+        );
+        window.parent.postMessage({ type: "artifact:size", h: Math.ceil(h) }, "*");
+      } catch (e) { /* parent unreachable */ }
+    }
+    postSize();
+    var ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(postSize) : null;
+    if (ro) ro.observe(document.documentElement);
+    var timers = [250, 600, 1200, 2500].map(function (ms) { return setTimeout(postSize, ms); });
+    window.addEventListener("resize", postSize);
+    return function () {
+      if (ro) ro.disconnect();
+      timers.forEach(clearTimeout);
+      window.removeEventListener("resize", postSize);
+    };
+  }, []);
+
   const W = w.current;
   const offered = traffic;
   const over = offered > CAPACITY;
