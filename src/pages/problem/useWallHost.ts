@@ -386,11 +386,13 @@ export function useWallHost(input: WallHostInput): WallHost {
           }
           const frame = m.frame as { top?: unknown; height?: unknown } | undefined
           if (!frame || typeof frame.top !== 'number' || typeof frame.height !== 'number') return
-          if (scrollport) return // the frame scrolls itself (the engine's own scrollTo)
+          if (scrollport) return // desktop: the frame scrolls itself (the engine's own scrollTo)
           const iframe = document.querySelector<HTMLIFrameElement>(`#${missionWrapperId} iframe`)
           if (!iframe) return
           const frameTop = iframe.getBoundingClientRect().top + window.pageYOffset
-          scrollPageTo(frameTop + frame.top - (window.innerHeight - frame.height) / 2)
+          // §2: put the target group at ~30% of the viewport (the same rule the
+          // engine uses on desktop), so "→ the decision" lands consistently.
+          scrollPageTo(frameTop + frame.top - window.innerHeight * 0.3)
           return
         }
         default:

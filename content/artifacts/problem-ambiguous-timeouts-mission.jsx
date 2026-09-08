@@ -61,9 +61,11 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     toast is deleted (markup + bridge logic); the log sits under the stage.
 //     "-> the decision" is now cueDecision(): a cue, not a page scroll, unless
 //     the group is fully off-screen (A2).
-//   §2 (F10/F11): phone collapses the grid to one re-ordered column and the
-//     deck groups become a one-open-at-a-time accordion (openGroup engine
-//     state, A3); the control row is not sticky. [in the §2 commit]
+//   §2 (F10/F11): phone collapses the grid to one re-ordered column (narration
+//     -> stage -> controls -> log -> bill -> commit -> deck -> attacks ->
+//     debrief) and the deck groups become a one-open-at-a-time accordion
+//     (openGroup engine state, A3); the control row is not sticky, meters wrap
+//     to a full-width 3-col line (F11).
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -148,6 +150,11 @@ const CSS = `
  .kg:first-of-type { margin-top:2px; border-top:none; padding-top:0; }
  .kg .kgl { color:var(--art-muted); font-size:10px; letter-spacing:1px; line-height:1.4; display:flex; align-items:center; gap:6px; }
  .kg .kgl .q { color:var(--art-muted); }
+ /* §2/A3: the phone accordion reuses .kg -- a .collapsed class hides the
+    options and the header shows the current choice + chevron. Desktop keeps the
+    full deck: paintDeck never adds .collapsed at >=700px, and the summary
+    choice + chevron are hidden. */
+ .kgchoice, .kgchev { display:none; }
  .kg .lockmsg { color:var(--art-muted); font-size:10px; font-style:italic; margin-top:3px; }
  .seg { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
  .seg button { text-align:left; padding:7px 10px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
@@ -228,12 +235,29 @@ const CSS = `
  @keyframes runpulse { from { box-shadow: 0 0 0 rgba(217,70,239,0); } to { box-shadow: 0 0 18px rgba(217,70,239,.55); } }
  @media (max-width: 700px) {
  .bstagewrap { overflow-x: visible; }
- /* §1: collapse the two columns to one and unstick the right column so phone
-    isn't a broken desktop; §2 sets the final order + control row. */
+ /* §1/§2: one natural-height column, re-ordered to the phone reading order:
+    narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
+    -> debrief (evchips lead the right column). The control row is NOT sticky
+    (the stage is directly above; sticky would cover the log the cards land in). */
  .mission-grid { display:flex; flex-direction:column; gap:12px; }
- .col-right { position:static; max-height:none; }
+ .col-right { position:static; max-height:none; order:-1; }
  .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
- .ctlrow { position: sticky; bottom: 8px; background: var(--art-bg); border: 1px solid var(--art-border); border-radius: 10px; padding: 8px; z-index: 5; }
+ #bill { order:1; }        /* right column: log before bill on phone */
+ #cmtbox { order:-1; }     /* left column: commit before deck on phone */
+ /* control row: buttons one line (RUN flexes), meters a second full-width
+    3-col line, never clipped (F11's "MYS"). */
+ .runbtn { flex:1 1 auto; }
+ #stepbtn, #fastbtn, #resetbtn { flex:0 0 auto; }
+ .meters { flex-basis:100%; margin-left:0; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+ .meter { min-width:0; }
+ /* phone accordion (A3): 44px rows, one open at a time. The base .kgl is
+    already flex; the choice is pushed right (label 1fr, choice auto, chevron)
+    -- flex not grid so the label + .q keep the reference's innerText. */
+ .kg .kgl { min-height:44px; padding:10px 12px; cursor:pointer; }
+ .kg .kgchoice { display:block; margin-left:auto; max-width:55%; font-size:12px; color:var(--art-text-bright); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+ .kg .kgchev { display:block; width:18px; text-align:center; color:var(--art-muted); }
+ .kg:not(.collapsed) .kgchoice { display:none; }
+ .kg.collapsed .seg, .kg.collapsed .lockmsg { display:none; }
  }
  @media (prefers-reduced-motion: reduce) {
  #artB[data-cue="deck"] .deck, #artB[data-cue="run"] .runbtn, #artB[data-cue="group"] .kg.cue-target, .bpulse, .shake { animation: none !important; }
@@ -335,6 +359,11 @@ function bootEngine() {
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  var lvlDone = [false,false,false,false,false];
+ /* §2/A3: phone accordion state -- which deck group is open (one at a time).
+    paintDeck reads it on phones; desktop ignores it (full deck). Attack-added
+    rows set it to themselves on arrival; "-> the decision" sets it to the
+    card's group. */
+ var openGroup = 'id';
 
  /* dayTokens(): the RULES block, imported from ./problem-ambiguous-timeouts-rules.js (verbatim, frozen). */
 
@@ -376,11 +405,22 @@ function bootEngine() {
  var STAGEMAP = { id:'sg-id', mem:'sg-mem', read:'sg-read', cli:'sg-cli', rep:'sg-rep', ret:'sg-ret' };
 
  function paintDeck(){
+ var vert = window.innerWidth < 700; /* §2/A3: phone shows a one-open accordion; desktop the full deck */
  var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs with whatever it says here</div>';
  GROUPS.forEach(function(g){
   var ok = !g.needs || g.needs();
   if (!ok && g.hideLocked) return;
-  h += '<div class="kg" id="kg-'+g.k+'"><div class="kgl">'+g.label+(g.q?' <span class="q">'+g.q+'</span>':'')+'</div>';
+  var collapsed = vert && openGroup !== g.k;
+  var chosen = '';
+  if (ok){ for (var ci=0;ci<g.opts.length;ci++){ if (K[g.k]===g.opts[ci][0]){ chosen=g.opts[ci][1]; break; } } }
+  /* label + .q stay as the reference has them (raw text + span) so innerText
+     parity holds; the choice + chevron are extra spans, hidden on desktop. */
+  h += '<div class="kg'+(collapsed?' collapsed':'')+'" id="kg-'+g.k+'">'+
+   '<div class="kgl" data-acc="'+g.k+'"'+(vert?' role="button" tabindex="0" aria-expanded="'+(collapsed?'false':'true')+'"':'')+'>'+
+    g.label+(g.q?' <span class="q">'+g.q+'</span>':'')+
+    '<span class="kgchoice">'+chosen+'</span>'+
+    '<span class="kgchev" aria-hidden="true">'+(collapsed?'▾':'▴')+'</span>'+
+   '</div>';
   if (!ok) h += '<div class="lockmsg">&#128274; '+g.lock+'</div>';
   h += '<div class="seg">';
   g.opts.forEach(function(o){
@@ -391,7 +431,7 @@ function bootEngine() {
  });
  $('#deck').innerHTML = h;
  if (escMode>=0 && LEVELS[escMode] && LEVELS[escMode].group){ var gk=document.getElementById('kg-'+LEVELS[escMode].group); if(gk) gk.classList.add('cue-target'); }
- $$('#deck button').forEach(function(b){
+ $$('#deck button[data-k]').forEach(function(b){
   b.addEventListener('click', function(){
   if (running || b.disabled) return;
   touched = true; if($('#artB').dataset.cue==='deck') $('#artB').dataset.cue='';
@@ -405,6 +445,12 @@ function bootEngine() {
   if (!kg.classList.contains('cue-target')){ kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg'); }
   focusDeckSel(b.dataset.k); /* B2-7 (F17): paintDeck() rebuilt the deck - keep focus on the chosen option */
   });
+ });
+ /* §2/A3: accordion toggle on the group header (phone only; desktop = full deck) */
+ $$('#deck .kgl[data-acc]').forEach(function(hd){
+  function toggle(){ if (window.innerWidth >= 700) return; var k=hd.getAttribute('data-acc'); openGroup = (openGroup===k) ? null : k; paintDeck(); }
+  hd.addEventListener('click', toggle);
+  hd.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } });
  });
  }
  /* B2-7 (F17): focus the selected option of a deck group after a repaint, so
@@ -591,7 +637,7 @@ function bootEngine() {
  function refreshXY(){ CX=G.client.x+G.client.w; SX=G.server.x; SXR=G.server.x+G.server.w; BX=G.bank.x; Y=G.wireY; }
  function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 520' : '0 0 640 336'); }
  pickG();
- window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); } });
+ window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
  function reqA(){ return VERT ? {x:GV.wireX, y:G.client.y+G.client.h+10} : {x:CX+14, y:Y}; }
  function reqB(){ return VERT ? {x:GV.wireX, y:G.server.y-8} : {x:SX-8, y:Y}; }
  async function animRequest(kind, opts){
@@ -658,6 +704,9 @@ function bootEngine() {
     first). */
  function cueDecision(knob){
   var kg = document.getElementById('kg-'+knob); if (!kg) return;
+  /* §2/A3: on phone open the target group in the accordion first, then cue it;
+     the host does the page scroll (bridge anchor). */
+  if (window.innerWidth < 700){ openGroup = knob; paintDeck(); kg = document.getElementById('kg-'+knob); if (!kg) return; }
   var artB = $('#artB');
   var attackActive = escMode >= 0;
   var attackGroup = (attackActive && LEVELS[escMode]) ? LEVELS[escMode].group : null;
@@ -994,7 +1043,7 @@ function bootEngine() {
    brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer - re-run and watch it break, then fix it.',
    attack: async function(){
     say('ATTACK 4','Same key as this morning - but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared - defaulted to the naive answer.');
-    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck(); focusDeckSel('params'); /* B2-7 */
+    ROWS_ADDED.params = true; if(!K.params) K.params='run'; openGroup='params'; paintDeck(); focusDeckSel('params'); /* B2-7; A3: the new row opens in the phone accordion */
     var d = await animParamsMismatch(); d.remove();
    },
    rerun: async function(){
@@ -1028,7 +1077,7 @@ function bootEngine() {
      return;
     }
     say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten - on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
-    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck(); focusDeckSel('after'); /* B2-7 */
+    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
@@ -1041,7 +1090,7 @@ function bootEngine() {
      return { held:false };
     }
     if (!ROWS_ADDED.after){
-     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck(); focusDeckSel('after'); /* B2-7 */
+     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
      say('ATTACK 5','Your window has an edge now - so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
      var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
@@ -1334,7 +1383,9 @@ function bootBridge(engine) {
    var lbl = kg.querySelector('.kgl'); if(!lbl) return;
    var tag = lbl.querySelector('.addtag');
    if (heldOf(t[1])){ if(tag) tag.remove(); return; }
-   if (!tag){ tag = document.createElement('span'); tag.className='addtag'; tag.textContent=t[2]; lbl.appendChild(tag); }
+   /* §2/A3: keep the ADDED-BY-ATTACK tag inline after the label (before the
+      accordion's choice + chevron), not after the chevron. */
+   if (!tag){ tag = document.createElement('span'); tag.className='addtag'; tag.textContent=t[2]; var ch = lbl.querySelector('.kgchoice'); if (ch) lbl.insertBefore(tag, ch); else lbl.appendChild(tag); }
   });
  }
 

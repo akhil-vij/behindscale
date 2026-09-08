@@ -455,6 +455,43 @@ test.describe('mobile (§2): the mission frame is content-height and the page (n
     ])
     expect(overscroll.every((v) => v !== 'contain' && v !== 'none')).toBe(true)
   })
+
+  test('§2 order: stage sits above the deck; RUN is reachable without an inner scroll', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    // Phone reading order: the stage (right column) comes before the deck (left
+    // column). Cards land under the controls the reader just used.
+    const order = await mission.evaluate(() => ({
+      stage: document.getElementById('bstage')!.getBoundingClientRect().top,
+      run: document.getElementById('runbtn')!.getBoundingClientRect().top,
+      deck: document.getElementById('deck')!.getBoundingClientRect().top,
+    }))
+    expect(order.stage).toBeLessThan(order.deck)
+    expect(order.run).toBeLessThan(order.deck)
+  })
+
+  test('§2/A3 accordion: one group open at a time; it survives a decision click', async ({ page }) => {
+    test.setTimeout(90_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    const openCount = () => mission.locator('#deck .kg:not(.collapsed)').count()
+    // On phone the deck is an accordion: exactly one group open at load.
+    expect(await openCount()).toBe(1)
+    await expect(mission.locator('#deck #kg-id')).not.toHaveClass(/collapsed/)
+    // A decision click inside the open group leaves it open (openGroup survives
+    // the paintDeck rebuild) -- and still exactly one group open.
+    await frameClick(mission, '#deck button[data-k="id"][data-v="key"]')
+    await mission.waitForTimeout(120)
+    expect(await openCount()).toBe(1)
+    await expect(mission.locator('#deck #kg-id')).not.toHaveClass(/collapsed/)
+    // Opening another group via its header closes the previous (one at a time).
+    await frameClick(mission, '#deck #kg-mem .kgl')
+    await mission.waitForTimeout(120)
+    expect(await openCount()).toBe(1)
+    await expect(mission.locator('#deck #kg-mem')).not.toHaveClass(/collapsed/)
+    await expect(mission.locator('#deck #kg-id')).toHaveClass(/collapsed/)
+  })
 })
 
 test.describe('desktop (§1): the sticky working column keeps the stage in view', () => {
