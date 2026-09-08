@@ -66,6 +66,12 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     debrief) and the deck groups become a one-open-at-a-time accordion
 //     (openGroup engine state, A3); the control row is not sticky, meters wrap
 //     to a full-width 3-col line (F11).
+//   §3 (F9): transient stage labels ("crash", "dropped", "reply lost", "seen
+//     it ✓", "never seen", the reply verdict) route through placeLabel(zone) ->
+//     a band slot (GH.bands / GV.bands), never a node rect; GV viewBox grows to
+//     0 0 360 552 for the bank band. The in-box memory status (#memrow, e.g.
+//     "K-4 ✓", "params DIFFER ⚠") stays inside the box -- it is the box's own
+//     content row, not a floating collision (noted in the PR).
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -463,14 +469,22 @@ function bootEngine() {
  client:{x:22,y:104,w:132,h:64}, server:{x:262,y:104,w:130,h:64}, bank:{x:472,y:64,w:150,h:136},
  wireY:132, idDot:{cx:176,cy:132}, repNote:{x:170,y:88},
  memNone:{x:272,y:214,w:110,h:34}, memStore:{x:396,y:214,w:118,h:34}, memAcid:{x:262,y:168,w:130,h:30},
- replica:{x:272,y:272,w:110,h:30}, clock:{cx:222,cy:236}
+ replica:{x:272,y:272,w:110,h:30}, clock:{cx:222,cy:236},
+ /* §3 (F9): transient labels never render inside a node rect -- each takes a
+    band slot. rows = the two y-slots (1st/2nd label of an event); xslots snap
+    to the nearest zone (client/server/bank on top, memory/store on bottom).
+    clock at (222,236) stays clear: bottom xslots start >= 260. */
+ bands: { top:{rows:[24,46],xslots:[88,327,547]}, bottom:{rows:[312,330],xslots:[327,470]} }
  };
  /* vertical G-map for phones: client -> server -> bank flows top-to-bottom */
  var GV = {
  client:{x:90,y:12,w:180,h:56}, server:{x:90,y:200,w:180,h:56}, bank:{x:76,y:396,w:208,h:114},
  wireX:180, wireY:0, idDot:{cx:180,cy:120}, repNote:{x:180,y:184},
  memNone:{x:196,y:296,w:112,h:32}, memStore:{x:196,y:296,w:120,h:34}, memAcid:{x:90,y:260,w:180,h:30},
- replica:{x:52,y:344,w:110,h:30}, clock:{cx:40,cy:250}
+ replica:{x:52,y:344,w:110,h:30}, clock:{cx:40,cy:250},
+ /* §3 (F9): wire dodges idDot cy=120; memory sits between replica-end 374 and
+    bank-top 396; bank needs the taller viewBox (0 0 360 552). */
+ bands: { wire:{rows:[96,148],xslots:[180]}, memory:{rows:[382],xslots:[180]}, bank:{rows:[528,546],xslots:[180]} }
  };
  var VERT = false, G = GH;
  var stage = $('#bstage'), layerStatic, layerAnim;
@@ -615,11 +629,29 @@ function bootEngine() {
  var g=el('g',{},layerAnim);
  el('line',{x1:x-7,y1:y-7,x2:x+7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
  el('line',{x1:x+7,y1:y-7,x2:x-7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
- if(label) el('text',{x:x,y:y-14,'text-anchor':'middle','font-size':'9',fill:'#ef4444'},g,label);
+ if(label){ var p=placeLabel('wire', x); el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:'#ef4444'},g,label); } /* §3: label in the wire band, never over a box (the X stays on the wire) */
  setTimeout(function(){ g.style.transition='opacity 1s'; g.style.opacity=0; }, Math.max(800, 1400/speed));
  return sleep(500);
  }
  function say(tag, html){ $('#narr').innerHTML = '<span class="tag">'+tag+'</span> · '+html; }
+ /* §3 (F9): every transient stage label goes through here -- it never lands in
+    a node rect. kind is the logical zone ('wire'|'memory'|'bank'); it maps to
+    the current map's band (GH: wire->top, memory/bank->bottom; GV: same names).
+    The nth label of the current event in a zone takes the nth row (1st/2nd);
+    x snaps to the nearest zone x-slot. Reset per event by resetLabelSlots(). */
+ var labelSlots = {};
+ function resetLabelSlots(){ labelSlots = {}; }
+ function placeLabel(kind, naturalX){
+  var bands = G.bands || {};
+  var zone = VERT ? kind : (kind === 'wire' ? 'top' : 'bottom');
+  var b = bands[zone];
+  if (!b){ return { x:naturalX, y:24, anchor:'middle' }; }
+  var n = labelSlots[zone] || 0; labelSlots[zone] = n + 1;
+  var y = b.rows[Math.min(n, b.rows.length - 1)];
+  var xs = b.xslots, x = xs[0], best = Infinity;
+  for (var i=0;i<xs.length;i++){ var dd = Math.abs(xs[i]-naturalX); if (dd<best){ best=dd; x=xs[i]; } }
+  return { x:x, y:y, anchor:'middle' };
+ }
  function flashServer(color){
  var b=$('#serverbox'); b.setAttribute('stroke',color); b.classList.add('bpulse');
  return sleep(700).then(function(){ b.classList.remove('bpulse'); b.setAttribute('stroke','#1F2333'); });
@@ -628,14 +660,15 @@ function bootEngine() {
  var m2 = fromReplica? G.replica : memRect();
  var yTop = fromReplica? m2.y : (K.mem==='acid'? m2.y+m2.h : m2.y);
  var line = el('line',{x1:G.server.x+34,y1:G.server.y+G.server.h,x2:m2.x+m2.w/2,y2:yTop,stroke: found?'#22c55e':'#ef4444','stroke-width':2,'stroke-dasharray':'4 3'},layerAnim);
- var lbl = el('text',{x:m2.x+m2.w/2+6,y:yTop-5,'font-size':'9',fill:found?'#22c55e':'#ef4444','text-anchor':'start'},layerAnim, found?'seen it \u2713':'never seen');
+ var p = placeLabel('memory', m2.x+m2.w/2); /* \u00a73: memory band, not beside the box */
+ var lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:found?'#22c55e':'#ef4444'},layerAnim, found?'seen it \u2713':'never seen');
  setTimeout(function(){ line.remove(); lbl.remove(); }, 1600/speed);
  return sleep(650);
  }
 
  var CX,SX,SXR,BX,Y;
  function refreshXY(){ CX=G.client.x+G.client.w; SX=G.server.x; SXR=G.server.x+G.server.w; BX=G.bank.x; Y=G.wireY; }
- function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 520' : '0 0 640 336'); }
+ function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 552' : '0 0 640 336'); } /* §3: GV grows 520->552 for the bank band */
  pickG();
  window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
  function reqA(){ return VERT ? {x:GV.wireX, y:G.client.y+G.client.h+10} : {x:CX+14, y:Y}; }
@@ -660,16 +693,16 @@ function bootEngine() {
  d.remove(); return e;
  }
  async function replyBack(kind, txt){
- var r, lbl;
+ var r, lbl, fill = kind==='err'?'#ef4444':'#22c55e';
  if (VERT){
   r = dot(GV.wireX-18, G.server.y-4, kind==='err'?'err':'reply');
   await move(r, GV.wireX-18, G.client.y+G.client.h+16, 480);
-  lbl = el('text',{x:GV.wireX-24,y:G.client.y+G.client.h+32,'font-size':'9',fill: kind==='err'?'#ef4444':'#22c55e','text-anchor':'end'},layerAnim, txt);
  } else {
   r = dot(SX-4, Y-14, kind==='err'?'err':'reply');
   await move(r, CX+16, Y-14, 480);
-  lbl = el('text',{x:CX+22,y:Y-24,'font-size':'9',fill: kind==='err'?'#ef4444':'#22c55e','text-anchor':'start'},layerAnim, txt);
  }
+ var p = placeLabel('wire', VERT ? GV.wireX : CX); /* §3: reply verdict in the wire band, not on the wire */
+ lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:fill},layerAnim, txt);
  setTimeout(function(){ r.remove(); lbl.remove(); }, 1700/speed);
  await sleep(450);
  }
@@ -860,6 +893,7 @@ function bootEngine() {
 
  async function playEvent(i){
  curEv = i;
+ resetLabelSlots(); /* §3: band slots are per-event */
  var t = dayDamage.ev[i].t;
  var chip = $('.evchip[data-i="'+i+'"]'); chip.classList.add('now');
  var res = await EVENTS[i](t);
@@ -1159,7 +1193,7 @@ function bootEngine() {
       if (!FREE && ($$('#lvls .lvl')[i].classList.contains('locked2') || lvlDone[i])) return;
       if (FREE && escMode>=0 && escMode!==i) escAbandon();
    running=true; lock(true);
-   escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); await LEVELS[i].attack();
+   escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); resetLabelSlots(); await LEVELS[i].attack();
    markAttackRun(); /* B2-4: an attack has run - the meters now read "today + attacks" */
    lock(false); running=false;
    escEnter(i);
@@ -1168,7 +1202,7 @@ function bootEngine() {
    var i=+b.dataset.lvl;
    if (running || escMode!==i) return;
    running=true; lock(true);
-   curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{});
+   curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{}); resetLabelSlots();
    var res = await LEVELS[i].rerun();
    markAttackRun(); /* B2-4: a re-run is an attack running - keep the note on */
    lock(false); running=false;

@@ -582,3 +582,51 @@ test.describe('desktop (§1): the sticky working column keeps the stage in view'
     })
   })
 })
+
+test.describe('§3 (F9): transient stage labels stay in their bands, never on a node', () => {
+  for (const geom of [
+    { name: 'GH desktop', width: 1200, height: 900 },
+    { name: 'GV phone', width: 390, height: 780 },
+  ]) {
+    test(`${geom.name}: no band label's centre lands inside a node rect`, async ({ page }) => {
+      test.setTimeout(150_000)
+      await page.setViewportSize({ width: geom.width, height: geom.height })
+      await page.goto(PAGE)
+      const mission = await waitForMission(page)
+      // Record every transient band label (font-size 10, in the anim layer) as
+      // it is inserted, flagging any whose bbox centre falls inside a node rect.
+      // Both bboxes are in the SVG's user units, so they compare directly.
+      await mission.evaluate(() => {
+        const w = window as unknown as { __hits: unknown[] }
+        w.__hits = []
+        const stage = document.getElementById('bstage')!
+        const inside = (cx: number, cy: number, r: { x: number; y: number; width: number; height: number }) =>
+          cx >= r.x && cx <= r.x + r.width && cy >= r.y && cy <= r.y + r.height
+        const record = (t: Element) => {
+          const bb = (t as unknown as SVGGraphicsElement).getBBox()
+          const cx = bb.x + bb.width / 2
+          const cy = bb.y + bb.height / 2
+          const boxes = Array.from(stage.querySelectorAll('rect.nodebox')).map((r) =>
+            (r as unknown as SVGGraphicsElement).getBBox(),
+          )
+          for (const r of boxes) if (inside(cx, cy, r)) w.__hits.push({ text: t.textContent, cx, cy })
+        }
+        const scan = (n: Node) => {
+          if (n.nodeType !== 1) return
+          const e = n as Element
+          if (e.tagName === 'text' && e.getAttribute('font-size') === '10') record(e)
+          e.querySelectorAll?.('text[font-size="10"]').forEach(record)
+        }
+        new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach(scan))).observe(stage, {
+          childList: true,
+          subtree: true,
+        })
+      })
+      // A memory-bearing design exercises both the wire band (crash / dropped /
+      // reply lost / reply verdict) and the memory band (seen it / never seen).
+      await surviveDay(mission, page)
+      const hits = await mission.evaluate(() => (window as unknown as { __hits: unknown[] }).__hits)
+      expect(hits, `labels landed on a node rect: ${JSON.stringify(hits)}`).toEqual([])
+    })
+  }
+})
