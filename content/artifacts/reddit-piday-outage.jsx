@@ -18,7 +18,7 @@ export function act(w, a) {
   }
   if (a === "investigate" && n.stage === "joinfail") { n.stage = "joined"; n.certsFixed = true; n.clock += 15; return n; }
   if (a === "beginreadmit" && n.stage === "joined") { n.stage = "readmit"; n.pct = 0; return n; }
-  if (n.stage === "readmit" && a === "jump") { n.herds += 1; n.pct = 0; n.clock += 15; return n; } // cold caches punish the firehose
+  if (n.stage === "readmit" && a === "jump") { n.herds += 1; n.pct = 0; n.clock += 15; return n; } // cold caches punish a jump to full traffic
   if (n.stage === "readmit" && a === "step") {
     const i = RAMP.indexOf(n.pct); n.pct = RAMP[Math.min(RAMP.length - 1, i + 1)] ?? RAMP[0];
     if (n.pct === 0 || i === -1) n.pct = RAMP[0];
@@ -41,29 +41,29 @@ export default function PiDay() {
 
   const verdict = (() => {
     switch (w.stage) {
-      case "pre": return { c: AMBER, code: "A ROUTINE TUESDAY", t: "The cluster running Old Reddit — the most critical legacy node in the dependency graph, a hand-reared kubeadm pet — is queued for its 1.23 → 1.24 upgrade. The process is careful: tested on dedicated clusters, rolled lowest criticality to highest. The team just closed the postmortem for the last upgrade of this same cluster. Kick it off." };
+      case "pre": return { c: AMBER, code: "A ROUTINE TUESDAY", t: "The cluster running Old Reddit, the company's most critical legacy system, a hand-built one-off, is queued for its 1.23 → 1.24 upgrade. The process is careful: tested on dedicated clusters, rolled lowest criticality to highest. The team just closed the postmortem for the last upgrade of this same cluster. Kick it off." };
       case "chaos": {
-        if (w.tried.opa) return { c: RED, code: "THE TIMEOUTS VANISH. THE CLUSTER STAYS DEAD.", t: `Deleting OPA's webhook configurations killed the API-server write timeouts instantly — a real finding — and recovered nothing. ${clockStr(w.clock)}. ${triedAll ? "Fix-forward is out of ideas. The only path left is the one everyone fears." : "Other attempts remain, or pull the ripcord."}` };
-        if (w.tried.cp) return { c: RED, code: "OFF AND ON AGAIN — NOTHING", t: `The full control-plane restart, the classic, changed nothing. Pods still crawl, images still take minutes, DNS still splits (Consul and in-cluster dead, public fine). ${clockStr(w.clock)}.` };
-        if (w.tried.typha) return { c: RED, code: "THE PODS NEVER CAME BACK", t: `You deleted calico-typha's pods — the caching proxy between Calico and the control plane — and waited. No new pods. Minutes pass. Nothing schedules cleanly on this cluster anymore. ${clockStr(w.clock)}.` };
-        if (w.tried.pod) return { c: RED, code: "NOT THE BUG YOU KNOW", t: `calico-kube-controllers is stuck in ContainerCreating — which looks exactly like the known low-severity CRI-O restart bug. Delete the pod, it recreates, move on. Except this time it doesn't. ${clockStr(w.clock)}.` };
-        return { c: RED, code: "FLYING BLIND AT T+2", t: "Two minutes after the upgrade started, the site halted — and every metric from this cluster is NO DATA, because the metrics are Kubernetes-native and died with it. The CDN edge (intentionally separate) shows requests cratering. The one clue: Consul and in-cluster DNS won't resolve; public DNS is fine. Rollback is Plan A — but Kubernetes has no downgrade path. Fix forward, or restore from a backup nobody has ever run against production." };
+        if (w.tried.opa) return { c: RED, code: "THE TIMEOUTS VANISH. THE CLUSTER STAYS DEAD.", t: `Deleting the admission-check configs (OPA, the policy step that approves each change) killed the API-server write timeouts instantly, a real finding, and recovered nothing. ${clockStr(w.clock)}. ${triedAll ? "Fix-forward is out of ideas. The only path left is the one everyone fears." : "Other attempts remain, or fall back to the restore."}` };
+        if (w.tried.cp) return { c: RED, code: "OFF AND ON AGAIN, NOTHING", t: `The full control-plane restart, the classic, changed nothing. Pods still crawl, images still take minutes, DNS still splits (Consul and in-cluster dead, public fine). ${clockStr(w.clock)}.` };
+        if (w.tried.typha) return { c: RED, code: "THE PODS NEVER CAME BACK", t: `You deleted calico-typha's pods, the caching proxy between Calico and the control plane, and waited. No new pods. Minutes pass. Nothing schedules cleanly on this cluster anymore. ${clockStr(w.clock)}.` };
+        if (w.tried.pod) return { c: RED, code: "NOT THE BUG YOU KNOW", t: `calico-kube-controllers is stuck in ContainerCreating, which looks exactly like the known low-severity container-runtime restart bug. Delete the pod, it recreates, move on. Except this time it doesn't. ${clockStr(w.clock)}.` };
+        return { c: RED, code: "FLYING BLIND AT T+2", t: "Two minutes after the upgrade started, the site halted, and every metric from this cluster is NO DATA, because the metrics are Kubernetes-native and died with it. The CDN edge (intentionally separate) shows requests cratering. The one clue: Consul and in-cluster DNS won't resolve; public DNS is fine. Rollback is Plan A, but Kubernetes has no downgrade path. Fix forward, or restore from a backup nobody has ever run against production." };
       }
-      case "choice": return { c: AMBER, code: "THE RIPCORD", t: `Workers terminated — twenty minutes of API calls on the largest cluster, ${clockStr(w.clock)}. Now the restore, from a runbook written for an end-of-life Kubernetes and the Docker era, rewritten live as you go. It says: restore to node 1, the procedure's baseline. The backup, though, was written to run from ANY control-plane node. Where do you restore?` };
-      case "joinfail": return { c: RED, code: "STUCK JOINING, NO ERROR", t: `The restore to node 1 worked — the autoscaler even sprang to life (networking is back; you shut it off to regain control), and AWS briefly ran out of your control-plane instance type. But the two new control-plane nodes will not join: stuck, silent, unable to reach etcd — the cluster's consensus store — on the restored node. A breakout group forks off. INVESTIGATE.` };
-      case "joined": return { c: w.certsFixed ? VIOLET : GREEN, code: w.certsFixed ? "THE BACKUP'S HIDDEN ASSUMPTION" : "THE HINDSIGHT PATH", t: w.certsFixed ? `Found in minutes: the backup runs on any node, the restore only works on the SAME node — and it wasn't. The restored node's TLS certificates carry the wrong hostname, so nothing will speak to it. Certificates regenerated with some fumbling and no documentation. High-availability control plane restored, ${clockStr(w.clock)}. Now bring Reddit back.` : `Restoring on the node the backup was taken from — the requirement the runbook never wrote down — the joins work first try. In the real incident, the procedure said node 1, and the mismatch surfaced as silent TLS failures. Control plane whole, ${clockStr(w.clock)}. Now bring Reddit back.` };
-      case "readmit": return { c: w.herds > 0 && w.pct === 0 ? RED : AMBER, code: w.herds > 0 && w.pct === 0 ? "A THUNDERING HERD OF YOUR OWN MAKING" : `READMITTING — ${w.pct}%`, t: w.herds > 0 && w.pct === 0 ? "You opened the firehose at a cold system: caches empty, downstream services idled and scaled down during the outage. The herd washed them out; back to zero. Reddit's caches are load-bearing — full traffic is only servable when they're warm. Walk it: 1, 5, 10, 20, 35, 55, 80, 100." : `Traffic at ${w.pct}%. Idle services waking, caches warming, touchy legacy services hand-gated back in. Keep stepping — or try the firehose and see why they didn't.` };
-      case "restored": return { c: GREEN, code: "SITE RESTORED — CAUSE UNKNOWN", t: `${clockStr(w.clock)}. The walk home: 1 → 5 → 10 → 20 → 35 → 55 → 80 → 100. The outage is over — 314 minutes in the real timeline — and nobody yet knows why it happened. The metrics died with the cluster. The logs survived, because they're low-level and deliberately not Kubernetes-native. 3.9 billion lines of them. Start digging.` };
+      case "choice": return { c: AMBER, code: "THE FALLBACK", t: `Workers terminated, twenty minutes of API calls on the largest cluster, ${clockStr(w.clock)}. Now the restore, from a runbook written for a long-dead Kubernetes and older container software, rewritten live as you go. It says: restore to node 1, the procedure's baseline. The backup, though, was written to run from ANY control-plane node. Where do you restore?` };
+      case "joinfail": return { c: RED, code: "STUCK JOINING, NO ERROR", t: `The restore to node 1 worked, the autoscaler even sprang to life (networking is back; you shut it off to regain control), and AWS briefly ran out of your control-plane instance type. But the two new control-plane nodes will not join: stuck, silent, unable to reach etcd, the cluster's consensus store, on the restored node. A breakout group forks off. INVESTIGATE.` };
+      case "joined": return { c: w.certsFixed ? VIOLET : GREEN, code: w.certsFixed ? "THE BACKUP'S HIDDEN ASSUMPTION" : "THE HINDSIGHT PATH", t: w.certsFixed ? `Found in minutes: the backup runs on any node, the restore only works on the SAME node, and it wasn't. The restored node's TLS certificates carry the wrong hostname, so nothing will speak to it. Certificates regenerated with some fumbling and no documentation. High-availability control plane restored, ${clockStr(w.clock)}. Now bring Reddit back.` : `Restoring on the node the backup was taken from, the requirement the runbook never wrote down, the joins work first try. In the real incident, the procedure said node 1, and the mismatch surfaced as silent TLS failures. Control plane whole, ${clockStr(w.clock)}. Now bring Reddit back.` };
+      case "readmit": return { c: w.herds > 0 && w.pct === 0 ? RED : AMBER, code: w.herds > 0 && w.pct === 0 ? "A THUNDERING HERD OF YOUR OWN MAKING" : `READMITTING, ${w.pct}%`, t: w.herds > 0 && w.pct === 0 ? "You jumped straight to full traffic at a cold system: caches empty, downstream services idled and scaled down during the outage. The herd washed them out; back to zero. Reddit's caches carry real load, full traffic is only servable once they're warm. Walk it: 1, 5, 10, 20, 35, 55, 80, 100." : `Traffic at ${w.pct}%. Idle services waking, caches warming, touchy legacy services hand-gated back in. Keep stepping, or try jumping straight to full traffic and see why they didn't.` };
+      case "restored": return { c: GREEN, code: "SITE RESTORED, CAUSE UNKNOWN", t: `${clockStr(w.clock)}. The walk home: 1 → 5 → 10 → 20 → 35 → 55 → 80 → 100. The outage is over, 314 minutes in the real timeline, and nobody yet knows why it happened. The metrics died with the cluster. The logs survived, because they're low-level and deliberately not Kubernetes-native. 3.9 billion lines of them. Start digging.` };
       case "logs": {
         const clues = [
-          { code: "CLUE 1 — 19:04:49", t: "The API server's log volume explodes 5x at that instant. The only hint inside: the OPA webhook timeouts you already found mid-incident. Next clue." },
-          { code: "CLUE 2 — FIVE SECONDS BEFORE", t: "OPA's own logs stop entirely, five seconds before the API server starts screaming. A dead end — OPA was a casualty, not a cause. Next clue." },
-          { code: "CLUE 3 — TWO SECONDS BEFORE", t: "Calico's logs: calico-node across the cluster drops routes to the first upgraded control-plane node — expected, it went offline for the upgrade. Then ALL routes for ALL nodes drop. That's when it clicks. See what the route reflectors were selecting." },
+          { code: "CLUE 1, 19:04:49", t: "The API server's log volume explodes 5x at that instant. The only hint inside: the OPA webhook timeouts you already found mid-incident. Next clue." },
+          { code: "CLUE 2, FIVE SECONDS BEFORE", t: "OPA's own logs stop entirely, five seconds before the API server starts screaming. A dead end, OPA was a casualty, not a cause. Next clue." },
+          { code: "CLUE 3, TWO SECONDS BEFORE", t: "Calico's logs: calico-node across the cluster drops routes to the first upgraded control-plane node, expected, it went offline for the upgrade. Then ALL routes for ALL nodes drop. That's when it clicks. See what the route reflectors were selecting." },
         ];
         const c = clues[Math.min(w.logsStep, 2)];
         return { c: VIOLET, code: c.code, t: c.t };
       }
-      case "reveal": return { c: RED, code: "COMMITTED NOWHERE", t: "The route reflectors — the few nodes that relay routes so hundreds needn't all peer with each other — selected nodes by the label node-role.kubernetes.io/master. Kubernetes renamed 'master' to 'control-plane' in 1.20 and removed the old label from running clusters in 1.24. The selectors matched nothing; the mesh lost its relays; networking ceased — two seconds into the upgrade. And nothing could have flagged it, because the configuration was hand-edited through Calico's CLI years ago by a team that no longer exists, and committed NOWHERE: no repository, no record, no breadcrumbs. One engineer happened to remember the feature existed — during the postmortem. The post's verdict: that label is the proximate cause; the actual cause is Inconsistency — and the cure is to standardize, and codify everything." };
+      case "reveal": return { c: RED, code: "COMMITTED NOWHERE", t: "The route reflectors, the few nodes that relay routes so hundreds needn't all peer with each other, selected nodes by the label node-role.kubernetes.io/master. Kubernetes renamed 'master' to 'control-plane' in 1.20 and removed the old label from running clusters in 1.24. The selectors matched nothing; the mesh lost its relays; networking stopped, two seconds into the upgrade. And nothing could have flagged it, because the configuration was hand-edited through Calico's CLI years ago by a team that no longer exists, and committed NOWHERE: no repository, no record, nothing written down anywhere. One engineer happened to remember the feature existed, during the postmortem. The postmortem's verdict: that label is the proximate cause; the actual cause is Inconsistency, and the cure is to standardize, and codify everything." };
       default: return { c: AMBER, code: "", t: "" };
     }
   })();
@@ -73,7 +73,7 @@ export default function PiDay() {
     root: { background: "#08090D", color: "#c8cdd8", fontFamily: mono, maxWidth: 960, margin: "0 auto", padding: 20, borderRadius: 12, border: "1px solid #2a2a3a", fontSize: 12, lineHeight: 1.5 },
     panel: { background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: 12 },
     label: { color: "#6b7080", fontSize: 10, letterSpacing: 1.2 },
-    btn: (dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.35 : 1, border: `1px solid ${col || "#2a2a3a"}`, color: "#c8cdd8", background: "#0c0d13", fontFamily: mono, fontSize: 11 }),
+    btn: (dis, col) => ({ display: "block", width: "100%", textAlign: "left", padding: "7px 9px", marginTop: 6, borderRadius: 6, cursor: dis ? "not-allowed" : "pointer", opacity: dis ? 0.35 : 1, border: `1px solid ${col || "#4a4f60"}`, color: "#c8cdd8", background: "#0c0d13", fontFamily: mono, fontSize: 11 }),
     metric: (dead) => ({ flex: "1 1 100px", background: "#0c0d13", border: `1px solid ${dead ? RED : "#2a2f45"}`, borderRadius: 6, padding: 8, textAlign: "center", color: dead ? RED : GREEN, fontSize: 10, fontWeight: 700 }),
   };
   const inChaos = w.stage === "chaos";
@@ -81,9 +81,9 @@ export default function PiDay() {
 
   return (
     <div style={S.root}>
-      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>REDDIT · YOU BROKE REDDIT: THE PI-DAY OUTAGE — INTERACTIVE</div>
+      <div style={{ color: ACCENT, fontSize: 10, letterSpacing: 2 }}>REDDIT · YOU BROKE REDDIT: THE PI-DAY OUTAGE, INTERACTIVE</div>
       <div style={{ color: "#edeff3", fontSize: 16, margin: "4px 0 2px", fontWeight: 700 }}>Committed nowhere</div>
-      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>You're in the incident commander's seat, {clockStr(w.clock)} on the clock. The cause is invisible — it was never written down anywhere you can look.</p>
+      <p style={{ color: "#8b90a0", fontSize: 11, margin: 0 }}>You're in the incident commander's seat, {clockStr(w.clock)} on the clock. The cause is invisible, it was never written down anywhere you can look.</p>
       <ContextBlock />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12 }}>
@@ -91,11 +91,11 @@ export default function PiDay() {
           <div style={S.label}>ACTIONS · {clockStr(w.clock)}</div>
           {w.stage === "pre" && <button style={S.btn(false, ACCENT)} onClick={go("upgrade")}>START THE 1.23 → 1.24 UPGRADE</button>}
           {inChaos && <>
-            <button style={S.btn(w.tried.pod)} disabled={w.tried.pod} onClick={go("pod")}>DELETE THE STUCK CALICO POD<div style={{ color: "#6b7080", fontSize: 10 }}>looks like the known CRI-O bug (+30 min)</div></button>
+            <button style={S.btn(w.tried.pod)} disabled={w.tried.pod} onClick={go("pod")}>DELETE THE STUCK CALICO POD<div style={{ color: "#6b7080", fontSize: 10 }}>looks like the known container-runtime bug (+30 min)</div></button>
             <button style={S.btn(w.tried.typha)} disabled={w.tried.typha} onClick={go("typha")}>RESTART CALICO-TYPHA (+30 min)</button>
             <button style={S.btn(w.tried.cp)} disabled={w.tried.cp} onClick={go("cp")}>FULL CONTROL-PLANE RESTART (+30 min)</button>
-            <button style={S.btn(w.tried.opa)} disabled={w.tried.opa} onClick={go("opa")}>DELETE OPA'S ADMISSION WEBHOOKS (+30 min)</button>
-            <button style={S.btn(false, RED)} onClick={go("restore")}>PULL THE RIPCORD: RESTORE FROM BACKUP<div style={{ color: "#6b7080", fontSize: 10 }}>terminate all workers first (+20 min)</div></button>
+            <button style={S.btn(w.tried.opa)} disabled={w.tried.opa} onClick={go("opa")}>DELETE THE ADMISSION-CHECK CONFIGS (+30 min)<div style={{ color: "#6b7080", fontSize: 10 }}>the policy step (OPA) that approves each change</div></button>
+            <button style={S.btn(false, RED)} onClick={go("restore")}>FALL BACK: RESTORE FROM BACKUP<div style={{ color: "#6b7080", fontSize: 10 }}>terminate all workers first (+20 min)</div></button>
           </>}
           {w.stage === "choice" && <>
             <button style={S.btn(false, AMBER)} onClick={go("node1")}>FOLLOW THE RUNBOOK: RESTORE TO NODE 1</button>
@@ -105,7 +105,7 @@ export default function PiDay() {
           {w.stage === "joined" && <button style={S.btn(false, GREEN)} onClick={go("beginreadmit")}>BEGIN BRINGING TRAFFIC BACK</button>}
           {w.stage === "readmit" && <>
             <button style={S.btn(false, GREEN)} onClick={go("step")}>NEXT STEP ({w.pct === 0 ? "→ 1%" : `${w.pct}% → ${RAMP[Math.min(RAMP.length - 1, RAMP.indexOf(w.pct) + 1)]}%`})</button>
-            <button style={S.btn(false, RED)} onClick={go("jump")}>OPEN THE FIREHOSE: JUMP TO 100%</button>
+            <button style={S.btn(false, RED)} onClick={go("jump")}>JUMP STRAIGHT TO 100%</button>
           </>}
           {w.stage === "restored" && <button style={S.btn(false, VIOLET)} onClick={go("logs")}>DIG INTO 3.9 BILLION LOG LINES</button>}
           {w.stage === "logs" && <button style={S.btn(false, VIOLET)} onClick={go("nextclue")}>NEXT CLUE</button>}
@@ -116,6 +116,10 @@ export default function PiDay() {
           <div style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${verdict.c}`, background: `${verdict.c}14`, marginBottom: 12 }}>
             <div style={{ color: verdict.c, fontWeight: 700 }}>{verdict.code}</div>
             <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.6 }}>{verdict.t}</div>
+          </div>
+          <div style={{ ...S.panel, marginBottom: 12 }}>
+            <div style={S.label}>CLUSTER ROUTING · LIVE</div>
+            <ClusterView w={w} />
           </div>
           <div style={S.panel}>
             <div style={S.label}>WHAT YOU CAN SEE</div>
@@ -136,10 +140,42 @@ export default function PiDay() {
       </div>
 
       <div style={{ color: "#6b7080", fontSize: 10, marginTop: 12, borderTop: "1px solid #2a2a3a", paddingTop: 8, lineHeight: 1.7 }}>
-        The two-minutes-to-chaos timeline, dead Kubernetes-native metrics with surviving low-level logs and separated CDN stats, the split-DNS clue (Consul and in-cluster dead, public fine), the fix-forward sequence (the CRI-O lookalike pod deletion, typha pods never recreating, the futile full control-plane restart, the OPA webhook deletion that killed the timeouts and saved nothing), Kubernetes' absent downgrade path, the twenty-minute worker termination, the Docker-era runbook rewritten live, the any-node-backup/same-node-restore asymmetry surfacing as silent TLS join failures, the AWS control-plane capacity exhaustion, the 1-5-10-20-35-55-80-100 readmission walk with thundering-herd caution and hand-gated legacy services, the 3.9-billion-line log dig (the 5x API-server explosion at 19:04:49, OPA's five-seconds-prior silence, Calico's two-seconds-prior all-routes drop), the route-reflector configuration selecting node-role.kubernetes.io/master, Kubernetes 1.24's removal of that label from running clusters, the committed-nowhere finding with its departed authors, and the proximate-vs-actual (Inconsistency) verdict with the standardize-and-codify remediation program are all from Reddit's r/RedditEng Pi-Day postmortem. The 30-minute attempt costs and the single-choice restore branch are an illustrative compression of a response that ran many threads in parallel.
+        The two-minutes-to-chaos timeline, dead Kubernetes-native metrics with surviving low-level logs and separated CDN stats, the split-DNS clue (Consul and in-cluster dead, public fine), the fix-forward sequence (the container-runtime lookalike pod deletion, typha pods never recreating, the futile full control-plane restart, the OPA webhook deletion that killed the timeouts and saved nothing), Kubernetes' absent downgrade path, the twenty-minute worker termination, the outdated runbook rewritten live, the any-node-backup/same-node-restore asymmetry surfacing as silent TLS join failures, the AWS control-plane capacity exhaustion, the 1-5-10-20-35-55-80-100 readmission walk with thundering-herd caution and hand-gated legacy services, the 3.9-billion-line log dig (the 5x API-server explosion at 19:04:49, OPA's five-seconds-prior silence, Calico's two-seconds-prior all-routes drop), the route-reflector configuration selecting node-role.kubernetes.io/master, Kubernetes 1.24's removal of that label from running clusters, the committed-nowhere finding with its departed authors, and the proximate-vs-actual (Inconsistency) verdict with the standardize-and-codify remediation program are all from Reddit's r/RedditEng Pi-Day postmortem. The 30-minute attempt costs and the single-choice restore branch are an illustrative compression of a response that ran many threads in parallel.
         {" "}<a href="https://behindscale.com/articles/reddit-piday-outage" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT, textDecoration: "none" }}>From the full dissection at behindscale.com →</a>
       </div>
     </div>
+  );
+}
+
+function ClusterView({ w }) {
+  const RED = "#ef4444", GREEN = "#22c55e", AMBER = "#eab308", VIOLET = "#9b8cf0", MUTE = "#6b7080";
+  const pre = w.stage === "pre";
+  const down = ["chaos", "choice", "joinfail"].includes(w.stage);
+  const up = pre || ["joined", "readmit", "restored", "logs", "reveal"].includes(w.stage);
+  const pct = w.stage === "readmit" ? w.pct : (["restored", "logs", "reveal"].includes(w.stage) ? 100 : (pre ? 100 : 0));
+  const nodeC = up ? GREEN : RED;
+  const cols = [70, 160, 250], cy1 = 84, cy2 = 140;
+  return (
+    <svg viewBox="0 0 320 214" style={{ width: "100%", height: "auto", display: "block", marginTop: 8 }} fontFamily="'JetBrains Mono',monospace">
+      <rect x="8" y="6" width="304" height="30" rx="6" fill={up ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)"} stroke={up ? GREEN : RED} strokeWidth="1" />
+      <text x="16" y="19" fill="#c8cdd8" fontSize="9">selector label · node-role.kubernetes.io/master</text>
+      <text x="16" y="31" fill={up ? GREEN : RED} fontSize="9" fontWeight="700">{up ? "selects the 3 relays" : "matches 0 servers, deleted by 1.24"}</text>
+      <text x="16" y="58" fill={MUTE} fontSize="8">control-plane / route reflectors</text>
+      {up && cols.map((cx, i) => <line key={"v" + i} x1={cx} y1={cy1} x2={cx} y2={cy2} stroke={GREEN} strokeWidth="1.4" />)}
+      {up && <><line x1={70} y1={cy1} x2={160} y2={cy1} stroke={GREEN} strokeWidth="1.4" /><line x1={160} y1={cy1} x2={250} y2={cy1} stroke={GREEN} strokeWidth="1.4" /></>}
+      {down && cols.map((cx, i) => <line key={"x" + i} x1={cx} y1={cy1} x2={cx} y2={cy2} stroke={RED} strokeWidth="1" strokeDasharray="2 3" opacity="0.35" />)}
+      {cols.map((cx, i) => <g key={"c" + i}>
+        {up && <circle cx={cx} cy={cy1} r="17" fill="none" stroke={VIOLET} strokeWidth="1" strokeDasharray="2 2" />}
+        <circle cx={cx} cy={cy1} r="13" fill={up ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.12)"} stroke={nodeC} strokeWidth="1.6" />
+        <text x={cx} y={cy1 + 3} fill={nodeC} fontSize="8" textAnchor="middle" fontWeight="700">CP</text>
+      </g>)}
+      <text x="16" y="130" fill={MUTE} fontSize="8">workers</text>
+      {cols.map((cx, i) => <circle key={"w" + i} cx={cx} cy={cy2} r="11" fill={up ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.10)"} stroke={nodeC} strokeWidth="1.4" />)}
+      <text x="160" y="172" textAnchor="middle" fontSize="10" fontWeight="700" fill={up ? GREEN : RED}>{up ? "ROUTES HEALTHY" : "ALL ROUTES DROPPED"}</text>
+      <rect x="8" y="184" width="304" height="16" rx="4" fill="#0c0d13" stroke="#2a2f45" />
+      <rect x="8" y="184" width={Math.max(0, Math.min(304, 304 * pct / 100))} height="16" rx="4" fill={pct >= 100 ? GREEN : pct > 0 ? AMBER : "#2a2f45"} />
+      <text x="160" y="196" textAnchor="middle" fontSize="8.5" fill="#c8cdd8" fontWeight="700">{"SITE TRAFFIC " + pct + "%"}</text>
+    </svg>
   );
 }
 
@@ -150,12 +186,12 @@ function ContextBlock() {
   return (
     <div style={{ background: "#111118", border: "1px solid #2a2a3a", borderRadius: 8, padding: "12px 14px", marginTop: 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT — IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
+        <div style={{ fontSize: 10, color: "#6b7080", letterSpacing: 1.2 }}>CONTEXT, IF YOU ARRIVED HERE WITHOUT THE ARTICLE</div>
         <button onClick={() => setOpen(false)} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontFamily: "inherit", fontSize: 10, padding: 0 }}>HIDE ✕</button>
       </div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A routine Kubernetes upgrade took Reddit down in two minutes, for 314 minutes — because the cluster's network routing depended on configuration set up years earlier by a departed team, hand-edited through a vendor tool, saved in no repository, and keyed to a label the new Kubernetes version silently deleted. Nothing and no one could see the dependency before it fired.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Survive the day (an unrehearsed restore from backup, rewritten live, plus a walked 1%-to-100% traffic return) — then fix the real cause: standardize the bespoke clusters and codify everything, so no load-bearing state exists without a record and a breadcrumb trail for whoever comes after.</div>
-      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run the incident from the commander's seat: go blind at T+2, burn the fix-forward attempts, pull the ripcord, hit the runbook's hidden trap, open the firehose once to meet the thundering herd — then walk home in eight steps and dig the two-second clue out of 3.9 billion log lines.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 8 }}><span style={lbl}>THE PROBLEM · </span>A routine Kubernetes upgrade took Reddit down in two minutes, for 314 minutes, because the cluster's network routing depended on configuration set up years earlier by a departed team, hand-edited through a vendor tool, saved in no repository, and keyed to a label the new Kubernetes version silently deleted. Nothing and no one could see the dependency before it fired.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>THE MOVE · </span>Survive the day (an unrehearsed restore from backup, rewritten live, plus a walked 1%-to-100% traffic return), then fix the real cause: standardize the one-off clusters and document everything, so no critical state exists without a record for whoever comes after.</div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, marginTop: 6 }}><span style={lbl}>TRY · </span>Run the incident from the commander's seat: go blind at T+2, burn the fix-forward attempts, fall back to the restore, hit the runbook's hidden trap, jump to full traffic once and watch the stampede, then walk it back in eight steps and dig the two-second clue out of 3.9 billion log lines.</div>
     </div>
   );
 }

@@ -7734,6 +7734,26 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   preserved. Rendered page verified: 3 figures, three stats present,
   artifact embed, 0 literal markdown. Build (23 checks, 0 errors) + 260
   tests green.
+- 2026-09-08: **Article review round — Reddit Pi-Day Outage** (13th article
+  round). Enriched the existing `content/articles/reddit-piday-outage.json`
+  (slug/title/url/publishedAt/cruxTag/source frozen) with three figures +
+  artifact. Placed article, artifact, three figure SVGs under
+  `content/figures/reddit-piday-outage/`, and the updated article
+  `docs/CORRECTIONS.md`. Revision HTML not placed. Refs verified: patterns
+  no-uncommitted-config / rehearsed-restore / universal-staged-rollout /
+  load-bearing-cache, related roblox-return-to-service /
+  gitlab-database-decomposition, cruxTag
+  unrecorded-config-outlives-its-authors. Non-numeric stat `committed
+  nowhere` grounds (the phrase IS the finding, per board precedent).
+  RECURRING correction: **7 of 9 figure fields over the Q10 word bands**
+  (captions 61-73w vs 40, ariaLabels 32-40w vs 20, one eyebrow 8w vs 6) —
+  tightened all into band (three passes; captions kept landing at 42-50).
+  KNOWN soft warnings (left as authored): `2 minutes` (prose says "two
+  minutes"/"314 minutes") and `3.9B` (prose says "3.9 billion") not literal.
+  Branch workflow: on `round/reddit-piday-outage-enrichment` off a
+  fast-forwarded main (Slack round merged as PR #10, main at 04074cf).
+  Rendered page verified: 3 figures, three stats present, artifact embed, 0
+  literal markdown. Build (23 checks, 0 errors) + 307 tests green.
 - 2026-09-08: **Article review round — Slack Incident 2-22-22** (12th article
   round). Enriched the existing `content/articles/slack-incident-2-22-22.json`
   (slug/title/url/publishedAt/cruxTag/source frozen) with FOUR figures +

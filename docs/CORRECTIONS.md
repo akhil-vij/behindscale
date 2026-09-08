@@ -4379,3 +4379,65 @@ same plain wording.
 
 P27 frozen fields byte-identical. Deliverables: updated .json, updated .jsx, rebuilt preview .html, the
 new cache-routing-layer .svg (the three existing figures unchanged), this entry.
+
+---
+
+## reddit-piday-outage - Clarity round (owner line-edits) (2026-08-12)
+
+The day-after clarity pass on the produced Reddit article, working through the owner's line notes plus
+a request to make the artifact more visual. All bands held (summary re-trimmed to 1,046; crux 1,048;
+problem 2,609; solution 4,150); dashes stayed 0; longest sentence 40 words; frozen fields intact.
+
+**Summary.** Dropped "deepest" ("the cause"). "hand-edited through a vendor's tool" -> "manually edited
+through a third-party tool." The unclear "tied to a label a Kubernetes upgrade removed" -> "keyed to a
+label on the servers that a later Kubernetes upgrade deleted." "the thing everyone dreads" -> "everyone
+fears." The unclear "names the real culprit above the label bug: inconsistency, a fleet of one-off
+clusters" -> "points past the label bug to the real cause: a fleet of clusters each built by hand and
+all a little different." "write it all down" -> "document it." Surrounding mechanism sentences
+re-tightened to hold the band.
+
+**Crux.** "The proximate cause is precise" (the owner's fair question: how can a proximate cause be
+precise?) -> "The immediate cause is easy to state." "it lived only in Calico's own hand-managed data,
+never brought into version control" -> "it lived only inside the networking system's own settings,
+edited by hand, and was never committed to the repository." "written down nowhere anyone could check"
+-> "it was documented nowhere." "no breadcrumbs" -> "no trail."
+
+**cruxSummary.** Added "Kubernetes" per request ("the Kubernetes upgrade deleted the label it needed"),
+kept to 16 words with a semicolon.
+
+**Problem.** Removed "and Reddit is candid about the fleet it belonged to." Replaced the "'Pets, not
+cattle'" line with plain wording. Removed the trailing semicolons from the fix-forward bullets (and the
+internal one in the first). Reworded the Open Policy Agent bullet to gloss the admission checks ("the
+policy step that approves each change") and drop the "OPA webhook" jargon.
+
+**Solution.** Dropped the CRI-O and Docker-era jargon ("changed the software that runs its
+containers"). "And it hid a trap the incident walked straight into" -> "It also hid a problem the
+recovery ran straight into." The unclear "The actual cause is named as inconsistency, with nearly every
+critical cluster one-off in some way..." split into two plain sentences. The "Calico's own hand-managed
+data" phrase reworded there too.
+
+**Tradeoffs.** "procedures that are not symmetric are its sharpest edge" -> "the sharpest danger is a
+backup and a restore that do not match each other." "The modernization boundary held, and it drew the
+real blast-radius lesson" -> "The newer parts of Reddit kept working, which points to the real lesson
+about how far an outage spreads." The dense "1-to-100 walk... in the direction nobody practices"
+simplified into two sentences. "no breadcrumbs" -> "no trail."
+
+**Notes.** "remediation's central vow" -> "the main promise in Reddit's fixes." "The record's second
+job is archaeology: leaving breadcrumbs" -> "The record has a second job too: leaving a trail."
+"symmetric with the backup that feeds it" -> "consistent with how the backup was actually taken." "The
+readmission ramp exists because..." -> "Traffic was brought back gradually because..."
+
+**Artifact - metaphors, glosses, and a new visual.** "pull the ripcord" -> "fall back to the restore"
+(button, verdict, TRY; the header "THE RIPCORD" -> "THE FALLBACK"). "open the firehose" / "the firehose"
+-> "jump straight to full traffic" (button "JUMP STRAIGHT TO 100%", verdicts, TRY). "bespoke clusters"
+-> "one-off clusters." "breadcrumb trail" and "no breadcrumbs" -> plain wording. OPA is now introduced
+as "the policy step (OPA) that approves each change"; the CRI-O and Docker-era references simplified.
+And the artifact gained a live cluster-routing visual (an inline SVG that updates with the incident
+stage): it shows the selector label and whether it matches the three relay servers, the control-plane
+and worker nodes with the routes between them, a ROUTES HEALTHY / ALL ROUTES DROPPED banner, and a
+site-traffic bar. During the outage it goes red with the label "deleted by 1.24" and all routes
+dropped; during the readmission walk it turns green with relay rings and a traffic bar filling from 1%
+toward 100%. This makes both the crux mechanism and the recovery visible.
+
+P27 frozen fields byte-identical; the three article figures unchanged. Deliverables: updated .json,
+updated .jsx, rebuilt preview .html, this entry.
