@@ -180,6 +180,9 @@ const MAIN_TEXT_WITH_MARKERS = () => {
   // counterpart in the reference build; item 2 is a rewrite handled below.
   main.querySelector('#howitworks')?.remove()
   main.querySelector('#mission-outline')?.remove()
+  // B3-5 (task 10): the prev/next wall nav is new text with no counterpart in
+  // the reference build (the footer sits OUTSIDE <main>, so it's already out).
+  main.querySelector('nav[aria-label="More walls"]')?.remove()
   const frames = Array.from(main.querySelectorAll('iframe'))
   const markers: HTMLElement[] = []
   frames.forEach((f, i) => {
