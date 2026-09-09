@@ -1,9 +1,17 @@
 import { Component, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { articles, cruxtags, urlSlugByCruxTag } from '../content'
+import {
+  articles,
+  cruxtags,
+  problemEssayByCruxTag,
+  urlSlugByCruxTag,
+} from '../content'
 import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
+import { estimateMinutes } from '../lib/wallEstimate'
 import { heroWallPromise } from '../config/site'
+import PlayableBadge from '../components/PlayableBadge'
+import SideBySideBadge from '../components/SideBySideBadge'
 
 // Landing page: the conversion billboard. Structure (design-spec §3):
 //
@@ -376,6 +384,13 @@ function PreviewSection({
           const href = urlSlug
             ? `/problems/${urlSlug}`
             : `/problems#term-${g.slug}`
+          // Mission + comparison badges (F20, findability tasks 3 + 5), same
+          // components and same source fields as /problems. Rendered INSIDE the
+          // row link, so the badge is part of the card's link target.
+          const essay = problemEssayByCruxTag.get(g.slug)
+          const hasMission = essay?.mission !== undefined
+          const hasComparison = essay?.comparison !== undefined
+          const minutes = hasMission ? estimateMinutes(essay!.stations ?? []) : null
           return (
           <li key={g.slug}>
             <Link
@@ -393,6 +408,14 @@ function PreviewSection({
               <div className="mt-2 font-mono text-xs text-cat-amber">
                 SEEN AT {g.companies.join(' · ')}
               </div>
+              {(hasMission || hasComparison) && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                  {hasMission && <PlayableBadge minutes={minutes} />}
+                  {hasComparison && essay?.comparison && (
+                    <SideBySideBadge systems={essay.comparison.columns.length} />
+                  )}
+                </div>
+              )}
             </Link>
           </li>
           )

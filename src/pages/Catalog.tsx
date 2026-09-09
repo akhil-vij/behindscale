@@ -18,6 +18,7 @@ import { estimateMinutes } from '../lib/wallEstimate'
 import { matchTerms, type MatchReason } from '../lib/search'
 import { articleTerms, cruxTagTerms } from '../lib/searchTerms'
 import PlayableBadge from '../components/PlayableBadge'
+import SideBySideBadge from '../components/SideBySideBadge'
 import type { Article } from '../types'
 
 // Catalog page: the browsable workbench. Grouped primarily by
@@ -309,7 +310,7 @@ function GroupSection({ group, reasons }: GroupSectionProps) {
             SEEN AT {group.companies.join(' · ')}
           </div>
         )}
-        <PlayableRow cruxTag={group.slug} />
+        <GroupBadges cruxTag={group.slug} />
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-4">
         {group.articles.map((article) => (
@@ -322,21 +323,47 @@ function GroupSection({ group, reasons }: GroupSectionProps) {
   )
 }
 
-// A wall with a playable mission gets a Playable badge, its break-it teaser,
-// and the computed time estimate (station budgets rounded up to 5 --
-// src/lib/wallEstimate). Data-driven off the essay's `mission` block, so a
-// second wall lights up by authoring that one field. The badge stays in the
-// light shell's neutral ink: the problem-class magenta is dark-side only.
-function PlayableRow({ cruxTag }: { cruxTag: string }) {
+// A wall's list badges (F20, findability tasks 3 + 5). A playable mission gets
+// the PLAYABLE badge + estimate + break-it teaser; an authored comparison gets
+// the SIDE BY SIDE · N SYSTEMS badge (N = comparison columns). Both are
+// data-driven off the essay, so a second wall lights up by authoring those
+// blocks. The badges are wrapped in the class-page link so the badge is a live
+// target, not a dead chip beside a linked heading (the audit's task-5 fix). The
+// badges stay in the light shell's neutral ink; the class magenta is dark-side.
+function GroupBadges({ cruxTag }: { cruxTag: string }) {
   const essay = problemEssayByCruxTag.get(cruxTag)
-  if (essay?.mission === undefined) return null
-  const minutes = estimateMinutes(essay.stations ?? [])
+  if (!essay) return null
+  const hasMission = essay.mission !== undefined
+  const hasComparison = essay.comparison !== undefined
+  if (!hasMission && !hasComparison) return null
+  const minutes = hasMission ? estimateMinutes(essay.stations ?? []) : null
+  const urlSlug = urlSlugByCruxTag.get(cruxTag)
+  const badges = (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-2">
+      {hasMission && <PlayableBadge minutes={minutes} />}
+      {hasComparison && essay.comparison && (
+        <SideBySideBadge systems={essay.comparison.columns.length} />
+      )}
+    </span>
+  )
   return (
-    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <PlayableBadge minutes={minutes} />
-      <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
-        {essay.mission.teaser}
-      </span>
+    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+      {urlSlug ? (
+        <Link
+          to={`/problems/${urlSlug}`}
+          aria-label={`Open ${essay.headline ?? cruxtags[cruxTag]?.label ?? cruxTag}`}
+          className="inline-flex rounded-md no-underline hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        >
+          {badges}
+        </Link>
+      ) : (
+        badges
+      )}
+      {hasMission && essay.mission?.teaser && (
+        <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
+          {essay.mission.teaser}
+        </span>
+      )}
     </div>
   )
 }
