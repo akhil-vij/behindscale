@@ -283,6 +283,20 @@ export function checkProblemEssay(value: unknown): Result {
       return fail('`lede` expected non-empty string when present')
     }
   }
+  if (value.searchQuestion !== undefined) {
+    // SEO "questions people type" (findability task 9). An object carrying the
+    // <title> clause after "how <companies>" and the full meta description.
+    if (!isObject(value.searchQuestion)) {
+      return fail('`searchQuestion` expected object when present')
+    }
+    const { titleClause, description } = value.searchQuestion
+    if (typeof titleClause !== 'string' || titleClause.trim().length === 0) {
+      return fail('`searchQuestion.titleClause` expected non-empty string')
+    }
+    if (typeof description !== 'string' || description.trim().length === 0) {
+      return fail('`searchQuestion.description` expected non-empty string')
+    }
+  }
   if (value.howItWorks !== undefined) {
     if (!nonEmptyStringArray(value.howItWorks) || value.howItWorks.length === 0) {
       return fail('`howItWorks` expected non-empty array of non-empty strings when present')

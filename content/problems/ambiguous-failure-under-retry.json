@@ -1,6 +1,10 @@
 {
   "cruxTag": "ambiguous-failure-under-retry",
   "lede": "The request timed out, which tells you it didn't answer - not whether it actually happened.",
+  "searchQuestion": {
+    "titleClause": "prevent double payments",
+    "description": "The request timed out - did the charge happen? Five production answers to the double-payment problem: idempotency keys, where the key's memory lives, replica lag, retry windows, and what still breaks. Build your own and get attacked with their incidents."
+  },
   "howItWorks": ["Cause it", "Build it", "Survive a day", "Compare with five real systems"],
   "intro": [
     "A request that fails cleanly is easy. The problem is the request that **vanishes**: the connection drops, the server dies mid-operation, or the answer is lost on its way back. In every case the caller holds the same evidence: nothing. The one recovery action available, retrying, is exactly the action that can repeat an operation that in fact succeeded. When the operation moves money, both wrong guesses are catastrophic: retry a success and you charge twice; write off a failure that succeeded and the customer paid for nothing.",

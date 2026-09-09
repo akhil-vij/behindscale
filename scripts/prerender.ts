@@ -93,6 +93,14 @@ function truncateForMeta(s: string, max = 160): string {
   return slice.slice(0, cutAt).replace(/[.,;:—–-]+$/, '').trimEnd() + '…'
 }
 
+// Join a list as "A, B, C and D" (no Oxford comma) for prose like the SEO
+// title's company list. One item returns itself; two join with "and".
+function formatList(items: readonly string[]): string {
+  if (items.length <= 1) return items[0] ?? ''
+  if (items.length === 2) return `${items[0]} and ${items[1]}`
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+}
+
 function escapeAttr(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -306,12 +314,26 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   // term identity is the class, not the essay's hook line.
   const essay = problemEssayByCruxTag.get(group.slug)
   const pageName = essay?.headline ?? group.label
-  // Description prefers the authored lede, then an authored intro's first
-  // sentence (usually a better hook than the registry definition), then the
-  // definition (docs/problem-page-design.md §7).
-  const pageDescription = truncateForMeta(
-    essay?.lede ?? essay?.intro?.[0] ?? group.definition,
-  )
+
+  // SEO "questions people type" (task 9, F20): when the wall carries a
+  // searchQuestion AND a comparison, the <title> names the class, the companies
+  // (from the comparison columns), and the reader's phrasing; the description is
+  // the authored SEO copy, used verbatim (og:* + the JSON-LD description follow
+  // from the same strings via headTags/Meta). Walls without a searchQuestion
+  // fall back to today's derived title + description.
+  const companies = essay?.comparison?.columns ?? []
+  const sq = essay?.searchQuestion
+  const useSeoTitle = sq !== undefined && companies.length > 0
+
+  const pageTitle = useSeoTitle
+    ? `${group.label} — how ${formatList(companies)} ${sq!.titleClause} · ${SITE_NAME}`
+    : `${pageName} — ${SITE_NAME}`
+  // Description prefers the authored searchQuestion copy, then the lede, then an
+  // authored intro's first sentence (usually a better hook than the registry
+  // definition), then the definition (docs/problem-page-design.md §7).
+  const pageDescription = sq
+    ? sq.description
+    : truncateForMeta(essay?.lede ?? essay?.intro?.[0] ?? group.definition)
 
   const memberItems = group.articles.map((article, idx) => ({
     '@type': 'ListItem',
@@ -371,7 +393,7 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   }
 
   return {
-    title: `${pageName} — ${SITE_NAME}`,
+    title: pageTitle,
     description: pageDescription,
     canonical: pageUrl,
     ogType: 'website',
