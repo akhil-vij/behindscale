@@ -61,6 +61,16 @@ export interface Article {
   tradeoffs: string[]
   tags: string[]
   patterns: PatternReference[]
+  // Optional search-terms (findability Batch 3, F19): free-form terms a reader
+  // might type that aren't already in the title / summary / tags -- product
+  // names, codenames, synonyms ("orpheus", "exactly-once"). Search-only data;
+  // surfaced on the /problems card's `matched: keyword <term>` line when a
+  // keyword hits and the title doesn't. Authored case is preserved for display;
+  // matching is case-insensitive + token-prefix. The DATA is not stored in this
+  // file -- it is delivered as `keywords/articles.json` and merged into the
+  // article at build time in src/content/index.ts, so authoring never edits the
+  // 100+ content files. See the Batch 3 field ruling.
+  keywords?: string[]
   relatedArticles?: string[]
   generatedAt?: string
   // Artifact pointer. `path` resolves to the compiled bundle at

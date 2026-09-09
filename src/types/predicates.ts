@@ -43,6 +43,22 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((v) => typeof v === 'string')
 }
 
+// Shared validation for an optional `keywords` array (findability Batch 3):
+// search-only terms on an Article or a CruxTagEntry. Non-empty strings, no
+// duplicates. Case is NOT forced (unlike pattern `aliases`) -- codenames like
+// "Orpheus" render in the matched: line in their authored form. `noun` tunes
+// the message.
+export function checkKeywordsField(keywords: unknown, noun: string): Result {
+  if (!isStringArray(keywords)) return fail(`\`keywords\` expected string[] when present`)
+  for (const kw of keywords) {
+    if (kw.trim().length === 0) return fail(`\`keywords\` entries must be non-empty`)
+  }
+  if (new Set(keywords).size !== keywords.length) {
+    return fail(`\`keywords\` must not contain duplicates (per ${noun})`)
+  }
+  return ok
+}
+
 export function checkSource(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
   if (typeof value.name !== 'string') return fail('`name` expected string')
@@ -210,6 +226,10 @@ export function checkArticle(value: unknown): Result {
   for (let i = 0; i < value.patterns.length; i++) {
     const refResult = checkPatternReference(value.patterns[i])
     if (!refResult.ok) return fail(`\`patterns[${i}]\`: ` + refResult.reason)
+  }
+  if (value.keywords !== undefined) {
+    const keywordsResult = checkKeywordsField(value.keywords, 'article')
+    if (!keywordsResult.ok) return keywordsResult
   }
   if (value.relatedArticles !== undefined && !isStringArray(value.relatedArticles)) {
     return fail('`relatedArticles` expected string[] when present')
@@ -797,6 +817,10 @@ export function checkCruxTagEntry(value: unknown): Result {
     if (!KEBAB_CASE.test(value.urlSlug)) {
       return fail(`\`urlSlug\` expected lowercase-kebab-case (got "${value.urlSlug}"; pattern ^[a-z0-9]+(-[a-z0-9]+)*$)`)
     }
+  }
+  if (value.keywords !== undefined) {
+    const keywordsResult = checkKeywordsField(value.keywords, 'cruxTag entry')
+    if (!keywordsResult.ok) return keywordsResult
   }
   return ok
 }

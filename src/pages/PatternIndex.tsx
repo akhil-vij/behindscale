@@ -5,6 +5,8 @@ import {
   PATTERN_CATEGORIES,
   patternCategoryById,
 } from '../lib/patternCategories'
+import { matchTerms, type MatchReason, type Term } from '../lib/search'
+import { oneLineFor, patternTerms } from '../lib/searchTerms'
 
 // /patterns listing page (nav-IA rebuild). Category-grouped browsing with
 // evidence, client-side search + single-select category filter, over the FULL
@@ -24,46 +26,7 @@ interface PatternView {
   oneLine: string
   frequency: number
   companies: readonly string[] // alphabetical, distinct
-  aliases: readonly string[] // lowercase
-  corpus: string // precomputed lowercase search haystack
-}
-
-// Search normalization: lowercase and fold every run of non-alphanumerics to a
-// single space, applied to BOTH corpus and query. Keeps the "substring is
-// sufficient" model but makes it punctuation-insensitive, so "exactly-once"
-// and "exactly once" are the same query. This is required to reconcile the
-// approved verbatim glosses (which write "exactly once") with the must-pass
-// hyphenated queries ("exactly-once") — and it makes recall robust to how a
-// reader hyphenates ("rate-limiting" vs "rate limiting", "at-least-once", ...).
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-}
-
-// The card's one-liner + search-corpus layer 1. Prefer the authored
-// `oneLineDefinition` (the field exists precisely to be the card/lede
-// summary); patterns not yet enriched fall back to the first-sentence
-// derivation from the full definition (unchanged behavior).
-//
-// The fallback strips figure markers and unwraps inline links
-// `[text](/path)` -> `text` (same reason proseText does — link chrome is
-// structure, not prose), then takes the first sentence. Preferring the
-// authored one-liner is what fixes embedded-vs-centralized-orchestration:
-// its definition opens with a colon list lead-in (no .!? in the first
-// "sentence"), so the derivation alone degenerates to the whole text —
-// the authored oneLineDefinition is the reliable source.
-function oneLineFor(pattern: {
-  oneLineDefinition?: string
-  definition: string
-}): string {
-  const authored = pattern.oneLineDefinition?.trim()
-  if (authored) return authored
-  const clean = pattern.definition
-    .replace(/\{\{figure:[^}]+\}\}/g, ' ')
-    .replace(/\[([^\]]+)\]\(\/[^)\s]+\)/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim()
-  const m = clean.match(/^(.*?[.!?])(?:\s|$)/)
-  return (m ? m[1] : clean).trim()
+  terms: Term[] // weighted search surface (src/lib/search)
 }
 
 function buildViews(): PatternView[] {
@@ -72,25 +35,14 @@ function buildViews(): PatternView[] {
     const companies = [...(stats?.companies ?? [])].sort((a, b) =>
       a.localeCompare(b),
     )
-    const oneLine = oneLineFor(p)
-    const aliases = p.aliases ?? []
-    const cat = patternCategoryById.get(p.category ?? '')
-    // Three-layer corpus (case-insensitive substring):
-    //   1 name + one-line definition · 2 category label + gloss · 3 companies + aliases
-    const corpus = normalize(
-      [p.name, oneLine, cat?.label ?? '', cat?.gloss ?? '', ...companies, ...aliases].join(
-        ' ',
-      ),
-    )
     return {
       slug: p.slug,
       name: p.name,
       category: p.category ?? '',
-      oneLine,
+      oneLine: oneLineFor(p),
       frequency: stats?.frequency ?? 0,
       companies,
-      aliases,
-      corpus,
+      terms: patternTerms(p),
     }
   })
 }
@@ -120,22 +72,27 @@ export default function PatternIndex() {
     return totals
   }, [views])
 
-  const q = normalize(query)
+  const q = query.trim()
 
   const groups = useMemo(() => {
     const built = PATTERN_CATEGORIES.map((meta, order) => {
       const members = views
         .filter((v) => v.category === meta.id)
         .filter((v) => cat === 'All' || v.category === cat)
-        .filter((v) => q === '' || v.corpus.includes(q))
-        .sort((a, b) => b.frequency - a.frequency || a.name.localeCompare(b.name))
-      const uses = members.reduce((n, v) => n + v.frequency, 0)
+        .map((v) => ({ view: v, match: q === '' ? null : matchTerms(query, v.terms) }))
+        .filter((m) => q === '' || m.match !== null)
+        .sort(
+          (a, b) =>
+            b.view.frequency - a.view.frequency ||
+            a.view.name.localeCompare(b.view.name),
+        )
+      const uses = members.reduce((n, m) => n + m.view.frequency, 0)
       return { meta, order, members, count: members.length, uses }
     }).filter((g) => g.count > 0)
     // Group order: pattern-count descending, canonical order as tie-break.
     built.sort((a, b) => b.count - a.count || a.order - b.order)
     return built
-  }, [views, q, cat])
+  }, [views, q, query, cat])
 
   const shownCount = groups.reduce((n, g) => n + g.count, 0)
   const totalCount = views.length
@@ -268,8 +225,12 @@ export default function PatternIndex() {
                 </p>
               </div>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3">
-                {g.members.map((v) => (
-                  <PatternListCard key={v.slug} view={v} query={q} />
+                {g.members.map((m) => (
+                  <PatternListCard
+                    key={m.view.slug}
+                    view={m.view}
+                    matched={m.match?.matched ?? null}
+                  />
                 ))}
               </div>
             </section>
@@ -280,14 +241,15 @@ export default function PatternIndex() {
   )
 }
 
-function PatternListCard({ view, query }: { view: PatternView; query: string }) {
-  // Matched-alias line: only when the query hit an alias but NOT the name.
-  // `query` here is already normalized; fold the name/aliases the same way.
-  const aliasHit =
-    query && !normalize(view.name).includes(query)
-      ? view.aliases.find((a) => normalize(a).includes(query))
-      : undefined
-
+function PatternListCard({
+  view,
+  matched,
+}: {
+  view: PatternView
+  // The reason the query matched outside the name (F19): rendered as a
+  // `matched: alias backlog` line so a non-name hit is trustworthy.
+  matched: MatchReason | null
+}) {
   const shown = view.companies.slice(0, 4).map((c) => c.toUpperCase())
   const overflow = view.companies.length - shown.length
   const seenAt =
@@ -313,9 +275,10 @@ function PatternListCard({ view, query }: { view: PatternView; query: string }) 
           {view.oneLine}
         </span>
       )}
-      {aliasHit && (
+      {matched && (
         <span className="font-mono text-[10.5px] text-text-muted">
-          matches: <span className="text-text-primary">{aliasHit}</span>
+          matched: {matched.kind}{' '}
+          <span className="text-text-primary">{matched.value}</span>
         </span>
       )}
       {seenAt && (
