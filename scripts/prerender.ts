@@ -701,6 +701,8 @@ function headTags(m: Meta): string {
     `<meta property="og:url" content="${escapeAttr(m.canonical)}" />`,
     `<meta property="og:image" content="${escapeAttr(OG_IMAGE)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
+    // Atom feed discovery (findability task 10) -- advertised on every page.
+    `<link rel="alternate" type="application/atom+xml" title="${SITE_NAME}" href="/rss.xml" />`,
   ]
   if (m.jsonLd !== null) {
     // A meta can carry either a single JSON-LD object or an array of
