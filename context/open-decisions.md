@@ -37,6 +37,33 @@ _None._
 
 ## Worth resolving
 
+### 3. Problem-page Batch 1: two deferrals + one judgment call (2026-09-09)
+
+- **Source:** `problem-page-batch1` (the layout-spec build). Decisions 1
+  and 2 were resolved by the owner mid-round; three items remain owner-facing.
+- **What's needed / state:**
+  - **Vertical diagrams (DV + TV) — authoring, deferred to the design agent.**
+    The six comparison diagrams, the YOU row, AND the try-it wire are all
+    hand-authored static SVG (A1 assumed the try-it was JS-drawn; it is not).
+    §3b wired the comparison rows as a pure FILE DROP: dropping
+    `content/problems/<cruxTag>/<name>-v.svg` (incl. `you-empty-v` /
+    `you-filled-v` with `{{slot}}`s) flips the breakpoint switch — no code
+    change. The try-it TV is the same authoring class but its wire is inline in
+    the jsx, so it needs a jsx edit, not a file drop; kept on its Batch-2 scroll
+    pill for now. **Owner to brief the design agent** for all vertical SVGs.
+  - **§3 in-box memory status (`#memrow`).** The floating labels moved to bands
+    (F9); the memory box's own status row ("K-4 ✓", "params DIFFER ⚠") was kept
+    inside the box (it is the box's content, not a floating collision) even
+    though the spec's example list names those two. Move to the band later if
+    preferred.
+  - **Desktop scroll-in-scroll (nav-overlap compromise).** Sticky can't cross
+    the iframe boundary, so the working column sticks at an in-frame 12px, not
+    "56px clears the nav" — when the page is scrolled so the frame's top sits
+    under the host nav, the nav can cover the frame's top ~44px. If a future
+    audit finds the desktop scroll-in-scroll as bad as phone's was, the recorded
+    fallback is the non-sticky version of the same layout (two columns, log
+    under stage, attacks under deck, content-height) — noted, not built.
+
 ### 2. Landing preview: show-all vs cap-and-signal
 
 - **Source:** flagged since round 10 (Cloudflare) when count crossed

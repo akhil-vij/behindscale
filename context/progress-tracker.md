@@ -4,6 +4,37 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
+- **Problem-page Batch 1 — layout-spec build (2026-09-08/09, branch
+  `problem-page-batch1`, off `main` after Batch 2 merged).** Seven commits, one
+  per section of the approved `handoff/Batch 1 Layout Spec.pdf` (+ amendments
+  A1–A3). All green: build, 307 unit, 18 e2e (problem-page + smoke).
+  - **§4 (F4/F5):** station nav + comparison/interview tables → 960 breakout;
+    first column frozen at all widths; `scroll-margin-top` 60/52.
+  - **§1 (F1/F2/F13):** the mission is a two-column `.mission-grid` — outputs
+    (evchips→narration→stage→controls→bill→log) in a right column, sticky on
+    desktop; actions (deck→commit→attacks→debrief) scroll left. **Sizing model
+    inverted** (`useWallHost`): desktop ≥700 is a bounded scrollport,
+    `min(content, 100dvh-56)`, so `position:sticky` engages; phone <700 is
+    content-height. Sticky can't cross the iframe boundary → 12px in-frame
+    offset (nav-overlap compromise, see open-decisions). Toast deleted;
+    `cueDecision` is a cue-not-scroll (A2).
+  - **§2 (F10/F11, A3):** phone one re-ordered natural-height column; deck is a
+    one-open accordion (`openGroup` engine state); control row not sticky,
+    meters full-width 3-col.
+  - **§3 (F9):** transient stage labels route through `placeLabel(zone)` →
+    `GH.bands`/`GV.bands`, never a node rect; GV viewBox → `0 0 360 552`. In-box
+    `#memrow` status kept in the box (open-decisions).
+  - **§3b (F12/A1):** comparison vertical (DV) diagrams wired as a **file drop**
+    (`<name>-v.svg` + breakpoint switch + aria-hidden); the 6 comparison SVGs +
+    YOU + the try-it wire are authored SVG (not JS-drawn) → **deferred to the
+    design agent**; scroll pills stay until the files land.
+  - **§5 (F3):** the landing hero artifact posts `artifact:size`; the page sizes
+    the iframe from it (min 380, no max); 560-under-420 fallback recorded.
+  - **§6 (F18):** `--text-muted` #8A8A94→#6E6E78 (text, 4.5:1+); new
+    `--muted-ghost` (#8A8A94) for non-text uses; in-prose links underline at
+    rest; `<summary>` outbound link → body `Read the article ↗`. Tokens + rule
+    in `ui-context.md`.
+
 - **Problem-page v7.3 port — follow-up: the mission visible without
   JavaScript + two orientation fixes (2026-09-06, branch
   `feat/problem-mission-outline`).** An independent no-JS audit could not
