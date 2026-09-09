@@ -28,18 +28,19 @@ export function oneLineFor(pattern: {
   return (m ? m[1] : clean).trim()
 }
 
-// An article's browse-surface as weighted search terms. Recall reaches `tags`
-// + authored `keywords` + the class label, not just title/summary; a non-title
-// hit drives the card's `matched:` line. BODIES (problem/solution/tradeoffs)
-// stay OUT -- they would match half the library on a common word, the noise the
-// matched: line exists to prevent.
+// An article's browse-surface as weighted search terms (B3-1 field list): title,
+// summary, tags, company, class label, linked pattern names, and authored
+// keywords. Recall reaches tags + keywords + the class label, not just the
+// title; a non-title hit drives the card's `matched:` line. Deliberately NOT
+// indexed: the crux/cruxSummary and the bodies (problem/solution/tradeoffs) --
+// they match half the library on a common word (the noise the matched: line and
+// the authored keywords exist to replace). `summary` is the article's summary
+// field, matching the authoring agent's search simulator.
 export function articleTerms(article: Article): Term[] {
   const terms: Term[] = [
     { kind: 'title', value: article.title, weight: 10 },
-    { kind: 'summary', value: article.cruxSummary, weight: 8, long: true },
-    { kind: 'crux', value: article.crux, weight: 3, long: true },
+    { kind: 'summary', value: article.summary, weight: 8, long: true },
     { kind: 'company', value: article.source.company, weight: 4 },
-    { kind: 'source', value: article.source.name, weight: 3 },
   ]
   const classLabel = cruxtags[article.cruxTag]?.label
   if (classLabel) terms.push({ kind: 'class', value: classLabel, weight: 5, long: true })
@@ -72,24 +73,38 @@ export function cruxTagTerms(slug: string, entry: CruxTagEntry): Term[] {
   return terms
 }
 
-// A pattern's search terms. name + one-line + aliases carry the signal;
-// category label/gloss + companies widen recall; the FULL definition is a
-// low-weight second net (Batch 3 note 1) so words like "backlog" -- present in
-// a definition but dropped from the derived one-liner -- still match for
-// patterns the authoring agent hasn't given aliases yet.
+// A pattern's search terms: name + one-line definition + aliases carry the
+// signal; category label/gloss + companies widen recall.
+//
+// NOTE (supersedes Batch 3 note 1): the full pattern definition was briefly
+// indexed as a low-weight "second net" so words present in a definition but not
+// the derived one-liner (e.g. "backlog") still matched for patterns the
+// authoring agent hadn't reached. The agent has since delivered aliases across
+// all 52 patterns, so the net is redundant AND harmful -- it re-surfaces
+// footnote mentions ("backlog" hit 6 patterns via definitions, not the 4
+// authored), breaking keywords/tests.md precision. Removed; authored aliases
+// are the recall mechanism now.
 export function patternTerms(pattern: PatternDefinition): Term[] {
   const stats = patternStats.get(pattern.slug)
   const companies = [...(stats?.companies ?? [])].sort((a, b) => a.localeCompare(b))
-  const oneLine = oneLineFor(pattern)
   const cat = patternCategoryById.get(pattern.category ?? '')
-  const terms: Term[] = [
-    { kind: 'name', value: pattern.name, weight: 10 },
-    { kind: 'definition', value: oneLine, weight: 6, long: true },
-  ]
+  const terms: Term[] = [{ kind: 'name', value: pattern.name, weight: 10 }]
+  // Only the AUTHORED one-liner feeds search. The derived first-sentence
+  // fallback (oneLineFor, used for the card DISPLAY) would drag in definition
+  // prose the authoring agent deliberately didn't make searchable -- it
+  // over-matched "watermark" (selective-acknowledgment) and "source of truth"
+  // (content-free-change-events). Recall for un-authored one-liners comes from
+  // the authored aliases instead.
+  const authoredOneLine = pattern.oneLineDefinition?.trim()
+  if (authoredOneLine) {
+    terms.push({ kind: 'definition', value: authoredOneLine, weight: 6, long: true })
+  }
+  // Category LABEL only, not the gloss: the gloss is shared category-header copy
+  // and matching it returns the whole category (its text literally contains
+  // "exactly once", "shedding", "truth" ...), which breaks keywords/tests.md
+  // precision. The label ("Resilience") is a legitimate per-pattern term.
   if (cat?.label) terms.push({ kind: 'category', value: cat.label, weight: 2 })
-  if (cat?.gloss) terms.push({ kind: 'category', value: cat.gloss, weight: 1, long: true })
   for (const c of companies) terms.push({ kind: 'company', value: c, weight: 3 })
   for (const a of pattern.aliases ?? []) terms.push({ kind: 'alias', value: a, weight: 6 })
-  terms.push({ kind: 'definition', value: pattern.definition, weight: 1, long: true })
   return terms
 }
