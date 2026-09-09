@@ -1,0 +1,636 @@
+{
+  "doordash-rabbitmq-kafka": {
+    "keywords": [
+      "head-of-line blocking",
+      "task processing outage",
+      "queue backs up under load",
+      "Flow Control",
+      "harakiri",
+      "uWSGI",
+      "feature flag",
+      "zero-downtime migration",
+      "local queue",
+      "RabbitMQ vs Kafka",
+      "migrate off RabbitMQ"
+    ]
+  },
+  "meta-foqs-priority-queue": {
+    "keywords": [
+      "backlog",
+      "priority queue",
+      "MVCC",
+      "history list",
+      "checkpoint",
+      "lease",
+      "at-least-once delivery",
+      "at-most-once",
+      "FOQS",
+      "Prefetch Buffer",
+      "design a distributed queue",
+      "design a priority queue"
+    ]
+  },
+  "segment-centrifuge-database-queue": {
+    "keywords": [
+      "head-of-line blocking",
+      "noisy neighbor",
+      "backlog",
+      "per-customer isolation",
+      "single writer",
+      "exponential backoff",
+      "Centrifuge",
+      "Director",
+      "JobDB",
+      "Consul",
+      "KSUID",
+      "Kafka",
+      "message queue vs database"
+    ]
+  },
+  "slack-scaling-job-queue": {
+    "keywords": [
+      "full queue can't drain",
+      "backlog",
+      "Redis out of memory",
+      "job queue",
+      "durable buffer",
+      "Kafka in front of Redis",
+      "admission control",
+      "Kafkagate",
+      "JQRelay",
+      "Consul",
+      "design a job queue"
+    ]
+  },
+  "uber-kafka-consumer-proxy": {
+    "keywords": [
+      "poison pill",
+      "partition scalability",
+      "dead letter queue",
+      "DLQ",
+      "out-of-order commit",
+      "offset commit",
+      "watermark",
+      "backpressure",
+      "at-least-once delivery",
+      "Consumer Proxy",
+      "uForwarder",
+      "Kafka as a message queue",
+      "consume Kafka out of order"
+    ]
+  },
+  "airbnb-orpheus-idempotent-payments": {
+    "keywords": [
+      "double payment",
+      "duplicate charge",
+      "replica lag",
+      "retry after timeout",
+      "idempotency key",
+      "master-only reads",
+      "lease",
+      "atomic phases",
+      "retryable errors",
+      "Orpheus",
+      "prevent double payments",
+      "idempotent payments API",
+      "at most once"
+    ]
+  },
+  "aws-idempotent-apis": {
+    "keywords": [
+      "duplicate resource",
+      "at most once",
+      "retry after timeout",
+      "idempotency key",
+      "retryable errors",
+      "replay the response",
+      "ClientToken",
+      "RunInstances",
+      "idempotent API",
+      "make retries safe",
+      "safe retry"
+    ]
+  },
+  "segment-exactly-once-delivery": {
+    "keywords": [
+      "duplicate events",
+      "client re-sends events",
+      "at-least-once delivery",
+      "idempotency key",
+      "bloom filter",
+      "dedupe window",
+      "source of truth",
+      "messageId",
+      "Memcached",
+      "deduplicate messages",
+      "exactly once delivery"
+    ]
+  },
+  "shopify-resilient-payments": {
+    "keywords": [
+      "double charge",
+      "chargeback",
+      "double refund",
+      "low timeouts",
+      "load shedding",
+      "idempotency key",
+      "reconciliation",
+      "Semian",
+      "ULID",
+      "Little's Law",
+      "prevent double charges",
+      "resilient payments"
+    ]
+  },
+  "stripe-idempotency": {
+    "keywords": [
+      "double charge",
+      "duplicate charge",
+      "retry after timeout",
+      "idempotency key",
+      "exponential backoff",
+      "jitter",
+      "thundering herd",
+      "Idempotency-Key header",
+      "idempotent API",
+      "prevent double charges",
+      "safe retry",
+      "idempotent endpoint"
+    ]
+  },
+  "aws-load-shedding": {
+    "keywords": [
+      "load balancer health check",
+      "retry storm",
+      "brownout",
+      "max connections",
+      "deadline propagation",
+      "queue age",
+      "Universal Scalability Law",
+      "goodput plateau",
+      "Application Load Balancer",
+      "how to shed load",
+      "prevent overload"
+    ]
+  },
+  "linkedin-hodor-overload-protection": {
+    "keywords": [
+      "overload protection",
+      "CPU starvation",
+      "garbage collection pause",
+      "thread pool exhaustion",
+      "retry storm",
+      "priority tiers",
+      "adaptive concurrency limit",
+      "retry budget",
+      "Hodor",
+      "detect overload",
+      "protect critical traffic"
+    ]
+  },
+  "netflix-prioritized-load-shedding": {
+    "keywords": [
+      "congestive failure",
+      "death spiral",
+      "concurrency limiter",
+      "partitioned concurrency limiter",
+      "adaptive concurrency limits",
+      "priority buckets",
+      "PlayAPI",
+      "Zuul",
+      "protect critical traffic",
+      "prioritized load shedding",
+      "pre-fetch traffic"
+    ]
+  },
+  "stripe-rate-limiters": {
+    "keywords": [
+      "token bucket",
+      "concurrent requests limiter",
+      "criticality ladder",
+      "reserved capacity",
+      "flapping",
+      "kill switch",
+      "dark launch",
+      "429",
+      "503",
+      "design a rate limiter",
+      "rate limiting vs load shedding",
+      "protect critical traffic"
+    ]
+  },
+  "uber-intelligent-load-management": {
+    "keywords": [
+      "thundering herd",
+      "noisy neighbor",
+      "split brain",
+      "PID controller",
+      "priority tiers",
+      "CoDel",
+      "Cinnamon",
+      "Docstore",
+      "Schemaless",
+      "bring your own signal",
+      "load shedding for databases",
+      "protect critical traffic"
+    ]
+  },
+  "doordash-aperture-global-failure-mitigation": {
+    "keywords": [
+      "cascading failure",
+      "retry storm",
+      "death spiral",
+      "metastable failure",
+      "thundering herd",
+      "shed at the edge",
+      "global coordination",
+      "predictive autoscaling",
+      "Aperture",
+      "Prometheus",
+      "prevent cascading failures",
+      "coordinate mitigation across services"
+    ]
+  },
+  "canva-media-dynamodb": {
+    "keywords": [
+      "schema migration",
+      "2TB table limit",
+      "replication lag",
+      "gh-ost",
+      "dual reads",
+      "hot data first",
+      "zero-downtime migration",
+      "RDS",
+      "SQS",
+      "NewSQL",
+      "migrate MySQL to DynamoDB",
+      "live database migration"
+    ]
+  },
+  "figma-postgres-sharding": {
+    "keywords": [
+      "vacuum",
+      "horizontal sharding",
+      "vertical partitioning",
+      "scatter-gather",
+      "shard key",
+      "colocation",
+      "logical sharding",
+      "Postgres views",
+      "DBProxy",
+      "shard Postgres",
+      "zero-downtime migration",
+      "cross-shard transactions"
+    ]
+  },
+  "notion-sharding-postgres": {
+    "keywords": [
+      "transaction ID wraparound",
+      "VACUUM stalls",
+      "shard key",
+      "workspace ID",
+      "double-write",
+      "backfill",
+      "dark reads",
+      "logical shards",
+      "colocation",
+      "Citus",
+      "shard Postgres",
+      "when to shard"
+    ]
+  },
+  "pinterest-sharding-mysql": {
+    "keywords": [
+      "replica lag",
+      "stale replica read",
+      "virtual shards",
+      "ID-encoded placement",
+      "ID as address",
+      "master-only reads",
+      "application-layer join",
+      "shard splitting",
+      "ZooKeeper",
+      "hot shard",
+      "shard MySQL",
+      "64-bit ID"
+    ]
+  },
+  "google-colossus": {
+    "keywords": [
+      "metadata bottleneck",
+      "single master",
+      "scale-out metadata",
+      "Curators",
+      "Bigtable",
+      "Colossus",
+      "GFS",
+      "shared pool",
+      "tiered storage",
+      "design a distributed file system",
+      "scale a file system"
+    ]
+  },
+  "google-colossus-ssd-placement": {
+    "keywords": [
+      "hot data on SSD",
+      "read cache",
+      "writeback cache",
+      "cache insertion policy",
+      "online simulation",
+      "L4",
+      "CacheSack",
+      "SSD vs HDD",
+      "what to put on SSD",
+      "cache eviction",
+      "tiered storage"
+    ]
+  },
+  "airbnb-partitioning-main-database": {
+    "keywords": [
+      "write bottleneck",
+      "snapshot latency spike",
+      "vertical partitioning",
+      "replica promotion",
+      "read replica promotion",
+      "planned downtime",
+      "remove cross-table joins",
+      "Multi-AZ",
+      "Zookeeper",
+      "split a database",
+      "move tables to a new database"
+    ]
+  },
+  "github-partitioning-relational-databases": {
+    "keywords": [
+      "one shared database",
+      "blast radius",
+      "cross-domain joins",
+      "schema domains",
+      "query linter",
+      "virtual partitioning",
+      "write cutover",
+      "application-side joins",
+      "Vitess",
+      "mysql1",
+      "vertical partitioning",
+      "split a database"
+    ]
+  },
+  "gitlab-database-decomposition": {
+    "keywords": [
+      "write bottleneck",
+      "single primary",
+      "vacuum saturation",
+      "loose foreign keys",
+      "violation ratchet",
+      "allowlist",
+      "planned downtime",
+      "vertical partitioning",
+      "Patroni",
+      "split a database",
+      "decompose a database"
+    ]
+  },
+  "slack-vitess-datastores": {
+    "keywords": [
+      "hot shard",
+      "shard hot spots",
+      "shard key",
+      "resharding",
+      "sharding behind a proxy",
+      "query layer",
+      "double-write",
+      "keyspace",
+      "channel id",
+      "shard by tenant",
+      "shard MySQL"
+    ]
+  },
+  "aws-timeouts-retries-backoff-jitter": {
+    "keywords": [
+      "retry storm",
+      "thundering herd",
+      "retries amplify overload",
+      "exponential backoff",
+      "jitter",
+      "full jitter",
+      "retry budget",
+      "token bucket",
+      "idempotency key",
+      "how to retry safely",
+      "prevent retry storms"
+    ]
+  },
+  "aws-shuffle-sharding": {
+    "keywords": [
+      "blast radius",
+      "noisy neighbor",
+      "poison request",
+      "DDoS",
+      "shuffle sharding",
+      "workload isolation",
+      "virtual shards",
+      "Route 53",
+      "Infima",
+      "limit blast radius",
+      "multi-tenant isolation"
+    ]
+  },
+  "discord-trillions-message-search": {
+    "keywords": [
+      "blast radius",
+      "coordination overhead",
+      "Lucene limit",
+      "dropped messages",
+      "cell architecture",
+      "batch by destination",
+      "guaranteed delivery",
+      "PubSub",
+      "Lucene",
+      "BFG",
+      "scale message search",
+      "search all my DMs"
+    ]
+  },
+  "shopify-pods-architecture": {
+    "keywords": [
+      "blast radius",
+      "fan-out failure",
+      "platform-wide outage",
+      "shared resource",
+      "pods",
+      "Sorting Hat",
+      "Pod Mover",
+      "generic mitigation",
+      "fault isolation",
+      "data center failover",
+      "isolate failures"
+    ]
+  },
+  "cloudflare-byzantine-failure": {
+    "keywords": [
+      "gray failure",
+      "partial failure",
+      "Byzantine failure",
+      "omission fault",
+      "split brain",
+      "false failover",
+      "conservative auto-remediation",
+      "generic mitigation",
+      "primary promotion",
+      "partial network failure",
+      "why did failover make it worse"
+    ]
+  },
+  "meta-silent-data-corruption": {
+    "keywords": [
+      "SDC",
+      "gray failure",
+      "wrong answer no error",
+      "corrupt computation",
+      "known-answer testing",
+      "Fleetscanner",
+      "Ripple",
+      "deep test",
+      "shallow test",
+      "detect silent data corruption",
+      "hardware fault detection"
+    ]
+  },
+  "slack-cellular-architecture": {
+    "keywords": [
+      "gray failure",
+      "availability zone failure",
+      "components disagree",
+      "cell architecture",
+      "drain button",
+      "siloing",
+      "generic mitigation",
+      "fault isolation",
+      "Rotor",
+      "drain a zone",
+      "isolate an availability zone"
+    ]
+  },
+  "airbnb-monitoring-reliably-at-scale": {
+    "keywords": [
+      "circular dependency",
+      "monitoring goes dark",
+      "shared fate",
+      "dead man's switch",
+      "heartbeat",
+      "independent observability",
+      "meta-monitoring",
+      "Prometheus",
+      "Envoy",
+      "who monitors the monitoring",
+      "monitor the monitors"
+    ]
+  },
+  "datadog-incident-response-observer-fate": {
+    "keywords": [
+      "circular dependency",
+      "monitoring goes dark",
+      "silence looks like health",
+      "auto-update outage",
+      "unattended-upgrades",
+      "Cilium",
+      "independent observability",
+      "external watcher",
+      "staged rollout",
+      "monitor the monitors",
+      "who monitors the monitoring"
+    ]
+  },
+  "roblox-return-to-service": {
+    "keywords": [
+      "circular dependency",
+      "monitoring goes dark",
+      "single point of failure",
+      "independent observability",
+      "throttled readmission",
+      "DNS steering",
+      "cold cache",
+      "BoltDB",
+      "Nomad",
+      "return to service",
+      "recover from full outage"
+    ]
+  },
+  "netflix-conductor-microservices-orchestrator": {
+    "keywords": [
+      "what remains",
+      "stalled workflow",
+      "durable workflows",
+      "orchestration",
+      "state machine",
+      "workflow definition",
+      "pause and resume",
+      "Conductor",
+      "Decider",
+      "orchestration vs choreography",
+      "workflow engine"
+    ]
+  },
+  "skipper-workflow-engine": {
+    "keywords": [
+      "crash between steps",
+      "partial completion",
+      "run the work twice",
+      "durable workflows",
+      "embedded workflow engine",
+      "replay",
+      "checkpoint",
+      "hibernation",
+      "Skipper",
+      "Temporal",
+      "resume after crash"
+    ]
+  },
+  "uber-cadence-workflow-platform": {
+    "keywords": [
+      "crash between steps",
+      "partial completion",
+      "duplicated plumbing",
+      "shared dependency",
+      "durable workflows",
+      "workflow as code",
+      "central workflow engine",
+      "deterministic workflow",
+      "Cadence",
+      "Temporal",
+      "central vs embedded orchestration"
+    ]
+  },
+  "reddit-piday-outage": {
+    "keywords": [
+      "unrecorded config",
+      "configuration drift",
+      "no downgrade path",
+      "route reflector",
+      "node-role.kubernetes.io/master",
+      "Kubernetes 1.24",
+      "restore from backup",
+      "rehearsed restore",
+      "gradual recovery",
+      "etcd",
+      "kubernetes upgrade outage"
+    ]
+  },
+  "slack-incident-2-22-22": {
+    "keywords": [
+      "cascading failure",
+      "cache miss storm",
+      "hit rate collapse",
+      "cold cache",
+      "scatter query",
+      "tipping point",
+      "Memcached",
+      "Mcrib",
+      "load-bearing cache",
+      "load shedding",
+      "recover from cascading failure",
+      "outage outlived its cause"
+    ]
+  }
+}

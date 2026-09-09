@@ -1,0 +1,58 @@
+{
+  "ambiguous-failure-under-retry": {
+    "keywords": ["request timed out did it succeed", "double payment", "duplicate charge", "idempotent api", "idempotency key", "exactly once delivery", "prevent double payments", "safe retry", "at most once"],
+    "searchQuestion": "prevent double payments"
+  },
+  "buffer-degrades-under-backlog": {
+    "keywords": ["backlog", "queue fills up", "queue can't drain", "head-of-line blocking", "durable queue", "kafka in front of redis", "queue backs up under load", "design a job queue", "design a message queue"],
+    "searchQuestion": "design a job queue"
+  },
+  "priority-blind-load-shedding": {
+    "keywords": ["overload", "dropping requests under load", "load shedding", "priority tiers", "rate limiter", "adaptive concurrency limits", "brownout", "how to shed load", "protect critical traffic under overload"],
+    "searchQuestion": "protect critical traffic under overload"
+  },
+  "single-table-scaling-ceiling": {
+    "keywords": ["table too big for one server", "outgrew one machine", "horizontal sharding", "shard key", "database sharding", "shard postgres", "shard mysql", "logical vs physical sharding", "how to shard a database"],
+    "searchQuestion": "how to shard a database"
+  },
+  "single-cluster-scaling-ceiling": {
+    "keywords": ["one primary write ceiling", "everything on one cluster", "write bottleneck", "vertical partitioning", "replica promotion", "database decomposition", "move tables to a new database", "split a monolithic database"],
+    "searchQuestion": "split a monolithic database"
+  },
+  "blast-radius-scales-with-cluster-size": {
+    "keywords": ["blast radius", "one bad node takes down everyone", "noisy neighbor", "cell architecture", "shuffle sharding", "fault isolation", "multi-tenant isolation", "isolate tenants", "limit the blast radius"],
+    "searchQuestion": "limit the blast radius"
+  },
+  "gray-failure-defeats-automatic-detection": {
+    "keywords": ["gray failure", "partial failure", "components disagree", "split brain", "when a component half-dies", "generic mitigation", "conservative auto-remediation", "why did failover make it worse", "why didn't automatic detection work"],
+    "searchQuestion": "why didn't automatic detection work"
+  },
+  "observer-shares-fate-with-observed": {
+    "keywords": ["monitoring goes dark", "circular dependency", "blind during an outage", "independent observability", "dead man's switch", "heartbeat", "external monitoring", "monitor the monitors", "who monitors the monitoring"],
+    "searchQuestion": "who monitors the monitoring"
+  },
+  "retry-amplified-overload": {
+    "keywords": ["retry storm", "retries amplify overload", "thundering herd", "exponential backoff", "jitter", "retry budget", "token bucket", "how to retry safely", "prevent retry storms"],
+    "searchQuestion": "prevent retry storms"
+  },
+  "mitigation-scoped-narrower-than-failure": {
+    "keywords": ["cascading failure", "failure spreads between services", "death spiral", "circuit breaker", "global coordination", "shed at the edge", "why did my circuit breaker fail", "coordinate mitigation across services", "prevent cascading failures"],
+    "searchQuestion": "prevent cascading failures"
+  },
+  "degraded-state-outlives-its-trigger": {
+    "keywords": ["metastable failure", "outage outlives its cause", "outage feeds itself", "cache miss storm", "positive feedback loop", "load-bearing cache", "shed below the tipping point", "outage kept going after the fix", "recover from a cascading failure"],
+    "searchQuestion": "recover from a cascading failure"
+  },
+  "partial-completion-under-crashes": {
+    "keywords": ["crash between steps", "half-done process", "partial completion", "durable workflow", "checkpoint", "saga", "resume after a crash", "durable execution", "design a durable workflow"],
+    "searchQuestion": "design a durable workflow"
+  },
+  "unrecorded-config-outlives-its-authors": {
+    "keywords": ["undocumented config", "configuration drift", "load-bearing config", "infrastructure as code", "codify everything", "rehearsed restore", "hidden config caused an outage", "configuration not in version control"],
+    "searchQuestion": "configuration not in version control"
+  },
+  "placement-precedes-the-access-pattern": {
+    "keywords": ["hot data on ssd", "cold data on flash", "data placement", "cache policy", "tiered storage", "online simulation", "ssd caching", "what to put on ssd"],
+    "searchQuestion": "what to put on ssd"
+  }
+}
