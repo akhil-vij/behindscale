@@ -1,12 +1,29 @@
 # Problem Detail Page — Technical Design & Contract
 
-Version 1.1 · 2026-08-17 · Governs `src/pages/ProblemDetail.tsx`,
+Version 2.0 · 2026-09-09 · Governs `src/pages/ProblemDetail.tsx`,
 `src/types/problemEssay.ts`, the `content/problems/*.json` content type, the
 `problemMeta()` prerender builder, and the `problem-essay` validator.
 
 Grounded in the two prototype comps in `Behindscale_nav_design.zip`:
 `problem-queue-backlog.dc.html` (**minimal**) and
 `problem-ambiguous-timeouts.dc.html` (**full**).
+
+> **v2.0 note (2026-09-09).** The v7.3 interactive port (2026-09-06) and the
+> Batch-1/2 rounds (2026-09-08/09) **replaced the speculative rich-block schema**
+> this doc originally proposed (`metricGrid`, `vantageRows`, `deepDive`,
+> `numbers`, `whatToSteal`, `simulator`) with a concrete one built around a
+> playable mission and a side-by-side comparison. §3 and §5 have been rewritten
+> to the shipped shape. The one-template principle, routing, derived data,
+> figures, SEO, and invariants below are unchanged.
+>
+> **Companion docs — read alongside this one:**
+> - `docs/authoring-problem-pages.md` — the authoring workflow, and the live
+>   per-block field table (§4b).
+> - `docs/problem-detail-implementation.md` — the *runtime*: the sandboxed
+>   artifacts, the iframe postMessage protocol, save-the-day persistence, the
+>   wall module (`youMapping`), iframe sizing, and the viewport engineering.
+> - `src/types/problemEssay.ts` — the authoritative schema (this doc summarises
+>   it; the types are canonical).
 
 ## 0. Review rulings folded (v1.1, 2026-08-17)
 
@@ -78,34 +95,38 @@ Two consequences that bind everything below:
 
 ## 3. Section contract (source of truth per section)
 
-Order is top-to-bottom. "Derived" = computed now. "Authored" = from
-`ProblemEssay`. "Status": `live` (wired today) · `incremental` (renderer lands
-with the first class that authors it) · `phase-6` (gated on `/newsletter`).
+Order is top-to-bottom, as composed by `ProblemDetail.tsx`. "Derived" =
+computed from articles now. "Authored" = from `ProblemEssay`. Every authored
+block is **render-when-present**; a block with neither authored content nor a
+derivation is omitted. Field shapes are in §5 (summary) and
+`src/types/problemEssay.ts` (canonical); the per-block *authoring* semantics are
+in `authoring-problem-pages.md` §4b.
 
-| # | Section | Minimal (derived) | Full (authored) | Render rule | Status |
-|---|---------|-------------------|-----------------|-------------|--------|
-| 1 | Eyebrow | `Problem · seen at N companies` | `Problem · <label> · seen at N companies` | always; label joins only when `headline` present | live |
-| 2 | H1 | class `label` | `headline` | `headline ?? label` | live |
-| 3 | Lede | authored italic teaser | (folded into intro) | render `lede` when present; suppress when `intro` present | live |
-| 4 | Provenance strip | — | "First sent as Edition N · updated as new evidence lands" + newsletter link | render when `edition` present **and** `/newsletter` exists | phase-6 |
-| 5 | Intro prose | — | paragraphs | render `intro[]` when present | live |
-| 6 | Metric grid | — | metric cards + caption | render `metricGrid` when present | incremental |
-| 7 | The wall | registry `definition` + generic synthesis | authored prose + diagram (figure) | authored `wall` replaces definition; else definition (+ synthesis when `N>1`) | live (derived) / incremental (authored) |
-| 8 | Same wall, N systems | rows: company/source + `cruxSummary` + breakdown link | rows: accent dot + company(+link) + year + tag + hand-written line + link | `vantageRows` replace derived rows 1:1 by `articleSlug`; unmatched members keep derived rows | live (derived) / incremental (authored) |
-| 9 | Deep dive | — | title + prose + step cards + callout stat | render `deepDive` when present | incremental |
-| 10 | The numbers that stick | — | prose + chart figures + captions | render `numbers` when present | incremental |
-| 11 | What to steal | — | takeaway cards | render `whatToSteal` when present | incremental |
-| 12 | Patterns in this class | neutral chips (derived union) | same | always when non-empty | live |
-| 13 | Every breakdown | source·date + title cards | (full omits — vantage rows cover all systems) | render derived cards **unless** `vantageRows` covers every member | live |
-| 14 | Interview corner | — (no question cites it) | "if this comes up…" card + guidance + question link | render when `questionsByCruxTag` has an entry (Phase 4); `interviewNote` augments | phase-4 |
-| 15 | Simulator CTA (dark) | — | "break it yourself" + button → article | render `simulator` when present | incremental |
-| 15b | **Extra sections** (escape valve) | — | authored `{title, blocks}` list | render each when present; fixed insertion point (between §11 and §12) | incremental |
-| 16 | Subscribe ("The weekly") | — | static pitch + originals list | render when a site-config newsletter URL is set (external now, `/newsletter` at Phase 6) | config-gated |
+| # | Section | Field | Minimal (derived) | Render rule |
+|---|---------|-------|-------------------|-------------|
+| 1 | Eyebrow | — | `Problem · seen at N companies · <year range>` | always; `label` joins when `headline` present |
+| 2 | H1 | `headline` | class `label` | `headline ?? label` |
+| 3 | Lede | `lede` | — | render when present |
+| 4 | "How this page works" strip | `howItWorks[]` | — | one mono line, ` · `-joined; render when present |
+| 5 | Station nav (sticky, scroll-spy) | `stations[]` | — | render when present; deck-jump appears after `touched` |
+| 6 | Intro prose | `intro[]` | — | render when present |
+| 7 | The wall (+ try-it artifact, stats, no-JS figure) | `wall`, `tryIt`, `figures[]` | registry `definition` (+ synthesis when N>1) | authored `wall` replaces the definition; `tryIt` mounts the "cause it" artifact |
+| 8 | Mission ("build it" artifact + outline card + stop block) | `mission` | — | render when present; **presence drives the /problems Playable badge** |
+| 9 | Comparison / hint sheet (spectrum · diagram strip **+ YOU row** · matrix **+ YOU column** · full answers) | `comparison` | derived "Same wall, N systems" table | authored `comparison` replaces the derived table; the YOU column/row fill from the wall module |
+| 10 | Decide ("Which answer is yours") | `decide` | — | render when present; a row can light matrix column(s) |
+| 11 | What to steal | `steal` | — | render when present |
+| 12 | Extra sections (escape valve) | `extraSections[]` | — | fixed insertion point (§5a); **field stub — validated, not yet rendered** |
+| 13 | Interview ("If this comes up…", live ticks) | `interview` | — | render when present; one follow-up row per attack |
+| 14 | Patterns in this class | `patterns` | neutral chips (derived union) | chips always (when non-empty); authored block adds intro + order |
+| 15 | Every breakdown / cards | `cards` | source·date + title cards | authored `cards` = chronological cards + break-it teasers |
+| 16 | Sources ("Read the originals") | `sources` | — | render when present; URLs derive from members |
+| 17 | Subscribe ("The weekly") | — | — | render when `newsletterSignupUrl` is set (§5b) |
+| 4′ | Provenance strip | `edition`, `firstSentAt` | — | **stored now, renders in Phase 6** (needs `/newsletter`) |
 
-**Section 13 rule (important):** "Every breakdown" is the derived
-member-card grid. It renders in the minimal state. In the full state it is
-**suppressed when `vantageRows` already covers every member** (the full comp
-drops it), preventing a redundant second listing of the same systems.
+The interactive sections (5, 7-tryIt, 8, 9, 10, 13) are the v7.3 port's
+concrete replacement for the original speculative blocks; their runtime (the
+artifacts, the protocol, the YOU-column fill) is documented in
+`problem-detail-implementation.md`.
 
 ---
 
@@ -132,65 +153,62 @@ All derivations read the in-memory `articles` / `patternBySlug` /`cruxtags`
 
 ## 5. Data model — `ProblemEssay`
 
-Full target schema. **Every field except `cruxTag` is optional.** Fields are
-grouped by build status; `incremental` shapes are *proposed* and finalised when
-the block's renderer + validator land together (§10).
+**Every field except `cruxTag` is optional.** `src/types/problemEssay.ts` is
+canonical (each field carries a doc comment); this is the summary. The per-block
+*authoring* semantics — what each renders and how a second wall uses it — are in
+`authoring-problem-pages.md` §4b.
 
 ```ts
 interface ProblemEssay {
   // — identity (required) —
   cruxTag: string            // frozen key; must equal filename and resolve to a registry entry
 
-  // — header (LIVE) —
-  headline?: string          // → H1; label moves to eyebrow
-  lede?: string              // italic teaser; suppressed when `intro` present
+  // — header —
+  headline?: string          // → H1; label moves to the eyebrow
+  lede?: string              // one italic teaser sentence (also the search snippet)
+  howItWorks?: string[]      // the "how this page works" strip (mono, · -joined)
   intro?: string[]           // opening prose paragraphs
 
   // — provenance (stored now; strip renders in PHASE 6) —
-  edition?: number           // positive int, unique across essays; feeds /newsletter list
+  edition?: number           // positive int, unique across essays
   firstSentAt?: string       // ISO date
 
-  // — rich blocks (INCREMENTAL; shapes proposed) —
-  metricGrid?: MetricCard[]          // + metricGridCaption?
-  metricGridCaption?: string
-  wall?: ProseBlock[]                // authored "The wall"; prose may carry {{figure:…}} markers
-  vantageRows?: VantageRow[]         // replaces derived rows by articleSlug
-  deepDive?: { title: string; blocks: DeepDiveBlock[] }
-  numbers?: NumberBlock[]            // "the numbers that stick"
-  whatToSteal?: Takeaway[]
-  simulator?: { articleSlug: string; eyebrow?: string; blurb: string; ctaLabel?: string }
-  interviewNote?: string             // OPTIONAL override of the derived interview corner (Phase 4)
+  // — v7.3 interactive rich blocks (all render-when-present) —
+  figures?: Figure[]                 // essay-hosted SVGs (§6): the no-JS wall figure + {{figure:…}} markers
+  stations?: ProblemStation[]        // sticky nav + time budgets (drives the /problems estimate)
+  wall?: ProblemWall                 // { prose[], figureSlug?, stats[], statsCaption? }
+  tryIt?: ProblemTryIt               // { artifactSlug, teaser, caption, noscript? } — the "cause it" artifact
+  mission?: ProblemMission           // { artifactSlug, teaser, title, intro, decisionsSummary?, outline?, stopblock?, stuckNote? }
+  comparison?: ProblemComparison     // spectrum · diagramRows[] (+YOU row) · columns + matrixRows[] (+YOU column) · questions[]
+  decide?: ProblemDecide             // "Which answer is yours" (a row can light matrix columns)
+  steal?: ProblemSteal               // "What to steal"
+  interview?: ProblemInterview       // five parts + one follow-up row per attack (live ticks)
+  patterns?: ProblemPatternsSection  // intro + optional order (chips stay derived)
+  cards?: ProblemCards               // "Every article" cards + break-it teasers
+  sources?: ProblemSources           // "Read the originals" (URLs derive from members)
 
-  // — escape valve (LIVE as a field stub; renderer incremental) —
-  extraSections?: { title: string; blocks: ProseBlock[] }[]  // see §5a
-
-  // — essay-hosted figures (INCREMENTAL; reuses the figures system) —
-  figures?: Figure[]                 // wall diagram, number charts, etc. — see §6
+  // — escape valve (field stub: validated, not yet rendered) —
+  extraSections?: ProblemExtraSection[]   // see §5a
 }
-
-interface MetricCard  { value: string; label: string; source: string }
-interface VantageRow  { articleSlug: string; year?: string; tag?: string; line: string }
-interface Takeaway    { lead: string; body: string }
-// ProseBlock / DeepDiveBlock / NumberBlock: discriminated unions
-//   { kind: 'prose'; text: string }               // text may carry figure markers
-//   { kind: 'steps'; steps: { text: string; emphasis?: boolean }[] }
-//   { kind: 'stat';  value: string; label: string }
-//   { kind: 'chart'; figure: string; caption?: string }   // chart == an SVG figure
 ```
 
 Notes:
 
-- **`vantageRows` are keyed by `articleSlug`.** A row replaces exactly one
-  derived member row. Members without an authored row keep their derived row —
-  so a half-authored class is coherent (this is the Phase-5b drift seam: the
-  derived fallback *is* the "also in this class" safety net, per-row).
-- **The vantage-row company dot** is **not authored per row** and **never a
-  raw hex** — it derives from an optional token-name accent on the *company
-  registry* entry (D-1), neutral until that exists.
-- **Company link** in a vantage row renders only when that company has a
-  `/companies/<slug>` page (Phase 5) — render-when-present.
-- **`lede` vs `intro`.** Minimal uses `lede`. When `intro` is authored the lede
-  is suppressed (the full comp opens on intro prose, no separate italic line).
+- **The comparison is the join point.** `comparison.matrixRows[].id` and the
+  `{{slot}}` tokens in the YOU diagram SVG must match the keys the wall module's
+  `youMapping()` returns, or the YOU column/row never fills. The wall module is
+  the **only** per-wall code (`src/walls/<wall>.ts`, registered by cruxTag); see
+  `problem-detail-implementation.md` §5 and §8.
+- **Artifacts are content, not schema.** `tryIt`/`mission` carry an
+  `artifactSlug` resolving to `/artifacts/<slug>/index.html` (built from
+  `content/artifacts/<slug>.jsx`). The page never imports artifact code — it
+  embeds a sandboxed iframe and speaks postMessage protocol v1 (impl doc §4).
+- **`lede` vs `intro`.** Both may be present; the lede is the italic teaser and
+  the search snippet, the intro is the opening prose.
+- **Superseded fields.** `metricGrid`, `vantageRows`, `deepDive`, `numbers`,
+  `whatToSteal`, `simulator`, and `interviewNote` were proposed in v1.1 and
+  **never built** — the interactive blocks above replaced them. Only
+  `extraSections` (§5a) and `figures` (§6) survive from that set.
 
 ### 5a. `extraSections` — the flexibility escape valve
 
@@ -289,28 +307,32 @@ above is figure-ready by construction.
 
 ## 9. Validator contract (`scripts/checks/problem-essay.ts`)
 
-Runs when any `content/problems/*.json` exists. Scope grows with the schema;
-**today's scope** (the header blocks we render) is marked ✅, forward rules are
-marked ▢.
+Runs when any `content/problems/*.json` exists. The scope grew with the v7.3
+port — it now validates the interactive blocks and their cross-references, not
+just the header. Current checks:
 
-- ✅ `cruxTag` present, kebab-case, resolves to a `cruxtags.json` entry.
-- ✅ filename (basename without `.json`) equals `cruxTag`.
-- ✅ at most one essay per `cruxTag`.
-- ✅ `headline` / `lede`: non-empty strings when present (bounds: headline
-  ≤ 120 chars, lede ≤ 200 — advisory warn).
-- ✅ `intro`: array of non-empty strings when present.
-- ✅ `extraSections`: array of `{ title (non-empty), blocks (array) }` when
-  present. (Deep `ProseBlock` shape validated once its renderer lands.)
-- ▢ `edition`: positive integer, **unique across essays**; `firstSentAt`:
-  valid ISO date. (Both present or both absent.)
-- ▢ `vantageRows[].articleSlug`: resolves to a real article **and** that
-  article's `cruxTag` equals this essay's (a row must be a class member).
-- ▢ `simulator.articleSlug`: resolves to a real article (warn if not a member).
-- ▢ `metricGrid[].source`: warn when it doesn't match a member `source.company`.
-- ▢ figure fields: delegated to the existing figure checks via `figureHosts`.
-- ▢ **drift warning** (Phase 5b): warn when members outnumber `vantageRows`
-  (visible, non-blocking — a publish is never blocked by an essay one revision
-  behind).
+- **Identity.** `cruxTag` present, kebab-case, resolves to a `cruxtags.json`
+  entry; filename equals `cruxTag`; at most one essay per `cruxTag`.
+- **Header.** `headline` / `lede` non-empty strings when present (advisory
+  length bounds); `intro` / `howItWorks` arrays of non-empty strings.
+- **Stations.** anchors resolve; time budgets are numbers.
+- **Wall / try-it / mission.** shapes valid; `artifactSlug`s present; the
+  mission's `decisionsSummary` requires the `{{decisions}}` marker exactly once.
+- **Comparison (the important one).** `matrixRows[].id` and the YOU diagram
+  `{{slot}}`s must be keys the wall module's `youMapping()` returns — a mismatch
+  **fails**, and a comparison with no registered wall module **warns** (the YOU
+  column would never fill); inline SVGs referenced by `diagramRows[].svg` /
+  `you.*Svg` exist and pass the figure-svg-safe allowlist.
+- **Decide.** `rows[].highlights` resolve against `comparison.columns`.
+- **Interview.** exactly **one follow-up row per attack** (count ==
+  the wall module's `attackCount`).
+- **Refs.** `steal[].qref`, `cards.teasers`, `sources.items[].articleSlug`,
+  `patterns.order` resolve to real questions / articles / patterns.
+- **Escape valve.** `extraSections`: `{ title (non-empty), blocks (array) }`
+  (deep block shape validated once its renderer lands).
+- **Provenance.** `edition` positive int (unique across essays) / `firstSentAt`
+  ISO — both present or both absent.
+- **Figures.** delegated to the existing figure checks via `figureHosts`.
 
 Registration: import + append to `CHECKS` in `scripts/validate-content.ts`;
 load essays in `scripts/load-content.ts` into `ContentSet` (mirrors how figures
@@ -318,31 +340,27 @@ were added). Predicate `checkProblemEssay` in `src/types/predicates.ts`.
 
 ---
 
-## 10. Incremental build order
+## 10. Incremental build order (largely historical)
+
+> **Superseded (2026-09-09).** This was the roadmap for the speculative blocks.
+> The v7.3 port took a different path and shipped the interactive block set
+> (§3/§5) as live. What survives is the **unit rule** and the **email-degradation
+> rule** below — apply them to any *new* block. The header + validator (step 1)
+> shipped; steps 2–5 (`vantageRows`/`metricGrid`/`deepDive`/`numbers`/
+> `simulator`) were not built.
 
 Each block ships as a unit: **schema field + renderer + validator rule +
 (if it embeds a figure) figure-host wiring + EMAIL degradation**, together, in
 one reviewed step. The essay record is canonical and editions are *sent* from
-it (D3 rule 2), so no block may exist that the email pipeline cannot carry.
-Sane email defaults: `metricGrid` → table; `steps` → numbered list; `chart`
-figure → static image or link-to-page; `stat` → bold line; `extraSections` →
-heading + degraded blocks. Nothing to build now — the rule just binds the
-checklist.
+it, so no block may exist that the email pipeline cannot carry. Sane email
+defaults: `steps` → numbered list; `chart` figure → static image or
+link-to-page; `stat` → bold line; `extraSections` → heading + degraded blocks;
+`mission`/`tryIt`/`comparison` → link to the live page (interactive by nature).
 
-1. **Header + validator (next).** Wire `checkProblemEssay` + `load-content` for
-   the LIVE fields (`cruxTag`, `headline`, `lede`, `intro`, `edition`,
-   `firstSentAt`). This is the "build the validator" step the owner asked to
-   scope first.
-2. **`vantageRows`** — the highest-value authored block (upgrades the "Same
-   wall" rows). Needs D-1 (accent) resolved.
-3. **`wall` + figures** — authored wall prose + the first essay-hosted diagram
-   (activates the essay figure host).
-4. **`metricGrid`**, **`whatToSteal`**, **`simulator`** — self-contained cards.
-5. **`deepDive`**, **`numbers`** — the richest blocks (prose + steps + chart
-   figures).
-6. **Provenance strip + subscribe** — with Phase 6 `/newsletter`.
-7. **Interview corner** — with Phase 4 (`questionsByCruxTag`); `interviewNote`
-   folds in.
+Still pending on their phase gates:
+
+- **Provenance strip + subscribe** — Phase 6 `/newsletter`.
+- **`extraSections` renderer** — with the shared `ProseBlock` renderer.
 
 ---
 
@@ -365,4 +383,3 @@ checklist.
   one-sentence `lede`s (one per class), which upgrades every page *and* every
   meta description via `lede ?? intro[0] ?? definition`. Those `{cruxTag, lede}`
   files are the first real exercise of the step-1 validator.
-```
