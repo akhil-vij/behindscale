@@ -77,6 +77,13 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     in the ledger panel). The F9 rule is "transient text never inside a node
 //     rect"; state text is exempt.
 //
+// Sanctioned edits (Batch 3, 2026-09-09 findability F20) -- copy only:
+//   B3-2 (F20): the DAY SURVIVED narration said the bill was "itemized on the
+//     right"; Batch 1 moved THE BILL under the stage, so it now reads
+//     "itemized in THE BILL under the stage". One clause; the rest of the
+//     narration (and every other string) is unchanged. The §5.4 text-parity
+//     test carries the matching fixture rewrite.
+//
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
 // belongs where the mission unlocks after the naive run (finishDay -> won).
@@ -930,7 +937,7 @@ function bootEngine() {
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
-  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized on the right. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>'+speedNote);
+  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized in THE BILL under the stage. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>'+speedNote);
   card('good','DAY SURVIVED','Zero double charges, zero lost sales, zero mystery tickets. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';

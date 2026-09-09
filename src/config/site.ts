@@ -15,3 +15,15 @@
 // An absolute "https://..." value renders as an external link (new tab); a
 // leading-slash value renders as an in-app route.
 export const newsletterSignupUrl = ''
+
+// The landing hero's cross-link to the load-shedding wall (F20). The old "See
+// how →" promised a drop-order comparison /problems/blind-load-shedding does
+// not carry yet, so the copy is scoped to what exists: five companies, five
+// posts. When that wall lands its comparison, flip `lead` + `linkLabel` back to
+// the comparison framing ("Five companies hit this same wall and each chose a
+// different drop order." / "See how →") -- one field, and `href` never changes.
+export const heroWallPromise = {
+  lead: 'Five companies hit this same wall.',
+  linkLabel: 'Read the five →',
+  href: '/problems/blind-load-shedding',
+}

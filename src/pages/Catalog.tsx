@@ -14,9 +14,10 @@ import {
   canonicalCompanies,
   companySourceSlugMap,
 } from '../lib/catalogGroups'
-import { estimateMinutes, formatEstimate } from '../lib/wallEstimate'
+import { estimateMinutes } from '../lib/wallEstimate'
 import { matchTerms, type MatchReason } from '../lib/search'
 import { articleTerms, cruxTagTerms } from '../lib/searchTerms'
+import PlayableBadge from '../components/PlayableBadge'
 import type { Article } from '../types'
 
 // Catalog page: the browsable workbench. Grouped primarily by
@@ -332,14 +333,7 @@ function PlayableRow({ cruxTag }: { cruxTag: string }) {
   const minutes = estimateMinutes(essay.stations ?? [])
   return (
     <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-border-strong bg-bg-surface px-2 py-[2px] font-mono text-[11px] uppercase tracking-[0.08em] text-text-primary">
-        <span aria-hidden="true">▶</span> Playable
-      </span>
-      {minutes !== null && (
-        <span className="font-mono text-xs text-text-muted">
-          {formatEstimate(minutes)}
-        </span>
-      )}
+      <PlayableBadge minutes={minutes} />
       <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
         {essay.mission.teaser}
       </span>
