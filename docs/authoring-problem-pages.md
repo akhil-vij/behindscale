@@ -1,8 +1,14 @@
 # Authoring Problem Pages — Workflow Guide
 
-A hands-on guide to creating and enriching the `/problems/<slug>` pages. For the
-full technical spec (schema, rendering rules, SEO, invariants) see
-`docs/problem-page-design.md` — this doc is the *how-to*.
+A hands-on guide to creating and enriching the `/problems/<slug>` pages. This
+doc is the *how-to*. Its companions:
+
+- `docs/problem-page-design.md` — the technical spec (schema, rendering rules,
+  SEO, invariants).
+- `docs/problem-detail-implementation.md` — the runtime (the interactive
+  artifacts, the iframe protocol, save-the-day persistence, the wall module,
+  iframe sizing, and the viewport engineering). Read it before authoring a new
+  **playable** wall (a mission + try-it).
 
 ---
 
@@ -188,12 +194,23 @@ surface, under the 4.5:1 floor for 9-11px text; open decision #22 holds
 the token question). Fonts stay the fallback mono stack; a sandboxed bundle
 fetches nothing.
 
+**Per-wall phone diagrams (Batch 1, 2026-09-09).** The comparison diagrams and
+the try-it wire are ~640px wide, so each ships a **vertical (phone) variant** as
+a pure *file drop*: author `content/problems/<cruxTag>/<name>-v.svg` (e.g.
+`anat-stripe-v.svg`, plus `you-empty-v.svg` / `you-filled-v.svg` — keep the
+`{{slot}}` tokens in the filled one) and the shell switches to it under 700px
+with no code change. The try-it wire is inline in its `.jsx`, so its vertical is
+a second inline `<svg class="stage stage-v">`. Two gotchas: strip any embedded
+provenance (C2PA) metadata, and remember the two SVGs share ids — the hidden one
+must be `display:none`. See `problem-detail-implementation.md` §7.5.
+
 **Validation.** `npm run validate` checks every shape and cross-reference:
 member articles, pattern order, question refs, station anchors, inline SVG
 existence + the figure-svg-safe allowlist, YOU keys vs the wall module, and
 one interview row per attack. `npm test` runs the rules-parity and
 click-through suites; `npm run test:e2e` the browser suite (round-trip, text
-parity against the reference build, no-JS, prerender, mobile scroll chaining).
+parity against the reference build, no-JS, prerender, and the layout suite —
+desktop sticky column, phone content-height + accordion, the label bands).
 
 ---
 
@@ -228,21 +245,28 @@ The validator gives a one-line reason and a fix. Common ones:
 
 ## 7. Growing a page richer over time
 
-The full design (`docs/problem-page-design.md`) defines more blocks — a metric
-grid, hand-written "vantage" rows, a deep-dive, number charts, a "what to steal"
-list, a simulator link, diagrams. These are **not authorable yet**: each one
-ships when its on-page renderer is built, as one reviewed unit
-(schema + renderer + validator rule + email handling). We add them in priority
-order as you want them.
+The full rich path is the interactive block set in §4b (`stations`, `wall`,
+`tryIt`, `mission`, `comparison`, `decide`, `steal`, `interview`, `patterns`,
+`cards`, `sources`). Every one is **authorable today** and render-when-present,
+so you grow a page from a one-line lede all the way to the full
+`ambiguous-timeouts` worked example, one field at a time. Add a block, run
+`npm run validate`, ship.
 
-**How to ask for the next block:** tell me which class you want to enrich and
-what it needs (e.g. "queue-backlog needs the hand-written company rows"), and
-I'll build that block's renderer + extend the validator, then you author it the
-same way — add a field to the JSON.
+> The earlier design draft (`problem-page-design.md` v1.1) proposed a different
+> set — a metric grid, "vantage" rows, a deep-dive, number charts, a simulator
+> link. Those were **superseded** by the interactive blocks above and never
+> built; don't author them. (The design doc's v2.0 §3/§5 now describe the
+> shipped set.)
 
-`extraSections` exists as a reserved field for genuinely one-off sections; it's
+`extraSections` remains a reserved field for genuinely one-off sections: it's
 validated but not rendered yet, and it's the incubator — when a one-off shape
-recurs across classes it graduates into a real block.
+recurs across classes it graduates into a real block with its own renderer.
+
+**Authoring a whole new playable wall** (not just enriching an existing page) is
+a bigger lift — a mission + try-it artifact, the comparison SVGs (horizontal +
+phone verticals), and one `youMapping()` module. Read
+`problem-detail-implementation.md` §8 ("Building the next wall") first: it lists
+exactly what you reuse (the entire runtime) vs what you author.
 
 ---
 
@@ -272,3 +296,4 @@ page that doesn't exist yet.
   `mission`, `comparison`, `decide`, `steal`, `interview`, `patterns`,
   `cards`, `sources`, `figures`)
 - **Full spec:** `docs/problem-page-design.md`
+- **Runtime / new playable wall:** `docs/problem-detail-implementation.md`
