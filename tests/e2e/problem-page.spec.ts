@@ -290,12 +290,20 @@ test.describe('§5.4 text parity with the reference build', () => {
       ),
     )
 
+    // §6 (F18): the ONE new string -- the diagram-row outbound link moved from
+    // the <summary> into the body ("Read the article ↗"). It is not in the
+    // reference; assert it appears (once per linked company row) and pull it out
+    // before the multiset compare, so parity still proves nothing else changed.
+    const READ_ARTICLE = 'Read the article ↗'
+    expect(servedLines.filter((l) => l === READ_ARTICLE).length).toBeGreaterThan(0)
+    const servedForParity = servedLines.filter((l) => l !== READ_ARTICLE)
+
     // Batch 1 §1 reorders the mission's internal layout (the two-column working
     // surface), so parity is now a MULTISET check: the same lines with the same
     // counts, order-independent. This still catches any added, removed, or
     // DOUBLED line (the hidden-vertical-SVG concern) -- it only tolerates the
     // deliberate reorder. Report the first sorted divergence with context.
-    const sortedServed = [...servedLines].sort()
+    const sortedServed = [...servedForParity].sort()
     const sortedFixture = [...fixtureLines].sort()
     const n = Math.max(sortedServed.length, sortedFixture.length)
     for (let i = 0; i < n; i++) {
@@ -306,8 +314,8 @@ test.describe('§5.4 text parity with the reference build', () => {
         )
       }
     }
-    expect(servedLines.length).toBe(fixtureLines.length)
-    expect(servedLines.length).toBeGreaterThan(250)
+    expect(servedForParity.length).toBe(fixtureLines.length)
+    expect(servedForParity.length).toBeGreaterThan(250)
   })
 })
 

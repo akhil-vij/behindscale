@@ -19,8 +19,11 @@ body { overflow-x: clip; }
 .problem-page h3.pp-h3 { font-size: 17px; font-weight: 600; margin: 26px 0 8px; color: var(--text-primary); }
 .problem-page .pp-p { color: var(--text-secondary); margin-bottom: 14px; }
 .problem-page p.lede { font-size: 18px; font-style: italic; color: var(--text-secondary); margin: 0 0 22px; }
-.problem-page .pp-link { color: var(--accent-primary); text-decoration: none; }
-.problem-page .pp-link:hover { color: var(--accent-hover); text-decoration: underline; }
+/* §6 (F18): in-prose links are underlined at rest (1px, offset 2px) -- colour
+   alone is ~1.5:1 against body text. Nav items, chips, card titles and mono
+   eyebrow links stay bare (affordances by position). */
+.problem-page .pp-link { color: var(--accent-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.problem-page .pp-link:hover { color: var(--accent-hover); }
 .problem-page .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 
 /* ---------- station nav (sticky, scroll-spy) ---------- */
@@ -86,6 +89,10 @@ body { overflow-x: clip; }
 .problem-page .anat-head .co { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
 .problem-page .anat-head .co a { color: var(--accent-primary); text-decoration: none; }
 .problem-page .anat-head .co a:hover { color: var(--accent-hover); text-decoration: underline; }
+/* §6 (F18): the diagram-row outbound link, moved out of the <summary> to the
+   first line of the expanded body; underlined at rest as an in-prose link. */
+.problem-page .anat-readlink { display: inline-block; margin: 2px 2px 6px; font-family: var(--font-mono); font-size: 11.5px; color: var(--accent-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.problem-page .anat-readlink:hover { color: var(--accent-hover); }
 .problem-page .anat-head .yr { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
 .problem-page .anat-head .vant { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 .problem-page .anat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -103,8 +110,8 @@ body { overflow-x: clip; }
 .problem-page .node { fill: var(--bg-subtle); stroke: var(--border-strong); stroke-width: 1.3; }
 .problem-page .nlabel { font-size: 11px; fill: var(--text-secondary); text-anchor: middle; letter-spacing: 0.03em; }
 .problem-page .nsub { font-size: 8.5px; fill: var(--text-muted); text-anchor: middle; }
-.problem-page .arrow { stroke: var(--text-muted); stroke-width: 1.3; }
-.problem-page .ahead { fill: var(--text-muted); }
+.problem-page .arrow { stroke: var(--muted-ghost); stroke-width: 1.3; } /* §6: decorative connector -> ghost */
+.problem-page .ahead { fill: var(--muted-ghost); } /* §6: decorative arrowhead -> ghost */
 .problem-page .alabel { font-size: 9px; fill: var(--text-muted); text-anchor: middle; letter-spacing: 0.04em; }
 .problem-page .state { fill: var(--bg-surface); stroke: var(--accent-primary); stroke-width: 1.4; }
 .problem-page .state.faded { stroke: var(--border-strong); fill: var(--bg-subtle); }
@@ -120,7 +127,7 @@ body { overflow-x: clip; }
 .problem-page .bx { stroke: var(--state-error); stroke-width: 2; stroke-linecap: round; }
 .problem-page .blabel { font-size: 9px; fill: var(--state-error); letter-spacing: 0.02em; }
 .problem-page .acid { fill: none; stroke: var(--accent-primary); stroke-width: 1.4; }
-.problem-page .clockmark { stroke: var(--text-muted); stroke-width: 1.3; fill: none; }
+.problem-page .clockmark { stroke: var(--muted-ghost); stroke-width: 1.3; fill: none; } /* §6: decorative clock -> ghost */
 .problem-page .anat-cap { font-size: 12.5px; color: var(--text-muted); margin: 2px 2px 6px; }
 .problem-page .strip-note { font-size: 13px; color: var(--text-muted); margin: 10px 0 0; }
 .problem-page .matrix-lead { font-size: 14px; color: var(--text-secondary); margin-top: 14px; }

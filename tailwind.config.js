@@ -11,6 +11,10 @@ export default {
         'text-primary': 'var(--text-primary)',
         'text-secondary': 'var(--text-secondary)',
         'text-muted': 'var(--text-muted)',
+        // §6 (F18): the old --text-muted value, for non-text uses (decorative
+        // dashes, dividers, disabled hints, the reserved-slot circle) where the
+        // 4.5:1 contrast law doesn't apply.
+        'muted-ghost': 'var(--muted-ghost)',
         'accent-primary': 'var(--accent-primary)',
         'accent-hover': 'var(--accent-hover)',
         'border-default': 'var(--border-default)',

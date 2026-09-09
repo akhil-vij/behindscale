@@ -95,16 +95,18 @@ export default function ComparisonSection({
         return (
           <details key={row.svg} className={vertical !== undefined ? 'anat-row has-vert' : 'anat-row'} open={row.open}>
             <summary className="anat-head">
-              <span className="co">
-                {row.articleSlug !== undefined ? (
-                  <Link to={`/articles/${row.articleSlug}`}>{row.company}</Link>
-                ) : (
-                  row.company
-                )}
-              </span>
+              {/* §6 (F18): company name is plain text now; the outbound link
+                  moves to the first line of the expanded body, so the whole
+                  summary row is one predictable control (no nested tap target). */}
+              <span className="co">{row.company}</span>
               <span className="yr">{row.year}</span>
               <span className="vant">{row.vantage}</span>
             </summary>
+            {row.articleSlug !== undefined && (
+              <Link to={`/articles/${row.articleSlug}`} className="anat-readlink">
+                Read the article ↗
+              </Link>
+            )}
             <div
               className="anat-scroll"
               dangerouslySetInnerHTML={{ __html: svg(row.svg) ?? '' }}
