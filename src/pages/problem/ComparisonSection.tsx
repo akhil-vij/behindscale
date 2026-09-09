@@ -109,6 +109,9 @@ export default function ComparisonSection({
             )}
             <div
               className="anat-scroll"
+              tabIndex={0}
+              role="group"
+              aria-label={`${row.company} — how it works (scrollable diagram)`}
               dangerouslySetInnerHTML={{ __html: svg(row.svg) ?? '' }}
             />
             {vertical !== undefined && (
@@ -129,6 +132,9 @@ export default function ComparisonSection({
         </summary>
         <div
           className="anat-scroll"
+          tabIndex={0}
+          role="group"
+          aria-label="Your design — how it works (scrollable diagram)"
           dangerouslySetInnerHTML={{
             __html: you.filled
               ? fillSlots(svg(c.you.filledSvg) ?? '', you.cells)
@@ -159,7 +165,13 @@ export default function ComparisonSection({
       {c.matrixLead !== undefined && (
         <p className="matrix-lead">{pp(c.matrixLead)}</p>
       )}
-      <div className="matrix-wrap" id="glance">
+      <div
+        className="matrix-wrap"
+        id="glance"
+        tabIndex={0}
+        role="group"
+        aria-label="Answers at a glance — scrollable comparison table"
+      >
         <table className="matrix">
           <thead>
             <tr>

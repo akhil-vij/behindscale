@@ -231,6 +231,12 @@ body { overflow-x: clip; }
 .problem-page .scrollhint { position: relative; }
 .problem-page .scrollhint::after { content: "\27f7 scroll"; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 999px; padding: 1px 9px; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; pointer-events: none; z-index: 2; }
 
+/* F18: the sideways-scrolling boxes (comparison table, interview table,
+   diagram strips) are keyboard-focusable (tabindex=0 in the TSX) so they can be
+   scrolled without a pointer; a visible ring marks the focused box. */
+.problem-page .anat-scroll:focus-visible,
+.problem-page .matrix-wrap:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; border-radius: 4px; }
+
 /* ---------- phone ---------- */
 @media (max-width: 700px) {
   /* §4 (F5): under 700px the nav is a single scrolling row, 40px, budgets

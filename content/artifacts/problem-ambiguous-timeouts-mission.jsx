@@ -77,12 +77,16 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     in the ledger panel). The F9 rule is "transient text never inside a node
 //     rect"; state text is exempt.
 //
-// Sanctioned edits (Batch 3, 2026-09-09 findability F20) -- copy only:
+// Sanctioned edits (Batch 3, 2026-09-09 findability F20) -- copy + a11y markup:
 //   B3-2 (F20): the DAY SURVIVED narration said the bill was "itemized on the
 //     right"; Batch 1 moved THE BILL under the stage, so it now reads
 //     "itemized in THE BILL under the stage". One clause; the rest of the
 //     narration (and every other string) is unchanged. The §5.4 text-parity
 //     test carries the matching fixture rewrite.
+//   B3-6 (F18): the artifact root #mission-root is now a <main> landmark and
+//     the .a-title line is an <h1> (its title). Class-driven styling is
+//     unchanged, so both render identically; only the tag names change (no
+//     text change, so parity holds).
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
@@ -305,10 +309,10 @@ const CSS = `
 `
 
 const MARKUP = `
-<div id="mission-root">
+<main id="mission-root">
 <div class="artB" id="artB" data-cue="run">
  <div class="a-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY - BUILD IT</div>
- <div class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></div>
+ <h1 class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></h1>
  <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.</div>
 
  <div class="mission-grid">
@@ -359,7 +363,7 @@ const MARKUP = `
 
  </div>
  <div class="art-foot" id="mission-foot" style="display:none;"><a href="https://www.behindscale.com/problems/ambiguous-timeouts">From the full problem page at behindscale.com →</a></div>
-</div>
+</main>
 `
 
 // ---- the frozen engine (problem-page-v7.3.html, Script 2) ----------------
