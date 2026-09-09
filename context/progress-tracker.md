@@ -7699,6 +7699,68 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-09-09: **Findability Batch 3 — implementation (F18/F19/F20 + tasks 3/5/9/10).**
+  Branch `findability-batch3` off latest `main`; one commit per item.
+  - **B3-1 (F19):** shared matcher `src/lib/search.ts` (tokenise →
+    case-insensitive token-prefix, AND) + term builders `src/lib/searchTerms.ts`
+    power both list pages; a non-title hit shows a `matched: <kind> <term>` line.
+    New `keywords` field on Article + CruxTagEntry (validated); patterns extend
+    existing `aliases`. Data merged at build via
+    `import.meta.glob('/keywords/*.json')` in `src/content/index.ts` (no
+    hand-copy; absent files merge empty).
+  - **B3-1 data follow-up:** consumed the authoring agent's `keywords/` delivery;
+    `keywords/tests.md` → the unit suite (`search-content.test.ts`, 92 cases + 9
+    matcher tests, all green). Aligning the term surface to the author's
+    simulator required: index `article.summary` (not cruxSummary) and drop
+    crux/source; **remove the full-pattern-definition net — supersedes Batch-3
+    note 1** (all 52 patterns now have aliases; the net re-surfaced footnotes,
+    `backlog`→6 not 4); drop the shared category gloss (`exactly once`→all 9
+    consistency patterns); index only the authored one-liner (card display keeps
+    the derived fallback).
+  - **B3-2 (F20):** landing count sentence derives both numbers from
+    `catalogGroups()` ("Nine walls hit by three to five companies — fourteen in
+    all."; `numberWord` extended past twelve). Shared `PlayableBadge`
+    ("▶ PLAYABLE · ~35 min to a survived design", one rule = `estimateMinutes`).
+    Mission DAY SURVIVED narration → "itemized in THE BILL under the stage"
+    (sanctioned; §5.4 parity fixture rewrite carried). Hero promise →
+    `heroWallPromise` in `config/site.ts` so it flips back when the load-shedding
+    wall lands.
+  - **B3-3 (tasks 3/5):** PlayableBadge on landing wall cards; new
+    `SideBySideBadge` (N = comparison columns) on both lists; badges wrapped in
+    the class-page link. Data-driven off `mission`/`comparison`; one wall today.
+  - **B3-4 (task 9):** new essay field `searchQuestion { titleClause, description }`
+    (validated). `prerender.problemMeta` builds the SEO `<title>` and description
+    (companies from comparison columns); og:* + JSON-LD description follow.
+    Populated for ambiguous-failure-under-retry; other walls fall back.
+  - **B3-5 (task 10):** `src/components/Footer.tsx` mounted once in AppRoutes;
+    prev/next wall links on problem pages (/problems order, none at the ends);
+    Atom feed `scripts/generate-feed.ts` → `dist/rss.xml`, linked from `<head>`
+    + footer. /about,/pricing,/interview,/companies stay unlinked (Stage 2).
+  - **B3-6 (F18):** tabindex=0 + role + aria-label + focus ring on the three
+    horizontal-scroll boxes; mission artifact root → `<main>` + `<h1>` title
+    (styling unchanged, parity holds).
+  - Spec-vs-reality: audit's "Kafka 2 of 7" resolved to 5 material articles
+    (author's ruling); note-1 full-def net removed as superseded (both above).
+- 2026-09-09: **Search-terms authoring — whole library (findability Batch 3).**
+  Authored the search-terms overlay for all 41 articles, 52 patterns, and 14
+  walls into `keywords/` per the implementation agent's field contract
+  (`keywords/README.md`): `articles.json` (`keywords`, authored case),
+  `patterns.json` (`aliases`, lowercase, unioned with existing owner aliases),
+  `walls.json` (keyed by **cruxTag**, `keywords` + `searchQuestion`). 470 article
+  keywords (8–15 each), 327 pattern aliases (4–8 each), 123 wall keywords (6–10
+  each) plus one `searchQuestion` per wall. Validators green: no keyword equals
+  its article's own tag; all pattern aliases lowercase/deduped; every cruxTag
+  covered. Deliverables also: `keywords/REPORT.md` (method, per-item coverage,
+  alias evidence from live web checks for HOL/DLQ/cache-stampede/job-queue/
+  brownout/idempotency, cross-cutting rulings, thin-tags list) and
+  `keywords/tests.md` (~70 query→expected-results checks, verified against a
+  token-prefix AND-semantics simulator over the real corpus). **Key ruling:**
+  `Kafka` returns the **5** articles where it is material, not 7 — FOQS and
+  Cadence mention it only in passing and are deliberately excluded (precision
+  over the audit's literal "2 of 7"). Files are in the working tree, uncommitted.
+  **Owner-facing (see below / open-decisions):** `slack-incident-2-22-22` tags
+  miss `cascading-failure` and `memcached` (post's own high-frequency terms,
+  currently unfindable at the source) — flagged to fix tags at source.
 - 2026-08-19: Drafted `docs/pattern-artifacts-design.md` — artifact
   support for pattern detail pages, converged with figures onto a
   single `ContentHost` abstraction (`scripts/content-hosts.ts`

@@ -160,6 +160,27 @@ _None._
 
 ## Lower priority
 
+### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)
+
+- **Source:** findability Batch 3 search-terms authoring (`keywords/REPORT.md`,
+  final section). The authored `keywords` overlay makes these findable in search
+  now; the recommendation is to also fix the tags at the source so the taxonomy
+  itself is right.
+- **The list (fix at source, not done):**
+  - **`slack-incident-2-22-22` (priority):** tags miss `cascading-failure` (the
+    post's own primary term, ~9×; the tag set only has `metastable-failure`,
+    which appears once and only in a cited paper's title) and `memcached` (~10×
+    in the post, 0× in the dissection body — unfindable at source). A mitigation
+    tag (`load-shedding`/`throttling`) and `scatter-query` would also help.
+  - **`reddit-piday-outage`:** `configuration` is vague (→ `configuration-drift`
+    / `unrecorded-config`); the recovery half (backup/restore, etcd cert trap,
+    staged return) is untagged (→ `disaster-recovery`/`backup-restore`, `etcd`).
+  - **Redundant/generic:** company-name-as-tag (`google` on `google-colossus`,
+    `meta` on `meta-foqs-priority-queue`) duplicates the indexed company field;
+    generic `distributed-systems` tag on three articles adds little.
+- **Reply:** approve the source-tag edits (or defer — keywords already cover
+  search recall, so no compounding cost).
+
 ### 21. v7.3 port: unspecified decisions to ratify
 
 - **Source:** the port (2026-09-06); each is implemented and listed in
