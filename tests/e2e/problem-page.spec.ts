@@ -638,3 +638,28 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
     })
   }
 })
+
+test.describe('§3b verticals live: DV/TV replace the scrolling horizontals under 700px', () => {
+  test.use({ viewport: { width: 390, height: 780 } })
+
+  test('comparison + try-it show the vertical variant; the YOU vertical fills', async ({ page }) => {
+    test.setTimeout(150_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    // A comparison diagram row swaps to its vertical (DV) SVG; the horizontal
+    // (and its scroll pill) is display:none.
+    const row = page.locator('.anat-row.has-vert').first()
+    await expect(row.locator('.anat-vert')).toBeVisible()
+    await expect(row.locator('.anat-scroll')).toBeHidden()
+    // The try-it frame (iframe < 700 here) shows the vertical (TV) wire.
+    const tryIt = frameOf(page, 'problem-ambiguous-timeouts-tryit')
+    await expect(tryIt.locator('svg.stage.stage-v')).toBeVisible()
+    await expect(tryIt.locator('svg.stage:not(.stage-v)')).toBeHidden()
+    // After a survived day, the YOU vertical fills from the mapped decisions
+    // ({{dState}} etc., not left blank).
+    await surviveDay(mission, page)
+    const youVert = page.locator('#you-row .anat-vert')
+    await expect(youVert).toBeVisible()
+    await expect(youVert).toContainText(/commit/i)
+  })
+})

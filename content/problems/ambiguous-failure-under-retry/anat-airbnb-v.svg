@@ -1,0 +1,29 @@
+<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Airbnb: key born at the client, state on the master database only, retries get the saved outcome; a lagging replica would cause a double charge" xmlns="http://www.w3.org/2000/svg">
+  <path class="replay" d="M 90 144 C 40 116, 40 62, 78 34"></path>
+  <polygon class="rhead" points="90,34 78,28 78,40"></polygon>
+  <rect class="node" x="90" y="10" width="180" height="48" rx="7"></rect>
+  <text class="nlabel" x="180" y="38">CLIENT</text>
+  <circle class="keydot" cx="180" cy="58" r="6"></circle>
+  <line class="arrow" x1="180" y1="66" x2="180" y2="79"></line>
+  <line class="arrow" x1="180" y1="97" x2="180" y2="110"></line>
+  <polygon class="ahead" points="180,118 176,110 184,110"></polygon>
+  <text class="alabel" x="180" y="88">SAME KEY, EVERY RETRY</text>
+  <rect class="node" x="90" y="120" width="180" height="48" rx="7"></rect>
+  <text class="nlabel" x="180" y="140">ORPHEUS</text>
+  <text class="nsub" x="180" y="156">library inside the service</text>
+  <line class="drop" x1="180" y1="168" x2="180" y2="188"></line>
+  <line class="drop" x1="180" y1="210" x2="180" y2="224"></line>
+  <text class="rlabel" x="180" y="198">RETRY GETS THE SAVED OUTCOME</text>
+  <rect class="state" x="90" y="230" width="180" height="20" rx="6"></rect>
+  <text class="slabel" x="180" y="243">MASTER DB ONLY</text>
+  <rect class="state faded" x="120" y="254" width="120" height="20" rx="6"></rect>
+  <text class="slabel faded" x="180" y="267">REPLICA</text>
+  <line class="arrow" x1="180" y1="274" x2="180" y2="296"></line>
+  <line class="arrow" x1="180" y1="316" x2="180" y2="322"></line>
+  <polygon class="ahead" points="180,330 176,322 184,322"></polygon>
+  <line class="bx" x1="100" y1="300" x2="112" y2="312"></line>
+  <line class="bx" x1="112" y1="300" x2="100" y2="312"></line>
+  <text class="blabel" x="120" y="310">SECONDS OF LAG = DOUBLE CHARGE</text>
+  <rect class="node" x="76" y="330" width="208" height="56" rx="7"></rect>
+  <text class="nlabel" x="180" y="362">BANK</text>
+</svg>
