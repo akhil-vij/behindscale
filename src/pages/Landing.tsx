@@ -1,4 +1,4 @@
-import { Component } from 'react'
+import { Component, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { articles, cruxtags, urlSlugByCruxTag } from '../content'
@@ -40,7 +40,13 @@ import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 // mount uses the same), which also closes the empty band the taller 560px
 // frame used to leave below the content.
 const HERO_IFRAME_PATH = '/artifacts/priority-aware-load-shedding/index.html'
+// §5 (F3): the design height is the initial + fallback value; the real height
+// comes from the artifact's `artifact:size` message (min 380, no max). The
+// 560px narrow fallback (D2, the inferior option) is used only if the channel
+// never delivers -- allow-scripts can postMessage, so that is rare.
 const HERO_IFRAME_HEIGHT_PX = 470
+const HERO_MIN_HEIGHT_PX = 380
+const HERO_FALLBACK_NARROW_PX = 560
 
 // Spell small counts as words (AP style: words up to twelve, digits
 // above). Used by the preview header so its "<N> walls / <min> to <max>
@@ -126,6 +132,30 @@ function Hero() {
 }
 
 function HeroArtifactFrame() {
+  // §5 (F3, D2): size the hero iframe from the artifact's posted height (min
+  // 380, no max) instead of a hand-tuned fixed height -- only the artifact
+  // knows its reflowed height, so the "flip SHED SMART" toggle stays visible.
+  const heroRef = useRef<HTMLIFrameElement>(null)
+  const [heroHeight, setHeroHeight] = useState<number | null>(null)
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.source !== heroRef.current?.contentWindow) return
+      const d = e.data as { type?: string; h?: number } | null
+      if (!d || d.type !== 'artifact:size' || typeof d.h !== 'number' || !Number.isFinite(d.h)) return
+      setHeroHeight(Math.max(HERO_MIN_HEIGHT_PX, Math.ceil(d.h)))
+    }
+    window.addEventListener('message', onMsg)
+    // Fallback if the channel never delivers a size. Post-mount, so the first
+    // render (SSR + hydration) is always the fixed default -- no mismatch.
+    const t = window.setTimeout(() => {
+      setHeroHeight((h) => h ?? (window.innerWidth < 420 ? HERO_FALLBACK_NARROW_PX : HERO_IFRAME_HEIGHT_PX))
+    }, 1500)
+    return () => {
+      window.removeEventListener('message', onMsg)
+      window.clearTimeout(t)
+    }
+  }, [])
+  const heroHeightPx = heroHeight ?? HERO_IFRAME_HEIGHT_PX
   return (
     <div className="mx-auto w-full max-w-[640px]">
       <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
@@ -160,11 +190,12 @@ function HeroArtifactFrame() {
             }}
           />
           <iframe
+            ref={heroRef}
             src={HERO_IFRAME_PATH}
             sandbox="allow-scripts"
             title="Priority-blind load shedding — interactive demo"
             className="relative block w-full rounded-[14px] border-0"
-            style={{ height: `${HERO_IFRAME_HEIGHT_PX}px` }}
+            style={{ height: `${heroHeightPx}px` }}
           />
         </div>
       </HeroErrorBoundary>

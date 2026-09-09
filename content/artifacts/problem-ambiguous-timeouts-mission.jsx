@@ -51,6 +51,28 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     CSS rule (the JS inline STEP styling moved into it), so exactly one
 //     control reads as primary under reduced motion.
 //
+// Sanctioned edits (Batch 1, 2026-09-08 layout spec) -- markup/CSS moves plus
+// the four allowed engine touches; the RULES block, GROUPS/LEVELS, copy and the
+// checkpoint contract are unchanged:
+//   §1 (F1/F2/F13): the single .brow is now a two-column .mission-grid --
+//     col-left (deck -> commit -> attacks/debrief) scrolls, col-right
+//     (evchips -> narration -> stage -> controls -> bill -> log) is the sticky
+//     working column on desktop (position:sticky; top:12px). The phone damage
+//     toast is deleted (markup + bridge logic); the log sits under the stage.
+//     "-> the decision" is now cueDecision(): a cue, not a page scroll, unless
+//     the group is fully off-screen (A2).
+//   §2 (F10/F11): phone collapses the grid to one re-ordered column (narration
+//     -> stage -> controls -> log -> bill -> commit -> deck -> attacks ->
+//     debrief) and the deck groups become a one-open-at-a-time accordion
+//     (openGroup engine state, A3); the control row is not sticky, meters wrap
+//     to a full-width 3-col line (F11).
+//   §3 (F9): transient stage labels ("crash", "dropped", "reply lost", "seen
+//     it ✓", "never seen", the reply verdict) route through placeLabel(zone) ->
+//     a band slot (GH.bands / GV.bands), never a node rect; GV viewBox grows to
+//     0 0 360 552 for the bank band. The in-box memory status (#memrow, e.g.
+//     "K-4 ✓", "params DIFFER ⚠") stays inside the box -- it is the box's own
+//     content row, not a floating collision (noted in the PR).
+//
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
 // belongs where the mission unlocks after the naive run (finishDay -> won).
@@ -112,9 +134,20 @@ const CSS = `
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
- /* ===== layout: deck | stage ===== */
- .brow { display:flex; gap:12px; flex-wrap:wrap; }
- .deck { flex:0 1 250px; min-width:236px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
+ /* ===== layout (§1/§2): two columns — the run's OUTPUTS live in the right,
+    sticky column (stage + meters + newest card stay in view); the reader's
+    ACTIONS live in the left, scrolling column (deck, commit, attacks, debrief).
+    Phone collapses to one re-ordered column (§2). ===== */
+ .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:20px; align-items:start; }
+ .col-left, .col-right { display:flex; flex-direction:column; gap:10px; min-width:0; }
+ /* top:12px is an in-frame gap: sticky can't reference the host nav across the
+    iframe boundary, so the "56px clears the nav" of the spec becomes a small
+    internal offset (nav-overlap at the very top is a recorded compromise). The
+    frame is a bounded scrollport on desktop (host sets min(content,100dvh-56));
+    align-self:start keeps the column at content height so it can stick. */
+ .col-right { position:sticky; top:12px; align-self:start; max-height:calc(100dvh - 24px); }
+ .col-right .log { flex:1 1 auto; min-height:150px; max-height:none; }
+ .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
  #artB[data-cue="deck"] .deck { animation:deckpulse 1.6s ease infinite alternate; }
  @keyframes deckpulse { from { border-color:var(--art-border); } to { border-color:var(--accent-problem); box-shadow:0 0 14px rgba(217,70,239,.18);} }
  .deck-title { color:var(--art-text); font-size:10px; letter-spacing:1.6px; margin-bottom:2px; }
@@ -123,6 +156,11 @@ const CSS = `
  .kg:first-of-type { margin-top:2px; border-top:none; padding-top:0; }
  .kg .kgl { color:var(--art-muted); font-size:10px; letter-spacing:1px; line-height:1.4; display:flex; align-items:center; gap:6px; }
  .kg .kgl .q { color:var(--art-muted); }
+ /* §2/A3: the phone accordion reuses .kg -- a .collapsed class hides the
+    options and the header shows the current choice + chevron. Desktop keeps the
+    full deck: paintDeck never adds .collapsed at >=700px, and the summary
+    choice + chevron are hidden. */
+ .kgchoice, .kgchev { display:none; }
  .kg .lockmsg { color:var(--art-muted); font-size:10px; font-style:italic; margin-top:3px; }
  .seg { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
  .seg button { text-align:left; padding:7px 10px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
@@ -133,9 +171,10 @@ const CSS = `
  @keyframes gflash { 0%,100% { background:transparent; } 35% { background:rgba(217,70,239,.14); border-radius:8px; } }
  .locked .seg button { pointer-events:none; opacity:.7; }
 
- .stagecol { flex:1 1 420px; min-width:380px; }
+ /* §1: the desktop stage fits its ~508px column (viewBox 640x336 -> ~508x267),
+    so no horizontal scroll and no 560px floor. */
  .bstagewrap { overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
- svg#bstage { display:block; width:100%; min-width:560px; height:auto; }
+ svg#bstage { display:block; width:100%; min-width:0; height:auto; }
  svg#bstage text { font-family:var(--mono); }
  .nodebox { fill:var(--art-surface-2); stroke:var(--art-border); stroke-width:1.4; }
  .nlab { fill:var(--art-text); font-size:12px; text-anchor:middle; letter-spacing:.5px; font-weight:600; }
@@ -201,9 +240,30 @@ const CSS = `
  #artB[data-cue="run"] .runbtn { animation: runpulse 1.4s ease infinite alternate; }
  @keyframes runpulse { from { box-shadow: 0 0 0 rgba(217,70,239,0); } to { box-shadow: 0 0 18px rgba(217,70,239,.55); } }
  @media (max-width: 700px) {
- svg#bstage { min-width: 0; }
  .bstagewrap { overflow-x: visible; }
- .ctlrow { position: sticky; bottom: 8px; background: var(--art-bg); border: 1px solid var(--art-border); border-radius: 10px; padding: 8px; z-index: 5; }
+ /* §1/§2: one natural-height column, re-ordered to the phone reading order:
+    narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
+    -> debrief (evchips lead the right column). The control row is NOT sticky
+    (the stage is directly above; sticky would cover the log the cards land in). */
+ .mission-grid { display:flex; flex-direction:column; gap:12px; }
+ .col-right { position:static; max-height:none; order:-1; }
+ .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
+ #bill { order:1; }        /* right column: log before bill on phone */
+ #cmtbox { order:-1; }     /* left column: commit before deck on phone */
+ /* control row: buttons one line (RUN flexes), meters a second full-width
+    3-col line, never clipped (F11's "MYS"). */
+ .runbtn { flex:1 1 auto; }
+ #stepbtn, #fastbtn, #resetbtn { flex:0 0 auto; }
+ .meters { flex-basis:100%; margin-left:0; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+ .meter { min-width:0; }
+ /* phone accordion (A3): 44px rows, one open at a time. The base .kgl is
+    already flex; the choice is pushed right (label 1fr, choice auto, chevron)
+    -- flex not grid so the label + .q keep the reference's innerText. */
+ .kg .kgl { min-height:44px; padding:10px 12px; cursor:pointer; }
+ .kg .kgchoice { display:block; margin-left:auto; max-width:55%; font-size:12px; color:var(--art-text-bright); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+ .kg .kgchev { display:block; width:18px; text-align:center; color:var(--art-muted); }
+ .kg:not(.collapsed) .kgchoice { display:none; }
+ .kg.collapsed .seg, .kg.collapsed .lockmsg { display:none; }
  }
  @media (prefers-reduced-motion: reduce) {
  #artB[data-cue="deck"] .deck, #artB[data-cue="run"] .runbtn, #artB[data-cue="group"] .kg.cue-target, .bpulse, .shake { animation: none !important; }
@@ -231,11 +291,6 @@ const CSS = `
  .debrief, .narr, .lvl .lq, #cmt-locked { font-size: 12.5px; max-width: 68ch; }
  .esc-head .esc-rest { font-size: 11.5px; letter-spacing: 0.2px; }
  .kgl .addtag { color: var(--art-amber); font-size: 10px; letter-spacing: 1px; margin-left: 6px; }
- #dmgtoast { display: none; }
- @media (max-width: 700px) {
- #dmgtoast { display: block; position: sticky; bottom: 66px; z-index: 6; background: var(--art-surface-2); border: 1px solid var(--art-border-interactive); border-radius: 8px; padding: 7px 10px; font-size: 10.5px; color: var(--art-text); cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .25s; }
- #dmgtoast.on { opacity: 1; pointer-events: auto; }
- }
 `
 
 const MARKUP = `
@@ -245,50 +300,49 @@ const MARKUP = `
  <div class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></div>
  <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.</div>
 
- <div class="evchips" id="evchips"></div>
- <div class="narr" id="narr" aria-live="polite"></div>
+ <div class="mission-grid">
+  <div class="col-left">
+   <div class="deck" id="deck" aria-label="Your six design decisions"></div>
 
- <div class="brow">
-      <div class="deck" id="deck" aria-label="Your six design decisions"></div>
-  <div class="stagecol">
-  <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
-  <div class="ctlrow">
-   <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
-   <button class="bghost" id="stepbtn">STEP</button>
-   <button class="bghost" id="fastbtn">1×</button>
-   <button class="bghost" id="resetbtn">reset</button>
-   <div class="meters">
-   <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
-   <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
-   <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
+   <div class="billpanel" id="cmtbox" style="display:none;">
+    <div class="billhead">BEFORE YOU READ ANYONE'S ANSWER</div>
+    <div id="cmt-ask">
+     <div style="color:#C8CDD8;margin-bottom:6px;">In one sentence: why this design?</div>
+     <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <input id="cmt-input" maxlength="200" style="flex:1;min-width:200px;background:#0F1118;border:1px solid var(--art-border-interactive);border-radius:6px;color:var(--art-text);font-family:inherit;font-size:11px;padding:7px 9px;" aria-label="Why this design, in one sentence">
+      <button class="bghost" id="cmt-lock" style="border-color:#D946EF;color:#E879F9;">Lock it in</button>
+      <button class="bghost" id="cmt-skip" style="border:none;text-decoration:underline;">Skip</button>
+     </div>
+    </div>
+    <div id="cmt-locked" style="display:none;color:#C8CDD8;"></div>
    </div>
-   <div class="meternote" id="meternote"></div>
-  </div>
-  <div id="dmgtoast" role="status"></div>
-  </div>
- </div>
 
- <div class="billpanel" id="bill" style="display:none;"></div>
-
-    <div class="billpanel" id="cmtbox" style="display:none;">
-  <div class="billhead">BEFORE YOU READ ANYONE'S ANSWER</div>
-  <div id="cmt-ask">
-   <div style="color:#C8CDD8;margin-bottom:6px;">In one sentence: why this design?</div>
-   <div style="display:flex;gap:6px;flex-wrap:wrap;">
-    <input id="cmt-input" maxlength="200" style="flex:1;min-width:200px;background:#0F1118;border:1px solid var(--art-border-interactive);border-radius:6px;color:var(--art-text);font-family:inherit;font-size:11px;padding:7px 9px;" aria-label="Why this design, in one sentence">
-    <button class="bghost" id="cmt-lock" style="border-color:#D946EF;color:#E879F9;">Lock it in</button>
-    <button class="bghost" id="cmt-skip" style="border:none;text-decoration:underline;">Skip</button>
+   <div class="esc" id="escwrap" style="display:none;">
+    <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest"> - YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
+    <div id="lvls"></div>
+    <div class="debrief" id="debrief"></div>
    </div>
   </div>
-  <div id="cmt-locked" style="display:none;color:#C8CDD8;"></div>
- </div>
 
-    <div class="log" id="log"></div>
-
- <div class="esc" id="escwrap" style="display:none;">
-  <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest"> - YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
-  <div id="lvls"></div>
-  <div class="debrief" id="debrief"></div>
+  <div class="col-right">
+   <div class="evchips" id="evchips"></div>
+   <div class="narr" id="narr" aria-live="polite"></div>
+   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
+   <div class="ctlrow">
+    <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
+    <button class="bghost" id="stepbtn">STEP</button>
+    <button class="bghost" id="fastbtn">1×</button>
+    <button class="bghost" id="resetbtn">reset</button>
+    <div class="meters">
+    <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
+    <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
+    <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
+    </div>
+    <div class="meternote" id="meternote"></div>
+   </div>
+   <div class="billpanel" id="bill" style="display:none;"></div>
+   <div class="log" id="log"></div>
+  </div>
  </div>
 
 
@@ -311,6 +365,11 @@ function bootEngine() {
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  var lvlDone = [false,false,false,false,false];
+ /* §2/A3: phone accordion state -- which deck group is open (one at a time).
+    paintDeck reads it on phones; desktop ignores it (full deck). Attack-added
+    rows set it to themselves on arrival; "-> the decision" sets it to the
+    card's group. */
+ var openGroup = 'id';
 
  /* dayTokens(): the RULES block, imported from ./problem-ambiguous-timeouts-rules.js (verbatim, frozen). */
 
@@ -352,11 +411,22 @@ function bootEngine() {
  var STAGEMAP = { id:'sg-id', mem:'sg-mem', read:'sg-read', cli:'sg-cli', rep:'sg-rep', ret:'sg-ret' };
 
  function paintDeck(){
+ var vert = window.innerWidth < 700; /* §2/A3: phone shows a one-open accordion; desktop the full deck */
  var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs with whatever it says here</div>';
  GROUPS.forEach(function(g){
   var ok = !g.needs || g.needs();
   if (!ok && g.hideLocked) return;
-  h += '<div class="kg" id="kg-'+g.k+'"><div class="kgl">'+g.label+(g.q?' <span class="q">'+g.q+'</span>':'')+'</div>';
+  var collapsed = vert && openGroup !== g.k;
+  var chosen = '';
+  if (ok){ for (var ci=0;ci<g.opts.length;ci++){ if (K[g.k]===g.opts[ci][0]){ chosen=g.opts[ci][1]; break; } } }
+  /* label + .q stay as the reference has them (raw text + span) so innerText
+     parity holds; the choice + chevron are extra spans, hidden on desktop. */
+  h += '<div class="kg'+(collapsed?' collapsed':'')+'" id="kg-'+g.k+'">'+
+   '<div class="kgl" data-acc="'+g.k+'"'+(vert?' role="button" tabindex="0" aria-expanded="'+(collapsed?'false':'true')+'"':'')+'>'+
+    g.label+(g.q?' <span class="q">'+g.q+'</span>':'')+
+    '<span class="kgchoice">'+chosen+'</span>'+
+    '<span class="kgchev" aria-hidden="true">'+(collapsed?'▾':'▴')+'</span>'+
+   '</div>';
   if (!ok) h += '<div class="lockmsg">&#128274; '+g.lock+'</div>';
   h += '<div class="seg">';
   g.opts.forEach(function(o){
@@ -367,7 +437,7 @@ function bootEngine() {
  });
  $('#deck').innerHTML = h;
  if (escMode>=0 && LEVELS[escMode] && LEVELS[escMode].group){ var gk=document.getElementById('kg-'+LEVELS[escMode].group); if(gk) gk.classList.add('cue-target'); }
- $$('#deck button').forEach(function(b){
+ $$('#deck button[data-k]').forEach(function(b){
   b.addEventListener('click', function(){
   if (running || b.disabled) return;
   touched = true; if($('#artB').dataset.cue==='deck') $('#artB').dataset.cue='';
@@ -382,6 +452,12 @@ function bootEngine() {
   focusDeckSel(b.dataset.k); /* B2-7 (F17): paintDeck() rebuilt the deck - keep focus on the chosen option */
   });
  });
+ /* §2/A3: accordion toggle on the group header (phone only; desktop = full deck) */
+ $$('#deck .kgl[data-acc]').forEach(function(hd){
+  function toggle(){ if (window.innerWidth >= 700) return; var k=hd.getAttribute('data-acc'); openGroup = (openGroup===k) ? null : k; paintDeck(); }
+  hd.addEventListener('click', toggle);
+  hd.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } });
+ });
  }
  /* B2-7 (F17): focus the selected option of a deck group after a repaint, so
     keyboard focus survives the deck rebuild (and lands on a newly added
@@ -393,14 +469,22 @@ function bootEngine() {
  client:{x:22,y:104,w:132,h:64}, server:{x:262,y:104,w:130,h:64}, bank:{x:472,y:64,w:150,h:136},
  wireY:132, idDot:{cx:176,cy:132}, repNote:{x:170,y:88},
  memNone:{x:272,y:214,w:110,h:34}, memStore:{x:396,y:214,w:118,h:34}, memAcid:{x:262,y:168,w:130,h:30},
- replica:{x:272,y:272,w:110,h:30}, clock:{cx:222,cy:236}
+ replica:{x:272,y:272,w:110,h:30}, clock:{cx:222,cy:236},
+ /* §3 (F9): transient labels never render inside a node rect -- each takes a
+    band slot. rows = the two y-slots (1st/2nd label of an event); xslots snap
+    to the nearest zone (client/server/bank on top, memory/store on bottom).
+    clock at (222,236) stays clear: bottom xslots start >= 260. */
+ bands: { top:{rows:[24,46],xslots:[88,327,547]}, bottom:{rows:[312,330],xslots:[327,470]} }
  };
  /* vertical G-map for phones: client -> server -> bank flows top-to-bottom */
  var GV = {
  client:{x:90,y:12,w:180,h:56}, server:{x:90,y:200,w:180,h:56}, bank:{x:76,y:396,w:208,h:114},
  wireX:180, wireY:0, idDot:{cx:180,cy:120}, repNote:{x:180,y:184},
  memNone:{x:196,y:296,w:112,h:32}, memStore:{x:196,y:296,w:120,h:34}, memAcid:{x:90,y:260,w:180,h:30},
- replica:{x:52,y:344,w:110,h:30}, clock:{cx:40,cy:250}
+ replica:{x:52,y:344,w:110,h:30}, clock:{cx:40,cy:250},
+ /* §3 (F9): wire dodges idDot cy=120; memory sits between replica-end 374 and
+    bank-top 396; bank needs the taller viewBox (0 0 360 552). */
+ bands: { wire:{rows:[96,148],xslots:[180]}, memory:{rows:[382],xslots:[180]}, bank:{rows:[528,546],xslots:[180]} }
  };
  var VERT = false, G = GH;
  var stage = $('#bstage'), layerStatic, layerAnim;
@@ -545,11 +629,29 @@ function bootEngine() {
  var g=el('g',{},layerAnim);
  el('line',{x1:x-7,y1:y-7,x2:x+7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
  el('line',{x1:x+7,y1:y-7,x2:x-7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
- if(label) el('text',{x:x,y:y-14,'text-anchor':'middle','font-size':'9',fill:'#ef4444'},g,label);
+ if(label){ var p=placeLabel('wire', x); el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:'#ef4444'},g,label); } /* §3: label in the wire band, never over a box (the X stays on the wire) */
  setTimeout(function(){ g.style.transition='opacity 1s'; g.style.opacity=0; }, Math.max(800, 1400/speed));
  return sleep(500);
  }
  function say(tag, html){ $('#narr').innerHTML = '<span class="tag">'+tag+'</span> · '+html; }
+ /* §3 (F9): every transient stage label goes through here -- it never lands in
+    a node rect. kind is the logical zone ('wire'|'memory'|'bank'); it maps to
+    the current map's band (GH: wire->top, memory/bank->bottom; GV: same names).
+    The nth label of the current event in a zone takes the nth row (1st/2nd);
+    x snaps to the nearest zone x-slot. Reset per event by resetLabelSlots(). */
+ var labelSlots = {};
+ function resetLabelSlots(){ labelSlots = {}; }
+ function placeLabel(kind, naturalX){
+  var bands = G.bands || {};
+  var zone = VERT ? kind : (kind === 'wire' ? 'top' : 'bottom');
+  var b = bands[zone];
+  if (!b){ return { x:naturalX, y:24, anchor:'middle' }; }
+  var n = labelSlots[zone] || 0; labelSlots[zone] = n + 1;
+  var y = b.rows[Math.min(n, b.rows.length - 1)];
+  var xs = b.xslots, x = xs[0], best = Infinity;
+  for (var i=0;i<xs.length;i++){ var dd = Math.abs(xs[i]-naturalX); if (dd<best){ best=dd; x=xs[i]; } }
+  return { x:x, y:y, anchor:'middle' };
+ }
  function flashServer(color){
  var b=$('#serverbox'); b.setAttribute('stroke',color); b.classList.add('bpulse');
  return sleep(700).then(function(){ b.classList.remove('bpulse'); b.setAttribute('stroke','#1F2333'); });
@@ -558,16 +660,17 @@ function bootEngine() {
  var m2 = fromReplica? G.replica : memRect();
  var yTop = fromReplica? m2.y : (K.mem==='acid'? m2.y+m2.h : m2.y);
  var line = el('line',{x1:G.server.x+34,y1:G.server.y+G.server.h,x2:m2.x+m2.w/2,y2:yTop,stroke: found?'#22c55e':'#ef4444','stroke-width':2,'stroke-dasharray':'4 3'},layerAnim);
- var lbl = el('text',{x:m2.x+m2.w/2+6,y:yTop-5,'font-size':'9',fill:found?'#22c55e':'#ef4444','text-anchor':'start'},layerAnim, found?'seen it \u2713':'never seen');
+ var p = placeLabel('memory', m2.x+m2.w/2); /* \u00a73: memory band, not beside the box */
+ var lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:found?'#22c55e':'#ef4444'},layerAnim, found?'seen it \u2713':'never seen');
  setTimeout(function(){ line.remove(); lbl.remove(); }, 1600/speed);
  return sleep(650);
  }
 
  var CX,SX,SXR,BX,Y;
  function refreshXY(){ CX=G.client.x+G.client.w; SX=G.server.x; SXR=G.server.x+G.server.w; BX=G.bank.x; Y=G.wireY; }
- function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 520' : '0 0 640 336'); }
+ function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 552' : '0 0 640 336'); } /* §3: GV grows 520->552 for the bank band */
  pickG();
- window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); } });
+ window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
  function reqA(){ return VERT ? {x:GV.wireX, y:G.client.y+G.client.h+10} : {x:CX+14, y:Y}; }
  function reqB(){ return VERT ? {x:GV.wireX, y:G.server.y-8} : {x:SX-8, y:Y}; }
  async function animRequest(kind, opts){
@@ -590,16 +693,16 @@ function bootEngine() {
  d.remove(); return e;
  }
  async function replyBack(kind, txt){
- var r, lbl;
+ var r, lbl, fill = kind==='err'?'#ef4444':'#22c55e';
  if (VERT){
   r = dot(GV.wireX-18, G.server.y-4, kind==='err'?'err':'reply');
   await move(r, GV.wireX-18, G.client.y+G.client.h+16, 480);
-  lbl = el('text',{x:GV.wireX-24,y:G.client.y+G.client.h+32,'font-size':'9',fill: kind==='err'?'#ef4444':'#22c55e','text-anchor':'end'},layerAnim, txt);
  } else {
   r = dot(SX-4, Y-14, kind==='err'?'err':'reply');
   await move(r, CX+16, Y-14, 480);
-  lbl = el('text',{x:CX+22,y:Y-24,'font-size':'9',fill: kind==='err'?'#ef4444':'#22c55e','text-anchor':'start'},layerAnim, txt);
  }
+ var p = placeLabel('wire', VERT ? GV.wireX : CX); /* §3: reply verdict in the wire band, not on the wire */
+ lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:fill},layerAnim, txt);
  setTimeout(function(){ r.remove(); lbl.remove(); }, 1700/speed);
  await sleep(450);
  }
@@ -619,10 +722,46 @@ function bootEngine() {
  var d=document.createElement('div'); d.className='bcard '+cls;
  d.innerHTML='<span class="code">'+(curEv>=0?('E'+(curEv+1)+' \u00B7 '):(curLvl>0?('A'+curLvl+' \u00B7 '):''))+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
  $('#log').prepend(d);
- d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){
-  var kg = document.getElementById('kg-'+k.dataset.knob);
-  if (kg){ var kr=kg.getBoundingClientRect(); window.scrollTo({top: kr.top + window.pageYOffset - (window.innerHeight-kr.height)/2, behavior:'smooth'}); kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg'); }
- });});
+ d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){ cueDecision(k.dataset.knob); }); });
+ }
+ /* F13 (A2): "→ the decision" no longer scrolls the page by default. It
+    cues the target group (data-cue="group" + .cue-target for 1.6s), then
+    restores the prior cue. During an attack it never steals the attack's own
+    cue: a different group only .flashg's. It scrolls only when the group is
+    fully outside the viewport, and then flashes on ARRIVAL (scrollend, 400ms
+    fallback) -- never mid-scroll; window.scrollTo, never scrollIntoView. On
+    desktop the deck is beside the stage in the sticky layout, so the group is
+    usually already on screen and nothing scrolls. On phone the frame is
+    content-height, so the group reads as on-screen here and the host does the
+    page scroll from the bridge's anchor message (§2 opens the accordion
+    first). */
+ function cueDecision(knob){
+  var kg = document.getElementById('kg-'+knob); if (!kg) return;
+  /* §2/A3: on phone open the target group in the accordion first, then cue it;
+     the host does the page scroll (bridge anchor). */
+  if (window.innerWidth < 700){ openGroup = knob; paintDeck(); kg = document.getElementById('kg-'+knob); if (!kg) return; }
+  var artB = $('#artB');
+  var attackActive = escMode >= 0;
+  var attackGroup = (attackActive && LEVELS[escMode]) ? LEVELS[escMode].group : null;
+  var isAttackGroup = !!attackGroup && ('kg-'+attackGroup) === kg.id;
+  var useCue = !attackActive || isAttackGroup;
+  function flash(){
+   if (useCue){
+    var saved = artB.dataset.cue;
+    kg.classList.add('cue-target'); artB.dataset.cue = 'group';
+    setTimeout(function(){ if (artB.dataset.cue === 'group') artB.dataset.cue = saved; kg.classList.remove('cue-target'); }, 1600);
+   } else {
+    kg.classList.remove('flashg'); void kg.offsetWidth; kg.classList.add('flashg');
+   }
+  }
+  var r = kg.getBoundingClientRect();
+  var offscreen = r.bottom <= 0 || r.top >= window.innerHeight;
+  if (!offscreen){ flash(); return; }
+  var done = false;
+  function arrive(){ if (done) return; done = true; window.removeEventListener('scrollend', arrive); flash(); }
+  window.addEventListener('scrollend', arrive);
+  setTimeout(arrive, 400); /* fallback: Safari < 16 has no scrollend */
+  window.scrollTo({ top: Math.max(0, r.top + window.pageYOffset - window.innerHeight * 0.3), behavior:'smooth' });
  }
  function idKind(){ return K.id==='key'?'key': K.id==='hash'?'hash':'plain'; }
 
@@ -754,6 +893,7 @@ function bootEngine() {
 
  async function playEvent(i){
  curEv = i;
+ resetLabelSlots(); /* §3: band slots are per-event */
  var t = dayDamage.ev[i].t;
  var chip = $('.evchip[data-i="'+i+'"]'); chip.classList.add('now');
  var res = await EVENTS[i](t);
@@ -937,7 +1077,7 @@ function bootEngine() {
    brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer - re-run and watch it break, then fix it.',
    attack: async function(){
     say('ATTACK 4','Same key as this morning - but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared - defaulted to the naive answer.');
-    ROWS_ADDED.params = true; if(!K.params) K.params='run'; paintDeck(); focusDeckSel('params'); /* B2-7 */
+    ROWS_ADDED.params = true; if(!K.params) K.params='run'; openGroup='params'; paintDeck(); focusDeckSel('params'); /* B2-7; A3: the new row opens in the phone accordion */
     var d = await animParamsMismatch(); d.remove();
    },
    rerun: async function(){
@@ -971,7 +1111,7 @@ function bootEngine() {
      return;
     }
     say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten - on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
-    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; paintDeck(); focusDeckSel('after'); /* B2-7 */
+    ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
@@ -984,7 +1124,7 @@ function bootEngine() {
      return { held:false };
     }
     if (!ROWS_ADDED.after){
-     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; paintDeck(); focusDeckSel('after'); /* B2-7 */
+     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
      say('ATTACK 5','Your window has an edge now - so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
      var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
@@ -1053,7 +1193,7 @@ function bootEngine() {
       if (!FREE && ($$('#lvls .lvl')[i].classList.contains('locked2') || lvlDone[i])) return;
       if (FREE && escMode>=0 && escMode!==i) escAbandon();
    running=true; lock(true);
-   escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); await LEVELS[i].attack();
+   escWatched[i]=true; curLvl=i+1; layerAnim = el('g',{}); resetLabelSlots(); await LEVELS[i].attack();
    markAttackRun(); /* B2-4: an attack has run - the meters now read "today + attacks" */
    lock(false); running=false;
    escEnter(i);
@@ -1062,7 +1202,7 @@ function bootEngine() {
    var i=+b.dataset.lvl;
    if (running || escMode!==i) return;
    running=true; lock(true);
-   curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{});
+   curLvl=i+1; layerAnim = el('g',{}); drawStage(); layerAnim = el('g',{}); resetLabelSlots();
    var res = await LEVELS[i].rerun();
    markAttackRun(); /* B2-4: a re-run is an attack running - keep the note on */
    lock(false); running=false;
@@ -1277,17 +1417,9 @@ function bootBridge(engine) {
    var lbl = kg.querySelector('.kgl'); if(!lbl) return;
    var tag = lbl.querySelector('.addtag');
    if (heldOf(t[1])){ if(tag) tag.remove(); return; }
-   if (!tag){ tag = document.createElement('span'); tag.className='addtag'; tag.textContent=t[2]; lbl.appendChild(tag); }
-  });
- }
-
- /* ---- R4: phone damage toast - clones each new failure card's first line (v7.3 script) ---- */
- var toast = $('#dmgtoast'), toastT = null;
- if (toast){
-  toast.addEventListener('click', function(){
-   var log=$('#log'); if(!log) return;
-   window.scrollTo({ top: log.getBoundingClientRect().top + window.pageYOffset - 70, behavior:'smooth' });
-   toast.classList.remove('on');
+   /* §2/A3: keep the ADDED-BY-ATTACK tag inline after the label (before the
+      accordion's choice + chevron), not after the chevron. */
+   if (!tag){ tag = document.createElement('span'); tag.className='addtag'; tag.textContent=t[2]; var ch = lbl.querySelector('.kgchoice'); if (ch) lbl.insertBefore(tag, ch); else lbl.appendChild(tag); }
   });
  }
 
@@ -1306,18 +1438,6 @@ function bootBridge(engine) {
   emitState();
  }, { attributes:true, attributeFilter:['style'] });
  observe($('#deck'), function(){ tagRows(); if (filled) emitState(); }, { childList:true });
- observe($('#log'), function(ms){
-  if (!toast || window.innerWidth >= 700) return;
-  ms.forEach(function(m){
-   if (!m.addedNodes.length) return;
-   var c = m.addedNodes[0];
-   if (!c.classList || !c.classList.contains('bcard') || !(c.classList.contains('bad')||c.classList.contains('warn'))) return;
-   var code = c.querySelector('.code');
-   toast.textContent = (code ? code.textContent : 'damage') + ' - tap for the report';
-   toast.classList.add('on');
-   clearTimeout(toastT); toastT = setTimeout(function(){ toast.classList.remove('on'); }, 4000);
-  });
- }, { childList:true });
  /* caused: the first finished day with damage (the meters leave "-") */
  observe($('.meters'), function(){
   var d = parseInt($('#m-dbl').textContent, 10), l = parseInt($('#m-lost').textContent, 10), t = parseInt($('#m-tick').textContent, 10);

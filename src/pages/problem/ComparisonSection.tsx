@@ -34,6 +34,15 @@ export default function ComparisonSection({
   const lit = new Set(highlightColumns)
   const colClass = (col: string | undefined) =>
     col !== undefined && lit.has(col) ? 'col-hl' : undefined
+  // §3b (F12/A1): the YOU row's vertical variant is the same file drop
+  // (you-empty-v / you-filled-v); the filled one keeps its {{slot}} fill.
+  const youVerticalSrc = you.filled ? svg(`${c.you.filledSvg}-v`) : svg(`${c.you.emptySvg}-v`)
+  const youVertical =
+    youVerticalSrc !== undefined
+      ? you.filled
+        ? fillSlots(youVerticalSrc, you.cells)
+        : youVerticalSrc
+      : undefined
   return (
     <section>
       <h2 className="pp-h2" id="hintsheet">
@@ -76,30 +85,43 @@ export default function ComparisonSection({
         ))}
       </div>
 
-      {c.diagramRows.map((row) => (
-        <details key={row.svg} className="anat-row" open={row.open}>
-          <summary className="anat-head">
-            <span className="co">
-              {row.articleSlug !== undefined ? (
-                <Link to={`/articles/${row.articleSlug}`}>{row.company}</Link>
-              ) : (
-                row.company
-              )}
-            </span>
-            <span className="yr">{row.year}</span>
-            <span className="vant">{row.vantage}</span>
-          </summary>
-          <div
-            className="anat-scroll"
-            dangerouslySetInnerHTML={{ __html: svg(row.svg) ?? '' }}
-          />
-          <p className="anat-cap">{row.caption}</p>
-        </details>
-      ))}
+      {c.diagramRows.map((row) => {
+        // §3b (F12/A1): the vertical (DV) diagram is a FILE DROP --
+        // content/problems/<cruxTag>/<name>-v.svg, authored by the design agent
+        // to the DV map. When present, `has-vert` switches the row by breakpoint
+        // (CSS) and the horizontal's scroll pill stops (it's display:none under
+        // 700px). Until then the horizontal + pill stay. No code change on drop.
+        const vertical = svg(`${row.svg}-v`)
+        return (
+          <details key={row.svg} className={vertical !== undefined ? 'anat-row has-vert' : 'anat-row'} open={row.open}>
+            <summary className="anat-head">
+              {/* §6 (F18): company name is plain text now; the outbound link
+                  moves to the first line of the expanded body, so the whole
+                  summary row is one predictable control (no nested tap target). */}
+              <span className="co">{row.company}</span>
+              <span className="yr">{row.year}</span>
+              <span className="vant">{row.vantage}</span>
+            </summary>
+            {row.articleSlug !== undefined && (
+              <Link to={`/articles/${row.articleSlug}`} className="anat-readlink">
+                Read the article ↗
+              </Link>
+            )}
+            <div
+              className="anat-scroll"
+              dangerouslySetInnerHTML={{ __html: svg(row.svg) ?? '' }}
+            />
+            {vertical !== undefined && (
+              <div className="anat-vert" dangerouslySetInnerHTML={{ __html: vertical }} />
+            )}
+            <p className="anat-cap">{row.caption}</p>
+          </details>
+        )
+      })}
 
       {/* YOU row: empty until a survived day; then the filled SVG with its
           {{slot}} placeholders substituted from youMapping(). */}
-      <details className="anat-row" open={c.you.open} id="you-row">
+      <details className={youVertical !== undefined ? 'anat-row has-vert' : 'anat-row'} open={c.you.open} id="you-row">
         <summary className="anat-head">
           <span className="co">{c.you.name}</span>
           <span className="yr">{c.you.year}</span>
@@ -113,6 +135,9 @@ export default function ComparisonSection({
               : (svg(c.you.emptySvg) ?? ''),
           }}
         />
+        {youVertical !== undefined && (
+          <div className="anat-vert" dangerouslySetInnerHTML={{ __html: youVertical }} />
+        )}
         <p
           className="anat-cap"
           id="you-commit-foot"

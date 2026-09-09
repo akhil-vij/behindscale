@@ -34,7 +34,8 @@ tokens for visual continuity.
 | Surface (subtle)    | `--bg-subtle`         | `#F4F2EE` |
 | Primary text        | `--text-primary`      | `#1A1A1F` |
 | Secondary text      | `--text-secondary`    | `#52525B` |
-| Muted text          | `--text-muted`        | `#8A8A94` |
+| Muted text          | `--text-muted`        | `#6E6E78` |
+| Muted (non-text)    | `--muted-ghost`       | `#8A8A94` |
 | Primary accent      | `--accent-primary`    | `#2563EB` |
 | Accent (hover)      | `--accent-hover`      | `#1D4ED8` |
 | Border (default)    | `--border-default`    | `#E7E4DE` |
@@ -42,6 +43,25 @@ tokens for visual continuity.
 | Success             | `--state-success`     | `#15803D` |
 | Error               | `--state-error`       | `#DC2626` |
 | Code background     | `--code-bg`           | `#F4F2EE` |
+
+**Muted split (F18, 2026-09-09):** `--text-muted` was `#8A8A94` (≈3.9:1 on the
+light grounds — fails WCAG AA for text). It is darkened to `#6E6E78` for every
+**text** use (measured 4.84:1 on `#FBFAF8`, 5.02:1 on `#FFFFFF`, ≈4.55:1 on
+`#F4F2EE`): eyebrows, figure/diagram captions, stat labels, station-nav idle
+items, card read-times/dates, result-count lines, footer small print, "not
+stated" table cells, tick titles. `--muted-ghost` (`#8A8A94`, the old value)
+carries the **non-text** uses where the contrast law doesn't apply: decorative
+dashes, dividers, disabled-state hints, the reserved-slot circle, and the
+diagram connectors/arrowheads/clock. Naming note: the Batch-1 design spec calls
+these `--muted` / `--muted-ghost`; the codebase keeps the existing
+`--text-muted` name and adds `--muted-ghost` (both mapped in `tailwind.config.js`).
+
+**In-prose links (F18):** a link inside a paragraph or list item is underlined
+at rest (1px, `text-underline-offset: 2px`) — colour alone is ~1.5:1 against
+body text. Nav items, chips, card titles and mono eyebrow links stay bare
+(affordances by position). A link inside a `<details>` `<summary>` moves into
+the expanded body as its first line (`Read the article ↗`) so the summary row
+is one predictable control.
 
 ### Artifact / dark tokens (for artifact bundles and any dark embed)
 

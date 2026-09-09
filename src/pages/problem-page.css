@@ -10,16 +10,28 @@
 body { overflow-x: clip; }
 
 .problem-page { line-height: 1.65; }
+
+/* §4 (F4/F5): every in-page anchor clears the sticky nav (44 + 16 breathing;
+   40 + 12 under 700px). Covers the station anchors, #hintsheet, #glance, and
+   the deck target of the mission's conditional scroll. */
+.problem-page [id] { scroll-margin-top: 60px; }
 .problem-page h2.pp-h2 { font-size: 22px; letter-spacing: -0.01em; font-weight: 700; margin: 48px 0 10px; color: var(--text-primary); }
 .problem-page h3.pp-h3 { font-size: 17px; font-weight: 600; margin: 26px 0 8px; color: var(--text-primary); }
 .problem-page .pp-p { color: var(--text-secondary); margin-bottom: 14px; }
 .problem-page p.lede { font-size: 18px; font-style: italic; color: var(--text-secondary); margin: 0 0 22px; }
-.problem-page .pp-link { color: var(--accent-primary); text-decoration: none; }
-.problem-page .pp-link:hover { color: var(--accent-hover); text-decoration: underline; }
+/* §6 (F18): in-prose links are underlined at rest (1px, offset 2px) -- colour
+   alone is ~1.5:1 against body text. Nav items, chips, card titles and mono
+   eyebrow links stay bare (affordances by position). */
+.problem-page .pp-link { color: var(--accent-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.problem-page .pp-link:hover { color: var(--accent-hover); }
 .problem-page .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
 
 /* ---------- station nav (sticky, scroll-spy) ---------- */
-.problem-page nav.ppnav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg-base) 94%, transparent); backdrop-filter: blur(4px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; margin: 0 0 18px; padding: 10px 0; border-bottom: 1px solid var(--border-default); display: flex; gap: 14px; flex-wrap: wrap; }
+.problem-page nav.ppnav { position: sticky; top: 0; z-index: 40; background: color-mix(in srgb, var(--bg-base) 94%, transparent); backdrop-filter: blur(4px); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; margin: 0 0 18px; padding: 10px 0; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; overflow-x: auto; min-height: 44px;
+  /* §4 (F4/F5): span the 960 breakout, one line at >=700px. Centering is
+     margin-based (not the transform the artifact breakouts use): a transformed
+     ancestor would drop position:sticky to static and kill the nav's top:0. */
+  width: min(960px, calc(100vw - 40px)); margin-left: calc((100% - min(960px, calc(100vw - 40px))) / 2); }
 .problem-page nav.ppnav a { color: var(--text-secondary); text-decoration: none; }
 .problem-page nav.ppnav a:hover { color: var(--text-primary); }
 .problem-page nav.ppnav a.nav-here { color: var(--text-primary) !important; font-weight: 600; }
@@ -77,9 +89,19 @@ body { overflow-x: clip; }
 .problem-page .anat-head .co { font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; color: var(--text-primary); }
 .problem-page .anat-head .co a { color: var(--accent-primary); text-decoration: none; }
 .problem-page .anat-head .co a:hover { color: var(--accent-hover); text-decoration: underline; }
+/* §6 (F18): the diagram-row outbound link, moved out of the <summary> to the
+   first line of the expanded body; underlined at rest as an in-prose link. */
+.problem-page .anat-readlink { display: inline-block; margin: 2px 2px 6px; font-family: var(--font-mono); font-size: 11.5px; color: var(--accent-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.problem-page .anat-readlink:hover { color: var(--accent-hover); }
 .problem-page .anat-head .yr { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
 .problem-page .anat-head .vant { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
 .problem-page .anat-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* §3b (F12/A1): the vertical (DV) diagram, shown under 700px when the row has
+   one (a file drop). The hidden variant is display:none -- out of the a11y tree
+   AND innerText, so labels are never doubled. Until the vertical SVGs land,
+   .has-vert is absent and the horizontal + its scroll pill stay. */
+.problem-page .anat-vert { display: none; }
+.problem-page .anat-vert svg { width: 100%; height: auto; display: block; }
 .problem-page svg.anat { width: 100%; min-width: 560px; height: auto; display: block; }
 .problem-page svg.anat text { font-family: var(--font-mono); }
 .problem-page .keydot { fill: var(--cat-amber); }
@@ -88,8 +110,8 @@ body { overflow-x: clip; }
 .problem-page .node { fill: var(--bg-subtle); stroke: var(--border-strong); stroke-width: 1.3; }
 .problem-page .nlabel { font-size: 11px; fill: var(--text-secondary); text-anchor: middle; letter-spacing: 0.03em; }
 .problem-page .nsub { font-size: 8.5px; fill: var(--text-muted); text-anchor: middle; }
-.problem-page .arrow { stroke: var(--text-muted); stroke-width: 1.3; }
-.problem-page .ahead { fill: var(--text-muted); }
+.problem-page .arrow { stroke: var(--muted-ghost); stroke-width: 1.3; } /* §6: decorative connector -> ghost */
+.problem-page .ahead { fill: var(--muted-ghost); } /* §6: decorative arrowhead -> ghost */
 .problem-page .alabel { font-size: 9px; fill: var(--text-muted); text-anchor: middle; letter-spacing: 0.04em; }
 .problem-page .state { fill: var(--bg-surface); stroke: var(--accent-primary); stroke-width: 1.4; }
 .problem-page .state.faded { stroke: var(--border-strong); fill: var(--bg-subtle); }
@@ -105,13 +127,17 @@ body { overflow-x: clip; }
 .problem-page .bx { stroke: var(--state-error); stroke-width: 2; stroke-linecap: round; }
 .problem-page .blabel { font-size: 9px; fill: var(--state-error); letter-spacing: 0.02em; }
 .problem-page .acid { fill: none; stroke: var(--accent-primary); stroke-width: 1.4; }
-.problem-page .clockmark { stroke: var(--text-muted); stroke-width: 1.3; fill: none; }
+.problem-page .clockmark { stroke: var(--muted-ghost); stroke-width: 1.3; fill: none; } /* §6: decorative clock -> ghost */
 .problem-page .anat-cap { font-size: 12.5px; color: var(--text-muted); margin: 2px 2px 6px; }
 .problem-page .strip-note { font-size: 13px; color: var(--text-muted); margin: 10px 0 0; }
 .problem-page .matrix-lead { font-size: 14px; color: var(--text-secondary); margin-top: 14px; }
 
 /* ---------- matrix ---------- */
-.problem-page .matrix-wrap { overflow-x: auto; margin: 22px 0 6px; -webkit-overflow-scrolling: touch; }
+.problem-page .matrix-wrap { overflow-x: auto; margin: 22px 0 6px; -webkit-overflow-scrolling: touch;
+  /* §4 (F4): span the 960 breakout so the YOU column is fully visible at 1440
+     with zero horizontal scroll. Margin-based centering (no transform) keeps
+     the frozen first column's position:sticky alive. */
+  width: min(960px, calc(100vw - 40px)); margin-left: calc((100% - min(960px, calc(100vw - 40px))) / 2); }
 .problem-page table.matrix { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 13px; line-height: 1.45; color: var(--text-primary); }
 .problem-page table.matrix.interview { min-width: 520px; }
 .problem-page table.matrix th, .problem-page table.matrix td { padding: 9px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-default); }
@@ -130,6 +156,11 @@ body { overflow-x: clip; }
 /* The same grammar marks the column(s) a "Which answer is yours" row points
    at while that row is selected (.col-hl on the header + every cell). */
 .problem-page #you-th, .problem-page td[id^="you-c-"], .problem-page table.matrix .col-hl { border-left: 1.5px solid var(--border-strong); background: var(--bg-subtle); }
+/* §4 (F4): freeze the first column at ALL widths (desktop overlay scrollbars
+   were the audit's exact failure, not just phone). Opaque bg so scrolled cells
+   pass under it; hot rows keep their tint. */
+.problem-page table.matrix td:first-child, .problem-page table.matrix th:first-child { position: sticky; left: 0; z-index: 2; background: var(--bg-surface); }
+.problem-page table.matrix tr.hot td:first-child { background: var(--hot-bg); }
 
 /* ---------- full answers ---------- */
 .problem-page details.q { border: 1px solid var(--border-default); border-radius: 10px; background: var(--bg-surface); margin: 12px 0; overflow: hidden; }
@@ -202,11 +233,16 @@ body { overflow-x: clip; }
 
 /* ---------- phone ---------- */
 @media (max-width: 700px) {
-  .problem-page nav.ppnav { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, black 92%, transparent); mask-image: linear-gradient(90deg, black 92%, transparent); }
+  /* §4 (F5): under 700px the nav is a single scrolling row, 40px, budgets
+     hidden; the right-edge fade cues the overflow. */
+  .problem-page nav.ppnav { min-height: 40px; white-space: nowrap; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, black 92%, transparent); mask-image: linear-gradient(90deg, black 92%, transparent); }
   .problem-page nav .navmin { display: none; }
+  .problem-page [id] { scroll-margin-top: 52px; }
   .problem-page .spectrum-label:first-of-type { transform: translateX(-10%); }
   .problem-page .spectrum-label:last-of-type { transform: translateX(-90%); }
-  .problem-page table.matrix td:first-child, .problem-page table.matrix th:first-child { position: sticky; left: 0; background: var(--bg-surface); z-index: 2; }
-  .problem-page table.matrix tr.hot td:first-child { background: var(--hot-bg); }
   .problem-page .matrix-wrap, .problem-page .anat-scroll { -webkit-mask-image: linear-gradient(90deg, black 94%, transparent); mask-image: linear-gradient(90deg, black 94%, transparent); }
+  /* §3b: when a vertical diagram exists, it replaces the scrolling horizontal
+     one under 700px (so no pill, no horizontal scroll). */
+  .problem-page .anat-row.has-vert .anat-scroll { display: none; }
+  .problem-page .anat-row.has-vert .anat-vert { display: block; }
 }

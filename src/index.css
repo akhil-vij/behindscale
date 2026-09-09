@@ -9,7 +9,14 @@
   --bg-subtle: #F4F2EE;
   --text-primary: #1A1A1F;
   --text-secondary: #52525B;
-  --text-muted: #8A8A94;
+  /* §6 (F18): --text-muted darkened #8A8A94 -> #6E6E78 for TEXT uses (measured
+     4.84:1 on #FBFAF8, 5.02:1 on #FFFFFF, ~4.55:1 on #F4F2EE -- clears 4.5 on
+     all three grounds). --muted-ghost keeps the old value for NON-TEXT uses
+     where contrast law doesn't apply (decorative dashes, dividers, disabled
+     hints, the reserved-slot circle). Name kept as --text-muted (the spec calls
+     it --muted); both are recorded in ui-context.md. */
+  --text-muted: #6E6E78;
+  --muted-ghost: #8A8A94;
   --accent-primary: #2563EB;
   --accent-hover: #1D4ED8;
   --border-default: #E7E4DE;
