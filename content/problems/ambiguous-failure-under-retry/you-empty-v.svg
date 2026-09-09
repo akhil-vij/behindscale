@@ -1,0 +1,4 @@
+<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Your design on the same skeleton: client, server, memory, bank - drawn from your decisions after a survived day" xmlns="http://www.w3.org/2000/svg">
+  <rect x="14" y="14" width="332" height="392" rx="10" fill="none" stroke="var(--border-2)" stroke-width="1.4" stroke-dasharray="6 5"></rect>
+  <text x="180" y="204" text-anchor="middle" font-size="12" fill="var(--muted)">Your design draws itself<tspan x="180" dy="18">here after a survived day.</tspan></text>
+</svg>

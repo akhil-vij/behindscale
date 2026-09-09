@@ -24,10 +24,13 @@ Update this file after every meaningful implementation change.
   - **§3 (F9):** transient stage labels route through `placeLabel(zone)` →
     `GH.bands`/`GV.bands`, never a node rect; GV viewBox → `0 0 360 552`. In-box
     `#memrow` status kept in the box (open-decisions).
-  - **§3b (F12/A1):** comparison vertical (DV) diagrams wired as a **file drop**
-    (`<name>-v.svg` + breakpoint switch + aria-hidden); the 6 comparison SVGs +
-    YOU + the try-it wire are authored SVG (not JS-drawn) → **deferred to the
-    design agent**; scroll pills stay until the files land.
+  - **§3b (F12/A1):** vertical diagrams **landed** (`b3a1232`) — the design
+    agent's eight SVGs (DV 360×420, TV 360×300). The 7 comparison files drop in
+    and light the breakpoint switch; the try-it wire is inlined as a second
+    `<svg class="stage stage-v">` (id-prefix cutlab toggle, specificity fix).
+    Scroll pills retired. On-drop fixes: stripped C2PA manifests, tokenized +
+    id-suffixed `you-filled-v`. (The wiring itself shipped earlier as the
+    file-drop scaffold.)
   - **§5 (F3):** the landing hero artifact posts `artifact:size`; the page sizes
     the iframe from it (min 380, no max); 560-under-420 fallback recorded.
   - **§6 (F18):** `--text-muted` #8A8A94→#6E6E78 (text, 4.5:1+); new

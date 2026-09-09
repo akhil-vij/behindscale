@@ -15,10 +15,15 @@ import { useEffect } from 'react'
 // and is same-tab (target dropped). Embedded it pointed at the current page
 // and target=_blank was a sandbox no-op. Reference untouched.
 //
-// Sanctioned edit (Batch 2, B2-13/F12): the wire keeps its scroll wrapper on
-// phone with an on-load "⟷ scroll" hint. A vertical (GH/GV) relayout would be
-// the legible fix but is a geometry rewrite of this static SVG whose cut zones
-// the frozen engine binds by id -- deferred to the Batch 1 design spec.
+// Sanctioned edit (Batch 1, §3b/F12/A1): the wire now ships a vertical (TV,
+// 360x300) SVG authored by the design agent alongside the horizontal one; CSS
+// shows the vertical under 700px and the horizontal at/above (the hidden one is
+// display:none). Both carry the same ids (cut1-3, cutlab1-3); the engine's
+// cut-zone logic is class-based already and the cutlab toggle is now id-prefix
+// based ($$('[id^="cutlab"]')), so it drives whichever wire is visible. This
+// retires the Batch-2 "⟷ scroll" pill + the phone scroll wrapper. Note: the
+// vertical caption uses ↓/↑ arrow glyphs (vs →/← horizontal) -- glyph-only,
+// flagged against the copy freeze.
 //
 // Host protocol (v1, see src/pages/ProblemDetail.tsx): this artifact posts
 // {v:1, wall, type:'size', h} so the host can size the frame to its
@@ -89,16 +94,21 @@ const CSS = `
 .art-meter .val.unk { color: #eab308; }
 .art-foot { color: var(--art-muted); font-size: 10px; margin-top: 12px; border-top: 1px solid var(--art-border); padding-top: 8px; line-height: 1.7; }
 .art-foot a { color: var(--art-text); text-decoration: underline; }
-.stagewrap { overflow-x: auto; margin-top: 12px; position: relative; }
-svg.stage { width: 100%; min-width: 480px; height: auto; display: block; }
-/* B2-13 (F12): the 640-wide wire keeps its scroll wrapper on phone (scaling
-   to ~324px drops the 8.5px labels to ~4.3px - illegible; a vertical relayout,
-   like the mission's GH/GV, is a geometry rewrite of this static wire whose
-   cut zones the frozen engine binds by id, so it is deferred to the Batch 1
-   design spec). The hint reads on load, centered, not on hover. */
+.stagewrap { margin-top: 12px; position: relative; }
+svg.stage { width: 100%; height: auto; display: block; }
+/* §3b (F12): the horizontal wire (640x138) shows at >=700px; the vertical TV
+   wire (360x300) shows under 700px, where it fits with legible labels. The
+   hidden one is display:none -- so no duplicate visible ids, and the engine
+   toggles cutlab across both by id-prefix. This retires the Batch-2 scroll
+   pill + horizontal min-width for phones. */
+svg.stage:not(.stage-v) { min-width: 480px; }
+svg.stage.stage-v { display: none; } /* outrank svg.stage{display:block} (§3b) */
 @media (max-width: 700px) {
- .stagewrap::after { content: "\\27f7 scroll"; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%); background: var(--art-surface); border: 1px solid var(--art-border-interactive); border-radius: 999px; padding: 1px 8px; color: var(--art-muted); font-family: var(--mono); font-size: 10px; pointer-events: none; }
+ .stagewrap { overflow-x: visible; }
+ svg.stage:not(.stage-v) { display: none; }
+ svg.stage.stage-v { display: block; min-width: 0; }
 }
+@media (min-width: 701px) { .stagewrap { overflow-x: auto; } }
 svg.stage text { font-family: var(--mono); }
 .s-node { fill: var(--art-surface); stroke: var(--art-border); stroke-width: 1.3; }
 .s-nlabel { font-size: 11px; fill: var(--art-text); text-anchor: middle; letter-spacing: 0.03em; }
@@ -144,6 +154,23 @@ const MARKUP = `
   <text id="cutlab1" class="s-nsub" x="212" y="28" style="text-anchor: end; display: none">request lost</text>
   <text id="cutlab2" class="s-nsub" x="552" y="112" style="text-anchor: end; display: none">dies mid-work</text>
   <text id="cutlab3" class="s-nsub" x="342" y="112" style="text-anchor: end; display: none">response lost</text>
+ </svg>
+ <svg class="stage stage-v" viewBox="0 0 360 300" role="img" aria-label="Interactive: a client sends POST /charge $100 to a server. Choose one of three cut points: request lost, server dies mid-work, or response lost.">
+  <rect class="s-node" x="90" y="10" width="180" height="44" rx="7"></rect>
+  <text class="s-nlabel" x="180" y="36">CLIENT</text>
+  <rect class="s-node" x="90" y="246" width="180" height="44" rx="7"></rect>
+  <text class="s-nlabel" x="180" y="264">SERVER</text>
+  <text class="s-nsub" x="180" y="278">charges the card</text>
+  <line class="s-seg" x1="172" y1="62" x2="172" y2="238"></line>
+  <line class="s-seg" x1="188" y1="238" x2="188" y2="62"></line>
+  <text class="s-nsub" x="160" y="110" style="text-anchor: end">POST /charge $100 ↓</text>
+  <text class="s-nsub" x="200" y="190" style="text-anchor: start">↑ response</text>
+  <g class="s-cutzone" aria-hidden="true" id="cut1" transform="translate(180, 82)"><circle r="11"></circle><text y="4">1</text></g>
+  <g class="s-cutzone" aria-hidden="true" id="cut2" transform="translate(180, 150)"><circle r="11"></circle><text y="4">2</text></g>
+  <g class="s-cutzone" aria-hidden="true" id="cut3" transform="translate(180, 218)"><circle r="11"></circle><text y="4">3</text></g>
+  <text id="cutlab1" class="s-nsub" x="196" y="86" style="text-anchor: start; display: none">request lost</text>
+  <text id="cutlab2" class="s-nsub" x="196" y="154" style="text-anchor: start; display: none">dies mid-work</text>
+  <text id="cutlab3" class="s-nsub" x="196" y="222" style="text-anchor: start; display: none">response lost</text>
  </svg>
  </div>
 
@@ -234,7 +261,7 @@ function bootEngine() {
  function render() {
  $$('.abtn[data-cut]').forEach(function (b) { b.classList.toggle('sel', b.dataset.cut === String(cut)); });
  $$('.s-cutzone').forEach(function (z) { z.classList.toggle('sel', z.id === 'cut' + cut); });
- [1,2,3].forEach(function (n) { var t = document.getElementById('cutlab' + n); if (t) t.style.display = (cut === n) ? '' : 'none'; });
+ $$('[id^="cutlab"]').forEach(function (t) { t.style.display = (Number(t.id.slice(6)) === cut) ? '' : 'none'; }); /* §3b: toggle cutlab across BOTH the horizontal + vertical wires */
  $$('.abtn[data-act]').forEach(function (b) { b.disabled = (cut === null); b.classList.toggle('sel', b.dataset.act === act); });
  var showShelf = (act === 'key');
  $('#shelflabel').style.display = showShelf ? '' : 'none';

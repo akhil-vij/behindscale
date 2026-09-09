@@ -69,9 +69,13 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //   §3 (F9): transient stage labels ("crash", "dropped", "reply lost", "seen
 //     it ✓", "never seen", the reply verdict) route through placeLabel(zone) ->
 //     a band slot (GH.bands / GV.bands), never a node rect; GV viewBox grows to
-//     0 0 360 552 for the bank band. The in-box memory status (#memrow, e.g.
-//     "K-4 ✓", "params DIFFER ⚠") stays inside the box -- it is the box's own
-//     content row, not a floating collision (noted in the PR).
+//     0 0 360 552 for the bank band.
+//     DO NOT BAND the in-box memory status (#memrow, e.g. "K-4 ✓", "params
+//     DIFFER ⚠"). Owner ruling (2026-09-09): that is the memory's CONTENTS --
+//     state text describing what the box holds -- not a transient label ABOUT
+//     an event, so the box is the right place (the same way bank verdicts stay
+//     in the ledger panel). The F9 rule is "transient text never inside a node
+//     rect"; state text is exempt.
 //
 // GATE (future, kept from the reference's note): reading and the naive run
 // are free; decisions, attacks, debrief and checkpoints are paid. The gate
