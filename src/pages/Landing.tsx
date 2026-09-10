@@ -1,8 +1,17 @@
 import { Component, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { articles, cruxtags, urlSlugByCruxTag } from '../content'
+import {
+  articles,
+  cruxtags,
+  problemEssayByCruxTag,
+  urlSlugByCruxTag,
+} from '../content'
 import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
+import { estimateMinutes } from '../lib/wallEstimate'
+import { heroWallPromise } from '../config/site'
+import PlayableBadge from '../components/PlayableBadge'
+import SideBySideBadge from '../components/SideBySideBadge'
 
 // Landing page: the conversion billboard. Structure (design-spec §3):
 //
@@ -48,19 +57,21 @@ const HERO_IFRAME_HEIGHT_PX = 470
 const HERO_MIN_HEIGHT_PX = 380
 const HERO_FALLBACK_NARROW_PX = 560
 
-// Spell small counts as words (AP style: words up to twelve, digits
-// above). Used by the preview header so its "<N> walls / <min> to <max>
-// companies" claim is DERIVED from the rendered groups rather than
-// hard-coded -- a tenth multi-company class, or a shift in the company
-// range, updates the sentence automatically instead of silently
-// falsifying it.
+// Spell small counts as words. The preview header derives every number in its
+// claim ("<N> walls hit by <min> to <max> companies — <total> in all") from the
+// rendered groups rather than hard-coding, so a new multi-company class, a
+// shifted company range, or a growing library updates the sentence instead of
+// silently falsifying it. Extended past twelve (to twenty) so the whole-library
+// count -- fourteen classes today (F20) -- spells out alongside the small
+// counts rather than dropping to a bare digit mid-sentence.
 const NUMBER_WORDS = [
   'zero', 'one', 'two', 'three', 'four', 'five', 'six',
-  'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
+  'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen',
+  'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty',
 ]
 
 function numberWord(n: number): string {
-  return n >= 0 && n <= 12 ? NUMBER_WORDS[n]! : String(n)
+  return n >= 0 && n < NUMBER_WORDS.length ? NUMBER_WORDS[n]! : String(n)
 }
 
 function capitalize(s: string): string {
@@ -84,19 +95,21 @@ export default function Landing() {
   // target viewport, the fix is not to truncate silently -- it's to
   // either land the recurrence in the catalog directly or cap-and-signal
   // the header deliberately. Nine groups today; revisit the fold at ~12+.
-  const preview = catalogGroups({
-    articles,
-    registry: cruxtags,
-  }).filter((g) => g.count >= 2)
+  // Both counts derive from the ONE grouping (F20): `preview` is the
+  // multi-company subset shown as rows; `totalClasses` is the whole library.
+  // The header sentence names both so "nine walls" and /problems' "fourteen
+  // classes" read as one truth, not a contradiction.
+  const allGroups = catalogGroups({ articles, registry: cruxtags })
+  const preview = allGroups.filter((g) => g.count >= 2)
+  const totalClasses = allGroups.length
 
   return (
     <main>
       <Hero />
       <TrustBand companies={companies} />
       <AudienceSection articleCount={articleCount} />
-      <PreviewSection preview={preview} />
+      <PreviewSection preview={preview} totalClasses={totalClasses} />
       <CtaSection articleCount={articleCount} />
-      <Footer />
     </main>
   )
 }
@@ -204,13 +217,12 @@ function HeroArtifactFrame() {
         while batch jobs get shed first.
       </p>
       <p className="mt-3 max-w-md text-sm leading-relaxed text-text-muted">
-        Five companies hit this same wall and each chose a different drop
-        order.{' '}
+        {heroWallPromise.lead}{' '}
         <Link
-          to="/problems/blind-load-shedding"
+          to={heroWallPromise.href}
           className="whitespace-nowrap text-text-secondary underline decoration-border-strong underline-offset-2 transition-colors hover:text-text-primary"
         >
-          See how →
+          {heroWallPromise.linkLabel}
         </Link>
       </p>
     </div>
@@ -320,16 +332,23 @@ interface PreviewGroup {
   companies: readonly string[]
 }
 
-function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
+function PreviewSection({
+  preview,
+  totalClasses,
+}: {
+  preview: PreviewGroup[]
+  totalClasses: number
+}) {
   if (preview.length === 0) return null
-  // Header claim ("<N> walls. Each one hit by <range> companies.") is
+  // Header claim ("<N> walls hit by <range> companies — <total> in all") is
   // derived from the rendered groups, never hard-coded: N is the number of
   // multi-company classes shown, the range is the min..max of each group's
-  // distinct-company count, spelled as words up to twelve. Edge cases: the
-  // preview filter is article-count >= 2, so a group's company count could
-  // fall as low as one (two same-company breakdowns); when min === max the
-  // sentence collapses to "hit by <N> companies", and the company noun goes
-  // singular only at exactly one.
+  // distinct-company count, and <total> is the whole library (F20) so the
+  // landing's "nine" and /problems' "fourteen" are visibly the same fact.
+  // Edge cases: the preview filter is article-count >= 2, so a group's company
+  // count could fall as low as one (two same-company breakdowns); when
+  // min === max the range collapses to a single number, and the company noun
+  // goes singular only at exactly one.
   const wallCount = preview.length
   const companyCounts = preview.map((g) => g.companies.length)
   const minCompanies = Math.min(...companyCounts)
@@ -349,8 +368,8 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
         </span>
       </div>
       <h2 className="mb-3 max-w-2xl font-serif text-[clamp(1.6rem,3vw,2.1rem)] font-medium leading-tight tracking-tight text-text-primary">
-        {capitalize(numberWord(wallCount))} {wallCount === 1 ? 'wall' : 'walls'}.
-        Each one hit by {companyRange} {companyNoun}.
+        {capitalize(numberWord(wallCount))} {wallCount === 1 ? 'wall' : 'walls'} hit
+        by {companyRange} {companyNoun} — {numberWord(totalClasses)} in all.
       </h2>
       <p className="mb-8 max-w-2xl text-lg leading-relaxed text-text-secondary">
         Open any wall to see who hit it, how each team got past it, and what
@@ -364,6 +383,13 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
           const href = urlSlug
             ? `/problems/${urlSlug}`
             : `/problems#term-${g.slug}`
+          // Mission + comparison badges (F20, findability tasks 3 + 5), same
+          // components and same source fields as /problems. Rendered INSIDE the
+          // row link, so the badge is part of the card's link target.
+          const essay = problemEssayByCruxTag.get(g.slug)
+          const hasMission = essay?.mission !== undefined
+          const hasComparison = essay?.comparison !== undefined
+          const minutes = hasMission ? estimateMinutes(essay!.stations ?? []) : null
           return (
           <li key={g.slug}>
             <Link
@@ -381,6 +407,14 @@ function PreviewSection({ preview }: { preview: PreviewGroup[] }) {
               <div className="mt-2 font-mono text-xs text-cat-amber">
                 SEEN AT {g.companies.join(' · ')}
               </div>
+              {(hasMission || hasComparison) && (
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                  {hasMission && <PlayableBadge minutes={minutes} />}
+                  {hasComparison && essay?.comparison && (
+                    <SideBySideBadge systems={essay.comparison.columns.length} />
+                  )}
+                </div>
+              )}
             </Link>
           </li>
           )
@@ -403,35 +437,3 @@ function CtaSection({ articleCount }: { articleCount: number }) {
   )
 }
 
-function Footer() {
-  return (
-    <footer className="border-t border-border-default bg-bg-subtle">
-      <div className="mx-auto flex max-w-[1080px] flex-wrap items-center justify-between gap-4 px-6 py-8">
-        <Link
-          to="/"
-          className="flex items-center gap-2 font-sans font-semibold tracking-tight text-text-primary"
-        >
-          <span
-            className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-gold"
-            aria-hidden="true"
-          />
-          behindscale
-        </Link>
-        <div className="flex flex-wrap gap-5">
-          <Link to="/problems" className="text-sm text-text-secondary hover:text-text-primary">
-            Problems
-          </Link>
-          <Link to="/patterns" className="text-sm text-text-secondary hover:text-text-primary">
-            Patterns
-          </Link>
-          <Link to="/sources" className="text-sm text-text-secondary hover:text-text-primary">
-            Sources
-          </Link>
-        </div>
-        <span className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
-          First-party engineering blogs only
-        </span>
-      </div>
-    </footer>
-  )
-}

@@ -10,6 +10,7 @@ import PatternDetail from './pages/PatternDetail'
 import PatternIndex from './pages/PatternIndex'
 import ProblemDetail from './pages/ProblemDetail'
 import Sources from './pages/Sources'
+import Footer from './components/Footer'
 
 // Router-agnostic route tree. Wrapped at the two entry points:
 //   src/main.tsx        wraps with BrowserRouter for client hydration
@@ -51,6 +52,10 @@ export default function AppRoutes() {
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        {/* Site footer on every route (findability task 10: no dead ends).
+            The landing's former in-page footer moved here so one component
+            serves every page uniformly. */}
+        <Footer />
       </div>
     </>
   )

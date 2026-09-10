@@ -27,6 +27,17 @@ export interface ProblemEssay {
   headline?: string
   // One-line italic teaser shown under the title.
   lede?: string
+  // SEO "questions people type" (findability task 9, F20). When present, the
+  // problem page <title> and meta description are built from the reader's
+  // search phrasing rather than the class label alone: `titleClause` is the
+  // verb phrase after "how <companies>" in the <title> (companies come from
+  // `comparison.columns`); `description` is the full meta / og:* / JSON-LD
+  // description, authored to length (not truncated). Absent -> today's derived
+  // title + description. Authored per wall by the category-5 phrasing brief.
+  searchQuestion?: {
+    titleClause: string
+    description: string
+  }
   // "How this page works": the reader's path in three or four short items
   // ("Cause it", "Build it", ...), rendered as one mono eyebrow line under
   // the lede with " · " separators. Orientation for the no-JS / indexed

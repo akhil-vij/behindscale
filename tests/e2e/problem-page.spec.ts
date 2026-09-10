@@ -180,6 +180,9 @@ const MAIN_TEXT_WITH_MARKERS = () => {
   // counterpart in the reference build; item 2 is a rewrite handled below.
   main.querySelector('#howitworks')?.remove()
   main.querySelector('#mission-outline')?.remove()
+  // B3-5 (task 10): the prev/next wall nav is new text with no counterpart in
+  // the reference build (the footer sits OUTSIDE <main>, so it's already out).
+  main.querySelector('nav[aria-label="More walls"]')?.remove()
   const frames = Array.from(main.querySelectorAll('iframe'))
   const markers: HTMLElement[] = []
   frames.forEach((f, i) => {
@@ -232,6 +235,12 @@ function applyCopyDecisions(lines: string[]): string[] {
       "The three cut points are the artifact's three cuts; the three places",
     ) // decision 2 (caption)
     if (l === '2×') l = '1×' // B2-5 (F15): the speed button now reads the current speed
+    // B3-2 (F20): the bill moved under the stage in Batch 1, so the DAY SURVIVED
+    // narration no longer says "on the right".
+    l = l.replace(
+      'yours is itemized on the right',
+      'yours is itemized in THE BILL under the stage',
+    )
     // B2-9.2 (F22): MEMORY's deck label Q-number Q2 -> Q3 (it renders as its own
     // line after the label; READS keeps its own Q2).
     if (l === 'Q2' && (lines[i - 1] ?? '').startsWith('MEMORY')) l = 'Q3'

@@ -14,7 +14,11 @@ import {
   canonicalCompanies,
   companySourceSlugMap,
 } from '../lib/catalogGroups'
-import { estimateMinutes, formatEstimate } from '../lib/wallEstimate'
+import { estimateMinutes } from '../lib/wallEstimate'
+import { matchTerms, type MatchReason } from '../lib/search'
+import { articleTerms, cruxTagTerms } from '../lib/searchTerms'
+import PlayableBadge from '../components/PlayableBadge'
+import SideBySideBadge from '../components/SideBySideBadge'
 import type { Article } from '../types'
 
 // Catalog page: the browsable workbench. Grouped primarily by
@@ -36,61 +40,6 @@ import type { Article } from '../types'
 // TechArticle references by @id). One DOM anchor serving three jobs.
 
 const MAX_CHIPS_PER_CARD = 3
-
-function normalize(s: string): string {
-  return s.trim().toLowerCase()
-}
-
-interface SearchMatch {
-  articleSlug: string
-  score: number
-}
-
-// Weighted-substring search over the article's browse-surface fields.
-// Weights are ordered by editorial signal strength: cruxSummary +
-// title carry the most because those are what the reader sees on the
-// card and what a search query usually names; company/source carry
-// less (those already have their own filter chip); pattern names
-// carry the least (a "shard" query should surface the sharding
-// articles but not swamp them with every article that mentions a
-// pattern in passing).
-function articleMatchScore(article: Article, q: string): number {
-  if (!q) return 1
-  const summary = normalize(article.cruxSummary)
-  const title = normalize(article.title)
-  const crux = normalize(article.crux)
-  const source = normalize(article.source.name)
-  const company = normalize(article.source.company)
-  const patternNames = article.patterns
-    .map((p) => normalize(patternBySlug.get(p.slug)?.name ?? p.slug))
-    .join(' ')
-
-  let score = 0
-  if (summary.includes(q)) score += 8
-  if (title.includes(q)) score += 8
-  if (company.includes(q)) score += 4
-  if (source.includes(q)) score += 3
-  if (crux.includes(q)) score += 3
-  if (patternNames.includes(q)) score += 2
-  return score
-}
-
-// Match a cruxTag *label* or *definition* against the query. When it
-// matches, the entire group surfaces as its own result cluster above
-// article matches -- search is a door into the taxonomy, not a text
-// grep (spec §7).
-function cruxTagMatches(
-  slug: string,
-  label: string,
-  definition: string,
-  q: string,
-): boolean {
-  if (!q) return false
-  const nlab = normalize(label)
-  const ndef = normalize(definition)
-  const nslug = normalize(slug)
-  return nlab.includes(q) || ndef.includes(q) || nslug.includes(q)
-}
 
 export default function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -132,25 +81,44 @@ export default function Catalog() {
   // Filter the article set by the company chip, then by search.
   // Groups re-derive from the filtered set every render so counts +
   // SEEN AT rows stay honest against the current filter.
-  const q = normalize(query)
+  const q = query.trim()
 
   const companyFiltered = sourceFilter
     ? articles.filter((a) => a.source.slug === sourceFilter)
     : articles
 
-  const matchedArticleSlugs = useMemo(() => {
-    if (!q) return null
-    const matches: SearchMatch[] = []
-    for (const article of companyFiltered) {
-      const score = articleMatchScore(article, q)
-      if (score > 0) matches.push({ articleSlug: article.slug, score })
+  // Taxonomy matches first: a query hitting a class label / definition / slug /
+  // keyword surfaces the WHOLE class as its own cluster (unfiltered by the
+  // query -- a taxonomy hit means the reader wants everything in the class).
+  const taxonomyMatches = useMemo(() => {
+    if (!q) return [] as string[]
+    const hits: string[] = []
+    for (const slug of Object.keys(cruxtags)) {
+      const entry = cruxtags[slug]
+      if (!entry) continue
+      if (matchTerms(q, cruxTagTerms(slug, entry))) hits.push(slug)
     }
-    matches.sort((a, b) => b.score - a.score)
-    return new Set(matches.map((m) => m.articleSlug))
-  }, [q, companyFiltered])
+    return hits
+  }, [q])
 
-  const filteredArticles = matchedArticleSlugs
-    ? companyFiltered.filter((a) => matchedArticleSlugs.has(a.slug))
+  const taxonomySet = useMemo(() => new Set(taxonomyMatches), [taxonomyMatches])
+
+  // Per-article matches + the reason for each card's `matched:` line. A class
+  // already surfaced as a taxonomy cluster is EXCLUDED here so it never
+  // double-renders (the cluster already shows every article in the class).
+  const articleReasons = useMemo(() => {
+    if (!q) return null
+    const reasons = new Map<string, MatchReason | null>()
+    for (const article of companyFiltered) {
+      if (taxonomySet.has(article.cruxTag)) continue
+      const result = matchTerms(q, articleTerms(article))
+      if (result) reasons.set(article.slug, result.matched)
+    }
+    return reasons
+  }, [q, companyFiltered, taxonomySet])
+
+  const filteredArticles = articleReasons
+    ? companyFiltered.filter((a) => articleReasons.has(a.slug))
     : companyFiltered
 
   const groups = catalogGroups({
@@ -161,33 +129,15 @@ export default function Catalog() {
   const totalShown = filteredArticles.length
   const totalCount = articles.length
 
-  // CruxTag-first matches: a query that hits a tag label/definition
-  // surfaces the group as a top-of-list result cluster. Renders the
-  // entire group unfiltered by the query (a taxonomy hit means the
-  // reader wants to see everything in the class, not just the
-  // article rows whose prose also happens to include the query).
-  const taxonomyMatches = useMemo(() => {
-    if (!q) return [] as string[]
-    const hits: string[] = []
-    for (const slug of Object.keys(cruxtags)) {
-      const entry = cruxtags[slug]
-      if (!entry) continue
-      if (cruxTagMatches(slug, entry.label, entry.definition, q))
-        hits.push(slug)
-    }
-    return hits
-  }, [q])
-
   // For taxonomy-hit groups, re-derive without the query narrowing
   // (but keep the company filter respected).
   const taxonomyGroups = useMemo(() => {
     if (taxonomyMatches.length === 0) return [] as ReturnType<typeof catalogGroups>
-    const hitSet = new Set(taxonomyMatches)
     return catalogGroups({
-      articles: companyFiltered.filter((a) => hitSet.has(a.cruxTag)),
+      articles: companyFiltered.filter((a) => taxonomySet.has(a.cruxTag)),
       registry: cruxtags,
     })
-  }, [taxonomyMatches, companyFiltered])
+  }, [taxonomyMatches, taxonomySet, companyFiltered])
 
   const hasResults = groups.length > 0 || taxonomyGroups.length > 0
 
@@ -270,7 +220,7 @@ export default function Catalog() {
             </section>
           )}
           {groups.map((g) => (
-            <GroupSection key={g.slug} group={g} />
+            <GroupSection key={g.slug} group={g} reasons={articleReasons} />
           ))}
         </div>
       ) : (
@@ -311,9 +261,13 @@ interface GroupSectionProps {
     companies: readonly string[]
     articles: readonly Article[]
   }
+  // Per-article match reasons (F19). Present only for the regular result
+  // groups; taxonomy clusters render the whole class, so no card there carries
+  // a matched: line. Null when there is no active query.
+  reasons?: ReadonlyMap<string, MatchReason | null> | null
 }
 
-function GroupSection({ group }: GroupSectionProps) {
+function GroupSection({ group, reasons }: GroupSectionProps) {
   const anchorId = `term-${group.slug}`
   // The workbench group title links to the class's own page, mirroring the
   // landing preview rows. Falls back to plain text if a urlSlug is ever
@@ -356,12 +310,12 @@ function GroupSection({ group }: GroupSectionProps) {
             SEEN AT {group.companies.join(' · ')}
           </div>
         )}
-        <PlayableRow cruxTag={group.slug} />
+        <GroupBadges cruxTag={group.slug} />
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(310px,1fr))] gap-4">
         {group.articles.map((article) => (
           <li key={article.slug}>
-            <ArticleCard article={article} />
+            <ArticleCard article={article} reason={reasons?.get(article.slug) ?? null} />
           </li>
         ))}
       </ul>
@@ -369,37 +323,59 @@ function GroupSection({ group }: GroupSectionProps) {
   )
 }
 
-// A wall with a playable mission gets a Playable badge, its break-it teaser,
-// and the computed time estimate (station budgets rounded up to 5 --
-// src/lib/wallEstimate). Data-driven off the essay's `mission` block, so a
-// second wall lights up by authoring that one field. The badge stays in the
-// light shell's neutral ink: the problem-class magenta is dark-side only.
-function PlayableRow({ cruxTag }: { cruxTag: string }) {
+// A wall's list badges (F20, findability tasks 3 + 5). A playable mission gets
+// the PLAYABLE badge + estimate + break-it teaser; an authored comparison gets
+// the SIDE BY SIDE · N SYSTEMS badge (N = comparison columns). Both are
+// data-driven off the essay, so a second wall lights up by authoring those
+// blocks. The badges are wrapped in the class-page link so the badge is a live
+// target, not a dead chip beside a linked heading (the audit's task-5 fix). The
+// badges stay in the light shell's neutral ink; the class magenta is dark-side.
+function GroupBadges({ cruxTag }: { cruxTag: string }) {
   const essay = problemEssayByCruxTag.get(cruxTag)
-  if (essay?.mission === undefined) return null
-  const minutes = estimateMinutes(essay.stations ?? [])
+  if (!essay) return null
+  const hasMission = essay.mission !== undefined
+  const hasComparison = essay.comparison !== undefined
+  if (!hasMission && !hasComparison) return null
+  const minutes = hasMission ? estimateMinutes(essay.stations ?? []) : null
+  const urlSlug = urlSlugByCruxTag.get(cruxTag)
+  const badges = (
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-2">
+      {hasMission && <PlayableBadge minutes={minutes} />}
+      {hasComparison && essay.comparison && (
+        <SideBySideBadge systems={essay.comparison.columns.length} />
+      )}
+    </span>
+  )
   return (
-    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-      <span className="inline-flex items-center gap-1.5 rounded-md border border-border-strong bg-bg-surface px-2 py-[2px] font-mono text-[11px] uppercase tracking-[0.08em] text-text-primary">
-        <span aria-hidden="true">▶</span> Playable
-      </span>
-      {minutes !== null && (
-        <span className="font-mono text-xs text-text-muted">
-          {formatEstimate(minutes)}
+    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-2">
+      {urlSlug ? (
+        <Link
+          to={`/problems/${urlSlug}`}
+          aria-label={`Open ${essay.headline ?? cruxtags[cruxTag]?.label ?? cruxTag}`}
+          className="inline-flex rounded-md no-underline hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        >
+          {badges}
+        </Link>
+      ) : (
+        badges
+      )}
+      {hasMission && essay.mission?.teaser && (
+        <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
+          {essay.mission.teaser}
         </span>
       )}
-      <span className="max-w-3xl text-sm leading-relaxed text-text-secondary">
-        {essay.mission.teaser}
-      </span>
     </div>
   )
 }
 
 interface ArticleCardProps {
   article: Article
+  // When set, the query matched this card outside its title -- render the
+  // reason so the extra result is trustworthy (`matched: tag kafka`).
+  reason?: MatchReason | null
 }
 
-function ArticleCard({ article }: ArticleCardProps) {
+function ArticleCard({ article, reason }: ArticleCardProps) {
   return (
     <article className="flex h-full flex-col gap-3 rounded-xl border border-border-default bg-bg-surface p-5 transition-shadow hover:border-border-strong hover:shadow-md">
       <SourceAttribution
@@ -418,6 +394,12 @@ function ArticleCard({ article }: ArticleCardProps) {
       <p className="text-sm leading-relaxed text-text-secondary">
         {article.cruxSummary}
       </p>
+      {reason && (
+        <p className="font-mono text-[11px] leading-relaxed text-text-muted">
+          matched: {reason.kind}{' '}
+          <span className="text-text-primary">{reason.value}</span>
+        </p>
+      )}
       {article.patterns.length > 0 && (
         <div className="mt-auto flex flex-wrap gap-2 pt-1">
           {article.patterns.slice(0, MAX_CHIPS_PER_CARD).map((ref) => {

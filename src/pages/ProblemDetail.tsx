@@ -8,7 +8,9 @@ import {
   patternBySlug,
   problemEssayByCruxTag,
   problemSvgByKey,
+  urlSlugByCruxTag,
 } from '../content'
+import { catalogGroups } from '../lib/catalogGroups'
 import { newsletterSignupUrl } from '../config/site'
 import type { Article, PatternDefinition, ProblemEssay } from '../types'
 import StationNav from './problem/StationNav'
@@ -27,6 +29,18 @@ import { wallBySlug } from '../walls'
 import './problem-page.css'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// Prev/next wall order = /problems order (catalogGroups: count desc, alpha
+// tie-break), restricted to classes with a live /problems/<urlSlug> page
+// (findability task 10). Computed once at module load from build-time content.
+interface WallLink {
+  cruxTag: string
+  label: string
+  urlSlug: string
+}
+const WALL_ORDER: WallLink[] = catalogGroups({ articles, registry: cruxtags })
+  .map((g) => ({ cruxTag: g.slug, label: g.label, urlSlug: urlSlugByCruxTag.get(g.slug) }))
+  .filter((w): w is WallLink => typeof w.urlSlug === 'string')
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -153,6 +167,15 @@ export default function ProblemDetail() {
   const svg = (name: string) => problemSvgByKey.get(`${cruxTag}/${name}`)
   const wallFigure = essay?.figures?.find((f) => f.slug === essay.wall?.figureSlug)
   const you = host.you
+
+  // Prev/next wall (findability task 10): neighbours in /problems order; none
+  // at the ends.
+  const wallIndex = WALL_ORDER.findIndex((w) => w.cruxTag === cruxTag)
+  const prevWall = wallIndex > 0 ? WALL_ORDER[wallIndex - 1] : null
+  const nextWall =
+    wallIndex >= 0 && wallIndex < WALL_ORDER.length - 1
+      ? WALL_ORDER[wallIndex + 1]
+      : null
 
   return (
     <main className="problem-page max-w-[680px] mx-auto px-5 pt-10 pb-[72px]">
@@ -352,6 +375,44 @@ export default function ProblemDetail() {
       )}
 
       <SubscribeCard />
+
+      {(prevWall || nextWall) && (
+        <nav
+          aria-label="More walls"
+          className="mt-16 flex items-stretch justify-between gap-4 border-t border-border-default pt-6"
+        >
+          {prevWall ? (
+            <Link
+              to={`/problems/${prevWall.urlSlug}`}
+              className="group flex max-w-[46%] flex-col gap-1 no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              <span className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
+                ← Previous wall
+              </span>
+              <span className="font-serif text-base leading-snug text-text-primary transition-colors group-hover:text-accent-primary">
+                {prevWall.label}
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+          {nextWall ? (
+            <Link
+              to={`/problems/${nextWall.urlSlug}`}
+              className="group flex max-w-[46%] flex-col items-end gap-1 text-right no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              <span className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
+                Next wall →
+              </span>
+              <span className="font-serif text-base leading-snug text-text-primary transition-colors group-hover:text-accent-primary">
+                {nextWall.label}
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )}
     </main>
   )
 }

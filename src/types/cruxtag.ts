@@ -28,6 +28,14 @@ export interface CruxTagEntry {
   label: string
   definition: string
   urlSlug?: string
+  // Optional search-terms for the problem class (findability Batch 3, F19):
+  // terms a reader types that name the class but aren't in its label or
+  // definition ("double payment", "at-least-once"). A hit surfaces the whole
+  // class as its own result cluster on /problems, the same as a label hit.
+  // Search-only; authored case preserved. Delivered as `keywords/walls.json`
+  // (keyed by cruxTag) and merged at build time in src/content/index.ts, not
+  // hand-edited into this file. See the Batch 3 field ruling.
+  keywords?: string[]
 }
 
 export type CruxTagRegistry = Record<string, CruxTagEntry>

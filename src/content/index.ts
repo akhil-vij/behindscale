@@ -32,17 +32,87 @@ const patternModules = import.meta.glob<PatternDefinition>(
   { eager: true, import: 'default' },
 )
 
-export const articles: Article[] = Object.values(articleModules).sort((a, b) =>
-  b.publishedAt.localeCompare(a.publishedAt),
-)
+// Search-terms overlay (findability Batch 3, F19). The authoring agent delivers
+// three files under /keywords -- articles.json, patterns.json, walls.json --
+// keyed by article slug / pattern slug / cruxTag, each value carrying that
+// type's term field (`keywords` for articles + walls, `aliases` for patterns;
+// see the Batch 3 field ruling). They are bundled at build time exactly like
+// the content JSON (import.meta.glob), so authoring never touches the 100+
+// content files. Absent files -> the glob matches nothing -> empty overlay;
+// malformed entries are skipped defensively (cleanTerms).
+type KeywordsFile = Record<string, { keywords?: unknown; aliases?: unknown }>
+
+const keywordsModules = import.meta.glob<KeywordsFile>('/keywords/*.json', {
+  eager: true,
+  import: 'default',
+})
+
+function keywordsFile(name: string): KeywordsFile {
+  const entry = Object.entries(keywordsModules).find(([path]) =>
+    path.endsWith(`/${name}`),
+  )
+  return entry?.[1] ?? {}
+}
+
+// Trim, drop non-strings/blanks, de-dupe case-insensitively; preserve order and
+// authored case (the matched: line shows keywords verbatim).
+function cleanTerms(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const v of raw) {
+    if (typeof v !== 'string') continue
+    const t = v.trim()
+    if (!t) continue
+    const key = t.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(t)
+  }
+  return out
+}
+
+// Union `base` with `extra`, case-insensitive de-dupe, order-stable.
+function unionTerms(base: readonly string[], extra: readonly string[]): string[] {
+  const merged = [...base]
+  const seen = new Set(base.map((s) => s.toLowerCase()))
+  for (const t of extra) {
+    const key = t.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    merged.push(t)
+  }
+  return merged
+}
+
+const articleKeywordsOverlay = keywordsFile('articles.json')
+const patternAliasesOverlay = keywordsFile('patterns.json')
+const wallKeywordsOverlay = keywordsFile('walls.json')
+
+export const articles: Article[] = Object.values(articleModules)
+  .map((a) => {
+    const overlay = cleanTerms(articleKeywordsOverlay[a.slug]?.keywords)
+    if (overlay.length === 0) return a
+    return { ...a, keywords: unionTerms(a.keywords ?? [], overlay) }
+  })
+  .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt))
 
 export const articleBySlug: ReadonlyMap<string, Article> = new Map(
   articles.map((a) => [a.slug, a]),
 )
 
-export const patterns: PatternDefinition[] = Object.values(patternModules).sort(
-  (a, b) => a.name.localeCompare(b.name),
-)
+export const patterns: PatternDefinition[] = Object.values(patternModules)
+  .map((p) => {
+    // Pattern search-terms land in the existing `aliases` field (lowercased to
+    // honour its schema); the overlay extends whatever the pattern file already
+    // declares.
+    const overlay = cleanTerms(patternAliasesOverlay[p.slug]?.aliases).map((s) =>
+      s.toLowerCase(),
+    )
+    if (overlay.length === 0) return p
+    return { ...p, aliases: unionTerms(p.aliases ?? [], overlay) }
+  })
+  .sort((a, b) => a.name.localeCompare(b.name))
 
 export const patternBySlug: ReadonlyMap<string, PatternDefinition> = new Map(
   patterns.map((p) => [p.slug, p]),
@@ -77,8 +147,18 @@ const cruxtagsModules = import.meta.glob<CruxTagRegistry>(
   '/content/cruxtags.json',
   { eager: true, import: 'default' },
 )
-export const cruxtags: CruxTagRegistry =
-  Object.values(cruxtagsModules)[0] ?? {}
+const cruxtagsBase: CruxTagRegistry = Object.values(cruxtagsModules)[0] ?? {}
+export const cruxtags: CruxTagRegistry = Object.fromEntries(
+  Object.entries(cruxtagsBase).map(([key, entry]) => {
+    const overlay = cleanTerms(wallKeywordsOverlay[key]?.keywords)
+    return [
+      key,
+      overlay.length === 0
+        ? entry
+        : { ...entry, keywords: unionTerms(entry.keywords ?? [], overlay) },
+    ]
+  }),
+)
 
 // urlSlug resolvers for the `/problems/<urlSlug>` class pages (nav-IA
 // Phase 3, D2/D3). The registry's `urlSlug` is the public, human-facing

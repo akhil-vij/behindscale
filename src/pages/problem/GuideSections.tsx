@@ -114,7 +114,12 @@ export function InterviewSection({
       <p className="pp-p">{pp(interview.shape)}</p>
       <h3 className="pp-h3">The follow-ups are the attacks</h3>
       <p className="pp-p">{pp(interview.followupsIntro)}</p>
-      <div className="matrix-wrap">
+      <div
+        className="matrix-wrap"
+        tabIndex={0}
+        role="group"
+        aria-label="Interview follow-ups — scrollable table"
+      >
         <table className="matrix interview">
           <thead>
             <tr>
