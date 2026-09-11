@@ -7699,6 +7699,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-09-11: **Pattern enrichment round — Dead Man's Switch** (enrichment of
+  the minimal-floor `content/patterns/dead-mans-switch.json`; slug / name /
+  category frozen — `observability`). Placed the round package: enriched JSON
+  (authored `oneLineDefinition`, `definition` with one figure marker
+  `{{figure:silence-is-the-signal}}` and one inline cross-link
+  `[failure domain](/patterns/independent-observability)`, `whenItApplies` 5 /
+  `tradeoffs` 4, `mechanism`, `artifact`, `aliases`: heartbeat monitoring ·
+  liveness check · absence detection), the authored artifact
+  `content/artifacts/dead-mans-switch.jsx` (export default, 0 em-dashes, 0
+  near-miss grays), and one figure
+  `content/figures/dead-mans-switch/silence-is-the-signal.svg`. **On-drop fix:**
+  stripped a C2PA content-credentials manifest from the SVG (`xmlns:c2pa` attr +
+  `<metadata>` block, ~7.8KB) before placing it. Revision-preview HTML not
+  placed. Gates all green: validate **23 checks, 0 errors**, compile-artifacts
+  `ok dead-mans-switch`, copy-figures ok, tsc + vite + SSR + prerender clean,
+  **422 tests** pass, full build 0 errors. Prerendered
+  `/patterns/dead-mans-switch` verified: inline link renders as a real
+  `<a href="/patterns/independent-observability">`, figure img + mechanism
+  teaser + artifact embed present, 0 literal markdown, 0 near-miss grays. Branch
+  `round/dead-mans-switch-enrichment` off latest `main` (`d707545`).
+
 - 2026-09-09: **Findability Batch 3 — implementation (F18/F19/F20 + tasks 3/5/9/10).**
   Branch `findability-batch3` off latest `main`; one commit per item.
   - **B3-1 (F19):** shared matcher `src/lib/search.ts` (tokenise →
