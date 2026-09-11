@@ -1,19 +1,43 @@
 {
   "slug": "dead-mans-switch",
   "name": "Dead Man's Switch",
-  "definition": "A Dead Man's Switch detects failure by monitoring the absence of an expected health signal, rather than by detecting the presence of a failure signal. A healthy system emits a continuous heartbeat — a periodic message, a regularly-updated timestamp, an always-firing alert rule, a successful liveness probe — and an external observer counts these heartbeats. When the heartbeat stops, the observer raises an alarm. Silence itself is the signal.\n\nThe pattern's value emerges from a recursive problem: any failure detector is itself a system that can fail. If you monitor your application with a monitoring service, what monitors the monitoring service? Adding more layers of detection creates infinite regress without ever solving the underlying problem — at some point a watchdog at the top of the chain has to be trusted, and that watchdog can still fail silently.\n\nDead Man's Switches resolve this by inverting the question. Instead of asking 'did something go wrong?' (which requires the detector to be functional), they ask 'is the system still saying it's alive?' (which requires only that you can count messages). The final observer is typically as simple as possible — a CloudWatch alarm watching SNS message rate, a cron job checking a file timestamp, a load balancer health check expecting a specific response — and lives in a different failure domain from the system being monitored.\n\nThe pattern is widely used outside software too: hardware watchdog timers, train operator vigilance devices, two-person nuclear authorization, certificate expiry monitors. All share the structure of 'continuous proof of life' rather than 'alert on failure.'",
+  "oneLineDefinition": "Detect failure by watching the system's steady 'I am alive' heartbeat, and raising the alert when that heartbeat stops - because a system that has died silently cannot report anything.",
+  "definition": "A dead man's switch spots failure by watching for a signal to stop, not for an error to appear. A healthy system sends a steady heartbeat - a regular message, a timestamp it keeps refreshing, a probe that keeps passing - and an outside observer just counts them. When the heartbeat stops, the observer raises the alert. The silence itself is the signal.\n\n{{figure:silence-is-the-signal}}\n\nA monitor is itself a system that can fail, which leads to a problem with no end. If a monitoring service watches your app, what watches the monitoring service? Adding another monitor on top just moves the question up a level, forever - and the one at the very top can still die quietly. A dead man's switch escapes this by flipping the question. Instead of asking 'did something break?', which needs a working detector to answer, it asks 'is the system still saying it is alive?', which needs nothing more than the ability to count messages.\n\nThe final observer is kept as dumb as possible - a simple alert that fires on a low message rate, a scheduled job checking a file's timestamp, a load balancer expecting a certain reply. And it has to live in a different [failure domain](/patterns/independent-observability) from the system it watches; a watcher that shares infrastructure with what it monitors gives no protection, because the same failure takes them both. The whole pattern rests on the observer surviving when everything else has died.\n\nThe same idea shows up well outside software. In each case, something has to keep actively proving it is okay, and the moment it stops, that is the warning:\n\n- a device that reboots itself if its software stops checking in\n- a train that brakes on its own if the driver stops pressing a pedal\n- a machine that runs only while two operators each hold a button down\n- a medical alert that calls for help if someone misses their daily check-in",
   "whenItApplies": [
-    "Monitoring infrastructure that must itself be monitored without infinite recursion of meta-monitoring layers",
-    "Detecting silent failures: scheduled jobs that fail to run, processes that crash without exit codes, network partitions where the failing side can't report itself",
-    "Validating that defensive systems (alerting pipelines, backup systems, replication streams) are actually functioning, not just configured",
-    "Building monitoring for systems that fail in ways their internal observability can't catch (entire region down, process completely stopped, network completely partitioned)",
-    "Designing for failure domains where the failure could include the failure detection itself — pair the heartbeat sender and the heartbeat watcher across independent infrastructure"
+    "Your monitoring needs watching too, without an endless chain. If you add a monitor to watch your monitor, then another to watch that one, it never ends - a dead man's switch replaces the whole chain with one check for silence.",
+    "The failure is silent - nothing gets reported. Scheduled jobs that never run, processes that vanish without an error, a network split where the broken side cannot call for help: none of these send a failure signal, but all of them stop the heartbeat.",
+    "You need to know a safety system actually runs, not just exists. For alerting pipelines, backups, or replication, a heartbeat proves the thing is really running - configuration alone does not.",
+    "The failure can take out the system's own monitoring. When a whole region can go down, a process can stop dead, or the network can split, the system's built-in telemetry dies with it - so you need an outside heartbeat to notice.",
+    "The failure could take the detector down too. Put the heartbeat sender and the watcher on independent infrastructure, so whatever kills the system cannot also silence the thing meant to notice."
   ],
   "tradeoffs": [
-    "Detection is binary (heartbeat present or absent) rather than gradient. Finer-grained degradation requires separate monitoring; a Dead Man's Switch tells you nothing about how close to failure the system was before stopping.",
-    "Heartbeat frequency tunes the detection latency: a faster heartbeat means quicker detection but more traffic and more sensitivity to transient network blips; a slower heartbeat means lower overhead but longer outages before paging.",
-    "False positives from network or routing issues are common — a missed heartbeat could mean the monitored system is down, OR the path between it and the observer is down. The observer alarming may not distinguish, which can produce noise during network incidents.",
-    "Requires deliberate placement of the observer in a different failure domain. A heartbeat watcher that shares infrastructure with what it monitors provides no protection — the entire pattern depends on the observer surviving when everything else fails."
+    "It only tells you alive or dead, nothing in between. The heartbeat is present or absent, so it says nothing about how degraded the system was on the way down - that needs separate, finer monitoring.",
+    "How often it beats trades speed against noise: a fast heartbeat catches failures sooner but adds traffic and can fire by mistake when the network hiccups for a moment; a slow one is cheaper but lets an outage run longer before it pages.",
+    "A missed heartbeat is ambiguous. It could mean the system is down, or just that the network path between it and the observer is down - the observer often cannot tell the two apart, which makes for noisy alerts during network trouble.",
+    "The observer has to sit somewhere the failure cannot reach. A watcher sharing infrastructure with the system it watches protects nothing, since the same failure takes both - the whole pattern depends on the observer outliving everything else."
   ],
-  "category": "observability"
+  "aliases": [
+    "heartbeat monitoring",
+    "liveness check",
+    "absence detection"
+  ],
+  "category": "observability",
+  "artifact": {
+    "path": "/artifacts/dead-mans-switch/index.html",
+    "teaser": "A crashed system can't send an error - but a dead man's switch hears the heartbeat go silent and raises the alert anyway."
+  },
+  "figures": [
+    {
+      "slug": "silence-is-the-signal",
+      "eyebrow": "SILENCE IS THE SIGNAL",
+      "caption": "Waiting for a failure signal misses a silent death - a crashed or cut-off system sends nothing; a dead man's switch watches for the heartbeat to stop, so the silence itself raises the alert.",
+      "ariaLabel": "Left, waiting for a failure signal misses a silent death; right, watching for a missing heartbeat catches it."
+    }
+  ],
+  "mechanism": {
+    "caption": "SILENCE IS THE ALERT",
+    "blurb": "At its core: a healthy system sends a steady heartbeat, and an outside observer just counts it. When the beats stop, that silence is the alert - which catches the failures a system can never report itself, because it has already died or been cut off.",
+    "idea": "Most monitoring waits for a failure signal - an error, a failed check - and raises an alert when it sees one. But a system that has crashed, hung, or been cut off from the network cannot send anything, so the loudest failures make no sound at all. A dead man's switch inverts this: the healthy system emits a steady heartbeat, an outside observer counts the beats, and when they stop, the silence itself is the alert. This also settles the endless 'who monitors the monitor' question - the final observer only has to count messages, so it can be trivially simple and live somewhere the outage cannot reach.",
+    "whatToTry": "Watch the heartbeat, then kill the system so it dies silently. The 'wait for an error' detector never fires - the dead system sent nothing - but the dead man's switch sees the heartbeat drop and alerts."
+  }
 }
