@@ -418,7 +418,8 @@
       "token bucket",
       "idempotency key",
       "how to retry safely",
-      "prevent retry storms"
+      "prevent retry storms",
+      "idempotent API"
     ]
   },
   "aws-shuffle-sharding": {
