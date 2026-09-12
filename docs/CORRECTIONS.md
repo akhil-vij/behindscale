@@ -4441,3 +4441,88 @@ toward 100%. This makes both the crux mechanism and the recovery visible.
 
 P27 frozen fields byte-identical; the three article figures unchanged. Deliverables: updated .json,
 updated .jsx, rebuilt preview .html, this entry.
+
+---
+
+## aws-timeouts-retries-backoff-jitter - Clarity round (owner line-edits) (2026-08-13)
+
+The day-after clarity pass on the produced AWS retries article. The biggest round so far, driven by the
+owner's line notes plus two global rules and a substantial artifact rework. All bands held (summary
+1,033; crux 820; problem 2,174; solution 3,043); dashes stayed 0; longest sentence 39 words; frozen
+fields intact.
+
+**Two global rules.** (1) One word for the concept: "failures" everywhere, never "faults" or "blips".
+(2) No semicolons in prose. Every mid-sentence semicolon in the article and its captions became a comma
+or a sentence split.
+
+**Summary.** The three-tool intro split into three sentences (removing its semicolons); "so that hiding
+does not cause the next outage" -> "so that retrying does not set off a thundering herd and cause the
+next outage". The four bullets rewritten to the owner's wording, trailing semicolons removed
+(Retry / Cap / Treat / Add).
+
+**Crux.** The owner's fair question about "a bet placed with someone else's money" answered by dropping
+the metaphor: "A retry improves one client's chances by spending the shared server's capacity, not the
+client's own." "vanish on a second try" -> "failures succeed on a second try"; "the same selfish
+bet... the least to spare" -> "retrying at once... already overloaded"; "come back at the same moment"
+-> "retry at the same moment"; the closing line rephrased in plain terms.
+
+**Problem.** "even the operators" -> "even the people operating it"; "a small share of faults" -> "a
+small number of failures"; the unclear "That growth is the hard part, and it arrives through the very
+tools..." rephrased; "piles up work for callers who may have long since given up" rephrased; "everyone's
+running out of resources" -> "a global resource shortage, which is what proper timeouts prevent"; "paper
+over" -> "deal with"; "The cost is the crux: retrying is selfish" rephrased to a plain statement of the
+cost; "everything lining up" -> "every retry lining up at the same time"; "the jam in synchronized
+waves" -> "the pile-up in repeated waves"; "not smooth to begin with" -> "not smooth in the first
+place".
+
+**Solution.** "Amazon's practice is strict" -> "Amazon has a strict rule"; "chosen on purpose, not by
+folklore" -> "chosen from real observation"; "applied with the caution that defines the piece" ->
+"applied with great care"; "enforced by a mechanism, not by good intentions" -> "enforced by a proper
+mechanism"; "the normal one" -> "the default one"; "a question about the API before... the client" ->
+"more a question for the API than about the client"; "usually idempotent already / may not be" ->
+"idempotent by default / (or have other side effects) may not be"; "a harmless echo of the first" ->
+"recognized as a repeat and ignored"; "smears... into a roughly steady trickle" -> "spreads... into a
+roughly even, steady stream"; "how much jitter to add and how" -> "...and how to add it";
+"self-inflicted" -> "caused by the clients themselves"; "cluster at the top of the hour" -> "bunch up on
+the hour"; the long jitter-per-machine sentence split in two.
+
+**Trade-offs.** "Every timeout buys you a rate of false failures" rephrased and the long sentence split;
+"duplicate work and... in ambiguity" -> "repeated work and... not knowing whether the first attempt
+already happened"; "resources held hostage" -> "resources blocked"; "let the number be folklore; the
+trade itself cannot be refused" -> "let the number be a guess. The trade-off itself cannot be avoided";
+"trades hiding-power for stability" -> "gives up some power to hide failures in exchange for stability";
+"the deep ones" -> "the deep ones caused by overload"; "budgets misbehave at the edges" -> "a budget
+behaves awkwardly at its limits"; "caps its own selfishness... a hopeful side effect" -> "each client
+limits only its own retries... hoped for rather than guaranteed"; "into the API's contract, where
+someone has to pay to keep it" -> "into the API's contract."; "make retries safe by making the server
+remember, which means state..." -> "make retries idempotent by making the server remember state, an
+expiry policy, and rules..."; "'creates are token-guarded'... metering, notifications, audit trails" ->
+"'creates use a token'... like recording usage for billing, sending notifications, or writing audit
+logs"; "Jitter buys smoothness by spending predictability" -> "Jitter makes the fleet's load smoother
+but makes each machine's timing less predictable"; "tune one tension that none of them settles" ->
+"manage one trade-off that none of them removes"; the two semicolon-joined sentences in t5 split.
+
+**Patterns.** "stated as operating doctrine" -> "written up as standard practice"; "all periodic work"
+-> "all periodic or asynchronous work"; "the discipline of the client fleet" -> "the job of the clients
+themselves" (semicolon split); "bought at API-design time" -> "designed in at API-design time"; "with a
+mechanism, not advice" -> "with a real mechanism rather than advice"; "the normal one" -> "the default
+one".
+
+**Figures.** the-token-bucket eyebrow "CAP THE STORM WITH ARITHMETIC, NOT LUCK" -> "A HARD CAP ON EACH
+CLIENT'S EXTRA LOAD"; "blips fully masked" -> "failures fully masked"; "the normal one" -> "the default
+one"; the caption's "rather than left to chance" removed. correlation-and-jitter eyebrow semicolon ->
+comma; "steady trickle" -> "steady stream"; "smears the wave" -> "spreads the wave" (semicolon ->
+comma). the-selfish-retry bottom-line semicolon -> comma; "the least to spare" -> "already overloaded".
+
+**Artifact - reset fix and a live rework.** The reset now actually resets: it clears the sim and puts
+all three sliders and the overload back to their starting values, and forces a redraw. The three on/off
+toggles became live sliders, so the load responds as they move: a backoff cap (the longest wait between
+retries), a jitter amount (0 to 100 percent), and a retry budget (0 to 15 tokens). The overload stays a
+single toggle. The verdict now reads off the slider settings (retry storm with no defenses, synchronized
+waves with backoff but little jitter, spread but unbounded with jitter alone, capped once a budget is
+set), and the load-vs-capacity trace updates in real time. Metaphors fixed: "brown it out" / "brown out"
+-> "overload"; "selfish by construction" removed; the doctrine and footer semicolons became commas or
+sentence splits.
+
+P27 frozen fields byte-identical; the three figures were re-touched (text only) this round.
+Deliverables: updated .json, reworked .jsx, rebuilt preview .html, the three figure .svgs, this entry.

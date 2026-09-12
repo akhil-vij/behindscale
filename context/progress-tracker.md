@@ -7699,6 +7699,33 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-09-12: **Article enrichment round — AWS Timeouts, Retries, Backoff &
+  Jitter** (enrichment of the existing `aws-timeouts-retries-backoff-jitter`
+  article; slug / title / url / publishedAt / cruxTag / source frozen —
+  `retry-amplified-overload`). Placed the round package: enriched article JSON
+  (adds three `figures`), the authored artifact
+  `content/artifacts/aws-timeouts-retries-backoff-jitter.jsx` (export default, 0
+  em-dashes, 0 near-miss grays), three figures
+  (`the-selfish-retry`, `correlation-and-jitter`, `the-token-bucket`), and the
+  additive `docs/CORRECTIONS.md` (+85, 0 deletions). Revision-preview HTML not
+  placed. **On-drop fixes:** (1) stripped a C2PA content-credentials manifest
+  from all three SVGs (~7.8KB each); (2) trimmed 8 of 9 figure fields into the
+  Q10 word bands (captions 66-74w → ≤40, ariaLabels 32-44w → ≤20, eyebrows 8-9w
+  → ≤6), meaning and spaced-hyphen style preserved, verified in-band before
+  write. **Findability follow-up (owner-approved):** the enriched summary
+  reworded "side-effecting APIs" → "any call with side effects", dropping the
+  only `api` token, which broke the merged search test asserting the article is
+  findable by "idempotent API" (`keywords/tests.md` line 68). Rather than edit
+  authored prose, added the term `"idempotent API"` to this article's entry in
+  `keywords/articles.json` (the designed search-terms file). Gates all green:
+  validate **23 checks, 0 errors**, compile-artifacts + copy-figures (3 new) ok,
+  **422 tests** pass, full build 0 errors. Prerendered
+  `/articles/aws-timeouts-retries-backoff-jitter` verified: all three figures
+  render, artifact embeds, 0 literal markdown, 0 near-miss grays. Soft warning
+  left as authored: `stat[1].value 3` ("tools in the doctrine") not literal in
+  prose. Branch `round/aws-timeouts-retries-backoff-jitter-enrichment` off
+  latest `main` (`9b67c75`).
+
 - 2026-09-11: **Pattern enrichment round — Dead Man's Switch** (enrichment of
   the minimal-floor `content/patterns/dead-mans-switch.json`; slug / name /
   category frozen — `observability`). Placed the round package: enriched JSON
