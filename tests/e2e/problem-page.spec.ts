@@ -1,5 +1,5 @@
 import { test, expect, type Frame, type Page } from '@playwright/test'
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 // Problem-page v7.3 port -- the browser half of the brief's §5 suite
@@ -29,7 +29,6 @@ import { join } from 'node:path'
 // server now sends Access-Control-Allow-Origin so the bundles run.
 
 const PAGE = '/problems/ambiguous-timeouts'
-const FIXTURE = join(process.cwd(), 'tests', 'fixtures', 'problem-page-v7.3.html')
 const DIST_PAGE = join(process.cwd(), 'dist', 'problems', 'ambiguous-timeouts.html')
 
 // Clicks a control INSIDE an artifact frame through the DOM. Playwright's
@@ -56,7 +55,8 @@ async function waitForMission(page: Page): Promise<Frame> {
   return f
 }
 
-// Set the AWS winning deck (the §5.2 path) and run one day to survival, at 2×.
+// Set the AWS winning deck (the §5.2 path) and run one day to survival (the 2×
+// speed control was removed in the copy pass, so the run is 1×).
 // Leaves the attacks revealed (#escwrap visible), RUN re-enabled.
 async function surviveDay(mission: Frame, page: Page): Promise<void> {
   const click = (k: string, v: string) => frameClick(mission, `#deck button[data-k="${k}"][data-v="${v}"]`)
@@ -65,7 +65,6 @@ async function surviveDay(mission: Frame, page: Page): Promise<void> {
   await click('cli', 'key')
   await click('rep', 'saved')
   await click('ret', 'ever')
-  await frameClick(mission, '#fastbtn')
   await frameClick(mission, '#runbtn')
   await page.locator('#artB iframe').scrollIntoViewIfNeeded()
   await mission.waitForFunction(
@@ -97,7 +96,8 @@ test.describe('§5.2 real iframe round-trip', () => {
     await expect(page.locator('#you-th')).toHaveText(/survive a day first/i)
     await expect(page.locator('#navdeck')).toBeHidden()
 
-    // The AWS deck, window forever (the brief's default path), at 2×.
+    // The AWS deck, window forever (the brief's default path); 1× (the 2× speed
+    // control was removed in the copy pass).
     const click = (k: string, v: string) => frameClick(mission, `#deck button[data-k="${k}"][data-v="${v}"]`)
     await click('id', 'key')
     await expect(page.locator('#navdeck')).toBeVisible() // touched -> deck-jump revealed
@@ -105,7 +105,6 @@ test.describe('§5.2 real iframe round-trip', () => {
     await click('cli', 'key')
     await click('rep', 'saved')
     await click('ret', 'ever')
-    await frameClick(mission, '#fastbtn')
     await frameClick(mission, '#runbtn')
     // Keep the frame on screen while the day runs: Chromium throttles
     // requestAnimationFrame in a fully offscreen cross-origin frame, and the
@@ -203,62 +202,9 @@ function normalizeLines(t: string): string[] {
     .filter((l) => l.length > 0)
 }
 
-// The reference build's lines that the port deliberately does not carry
-// (handoff §4G "do not port"): the two proto-notes, the FREE PLAY button,
-// the newsletter placeholder. Anything else that differs is a regression.
-const EXCLUDED_FIXTURE_LINES = new Set([
-  'FREE PLAY: OFF',
-  'THE WEEKLY', // uppercased by the block's CSS
-  "One problem class per week - the wall, the answers side by side, and one thing to steal. This page's class was Edition 1.",
-  'Subscribe',
-  'PROTOTYPE - form is a placeholder pending the newsletter account',
-])
-const EXCLUDED_FIXTURE_PREFIXES = ['PROTOTYPE v6 - priced design space.', 'GATE (future):']
 
-// The Build intro's first sentence, rewritten by the orientation follow-up
-// (item 2): the shell composes it from `mission.decisionsSummary`.
-const BUILD_INTRO_OLD =
-  "Now take the designer's: the six decisions below are yours, and the goal is a day of traffic, survived."
-const BUILD_INTRO_NEW =
-  "Now take the designer's. Six decisions are yours — who names the operation, where its memory lives, which copy of the database answers, what the client does on a timeout, what a duplicate hears, and how long the memory lasts — and the goal is a day of traffic, survived."
-
-// The three §4G copy decisions (+ the follow-up's rewritten sentence),
-// applied to the fixture text so the two sides must then match exactly.
-function applyCopyDecisions(lines: string[]): string[] {
-  const out: string[] = []
-  for (let i = 0; i < lines.length; i++) {
-    let l = lines[i]!
-    if (l === 'INTERVIEW') l = 'INTERVIEW · 5 MIN' // decision 3 (nav budget)
-    l = l.replace(BUILD_INTRO_OLD, BUILD_INTRO_NEW) // follow-up item 2
-    l = l.replace(
-      'The three cut points are the wall figure above; the three places',
-      "The three cut points are the artifact's three cuts; the three places",
-    ) // decision 2 (caption)
-    if (l === '2×') l = '1×' // B2-5 (F15): the speed button now reads the current speed
-    // B3-2 (F20): the bill moved under the stage in Batch 1, so the DAY SURVIVED
-    // narration no longer says "on the right".
-    l = l.replace(
-      'yours is itemized on the right',
-      'yours is itemized in THE BILL under the stage',
-    )
-    // B2-9.2 (F22): MEMORY's deck label Q-number Q2 -> Q3 (it renders as its own
-    // line after the label; READS keeps its own Q2).
-    if (l === 'Q2' && (lines[i - 1] ?? '').startsWith('MEMORY')) l = 'Q3'
-    // decision 1: the YOU row's vantage "You" -> "Your design" (the .vant
-    // cell is uppercased by CSS, so innerText reads "YOU"; the line after
-    // "You", "now").
-    if (l === 'YOU' && lines[i - 1] === 'now' && lines[i - 2] === 'You') l = 'YOUR DESIGN'
-    // B2-9.3 (F22): the "From the full problem page" backlink is hidden when the
-    // artifact is embedded on the page, so the served page never shows it.
-    l = l.replace(/ ?From the full problem page at behindscale\.com →/, '')
-    if (l === '') continue // a line that was only the (now-removed) backlink drops out
-    out.push(l)
-  }
-  return out
-}
-
-test.describe('§5.4 text parity with the reference build', () => {
-  test('served page (both frames included) vs problem-page-v7.3.html', async ({ page, browser }) => {
+test.describe('§5.4 text parity (served vs captured baseline)', () => {
+  test('served page (both frames included) matches the captured baseline', async ({ page }) => {
     test.setTimeout(120_000)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
@@ -277,54 +223,34 @@ test.describe('§5.4 text parity with the reference build', () => {
     })
     const servedLines = normalizeLines(served)
 
-    // The fixture, rendered by the same browser (its scripts run; fonts are
-    // blocked so the run never waits on the network).
-    const ctx = await browser.newContext()
-    await ctx.route('**/fonts.googleapis.com/**', (r) => r.abort())
-    await ctx.route('**/fonts.gstatic.com/**', (r) => r.abort())
-    const fx = await ctx.newPage()
-    await fx.goto(`file://${FIXTURE}`)
-    await fx.waitForTimeout(500)
-    // The reference keeps its filled-state YOU diagram in the DOM behind
-    // display:none (innerText still walks SVG text inside it); the port
-    // renders that state only once filled. Drop it before extracting.
-    const fixtureRaw = await fx.evaluate(() => {
-      document.getElementById('you-fill')?.remove()
-      return document.querySelector('main')!.innerText
-    })
-    await ctx.close()
-    const fixtureLines = applyCopyDecisions(
-      normalizeLines(fixtureRaw).filter(
-        (l) => !EXCLUDED_FIXTURE_LINES.has(l) && !EXCLUDED_FIXTURE_PREFIXES.some((p) => l.startsWith(p)),
-      ),
-    )
+    // Re-baselined (2026-09 copy pass): the port's v7.3-verbatim comparison
+    // shipped; this now guards against ACCIDENTAL future copy drift by comparing
+    // the served main text (both frames) to a captured baseline. After an
+    // intended copy change, regenerate it: CAPTURE_PARITY=1 npx playwright test.
+    const BASELINE = join(process.cwd(), 'tests', 'fixtures', 'ambiguous-timeouts-served.json')
+    if (process.env.CAPTURE_PARITY) {
+      writeFileSync(BASELINE, JSON.stringify(servedLines, null, 2) + '\n')
+      test.info().annotations.push({ type: 'captured', description: `${servedLines.length} lines` })
+      return
+    }
+    const expected: string[] = JSON.parse(readFileSync(BASELINE, 'utf8'))
 
-    // §6 (F18): the ONE new string -- the diagram-row outbound link moved from
-    // the <summary> into the body ("Read the article ↗"). It is not in the
-    // reference; assert it appears (once per linked company row) and pull it out
-    // before the multiset compare, so parity still proves nothing else changed.
-    const READ_ARTICLE = 'Read the article ↗'
-    expect(servedLines.filter((l) => l === READ_ARTICLE).length).toBeGreaterThan(0)
-    const servedForParity = servedLines.filter((l) => l !== READ_ARTICLE)
-
-    // Batch 1 §1 reorders the mission's internal layout (the two-column working
-    // surface), so parity is now a MULTISET check: the same lines with the same
-    // counts, order-independent. This still catches any added, removed, or
-    // DOUBLED line (the hidden-vertical-SVG concern) -- it only tolerates the
-    // deliberate reorder. Report the first sorted divergence with context.
-    const sortedServed = [...servedForParity].sort()
-    const sortedFixture = [...fixtureLines].sort()
-    const n = Math.max(sortedServed.length, sortedFixture.length)
+    // Multiset compare: same lines, same counts, order-independent (Batch-1 §1
+    // reorders the two-column working surface). Catches any added, removed, or
+    // doubled line; reports the first sorted divergence with context.
+    const sortedServed = [...servedLines].sort()
+    const sortedExpected = [...expected].sort()
+    const n = Math.max(sortedServed.length, sortedExpected.length)
     for (let i = 0; i < n; i++) {
-      if (sortedServed[i] !== sortedFixture[i]) {
+      if (sortedServed[i] !== sortedExpected[i]) {
         const ctxLines = (arr: string[]) => arr.slice(Math.max(0, i - 2), i + 3).map((l, k) => `${k === Math.min(i, 2) ? '>' : ' '} ${l}`).join('\n')
         throw new Error(
-          `text parity diverges (multiset) at index ${i}\n--- served:\n${ctxLines(sortedServed)}\n--- reference:\n${ctxLines(sortedFixture)}`,
+          `text parity diverges (multiset) at index ${i}\n--- served:\n${ctxLines(sortedServed)}\n--- baseline:\n${ctxLines(sortedExpected)}`,
         )
       }
     }
-    expect(servedForParity.length).toBe(fixtureLines.length)
-    expect(servedForParity.length).toBeGreaterThan(250)
+    expect(servedLines.length).toBe(expected.length)
+    expect(servedLines.length).toBeGreaterThan(250)
   })
 })
 
@@ -342,14 +268,14 @@ test.describe('§5.5 no-JS', () => {
     // The orientation follow-up: the strip, the composed sentence, the
     // outline card -- all static.
     await expect(page.locator('#howitworks')).toHaveText('Cause it · Build it · Survive a day · Compare with five real systems')
-    await expect(page.getByText(BUILD_INTRO_NEW, { exact: false })).toBeVisible()
+    await expect(page.getByText("Now let's design the solution", { exact: false })).toBeVisible()
     const outline = page.locator('#mission-outline')
     await expect(outline).toContainText("What's inside the mission", { ignoreCase: true })
     await expect(outline).toContainText('Your six decisions')
-    await expect(outline).toContainText('Identity — nobody names it · the server hashes the parameters · the caller sends a key')
+    await expect(outline).toContainText('Client — generates and sends an idempotency key')
     await expect(outline).toContainText('The day, six events')
     await expect(outline).toContainText('Five attacks, from the posts')
-    await expect(outline).toContainText('Stripe 2017, a reused key · Airbnb 2019, reads moved to a replica')
+    await expect(outline).toContainText('Airbnb 2019, reads moved to a read-only copy')
     await expect(outline).toContainText('your design becomes the sixth column in the comparison below.')
     // One fallback per artifact position, in the frames' wrappers; the
     // mission's carries the same outline as plain text.
@@ -361,7 +287,7 @@ test.describe('§5.5 no-JS', () => {
     await expect(page.locator('#artB iframe')).toBeHidden()
     await expect(page.locator('#artifact .artifact-noscript')).toBeVisible()
     await expect(page.locator('#artifact .artifact-noscript')).toContainText(
-      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, server dies mid-work, reply lost — and choose what the client does next.',
+      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, crash mid-charge, reply lost — and choose what the client does next.',
     )
     const missionFallback = page.locator('#artB .artifact-noscript')
     await expect(missionFallback).toBeVisible()
@@ -383,7 +309,7 @@ test.describe('§5.5 no-JS', () => {
 test('§5.6 prerender: the served HTML carries the copy', async () => {
   const html = readFileSync(DIST_PAGE, 'utf8')
   for (const sentence of [
-    'A request that fails cleanly is easy.',
+    'A request that returns a clear error is easy.',
     'Only the caller knows intent - every post that takes a position lands there.',
     'The difference is the bill. Staff answers have one. The bill panel above is yours.',
   ]) {
@@ -400,7 +326,7 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   for (const label of ['Identity', 'Memory', 'Reads', 'Client on a timeout', 'Reply to a duplicate', 'Window']) {
     expect(html, label).toContain(`>${label}</span> — `)
   }
-  for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a replica', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {
+  for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a read-only copy', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {
     expect(html, attack).toContain(attack)
   }
   expect(html).toContain('Cause it · Build it · Survive a day · Compare with five real systems')

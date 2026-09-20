@@ -32,11 +32,9 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     once any attack has run; freshDay (new day) and reset clear both. Side
 //     effect: the host's write-once `caused` checkpoint (observes the meter
 //     sum) can now also trip on an attack-caused double, not only a day.
-//   B2-5 (F15): the speed button reads the CURRENT speed (1× at 1x, 2× at
-//     2.2x, magenta outline only at 2x), not the target; the first-day
-//     auto-switch appends "Replays now run at 2×; the button sets it back."
-//     to the DAY SURVIVED/OVER line; reset returns to 1× unless the user
-//     chose a speed.
+//   B2-5 (F15): SUPERSEDED by the 2026-09 copy pass (F) — the 2× speed control
+//     and its first-day auto-switch (+ the "Replays now run at 2×" clause) were
+//     removed entirely. `speed` stays 1 (animation timing math untouched).
 //   B2-7 (F17): focusDeckSel(k) re-focuses a group's selected option after
 //     paintDeck() rebuilds the deck -- on a decision click, and after attacks
 //     4/5 add a row (focus the new row's default) -- so keyboard focus is not
@@ -268,7 +266,7 @@ const CSS = `
  /* control row: buttons one line (RUN flexes), meters a second full-width
     3-col line, never clipped (F11's "MYS"). */
  .runbtn { flex:1 1 auto; }
- #stepbtn, #fastbtn, #resetbtn { flex:0 0 auto; }
+ #stepbtn, #resetbtn { flex:0 0 auto; }
  .meters { flex-basis:100%; margin-left:0; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
  .meter { min-width:0; }
  /* phone accordion (A3): 44px rows, one open at a time. The base .kgl is
@@ -342,11 +340,10 @@ const MARKUP = `
   <div class="col-right">
    <div class="evchips" id="evchips"></div>
    <div class="narr" id="narr" aria-live="polite"></div>
-   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
+   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key's memory; traffic animates across it"></svg></div>
    <div class="ctlrow">
     <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
     <button class="bghost" id="stepbtn">STEP</button>
-    <button class="bghost" id="fastbtn">1×</button>
     <button class="bghost" id="resetbtn">reset</button>
     <div class="meters">
     <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
@@ -375,7 +372,7 @@ function bootEngine() {
  var K = { id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' };
   var ROWS_ADDED = { params:false, after:false };
     var FREE = false; /* FREE PLAY is prototype-only and not ported; the sequence gates below stay verbatim */
- var speed = 1, userChoseSpeed = false, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
+ var speed = 1, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
  var attackDbl = 0, anyAttackRun = false; /* B2-4: attack damage counted into the meters + the "today + attacks" note */
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -390,38 +387,38 @@ function bootEngine() {
 
  /* ---------- deck ---------- */
  var GROUPS = [
- { k:'id', q:'Q1', label:'IDENTITY - who names an operation?', opts:[
-  ['none','nobody - a request is just its parameters'],
-  ['hash','the server - hash the parameters'],
-  ['key','the caller - sends a key it generated']] },
- { k:'mem', q:'Q3', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
-  ['none','nowhere - keep no record'],
-  ['store','a separate store, written after the work'],
-  ['storerec','a separate store, plus recovery steps that rebuild state on retry'],
-  ['acid','committed with the work - one transaction']] },
- { k:'read', q:'Q2', label:'READS - which copy of the database answers "seen this?"', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
-  ['master','the master - where it was written'],
-  ['replica','a replica - cheaper, seconds behind']] },
- { k:'cli', q:'', label:'CLIENT - on a timeout, it&hellip;', opts:[
-  ['giveup','gives up - assumes it failed'],
-  ['blind','retries as a brand-new request'],
-  ['key','retries carrying the same identity']],
+ { k:'id', label:'IDENTITY — who names the request?', opts:[
+  ['none','Nobody — a request is just its parameters'],
+  ['hash','Server — hashes the request parameters'],
+  ['key','Client — generates and sends an idempotency key']] },
+ { k:'mem', label:'MEMORY — how the server remembers a request it already handled', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
+  ['none','Nowhere — keep no record'],
+  ['store','A separate store, written after the charge'],
+  ['storerec','A separate store that also tracks how far the charge got, so a retry can resume'],
+  ['acid','Committed together with the charge — one transaction']] },
+ { k:'read', label:'READS — which copy the server checks for the key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
+  ['master','The main database — where the record was written'],
+  ['replica','A read-only copy — cheaper, but seconds behind']] },
+ { k:'cli', label:'ON A TIMEOUT — the client…', opts:[
+  ['giveup','Gives up — assumes the charge failed'],
+  ['blind','Retries with no key — the server can\'t recognize it'],
+  ['key','Retries with the same idempotency key']],
   optNeeds:{ key:function(){return K.id!=='none';} } },
- { k:'rep', q:'Q4', label:'REPLY - a recognized duplicate gets&hellip;', needs:function(){return K.mem!=='none';}, lock:'needs recognition to exist', opts:[
-  ['err','an error - "already processed"'],
-  ['saved','the saved result, as if first']] },
- { k:'ret', q:'Q5', label:'WINDOW - the memory is kept for&hellip;', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
-  ['min','one minute'],
-  ['day','~24 hours'],
-  ['size','bounded by size - evict oldest first, page if it drops under 24h'],
-  ['ever','forever']] },
- { k:'params', q:'', label:'SAME KEY, NEW PARAMS - the server&hellip;', needs:function(){return ROWS_ADDED.params;}, lock:'', hideLocked:true, opts:[
-  ['run','runs it - the parameters are the request'],
-  ['replay','replays the old result'],
-  ['refuse','refuses, with a validation error naming the mismatch']] },
- { k:'after', q:'', label:'AFTER THE WINDOW - stragglers are&hellip;', needs:function(){return ROWS_ADDED.after;}, lock:'', hideLocked:true, opts:[
-  ['nothing','nobody\'s problem - the window is the guarantee'],
-  ['reconcile','caught by a reconciliation sweep against the partner\'s records']] }
+ { k:'rep', label:'REPLY — when the server sees a repeat, it sends back…', needs:function(){return K.mem!=='none';}, lock:'needs a memory first — without one, the server can\'t tell it\'s a repeat', opts:[
+  ['err','An error that says "this was already done"'],
+  ['saved','Return the original saved response']] },
+ { k:'ret', label:'WINDOW — how long the key store remembers each idempotency key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
+  ['min','One minute'],
+  ['day','About 24 hours'],
+  ['size','Limited by size — drop the oldest keys when full, and alert an engineer if keys start expiring in under a day'],
+  ['ever','Forever']] },
+ { k:'params', q:'', label:'SAME KEY, NEW PARAMS — the server…', needs:function(){return ROWS_ADDED.params;}, lock:'', hideLocked:true, opts:[
+  ['run','Runs it - the parameters are the request'],
+  ['replay','Returns the old response'],
+  ['refuse','Refuses, with a validation error naming the mismatch']] },
+ { k:'after', q:'', label:'AFTER THE WINDOW — stragglers are…', needs:function(){return ROWS_ADDED.after;}, lock:'', hideLocked:true, opts:[
+  ['nothing','Nobody\'s problem - the window is the guarantee'],
+  ['reconcile','Caught by a reconciliation sweep against the bank\'s records']] }
  ];
  var STAGEMAP = { id:'sg-id', mem:'sg-mem', read:'sg-read', cli:'sg-cli', rep:'sg-rep', ret:'sg-ret' };
 
@@ -730,12 +727,12 @@ function bootEngine() {
 
  /* ---------- events ---------- */
  var EVMETA = [
- {chip:'1 · ROUTINE'}, {chip:'2 · DROPPED REQ'}, {chip:'3 · MID-WORK CRASH'},
- {chip:'4 · LOST REPLY'}, {chip:'5 · IDENTICAL ORDERS'}, {chip:'6 · LATE RETRY'}
+ {chip:'1 · NORMAL CHARGE'}, {chip:'2 · REQUEST LOST'}, {chip:'3 · CRASH MID-CHARGE'},
+ {chip:'4 · REPLY LOST'}, {chip:'5 · TWO GENUINE ORDERS'}, {chip:'6 · LATE RETRY'}
  ];
  function card(cls, code, body, src, knob){
  var d=document.createElement('div'); d.className='bcard '+cls;
- d.innerHTML='<span class="code">'+(curEv>=0?('E'+(curEv+1)+' \u00B7 '):(curLvl>0?('A'+curLvl+' \u00B7 '):''))+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
+ d.innerHTML='<span class="code">'+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
  $('#log').prepend(d);
  d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){ cueDecision(k.dataset.knob); }); });
  }
@@ -783,16 +780,16 @@ function bootEngine() {
  var EVENTS = [
  async function routine(){
   if (runsDone>0){ say('EVENT 1/6','Routine ✓ - compressed on repeat runs.'); bankStamp('+ $100 CHARGE'); if(K.mem!=='none') memNote('K-4 ✓'); await sleep(700); return {cls:'good'}; }
-  say('EVENT 1/6','Routine traffic. A charge crosses, the bank stamps it, the answer comes home. This is the day when nothing goes wrong.');
+  say('EVENT 1/6','Routine traffic. A charge crosses, the bank records it, the response comes home. This is the day when nothing goes wrong.');
   var d = await animRequest(idKind()); await chargeBank(d); if(K.mem!=='none') memNote('K-4 \u2713 remembered');
   await replyBack('ok','\u2713 charged');
   return {cls:'good'};
  },
  async function cut1(t){
-  say('EVENT 2/6','<b>The wire drops a request</b> - it never reaches the server. The client holds a timeout and nothing else.');
+  say('EVENT 2/6','<b>The network drops a request</b> - it never reaches the server. The client is left with a timeout and nothing else.');
   await animRequest(idKind(), {dieOnWire:true});
-  if (t==='LOST_SALE'){ say('EVENT 2/6','The client <b>gives up</b>. Nothing was charged - and nothing ever will be. The sale evaporates.');
-  card('bad','SALE EVAPORATED','Assumed failure, never retried - the booking silently vanished.','Stripe: assume failure on a success and the customer never gets what they paid for; assume it here and you drop real revenue.','cli');
+  if (t==='LOST_SALE'){ say('EVENT 2/6','The client <b>gives up</b>. Nothing was charged, and nothing ever will be - the order is silently lost.');
+  card('bad','ORDER LOST','The client assumed failure and never retried, so the order silently vanished.','Stripe: treat a success as a failure and the customer never gets what they paid for.','cli');
   return {cls:'bad'}; }
   say('EVENT 2/6','The client retries'+(K.cli==='key'?' <b>carrying the same key</b>':' as a brand-new request')+'. Nothing had happened, so this one lands clean'+(K.cli==='blind'?' - <b>by luck</b>: from the client seat this cut is indistinguishable from event 4':'')+'.');
   var d2 = await animRequest(K.cli==='key'?idKind():'plain');
@@ -801,84 +798,84 @@ function bootEngine() {
   return {cls:'good'};
  },
  async function cut2(t){
-  say('EVENT 3/6','<b>The server dies mid-charge.</b> Did the bank move the money first? Even the ledger holds a question mark.');
+  say('EVENT 3/6','<b>The server dies mid-charge.</b> Did the bank move the money first? Even the bank\'s own record is uncertain.');
   var d = await animRequest(idKind());
   await intoServer(d);
   await flashServer('#ef4444');
   if (t==='TICKET_MYST'){ await kill(d,'crash'); bankStamp('$100? · UNKNOWN','dbl');
-  card('warn','MYSTERY TICKET','Charged or not? Nobody on either end knows - a support agent finds out next week.','Shopify: the still-wrong cases end in reconciliation - verify the money afterward.','cli');
+  card('warn','UNRESOLVED — NOBODY KNOWS','Did the charge go through? Neither the customer nor your system can tell. It surfaces later as a support complaint.','Shopify\'s fix for cases like this: reconciliation - check your records against the bank afterward.','cli');
   return {cls:'warn'}; }
   if (t==='DBL_CRASH'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash after charging');
   say('EVENT 3/6','The retry arrives as a stranger - the server has no way to recognize it.');
   var r=await animRequest('plain'); await chargeBank(r,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE (CRASH + UNRECOGNIZED RETRY)','First attempt charged before dying; the retry charged again.','Stripe 2017: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
+  card('bad','DOUBLE CHARGE — CRASH, THEN AN UNRECOGNIZED RETRY','The first attempt charged before the server died. The retry carried no key the server could recognize, so it charged again.','Stripe 2017: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
   return {cls:'bad'}; }
   if (t==='DBL_GAP'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash before memory write');
-  say('EVENT 3/6','The work finished - but the crash landed <b>before the separate store recorded it</b>. Memory and work parted ways.');
+  say('EVENT 3/6','The charge went through - but the server crashed <b>before the separate store recorded it</b>. The record and the charge came apart.');
   var r2=await animRequest('key'); await checkMemory(false); await chargeBank(r2,'dbl','+ $100 AGAIN \u26A0'); memNote('K \u2713 (retry only)');
-  card('bad','DOUBLE CHARGE - THE GAP','The retry found "never seen" and charged again. (The crash could as easily have landed before the charge - this memory gambles on where.)','AWS: record the token and make the changes one all-or-nothing unit. Stripe names the same gap: recovery is "heavily dependent on implementation."','mem');
+  card('bad','DOUBLE CHARGE \u2014 THE KEY WAS NEVER RECORDED','The retry found "never seen" and charged again. (The crash could just as easily have landed before the charge - a separate store can\'t guarantee which.)','AWS: record the key and make the charge one all-or-nothing transaction. Stripe names the same gap: recovery is "heavily dependent on implementation."','mem');
   return {cls:'bad'}; }
   if (t==='CLEAN_RECOVERY'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash mid-steps');
-   say('EVENT 3/6','The store recorded <b>which steps already ran</b>. The retry triggers recovery steps that rebuild the state first - only one request ever reaches the partner.');
+   say('EVENT 3/6','The store tracked <b>how far the charge got</b>. The retry runs recovery steps that finish from there - so only one charge ever reaches the bank.');
    var rr=await animRequest('key'); await checkMemory(true); memNote('steps recorded \u00b7 rebuilding'); await sleep(600); rr.remove(); await replyBack('ok','\u2713 charged (recovered)');
-   card('good','SURVIVED - RECOVERY STEPS REBUILT THE STATE','The crash interrupted the work; the store knew how far it got, and the retry finished the job without touching the partner twice. The price is on the bill: recovery code per step.','Shopify 2022; Airbnb 2019 buys the same safety with three all-or-nothing phases.',null);
+   card('good','SURVIVED - RECOVERY STEPS REBUILT THE STATE','The crash interrupted the charge; the store knew how far it got, so the retry finished the job without charging the bank twice. The cost is on the bill: recovery code for every step.','Shopify 2022; Airbnb 2019 buys the same safety with three all-or-nothing phases.',null);
    return {cls:'good'}; }
   var stamp = bankStamp('+ $100 CHARGE'); await kill(d,'crash');
-  say('EVENT 3/6','Memory and work were <b>one commit</b> - the crash erases both together. Watch the ledger take the charge back.');
+  say('EVENT 3/6','The record and the charge were <b>one transaction</b> - the crash erases both together. Watch the bank\'s record take the charge back.');
   await sleep(550); bankAmend(stamp,'$100 · rolled back','gone');
   var r3=await animRequest('key'); await checkMemory(false); await chargeBank(r3); memNote('K \u2713'); await replyBack('ok','\u2713 charged');
-  card('good','CLEAN - THE CRASH ROLLED BACK','One commit means the half-failures are not allowed to exist. The retry found nothing and ran fresh.','AWS; Airbnb buys the same safety with three all-or-nothing phases; Shopify with recovery steps.',null);
+  card('good','CLEAN - THE CRASH ROLLED BACK','One transaction means a half-done charge can\'t exist. The retry found nothing and ran fresh.','AWS; Airbnb buys the same safety with three all-or-nothing phases; Shopify with recovery steps.',null);
   return {cls:'good'};
  },
  async function cut3(t){
-  say('EVENT 4/6','<b>The charge lands - and the answer dies on the way home.</b> The ledger says $100. The client sees only a timeout.');
+  say('EVENT 4/6','<b>The charge lands - and the response dies on the way back.</b> The bank\'s record says $100. The client sees only a timeout.');
   var d = await animRequest(idKind()); await chargeBank(d); if(K.mem!=='none') memNote('K-9 \u2713');
   await replyDies();
-  if (t==='TICKET_WRITEOFF'){ card('bad','CHARGED - AND WRITTEN OFF','The client believes it failed. The customer paid $100 for a booking your system denies.','Stripe: the quieter catastrophe.','cli'); return {cls:'bad'}; }
+  if (t==='TICKET_WRITEOFF'){ card('bad','CHARGED — THEN TREATED AS FAILED','The client thinks the charge failed, so your system has no record of it. The customer paid $100 for an order you can\'t see.','Stripe: the quiet version of the disaster - the customer pays and gets nothing.','cli'); return {cls:'bad'}; }
   if (t==='DBL_CLASSIC'){ say('EVENT 4/6','The retry arrives unrecognized and does it all again.');
   var d2=await animRequest(K.cli==='key'?idKind():'plain'); if(K.cli==='key'&&K.mem!=='none') await checkMemory(false); await chargeBank(d2,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','THE CLASSIC DOUBLE CHARGE','Work done, answer lost, done again. 0.6% of ALL events at Segment in a four-week window - a constant, not an edge case.','Segment 2017. Every system on this page exists because of this ending.', K.id==='none'?'id':'mem');
+  card('bad','THE COMMON DOUBLE CHARGE','The charge went through, the response was lost, and the retry charged again. 0.6% of all events at Segment over four weeks - a constant, not an edge case.','This is the failure every system on this page is built to prevent.', K.id==='none'?'id':'mem');
   return {cls:'bad'}; }
-  if (t==='DBL_REPLICA'){ say('EVENT 4/6','The retry asks <b>the replica</b> - which hasn\'t heard yet.');
+  if (t==='DBL_REPLICA'){ say('EVENT 4/6','The retry checks <b>the read-only copy</b> - which is seconds behind and hasn\'t heard yet.');
   var rn=document.getElementById('replicanote'); if(rn) rn.textContent='K-9? not here yet';
   var d3=await animRequest('key'); await checkMemory(false,true); await chargeBank(d3,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE - WITH THE KEY ON','The record exists, on the master. The copy answering was seconds behind.','Airbnb: a copy that runs seconds behind turns a correct retry into a double charge - Orpheus reads from the master only.','read');
+  card('bad','DOUBLE CHARGE - WITH THE KEY ON','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb: a copy that runs seconds behind turns a correct retry into a double charge - Orpheus reads from the main database only.','read');
   return {cls:'bad'}; }
-  if (t==='CLEAN_ERR_REPLY'){ say('EVENT 4/6','The retry is recognized - and answered with an <b>error: "already processed"</b>. No double charge. The price lands on the caller.');
+  if (t==='CLEAN_ERR_REPLY'){ say('EVENT 4/6','The retry is recognized - and gets back an <b>error: "already processed"</b>. No double charge. The cost lands on the caller.');
   var d4=await animRequest('key'); await checkMemory(true); d4.remove(); await replyBack('err','"ERROR: already processed"');
-  card('good','SURVIVED - BUT THE CALLER PAYS','One charge, correct outcome - and every caller must now write branching code that treats this error as a success. That price is on the bill.','AWS 2021: idempotent, but exactly what makes retry-by-default hard to offer. Stripe/Airbnb replay the saved result instead - and pay in stored results.','rep');
+  card('good','SURVIVED - BUT THE CALLER PAYS','One charge, correct outcome - but every caller must now write extra code to treat this error as a success. That cost is on the bill.','AWS 2021: idempotent, but exactly what makes retry-by-default hard to offer. Stripe/Airbnb return the saved response instead - and pay in stored results.','rep');
   return {cls:'good'}; }
-  say('EVENT 4/6','The retry is recognized - and the server <b>replays the saved result</b> as if it were the first answer.');
+  say('EVENT 4/6','The retry is recognized - and the server <b>returns the saved response</b> as if it were the first one.');
   var d5=await animRequest('key'); await checkMemory(true); d5.remove(); await replyBack('ok','\u2713 charged (replayed)');
-  card('good','THE RETRY WAS FREE','One charge, correct answer - the saved result replayed.','Stripe / Airbnb; AWS sharpens the reply to "same-meaning success".',null);
+  card('good','THE RETRY WAS FREE','One charge, correct response - the saved response returned.','Stripe / Airbnb; AWS sharpens the reply to "same-meaning success".',null);
   return {cls:'good'};
  },
  async function twins(t){
-  say('EVENT 5/6','A merchant sends <b>two identical $100 orders on purpose</b>. Same parameters. Different intent.');
+  say('EVENT 5/6','A customer places <b>two identical $100 orders on purpose</b>. Same details - but both are genuinely wanted.');
   var a = await animRequest(idKind()); await chargeBank(a);
   var b = await animRequest(idKind());
   if (t==='LOST_TWIN'){ await checkMemory(true); await kill(b,'"duplicate" - dropped');
-  card('bad','TWO ORDERS, ONE CHARGE','The parameter hash said "seen it" and silently dropped the second. A fingerprint of the parameters cannot tell an accidental repeat from a customer who really wants two identical orders.','AWS: identical parameters do not mean identical intent - only the CALLER knows intent, so the caller names the operation.','id');
+  card('bad','TWO ORDERS COLLAPSED INTO ONE','The server built a fingerprint from the request\'s details, saw a match, and silently dropped the second order. A fingerprint can\'t tell an accidental repeat from a customer who genuinely wants two of the same.','AWS: identical request parameters do not mean identical intent — only the caller knows that, so the caller names the request.','id');
   return {cls:'bad'}; }
   if (K.id==='key' && K.mem!=='none') await checkMemory(false);
   await chargeBank(b,'','+ $100 CHARGE (2nd)');
-  card('good','BOTH ORDERS LANDED','Two operations, two names'+(K.id==='key'?' - the caller minted a fresh key for the second':'')+', two charges. Intent survived.', K.id==='key'?'AWS: the token carries intent, so twins are distinguishable by name.':'', null);
+  card('good','BOTH ORDERS WENT THROUGH','Two orders, two keys'+(K.id==='key'?' - the caller generated a fresh key for the second':'')+', two charges - the customer got what they actually wanted.', K.id==='key'?'AWS: the token carries intent, so twins are distinguishable by name.':'', null);
   return {cls:'good'};
  },
  async function late(t){
-  if (t==='NA'){ say('EVENT 6/6','A client wakes up late and retries - but with no working recognition, this is just the earlier failures again. (Fix those first.)'); await sleep(700); return {cls:'good'}; }
+  if (t==='NA'){ say('EVENT 6/6','A client wakes up late and retries - but with no way to recognize a repeat, this is just the earlier failures again. (Fix those first.)'); await sleep(700); return {cls:'good'}; }
   say('EVENT 6/6','<b>Three minutes later</b>, a mobile client wakes up and retries an old charge with its old key.');
   var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform .8s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(160deg)'; }
   await sleep(850);
-  if (t==='DBL_EXPIRE'){ say('EVENT 6/6','The one-minute memory <b>has already forgotten</b>.');
+  if (t==='DBL_EXPIRE'){ say('EVENT 6/6','The one-minute window <b>has already forgotten the key</b>.');
   var d=await animRequest('key'); await checkMemory(false); await chargeBank(d,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','THE MEMORY EXPIRED FIRST','The key was real; the memory had already let it go.','AWS: keep tokens too briefly and a late retry duplicates the resource. Shopify: the window is a dial you set on purpose (~24h).','ret');
+  card('bad','THE MEMORY EXPIRED FIRST','The key was real, but the window had already forgotten it.','AWS: keep keys too briefly and a late retry charges again. Shopify: the window is a dial you set on purpose (~24h).','ret');
   return {cls:'bad'}; }
   if (K.ret==='ever'){ var d2=await animRequest('key'); await checkMemory(true); d2.remove(); await replyBack('ok','\u2713 (replayed)');
-  card('good','LATE, AND STILL REMEMBERED - FOREVER','Replayed fine. The price is on the bill: every key ever seen, kept without bound.','AWS 2021 names both costs of the too-long window.',null);
+  card('good','LATE, AND STILL REMEMBERED - FOREVER','Returned fine. The cost is on the bill: every key ever seen, kept forever.','AWS 2021 names both costs of the too-long window.',null);
   return {cls:'good'}; }
   if (K.ret==='size'){ var d2b=await animRequest('key'); await checkMemory(true); d2b.remove(); await replyBack('ok','\u2713 (replayed)');
-  card('good','LATE, BUT INSIDE THE (CURRENTLY FULL-SIZE) WINDOW','Three minutes is nothing today. Under heavy load this window shrinks - that price is on the bill, and one of the attacks below is about exactly this.','Segment 2017: bound by size, evict oldest first, page if it thins past a day.',null);
+  card('good','LATE, BUT INSIDE THE (CURRENTLY FULL-SIZE) WINDOW','Three minutes is nothing today. Under heavy load this window shrinks - that price is on the bill, and one of the attacks below is about exactly this.','Segment 2017: limited by size, drop the oldest first, alert an engineer if it thins past a day.',null);
   return {cls:'good'}; }
   var d3=await animRequest('key'); await checkMemory(true); d3.remove(); await replyBack('ok','\u2713 (replayed)');
   card('good','LATE, BUT REMEMBERED','Inside the deliberate window, a three-minute nap costs nothing.','Shopify: ~24h, chosen on purpose.',null);
@@ -934,19 +931,16 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- var autoFast = false;
- if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='2\u00D7'; autoFast=true; } /* B2-5: the button reads the CURRENT speed (2\u00D7), not the target */
- var speedNote = autoFast ? ' Replays now run at 2\u00D7; the button sets it back.' : '';
- if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry an identity but the server keeps no record - recognition never actually happens.','Stripe: the server ties the key to state ON ITS SIDE - the key alone is half the machine.','mem');
+ if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it - so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem');
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
-  say('DAY SURVIVED','Zero damage - and a bill. Every safe design pays something; yours is itemized in THE BILL under the stage. Now hold it: <b>the attacks below are how the five posts say designs like yours still break.</b>'+speedNote);
-  card('good','DAY SURVIVED','Zero double charges, zero lost sales, zero mystery tickets. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
+  say('DAY SURVIVED','Nothing broke. But every safe design has a cost — the panel below (THE BILL) lists what yours pays. Next: five real failures that still get through your design.');
+  card('good','DAY SURVIVED','Zero double charges, zero lost orders, zero unresolved payments. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';
  } else {
-  say('DAY OVER','Read the damage. Every card points at one of your decisions. The five answers below are the hint sheet - adjust and run again.'+speedNote);
+  say('DAY OVER','See what broke. Each result points at one of your decisions. The five answers below show how the real companies handled it — adjust a decision and run again.');
  }
  }
  async function runAll(){
@@ -1005,7 +999,7 @@ function bootEngine() {
  }
 
  var LEVELS = [
-  { t:'A1 \u00b7 STRIPE - AN INTEGRATOR REUSES LAST WEEK\'S KEY FOR A NEW CHARGE', group:null,
+  { t:'A1 \u00b7 STRIPE - A DEVELOPER USING YOUR API REUSES LAST WEEK\'S KEY', group:null,
    brief:'The one attack no decision fixes - and finding that out is the level. Change anything you like, then re-run.',
    attack: async function(){
     say('ATTACK 1','A request arrives wearing <b>last week\'s key</b> - for a brand-new charge.');
@@ -1018,29 +1012,29 @@ function bootEngine() {
     return { held:false, showAccept:true };
    },
    accept:'Accept: this is caller discipline, not a server decision',
-   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase - which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per operation. The one attack you cannot fix with a decision.',
+   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase - which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per request. The one attack you cannot fix with a decision.',
    hints:[
     ['add server-side detection of stale keys','There is no signal to detect - two requests with the same key are duplicates BY DEFINITION.'],
-    ['switch identity to a parameter hash','That reopens the identical-orders trap - a hash cannot carry intent.'],
-    ['publish key rules; scope keys per operation','This is the answer - and it lives in documentation and client code, not in your decisions here.'] ] },
+    ['switch identity to a parameter hash','That reopens the identical-orders trap - a hash cannot carry what the customer wanted.'],
+    ['publish key rules; scope keys per request','This is the answer - and it lives in documentation and client code, not in your decisions here.'] ] },
 
-  { t:'A2 \u00b7 AIRBNB - A DBA MOVES YOUR KEY READS TO THE REPLICAS', group:'read',
+  { t:'A2 \u00b7 AIRBNB - SOMEONE MOVES YOUR KEY READS TO THE READ-ONLY COPIES', group:'read',
    brief:'This attack flips one of your decisions. Fix it with your decisions, then re-run.',
    attack: async function(){
-    say('ATTACK 2','Master capacity is expensive. Someone points key reads at <b>the replica - a copy seconds behind</b>\u2026');
+    say('ATTACK 2','The main database is expensive to read from. Someone points key reads at <b>a read-only copy - seconds behind</b>\u2026');
     K.read='replica'; drawStage(); paintDeck(); layerAnim=el('g',{}); await sleep(650);
     await animCut3Replay();
     say('ATTACK 2','Seconds of lag, and the double charge is back - <b>with the key on</b>. Your READS decision changed under you; it stays changed until you change it back.');
    },
    rerun: async function(){
     var held = await animCut3Replay();
-    if (held){ card('good','HELD - THE RETRY ASKED THE MASTER','The record was where it was written, and the replay was free. Airbnb kept key reads on the master and won the capacity back by splitting the key tables across machines.','Airbnb 2019.',null); }
-    else { card('bad','BROKE AGAIN - THE REPLICA HAD NOT HEARD','The record exists, on the master. The copy answering was seconds behind.','Airbnb 2019: a copy that runs seconds behind turns a correct retry into a double charge.','read'); }
+    if (held){ card('good','HELD - THE RETRY ASKED THE MAIN DATABASE','The record was where it was written, and the response was free. Airbnb kept key reads on the main database and won the capacity back by splitting the key tables across machines.','Airbnb 2019.',null); }
+    else { card('bad','BROKE AGAIN - THE READ-ONLY COPY HADN\'T HEARD','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb 2019: a copy that runs seconds behind turns a correct retry into a double charge.','read'); }
     return { held:held };
    },
    hints:[
     ['approve - seconds of lag is nothing','Seconds of lag is a double charge - you watched it.'],
-    ['reads stay on master; shard on the key to win capacity back','Airbnb\'s answer verbatim - and the fix is the READS decision.'],
+    ['reads stay on the main database; shard on the key to win capacity back','Airbnb\'s answer verbatim - and the fix is the READS decision.'],
     ['shorten the replication lag instead','A smaller gamble is still a gamble - the guarantee would ride on a race you do not control.'] ] },
 
   { t:'A3 \u00b7 SEGMENT - TRAFFIC 10\u00D7s FOR A WEEK', group:'ret',
@@ -1055,7 +1049,7 @@ function bootEngine() {
      say('ATTACK 3','Ten times the traffic. Your size-bound store evicts oldest-first by design - and under this much load, honest keys age out early\u2026');
      await animBurstThenStraggler(); memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(800);
      await animLateKey(false);
-     say('ATTACK 3','A straggler aged out early and charged twice - the pager fired, exactly as designed. Re-run to see the posture hold, with its price.');
+     say('ATTACK 3','A straggler aged out early and charged twice - the pager fired, exactly as designed. Re-run to see the posture hold, with its cost.');
     } else {
      say('ATTACK 3','Ten times the traffic. A fixed-time store cannot hold every key at this volume, so <b>the oldest quietly fall off</b>\u2026');
      await animBurstThenStraggler();
@@ -1069,13 +1063,13 @@ function bootEngine() {
     if (K.ret==='size'){
      memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(700);
      await animLateKey(true);
-     card('good','HELD - THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully - that price is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
+     card('good','HELD - THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully - that cost is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
      return { held:true };
     }
     if (K.ret==='ever'){
      memNote('holding EVERYTHING \u00b7 store ballooning'); await sleep(700);
      await animLateKey(true);
-     card('warn','HELD - BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds - at a price the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
+     card('warn','HELD - BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds - at a cost the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
      return { held:true };
     }
     memNote('oldest keys evicted \u2192'); await sleep(700);
@@ -1098,20 +1092,20 @@ function bootEngine() {
    rerun: async function(){
     var d = await animParamsMismatch();
     if (K.params==='refuse'){ d.remove(); await replyBack('err','"VALIDATION: params changed"');
-     card('good','HELD - THE MISMATCH WAS CAUGHT AND NAMED','The stored parameters exist precisely so this collision can be seen. The safest reading is that the customer meant something different - refuse, and say why.','AWS 2021: the guarantee protects INTENT.',null);
+     card('good','HELD - THE MISMATCH WAS CAUGHT AND NAMED','The stored fingerprint exists precisely so this collision can be seen. The safest reading is that the customer meant something different - refuse, and say why.','AWS 2021: the guarantee protects what the customer actually wanted.',null);
      return { held:true };
     }
-    if (K.params==='replay'){ d.remove(); await replyBack('ok','\u2713 ($100 - the OLD result)');
-     card('bad','BROKE - THE CUSTOMER ASKED FOR $250 AND SILENTLY GOT $100','The old result replayed for a new request. That is the reused-key failure from attack 1 - now endorsed by the server.','AWS 2021.','params');
+    if (K.params==='replay'){ d.remove(); await replyBack('ok','\u2713 ($100 - the OLD response)');
+     card('bad','BROKE - THE CUSTOMER ASKED FOR $250 AND SILENTLY GOT $100','The old response was returned for a new request. That is the reused-key failure from attack 1 - now endorsed by the server.','AWS 2021.','params');
      return { held:false };
     }
     await chargeBank(d,'dbl','+ $250 CHARGE \u00b7 SAME KEY \u26A0');
-    card('bad','BROKE - ONE KEY NOW MEANS TWO THINGS','The charge ran. The same key produced two different operations, so the contract that made every retry safe just dissolved.','AWS 2021: two requests with the same token are duplicates by definition - or the definition is gone.','params');
+    card('bad','BROKE - ONE KEY NOW MEANS TWO THINGS','The charge ran. The same key produced two different requests, so the contract that made every retry safe just dissolved.','AWS 2021: two requests with the same token are duplicates by definition - or the definition is gone.','params');
     return { held:false };
    },
    hints:[
     ['run it - the parameters are the request','Then the same key means two things - re-run and watch the contract dissolve.'],
-    ['replay the old result','The customer asked for something different and silently gets the old thing.'],
+    ['return the old response','The customer asked for something different and silently gets the old thing.'],
     ['refuse with a validation error','AWS\'s answer - the new row has this option.'] ] },
 
   { t:'A5 \u00b7 SHOPIFY - THE CASE YOUR WINDOW DECISION LEAVES OPEN', group:'after',
@@ -1119,9 +1113,9 @@ function bootEngine() {
    attack: async function(){
     LEVELS[4].group = (K.ret==='ever') ? 'ret' : 'after';
     if (K.ret==='ever'){
-     say('ATTACK 5','Months pass. A caller mints a fresh key that <b>collides with an ancient one</b> - your store never forgot it.');
+     say('ATTACK 5','Months pass. A caller generates a fresh key that <b>collides with an ancient one</b> - your store never forgot it.');
      await animOldKeyReplay();
-     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened - the store recognized a key from another era and replayed history. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
+     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened - the store recognized a key from another era and returned its old response. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
      say('ATTACK 5','No decision prevents stragglers AND collisions at once. <b>Bound the window</b> (WINDOW is glowing), then re-run - and watch what bounding it trades away.');
      return;
     }
@@ -1151,15 +1145,15 @@ function bootEngine() {
     if (K.after==='reconcile'){
      await animReconcileSweep();
      dayDamage = dayTokens(K); renderBill(dayDamage.bill);
-     card('good','HELD - CAUGHT, RECORDED, REPAIRED','The straggler still charged twice - the fix is detection, not prevention. The sweep compared your record against the partner\'s, logged the mismatch as an anomaly, and repaired it. Reconciliation joins your bill as a standing team cost.','Shopify 2022: the standing admission that prevention is never complete.',null);
+     card('good','HELD - CAUGHT, RECORDED, REPAIRED','The straggler still charged twice - the fix is detection, not prevention. The sweep compared your record against the bank\'s, logged the mismatch as an anomaly, and repaired it. Reconciliation joins your bill as a standing team cost.','Shopify 2022: the standing admission that prevention is never complete.',null);
      return { held:true };
     }
-    card('bad','BROKE - THE DOUBLE CHARGE WAS NEVER FOUND','Nobody compared the records. The merchant\'s accountant finds it in three months, as a chargeback.','Shopify 2022: verify the money afterward - your records against the partner\'s, every mismatch logged.','after');
+    card('bad','BROKE - THE DOUBLE CHARGE WAS NEVER FOUND','Nobody compared the records. The merchant\'s accountant finds it in three months, as a chargeback.','Shopify 2022: verify the money afterward - your records against the bank\'s, every mismatch logged.','after');
     return { held:false };
    },
    hints:[
     ['keep keys forever, so nothing is ever forgotten','Then nothing straggles - and every key ever seen becomes a landmine for a future collision. If you arrived here with forever on, you watched exactly that.'],
-    ['a reconciliation sweep against the partner\'s records','Shopify\'s posture - the new row has this option. Note what it does NOT do: prevent.'],
+    ['a reconciliation sweep against the bank\'s records','Shopify\'s posture - the new row has this option. Note what it does NOT do: prevent.'],
     ['reject retries older than the window with an error','The hour-30 client cannot tell that error from a fresh failure - the ambiguity is back for exactly the case the window missed.'] ] }
  ];
 
@@ -1243,29 +1237,29 @@ function bootEngine() {
   var d=$('#debrief'); d.className='debrief on';
   var bill = dayTokens(K).bill;
   var html='<span class="dt">HELD UNDER ATTACK - THE DEBRIEF</span><br><br>Your final design, decision by decision:<br><br>';
-  html+=drow('IDENTITY','the caller names each operation with a key',
-   'Stripe 2017, Airbnb 2019 and AWS 2021 state it outright. Segment 2017 mints it in the SDK because its callers can\'t cooperate. Shopify\'s post doesn\'t say who generates it.');
-  if (K.mem==='acid') html+=drow('MEMORY','committed with the work - one transaction',
-   'AWS 2021: the half-failures aren\'t allowed to exist. The price is on your bill: the work must live in the same database as its record, so nothing that crosses to an external partner can sit inside the commit. The other clean shape - a separate store plus recovery steps - is Shopify\'s, and pays in recovery code instead.');
+  html+=drow('IDENTITY','the caller names each request with a key',
+   'Stripe 2017, Airbnb 2019 and AWS 2021 state it outright. Segment 2017 generates it in the SDK because its callers can\'t cooperate. Shopify\'s post doesn\'t say who generates it.');
+  if (K.mem==='acid') html+=drow('MEMORY','committed together with the charge - one transaction',
+   'AWS 2021: the half-failures aren\'t allowed to exist. The cost is on your bill: the charge must live in the same database as its record, so nothing that crosses to an external partner can sit inside the commit. The other clean shape - a separate store plus recovery steps - is Shopify\'s, and pays in recovery code instead.');
   else html+=drow('MEMORY','a separate store, plus recovery steps that rebuild state',
-   'Shopify 2022; Airbnb 2019 in spirit, with three all-or-nothing phases. The price is on your bill: recovery code per step. The other clean shape - one commit - is AWS\'s, and pays by keeping the work inside one database, away from external partners.');
-  html+=drow('READS','the master - where the record was written',
+   'Shopify 2022; Airbnb 2019 in spirit, with three all-or-nothing phases. The cost is on your bill: recovery code per step. The other clean shape - one transaction - is AWS\'s, and pays by keeping the charge inside one database, away from external partners.');
+  html+=drow('READS','the main database - where the record was written',
    'Airbnb 2019 is the post that states it, and it is the baseline every safe design pays. Airbnb paid it by splitting the key tables across machines, by key.');
-  if (K.rep==='saved') html+=drow('REPLY','a duplicate gets the saved result',
-   'Stripe 2017 and Airbnb 2019; AWS 2021 sharpens it to a same-meaning success. The price is on your bill: results stored for every operation, a table that grows with traffic. The alternative - an error - moves that price into every caller\'s code. Segment answers with silence; none of these map to it, because its callers can\'t use the information.');
+  if (K.rep==='saved') html+=drow('REPLY','a duplicate gets the saved response',
+   'Stripe 2017 and Airbnb 2019; AWS 2021 sharpens it to a same-meaning success. The cost is on your bill: responses stored for every request, a table that grows with traffic. The alternative - an error - moves that cost into every caller\'s code. Segment answers with silence; none of these map to it, because its callers can\'t use the information.');
   else html+=drow('REPLY','a duplicate gets "error: already processed"',
-   'None of the five ship this as the design - AWS 2021 argues it is exactly what makes retry-by-default hard to offer. The price is on your bill: every caller writes branching code. The alternative - replay the saved result - is Stripe/Airbnb\'s, and pays in stored results instead.');
-  if (K.ret==='day') html+=drow('WINDOW','~24 hours, chosen on purpose',
-   'Shopify 2022. Price: stragglers after the window. Segment\'s alternative bounds by size and shrinks under load; forever is the option none of the five chose.');
-  else if (K.ret==='size') html+=drow('WINDOW','bounded by size - evict oldest, page under 24h',
-   'Segment 2017. Prices: stragglers, plus a window that shrinks under load. "Almost exactly once" is the honest name.');
+   'None of the five ship this as the design - AWS 2021 argues it is exactly what makes retry-by-default hard to offer. The cost is on your bill: every caller writes branching code. The alternative - return the saved response - is Stripe/Airbnb\'s, and pays in stored responses instead.');
+  if (K.ret==='day') html+=drow('WINDOW','about 24 hours, chosen on purpose',
+   'Shopify 2022. Cost: stragglers after the window. Segment\'s alternative bounds by size and shrinks under load; forever is the option none of the five chose.');
+  else if (K.ret==='size') html+=drow('WINDOW','limited by size - drop the oldest, alert an engineer under 24h',
+   'Segment 2017. Costs: stragglers, plus a window that shrinks under load. "Almost exactly once" is the honest name.');
   else html+=drow('WINDOW','forever',
    'None of the five kept keys without bound - AWS 2021 warns a future key can collide with an ancient one. It held the load attack by paying in storage.');
   if (K.params) html+= (K.params==='refuse'
-   ? drow('SAME KEY, NEW PARAMS','refuse, naming the mismatch','AWS 2021 - the stored parameters exist precisely so the collision can be caught. The guarantee protects intent.')
-   : drow('SAME KEY, NEW PARAMS', K.params==='run'?'run it':'replay the old result','None of the five - and the attack showed why.'));
+   ? drow('SAME KEY, NEW PARAMS','refuse, naming the mismatch','AWS 2021 - the stored fingerprint exists precisely so the collision can be caught. The guarantee protects what the customer actually wanted.')
+   : drow('SAME KEY, NEW PARAMS', K.params==='run'?'run it':'return the old response','None of the five - and the attack showed why.'));
   if (K.after) html+= (K.after==='reconcile'
-   ? drow('AFTER THE WINDOW','a reconciliation sweep against the partner\'s records','Shopify 2022 - verify the money afterward, log every mismatch as an anomaly. Detection, not prevention; a standing team cost, on your bill.')
+   ? drow('AFTER THE WINDOW','a reconciliation sweep against the bank\'s records','Shopify 2022 - verify the money afterward, log every mismatch as an anomaly. Detection, not prevention; a standing team cost, on your bill.')
    : drow('AFTER THE WINDOW','nothing','None of the five ship this - the straggler is real, and someone else finds it.'));
   html+='<b>THE BILL, IN FULL:</b><br>'+bill.map(function(b){ return '\u2022 '+b.c+' <span style="color:#6B7280;">('+b.s+')</span>'; }).join('<br>')+'<br><br>';
   html+='Same guarantee, different price. <b>That trade is the interview answer.</b>';
@@ -1312,20 +1306,18 @@ function bootEngine() {
 
  $('#runbtn').addEventListener('click', runAll);
  $('#stepbtn').addEventListener('click', stepOne);
- $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '2\u00D7' : '1\u00D7'; }); /* B2-5: label is the CURRENT speed */
  $('#resetbtn').addEventListener('click', function(){
  if (running) return;
  K={ id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' }; ROWS_ADDED={params:false,after:false}; delete K.params; delete K.after;
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
- if(!userChoseSpeed){ speed=1; $('#fastbtn').classList.remove('on'); $('#fastbtn').textContent='1×'; } /* B2-5: reset returns to 1× unless the user chose a speed */
  var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
  freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
- else say('READY','Your decisions start naive on purpose. RUN the day as-is first: <b>the damage report is the syllabus.</b>');
+ if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Run it first with the naive defaults and observe what breaks.'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
+ else say('READY','Run it first with the naive defaults and observe what breaks. <b>RUN the day as-is.</b>');
  return { restore: restore };
 }
 

@@ -1,14 +1,14 @@
 {
   "cruxTag": "ambiguous-failure-under-retry",
-  "lede": "The request timed out, which tells you it didn't answer - not whether it actually happened.",
+  "lede": "A timed-out request tells you the response never came back — not whether the work got done.",
   "searchQuestion": {
     "titleClause": "prevent double payments",
     "description": "The request timed out - did the charge happen? Five production answers to the double-payment problem: idempotency keys, where the key's memory lives, replica lag, retry windows, and what still breaks. Build your own and get attacked with their incidents."
   },
   "howItWorks": ["Cause it", "Build it", "Survive a day", "Compare with five real systems"],
   "intro": [
-    "A request that fails cleanly is easy. The problem is the request that **vanishes**: the connection drops, the server dies mid-operation, or the answer is lost on its way back. In every case the caller holds the same evidence: nothing. The one recovery action available, retrying, is exactly the action that can repeat an operation that in fact succeeded. When the operation moves money, both wrong guesses are catastrophic: retry a success and you charge twice; write off a failure that succeeded and the customer paid for nothing.",
-    "This page follows five teams into the same wall. Stripe and AWS design the public contract; Airbnb and Shopify build the machinery inside their payment services; Segment catches duplicates from callers who can't cooperate. Their answers are lined up below so the differences are visible."
+    "A request that returns a clear error is easy. You know it failed, so you retry it. The hard case is the request that times out with no error. The connection drops, the server dies partway through, or the response is lost on its way back. All three leave the caller holding the same timeout, and the only option left — retrying — is exactly what can run an operation a second time when it already worked the first. When the operation moves money, guessing wrong either way costs: retry something that already succeeded and you charge the customer twice, give up on something that actually worked and the customer has paid for nothing.",
+    "This page follows five companies into the same problem. Stripe and AWS are called by outside developers, so their fix is a rule in the API contract itself: send a key. Airbnb and Shopify sit on both sides — their own services call their own payment code — so they build the machinery inside those services. Segment can't ask its callers, phones and third-party devices that won't follow rules, to do anything, so it catches the duplicates downstream instead. Their answers, with the trade-offs each one makes, are compared below."
   ],
   "figures": [
     {
@@ -64,7 +64,7 @@
   "wall": {
     "prose": [
       "Every version of this problem reduces to one picture: a call that changes something crosses a network, and there are three places it can die. Only the first is safe to retry - and the caller can't tell the three apart, because all three look identical from the outside: a timeout.",
-      "Cause it yourself before reading anyone's answer: cut a $100 charge at each of the three points and decide what the client should do. The rescue tool is an **idempotency key** - a caller-chosen name for the operation, sent unchanged on every retry - and once you reach for it, you must also decide where the server keeps its memory of that name. Every bad ending is a failure one of the five posts names."
+      "Cause it yourself before reading anyone's answer: cut a $100 charge at each of the three points and decide what the client should do. The rescue tool is an idempotency key — a name the caller picks for the operation and sends unchanged on every retry. Reach for it and a second decision appears: where the server stores that name so it can recognize the retry later. Every failure you can cause here is one the five posts describe."
     ],
     "figureSlug": "three-deaths",
     "stats": [
@@ -79,49 +79,48 @@
         "source": "Airbnb · 2019"
       },
       {
-        "value": "1-in-a-million",
-        "label": "failures happen many times a day at Shopify's payment volume - the ambiguity is a constant, not an edge case",
+        "value": "many times a day",
+        "label": "a one-in-a-million failure still happens many times a day at Shopify's payment volume — the ambiguity is constant, not an edge case",
         "source": "Shopify · 2022"
       },
       {
         "value": "99.999%",
         "label": "payment consistency achieved since the framework launched, while annual payment volume doubled - the payoff side of solving this wall",
-        "source": "AIRBNB · 2019"
+        "source": "Airbnb · 2019"
       }
     ],
-    "statsCaption": "The cost of doing nothing, the sharpest way the fix itself breaks, why you can't ignore it at scale - and what solving it earns. Each number from the company that measured it."
+    "statsCaption": "What it costs to ignore, the sharpest way the fix itself breaks, why scale makes it unavoidable, and what solving it earns — each number measured by the company that reports it."
   },
   "tryIt": {
     "artifactSlug": "problem-ambiguous-timeouts-tryit",
-    "noscript": "Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, server dies mid-work, reply lost — and choose what the client does next.",
+    "noscript": "Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, crash mid-charge, reply lost — and choose what the client does next.",
     "teaser": "One $100 charge, three places to cut it, and a ledger the client can't see. The only thing in doubt is what the retry finds.",
-    "caption": "The three cut points are the artifact's three cuts; the three places the key's memory can live are question 2 below. If you found the double charge in replica mode - that's Airbnb's production incident, and their artifact [lets you cause it with their real machinery](#cards)."
+    "caption": "Cause the failure yourself before reading how anyone fixed it."
   },
   "mission": {
     "artifactSlug": "problem-ambiguous-timeouts-mission",
     "teaser": "You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.",
     "title": "Build the defense",
-    "intro": "You caused the failure from the victim's seat. Now take the designer's. {{decisions}} Run it naive first - **the damage report is the syllabus**. Every failure card names the post that names that failure and points at exactly one decision. When your day is clean, five attacks hit the design that just worked - each one a real failure that one of the five companies wrote about.",
-    "decisionsSummary": "who names the operation, where its memory lives, which copy of the database answers, what the client does on a timeout, what a duplicate hears, and how long the memory lasts",
+    "intro": "You caused the failure from the victim's seat. Now let's design the solution. You need to make six decisions — the box below lists them — and the goal is a day of traffic survived, with no double charges. Run it first with the naive defaults — the obvious choices, before you've learned anything — and observe what breaks. Each failure is your next lesson: it names the company that hit it, links to their post, and points at the one decision that would have prevented it. Clear the day, and the design faces five attacks — each a real-world failure one of the five companies actually hit.",
     "outline": {
       "decisions": [
-        { "label": "Identity", "options": ["nobody names it", "the server hashes the parameters", "the caller sends a key"] },
-        { "label": "Memory", "options": ["none", "a separate store", "a separate store plus recovery steps", "committed with the work"] },
-        { "label": "Reads", "options": ["the master", "a replica, seconds behind"] },
-        { "label": "Client on a timeout", "options": ["gives up", "retries blind", "retries with the same key"] },
-        { "label": "Reply to a duplicate", "options": ["an error", "the saved result"] },
-        { "label": "Window", "options": ["one minute", "about 24 hours", "size-bound", "forever"] }
+        { "label": "Identity", "options": ["Nobody — a request is just its parameters", "Server — hashes the request parameters", "Client — generates and sends an idempotency key"] },
+        { "label": "Memory", "options": ["Nowhere — keep no record", "A separate store, written after the charge", "A separate store that also tracks how far the charge got, so a retry can resume", "Committed together with the charge — one transaction"] },
+        { "label": "Reads", "options": ["The main database — where the record was written", "A read-only copy — cheaper, but seconds behind"] },
+        { "label": "Client on a timeout", "options": ["Gives up — assumes the charge failed", "Retries with no key — the server can't recognize it", "Retries with the same idempotency key"] },
+        { "label": "Reply to a duplicate", "options": ["An error that says \"this was already done\"", "Return the original saved response"] },
+        { "label": "Window", "options": ["One minute", "About 24 hours", "Limited by size — drop the oldest keys when full, and alert an engineer if keys start expiring in under a day", "Forever"] }
       ],
-      "events": ["Routine traffic", "a dropped request", "a crash mid-charge", "a lost reply", "two identical orders", "a late retry"],
+      "events": ["a normal charge", "a lost request", "a crash mid-charge", "a lost reply", "two genuine orders", "a late retry"],
       "attacks": [
         { "company": "Stripe", "year": "2017", "text": "a reused key" },
-        { "company": "Airbnb", "year": "2019", "text": "reads moved to a replica" },
+        { "company": "Airbnb", "year": "2019", "text": "reads moved to a read-only copy" },
         { "company": "Segment", "year": "2017", "text": "traffic 10× for a week" },
         { "company": "AWS", "year": "2021", "text": "a known key with a different amount" },
         { "company": "Shopify", "year": "2022", "text": "a retry after the window" }
       ]
     },
-    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it - that is the working knowledge. Everything below is for going deeper: the five real answers side by side ([the hint sheet](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
+    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it. That's the core of it. Everything below is for going deeper: the five real answers side by side ([the hint sheet](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
     "stuckNote": "Stuck on a failure card? Every decision you just made is one of the six questions below - the five answers are the hint sheet, and reading Stripe mid-debug is how engineers actually meet these posts."
   },
   "comparison": {
