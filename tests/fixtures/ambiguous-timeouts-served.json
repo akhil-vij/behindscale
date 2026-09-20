@@ -111,7 +111,7 @@
   "4 · REPLY LOST",
   "5 · TWO GENUINE ORDERS",
   "6 · LATE RETRY",
-  "READY · Your decisions start naive on purpose. RUN the day as-is first: the damage report is the syllabus.",
+  "READY · Run it first with the naive defaults and observe what breaks. RUN the day as-is.",
   "CLIENT",
   "timeout → blind retry",
   "no identity",

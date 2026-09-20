@@ -93,7 +93,7 @@
   },
   "tryIt": {
     "artifactSlug": "problem-ambiguous-timeouts-tryit",
-    "noscript": "Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, server dies mid-work, reply lost — and choose what the client does next.",
+    "noscript": "Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, crash mid-charge, reply lost — and choose what the client does next.",
     "teaser": "One $100 charge, three places to cut it, and a ledger the client can't see. The only thing in doubt is what the retry finds.",
     "caption": "Cause the failure yourself before reading how anyone fixed it."
   },

@@ -140,7 +140,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
   it('boots with the naive deck and the run cue', () => {
     expect(cue()).toBe('run')
     expect(text('#runbtn')).toContain('RUN THE DAY - NAIVE')
-    expect(text('#narr')).toContain('the damage report is the syllabus')
+    expect(text('#narr')).toContain('Run it first with the naive defaults and observe what breaks')
     expect($('#escwrap')!.style.display).toBe('none')
     expect($('#bill')!.style.display).toBe('none')
     expect($('#cmtbox')!.style.display).toBe('none')

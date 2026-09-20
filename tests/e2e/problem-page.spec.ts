@@ -287,7 +287,7 @@ test.describe('§5.5 no-JS', () => {
     await expect(page.locator('#artB iframe')).toBeHidden()
     await expect(page.locator('#artifact .artifact-noscript')).toBeVisible()
     await expect(page.locator('#artifact .artifact-noscript')).toContainText(
-      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, server dies mid-work, reply lost — and choose what the client does next.',
+      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, crash mid-charge, reply lost — and choose what the client does next.',
     )
     const missionFallback = page.locator('#artB .artifact-noscript')
     await expect(missionFallback).toBeVisible()

@@ -1316,8 +1316,8 @@ function bootEngine() {
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Your decisions start naive on purpose: <b>the damage report is the syllabus.</b>'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
- else say('READY','Your decisions start naive on purpose. RUN the day as-is first: <b>the damage report is the syllabus.</b>');
+ if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Run it first with the naive defaults and observe what breaks.'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
+ else say('READY','Run it first with the naive defaults and observe what breaks. <b>RUN the day as-is.</b>');
  return { restore: restore };
 }
 
