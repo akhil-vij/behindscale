@@ -390,31 +390,31 @@ function bootEngine() {
 
  /* ---------- deck ---------- */
  var GROUPS = [
- { k:'id', q:'Q1', label:'IDENTITY - who names an operation?', opts:[
-  ['none','nobody - a request is just its parameters'],
-  ['hash','the server - hash the parameters'],
-  ['key','the caller - sends a key it generated']] },
- { k:'mem', q:'Q3', label:'MEMORY - where does "seen it" live?', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
-  ['none','nowhere - keep no record'],
-  ['store','a separate store, written after the work'],
-  ['storerec','a separate store, plus recovery steps that rebuild state on retry'],
-  ['acid','committed with the work - one transaction']] },
- { k:'read', q:'Q2', label:'READS - which copy of the database answers "seen this?"', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
-  ['master','the master - where it was written'],
-  ['replica','a replica - cheaper, seconds behind']] },
- { k:'cli', q:'', label:'CLIENT - on a timeout, it&hellip;', opts:[
-  ['giveup','gives up - assumes it failed'],
-  ['blind','retries as a brand-new request'],
-  ['key','retries carrying the same identity']],
+ { k:'id', label:'IDENTITY — who names the request?', opts:[
+  ['none','Nobody — a request is just its parameters'],
+  ['hash','Server — hashes the request parameters'],
+  ['key','Client — generates and sends an idempotency key']] },
+ { k:'mem', label:'MEMORY — how the server remembers a request it already handled', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
+  ['none','Nowhere — keep no record'],
+  ['store','A separate store, written after the charge'],
+  ['storerec','A separate store that also tracks how far the charge got, so a retry can resume'],
+  ['acid','Committed together with the charge — one transaction']] },
+ { k:'read', label:'READS — which copy the server checks for the key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
+  ['master','The main database — where the record was written'],
+  ['replica','A read-only copy — cheaper, but seconds behind']] },
+ { k:'cli', label:'ON A TIMEOUT — the client…', opts:[
+  ['giveup','Gives up — assumes the charge failed'],
+  ['blind','Retries with no key — the server can\'t recognize it'],
+  ['key','Retries with the same idempotency key']],
   optNeeds:{ key:function(){return K.id!=='none';} } },
- { k:'rep', q:'Q4', label:'REPLY - a recognized duplicate gets&hellip;', needs:function(){return K.mem!=='none';}, lock:'needs recognition to exist', opts:[
-  ['err','an error - "already processed"'],
-  ['saved','the saved result, as if first']] },
- { k:'ret', q:'Q5', label:'WINDOW - the memory is kept for&hellip;', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
-  ['min','one minute'],
-  ['day','~24 hours'],
-  ['size','bounded by size - evict oldest first, page if it drops under 24h'],
-  ['ever','forever']] },
+ { k:'rep', label:'REPLY — when the server sees a repeat, it sends back…', needs:function(){return K.mem!=='none';}, lock:'needs a memory first — without one, the server can\'t tell it\'s a repeat', opts:[
+  ['err','An error that says "this was already done"'],
+  ['saved','Return the original saved response']] },
+ { k:'ret', label:'WINDOW — how long the key store remembers each idempotency key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
+  ['min','One minute'],
+  ['day','About 24 hours'],
+  ['size','Limited by size — drop the oldest keys when full, and alert an engineer if keys start expiring in under a day'],
+  ['ever','Forever']] },
  { k:'params', q:'', label:'SAME KEY, NEW PARAMS - the server&hellip;', needs:function(){return ROWS_ADDED.params;}, lock:'', hideLocked:true, opts:[
   ['run','runs it - the parameters are the request'],
   ['replay','replays the old result'],
@@ -730,8 +730,8 @@ function bootEngine() {
 
  /* ---------- events ---------- */
  var EVMETA = [
- {chip:'1 · ROUTINE'}, {chip:'2 · DROPPED REQ'}, {chip:'3 · MID-WORK CRASH'},
- {chip:'4 · LOST REPLY'}, {chip:'5 · IDENTICAL ORDERS'}, {chip:'6 · LATE RETRY'}
+ {chip:'1 · NORMAL CHARGE'}, {chip:'2 · REQUEST LOST'}, {chip:'3 · CRASH MID-CHARGE'},
+ {chip:'4 · REPLY LOST'}, {chip:'5 · TWO GENUINE ORDERS'}, {chip:'6 · LATE RETRY'}
  ];
  function card(cls, code, body, src, knob){
  var d=document.createElement('div'); d.className='bcard '+cls;

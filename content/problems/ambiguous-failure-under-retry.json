@@ -104,17 +104,17 @@
     "intro": "You caused the failure from the victim's seat. Now let's design the solution. You need to make six decisions — the box below lists them — and the goal is a day of traffic survived, with no double charges. Run it first with the naive defaults — the obvious choices, before you've learned anything — and observe what breaks. Each failure is your next lesson: it names the company that hit it, links to their post, and points at the one decision that would have prevented it. Clear the day, and the design faces five attacks — each a real-world failure one of the five companies actually hit.",
     "outline": {
       "decisions": [
-        { "label": "Identity", "options": ["nobody names it", "the server hashes the parameters", "the caller sends a key"] },
-        { "label": "Memory", "options": ["none", "a separate store", "a separate store plus recovery steps", "committed with the work"] },
-        { "label": "Reads", "options": ["the master", "a replica, seconds behind"] },
-        { "label": "Client on a timeout", "options": ["gives up", "retries blind", "retries with the same key"] },
-        { "label": "Reply to a duplicate", "options": ["an error", "the saved result"] },
-        { "label": "Window", "options": ["one minute", "about 24 hours", "size-bound", "forever"] }
+        { "label": "Identity", "options": ["Nobody — a request is just its parameters", "Server — hashes the request parameters", "Client — generates and sends an idempotency key"] },
+        { "label": "Memory", "options": ["Nowhere — keep no record", "A separate store, written after the charge", "A separate store that also tracks how far the charge got, so a retry can resume", "Committed together with the charge — one transaction"] },
+        { "label": "Reads", "options": ["The main database — where the record was written", "A read-only copy — cheaper, but seconds behind"] },
+        { "label": "Client on a timeout", "options": ["Gives up — assumes the charge failed", "Retries with no key — the server can't recognize it", "Retries with the same idempotency key"] },
+        { "label": "Reply to a duplicate", "options": ["An error that says \"this was already done\"", "Return the original saved response"] },
+        { "label": "Window", "options": ["One minute", "About 24 hours", "Limited by size — drop the oldest keys when full, and alert an engineer if keys start expiring in under a day", "Forever"] }
       ],
-      "events": ["Routine traffic", "a dropped request", "a crash mid-charge", "a lost reply", "two identical orders", "a late retry"],
+      "events": ["a normal charge", "a lost request", "a crash mid-charge", "a lost reply", "two genuine orders", "a late retry"],
       "attacks": [
         { "company": "Stripe", "year": "2017", "text": "a reused key" },
-        { "company": "Airbnb", "year": "2019", "text": "reads moved to a replica" },
+        { "company": "Airbnb", "year": "2019", "text": "reads moved to a read-only copy" },
         { "company": "Segment", "year": "2017", "text": "traffic 10× for a week" },
         { "company": "AWS", "year": "2021", "text": "a known key with a different amount" },
         { "company": "Shopify", "year": "2022", "text": "a retry after the window" }
