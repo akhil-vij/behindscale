@@ -3,7 +3,13 @@
 // pure function. VERBATIM and FROZEN: 576 decision sets -> exactly 12 clean,
 // with the 12 distinct bills of DECKS-v6-1.md. Imported by the mission
 // artifact (content/artifacts/problem-ambiguous-timeouts-mission.jsx) and by
-// the rules-parity test (tests/unit/rules-parity.test.ts). Do not edit.
+// the rules-parity test (tests/unit/rules-parity.test.ts).
+//
+// FROZEN = the LOGIC: the 576 -> 12 clean decision sets, which bill lines fire
+// per deck, the sources, `base`. The human-readable WORDING of the cost strings
+// was updated in the 2026-09 copy pass (charge/work, responses/results, main
+// database/master) to match the deck + cards; DECKS-v6-1.md carries the same
+// wording so parity still asserts the same decks and the same lines firing.
 //
 // v6: events produce FAILURES; the deck produces the BILL; each bill line
 // names the company that named the price.
@@ -26,11 +32,11 @@ export function dayTokens(Q){
    if(/^TICKET/.test(x.t)) tick++;
   });
   var bill=[];
-  if(rec&&read==='master') bill.push({c:'idempotency reads hit the master - the price every safe design pays', s:'Airbnb 2019', base:true});
-  if(rec&&mem==='acid') bill.push({c:'the work must live in the same database as its record - nothing that crosses to an external partner can sit inside the commit', s:'Airbnb 2019; AWS 2021'});
+  if(rec&&read==='master') bill.push({c:'idempotency reads hit the main database - the cost every safe design pays', s:'Airbnb 2019', base:true});
+  if(rec&&mem==='acid') bill.push({c:'the charge must live in the same database as its record - nothing that crosses to an external partner can sit inside the commit', s:'Airbnb 2019; AWS 2021'});
   if(rec&&mem==='storerec') bill.push({c:'recovery code per step - someone writes and maintains it', s:'Shopify 2022'});
   if(rec&&rep==='err') bill.push({c:'callers must write branching code - an error that means success', s:'AWS 2021'});
-  if(rec&&rep==='saved') bill.push({c:'results stored for every operation - the table grows with traffic and is hard to trim', s:'Airbnb 2019'});
+  if(rec&&rep==='saved') bill.push({c:'responses stored for every request - the table grows with traffic and is hard to trim', s:'Airbnb 2019'});
   if(rec&&ret==='ever') bill.push({c:'keys kept without bound - a future key can collide with an ancient one', s:'AWS 2021'});
   if(rec&&(ret==='day'||ret==='size')) bill.push({c:'stragglers after the window - must be caught later, not prevented', s:'Shopify 2022'});
   if(rec&&ret==='size') bill.push({c:'protection window shrinks under load - paged if it thins past a day', s:'Segment 2017'});
