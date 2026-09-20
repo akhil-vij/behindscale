@@ -220,7 +220,7 @@ function bootEngine() {
  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
  /* Verdict-only strings (assertable); wells/meters carry the visible truth. */
- var START = { v: 'amber', code: 'YOU ARE THE CLIENT - $100 TO CHARGE', body: 'Cut the call somewhere. The interesting failure is not a clean error - it is a vanished answer.', bank: [], mem: null, charged: '0×', chargedCls: '', belief: 'nothing sent yet', beliefCls: '' };
+ var START = { v: 'amber', code: 'YOU ARE THE CLIENT - $100 TO CHARGE', body: 'Cut the call somewhere. The interesting failure is not a clean error - it is a vanished response.', bank: [], mem: null, charged: '0×', chargedCls: '', belief: 'nothing sent yet', beliefCls: '' };
 
  var MID = {
  1: { v: 'amber', code: 'TIMEOUT - AND THE TRUTH IS: NOTHING HAPPENED', body: 'The network dropped the request. The ledger on the right is empty - but the client cannot see that ledger. All it holds is a timeout. Choose the move.', bank: [], charged: '0×', chargedCls: '', belief: 'timeout - unknown', beliefCls: 'unk' },
