@@ -1018,11 +1018,11 @@ function bootEngine() {
     return { held:false, showAccept:true };
    },
    accept:'Accept: this is caller discipline, not a server decision',
-   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase - which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per operation. The one attack you cannot fix with a decision.',
+   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase - which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per request. The one attack you cannot fix with a decision.',
    hints:[
     ['add server-side detection of stale keys','There is no signal to detect - two requests with the same key are duplicates BY DEFINITION.'],
-    ['switch identity to a parameter hash','That reopens the identical-orders trap - a hash cannot carry intent.'],
-    ['publish key rules; scope keys per operation','This is the answer - and it lives in documentation and client code, not in your decisions here.'] ] },
+    ['switch identity to a parameter hash','That reopens the identical-orders trap - a hash cannot carry what the customer wanted.'],
+    ['publish key rules; scope keys per request','This is the answer - and it lives in documentation and client code, not in your decisions here.'] ] },
 
   { t:'A2 \u00b7 AIRBNB - SOMEONE MOVES YOUR KEY READS TO THE READ-ONLY COPIES', group:'read',
    brief:'This attack flips one of your decisions. Fix it with your decisions, then re-run.',
@@ -1055,7 +1055,7 @@ function bootEngine() {
      say('ATTACK 3','Ten times the traffic. Your size-bound store evicts oldest-first by design - and under this much load, honest keys age out early\u2026');
      await animBurstThenStraggler(); memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(800);
      await animLateKey(false);
-     say('ATTACK 3','A straggler aged out early and charged twice - the pager fired, exactly as designed. Re-run to see the posture hold, with its price.');
+     say('ATTACK 3','A straggler aged out early and charged twice - the pager fired, exactly as designed. Re-run to see the posture hold, with its cost.');
     } else {
      say('ATTACK 3','Ten times the traffic. A fixed-time store cannot hold every key at this volume, so <b>the oldest quietly fall off</b>\u2026');
      await animBurstThenStraggler();
@@ -1069,13 +1069,13 @@ function bootEngine() {
     if (K.ret==='size'){
      memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(700);
      await animLateKey(true);
-     card('good','HELD - THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully - that price is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
+     card('good','HELD - THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully - that cost is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
      return { held:true };
     }
     if (K.ret==='ever'){
      memNote('holding EVERYTHING \u00b7 store ballooning'); await sleep(700);
      await animLateKey(true);
-     card('warn','HELD - BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds - at a price the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
+     card('warn','HELD - BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds - at a cost the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
      return { held:true };
     }
     memNote('oldest keys evicted \u2192'); await sleep(700);
@@ -1121,7 +1121,7 @@ function bootEngine() {
     if (K.ret==='ever'){
      say('ATTACK 5','Months pass. A caller generates a fresh key that <b>collides with an ancient one</b> - your store never forgot it.');
      await animOldKeyReplay();
-     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened - the store recognized a key from another era and replayed history. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
+     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened - the store recognized a key from another era and returned its old response. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
      say('ATTACK 5','No decision prevents stragglers AND collisions at once. <b>Bound the window</b> (WINDOW is glowing), then re-run - and watch what bounding it trades away.');
      return;
     }
