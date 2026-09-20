@@ -135,7 +135,10 @@ export default function ProblemDetail() {
   // Members are already sorted publishedAt-desc (src/content/index.ts),
   // which matches the design's row/card order.
   const members = articles.filter((a) => a.cruxTag === cruxTag)
-  const companyCount = new Set(members.map((a) => a.source.company)).size
+  // "seen at N companies" (F): one source — the comparison's column list when
+  // the wall has one, else the distinct companies among the member articles.
+  const companyCount =
+    essay?.comparison?.columns.length ?? new Set(members.map((a) => a.source.company)).size
   const companyLabel = `${companyCount} ${companyCount === 1 ? 'company' : 'companies'}`
   const systemLabel = `${members.length} ${members.length === 1 ? 'system' : 'systems'}`
   const intro = Array.isArray(essay?.intro) ? essay?.intro : undefined

@@ -32,11 +32,9 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     once any attack has run; freshDay (new day) and reset clear both. Side
 //     effect: the host's write-once `caused` checkpoint (observes the meter
 //     sum) can now also trip on an attack-caused double, not only a day.
-//   B2-5 (F15): the speed button reads the CURRENT speed (1× at 1x, 2× at
-//     2.2x, magenta outline only at 2x), not the target; the first-day
-//     auto-switch appends "Replays now run at 2×; the button sets it back."
-//     to the DAY SURVIVED/OVER line; reset returns to 1× unless the user
-//     chose a speed.
+//   B2-5 (F15): SUPERSEDED by the 2026-09 copy pass (F) — the 2× speed control
+//     and its first-day auto-switch (+ the "Replays now run at 2×" clause) were
+//     removed entirely. `speed` stays 1 (animation timing math untouched).
 //   B2-7 (F17): focusDeckSel(k) re-focuses a group's selected option after
 //     paintDeck() rebuilds the deck -- on a decision click, and after attacks
 //     4/5 add a row (focus the new row's default) -- so keyboard focus is not
@@ -268,7 +266,7 @@ const CSS = `
  /* control row: buttons one line (RUN flexes), meters a second full-width
     3-col line, never clipped (F11's "MYS"). */
  .runbtn { flex:1 1 auto; }
- #stepbtn, #fastbtn, #resetbtn { flex:0 0 auto; }
+ #stepbtn, #resetbtn { flex:0 0 auto; }
  .meters { flex-basis:100%; margin-left:0; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
  .meter { min-width:0; }
  /* phone accordion (A3): 44px rows, one open at a time. The base .kgl is
@@ -342,11 +340,10 @@ const MARKUP = `
   <div class="col-right">
    <div class="evchips" id="evchips"></div>
    <div class="narr" id="narr" aria-live="polite"></div>
-   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key’s memory; traffic animates across it"></svg></div>
+   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key's memory; traffic animates across it"></svg></div>
    <div class="ctlrow">
     <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
     <button class="bghost" id="stepbtn">STEP</button>
-    <button class="bghost" id="fastbtn">1×</button>
     <button class="bghost" id="resetbtn">reset</button>
     <div class="meters">
     <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
@@ -375,7 +372,7 @@ function bootEngine() {
  var K = { id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' };
   var ROWS_ADDED = { params:false, after:false };
     var FREE = false; /* FREE PLAY is prototype-only and not ported; the sequence gates below stay verbatim */
- var speed = 1, userChoseSpeed = false, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
+ var speed = 1, curEv = -1, running = false, won = false, evIdx = 0, dayDamage = null, touched = false, runsDone = 0;
  var attackDbl = 0, anyAttackRun = false; /* B2-4: attack damage counted into the meters + the "today + attacks" note */
  var dwellUntil = 0;
  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -735,7 +732,7 @@ function bootEngine() {
  ];
  function card(cls, code, body, src, knob){
  var d=document.createElement('div'); d.className='bcard '+cls;
- d.innerHTML='<span class="code">'+(curEv>=0?('E'+(curEv+1)+' \u00B7 '):(curLvl>0?('A'+curLvl+' \u00B7 '):''))+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
+ d.innerHTML='<span class="code">'+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
  $('#log').prepend(d);
  d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){ cueDecision(k.dataset.knob); }); });
  }
@@ -934,9 +931,6 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- var autoFast = false;
- if(runsDone===1 && speed===1 && !userChoseSpeed){ speed=2.2; $('#fastbtn').classList.add('on'); $('#fastbtn').textContent='2\u00D7'; autoFast=true; } /* B2-5: the button reads the CURRENT speed (2\u00D7), not the target */
- var speedNote = autoFast ? ' Replays now run at 2\u00D7; the button sets it back.' : '';
  if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it - so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem');
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
@@ -1312,12 +1306,10 @@ function bootEngine() {
 
  $('#runbtn').addEventListener('click', runAll);
  $('#stepbtn').addEventListener('click', stepOne);
- $('#fastbtn').addEventListener('click', function(){ userChoseSpeed = true; speed = speed===1?2.2:1; $('#fastbtn').classList.toggle('on', speed>1); $('#fastbtn').textContent = speed>1 ? '2\u00D7' : '1\u00D7'; }); /* B2-5: label is the CURRENT speed */
  $('#resetbtn').addEventListener('click', function(){
  if (running) return;
  K={ id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' }; ROWS_ADDED={params:false,after:false}; delete K.params; delete K.after;
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
- if(!userChoseSpeed){ speed=1; $('#fastbtn').classList.remove('on'); $('#fastbtn').textContent='1×'; } /* B2-5: reset returns to 1× unless the user chose a speed */
  var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
  freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
