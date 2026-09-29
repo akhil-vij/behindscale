@@ -271,7 +271,7 @@ const CSS = `
     narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
     -> debrief (evchips lead the right column). The control row is NOT sticky
     (the stage is directly above; sticky would cover the log the cards land in). */
- .mission-grid { display:flex; flex-direction:column; gap:14px; }
+ .mission-grid { display:flex; flex-direction:column; gap:14px; align-items:stretch; } /* the desktop grid's align-items:start let the nowrap .kgchoice size the column past the frame */
  .col-right { position:static; max-height:none; order:-1; }
  .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
  #bill { order:1; }        /* right column: log before bill on phone */

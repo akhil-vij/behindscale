@@ -443,6 +443,10 @@ test.describe('mobile (§2): the mission frame is content-height and the page (n
     expect(await openCount()).toBe(1)
     await expect(mission.locator('#deck #kg-mem')).not.toHaveClass(/collapsed/)
     await expect(mission.locator('#deck #kg-id')).toHaveClass(/collapsed/)
+    // Polish: a collapsed header's chosen value is nowrap; it must truncate,
+    // never widen the deck past the frame (it once scrolled 591px in 350).
+    const widths = await mission.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth])
+    expect(widths[0]).toBeLessThanOrEqual(widths[1])
   })
 })
 
