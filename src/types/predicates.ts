@@ -357,6 +357,25 @@ export function checkProblemEssay(value: unknown): Result {
     const result = check(value[field])
     if (!result.ok) return fail(`\`${field}\`: ` + result.reason)
   }
+  // The outline's decision labels link into the comparison: every anchor must
+  // name a question the page renders.
+  const anchors = checkOutlineAnchors(value)
+  if (!anchors.ok) return anchors
+  return ok
+}
+
+function checkOutlineAnchors(value: Record<string, unknown>): Result {
+  const mission = value.mission as { outline?: { decisions: { anchor?: string }[] } } | undefined
+  const decisions = mission?.outline?.decisions ?? []
+  if (!decisions.some((d) => d.anchor !== undefined)) return ok
+  const comparison = value.comparison as { questions?: { id: string }[] } | undefined
+  const ids = new Set((comparison?.questions ?? []).map((q) => q.id))
+  for (let i = 0; i < decisions.length; i++) {
+    const anchor = decisions[i].anchor
+    if (anchor !== undefined && !ids.has(anchor)) {
+      return fail(`\`mission.outline.decisions[${i}].anchor\` "${anchor}" names no comparison question`)
+    }
+  }
   return ok
 }
 
@@ -494,6 +513,9 @@ function checkProblemMissionOutline(value: unknown): Result {
     if (!isObject(d) || !nonEmptyString(d.label)) return fail(`\`decisions[${i}]\` expected { label, options[] }`)
     if (!nonEmptyStringArray(d.options) || d.options.length === 0) {
       return fail(`\`decisions[${i}].options\` expected non-empty array of non-empty strings`)
+    }
+    if (d.anchor !== undefined && !(typeof d.anchor === 'string' && KEBAB_CASE.test(d.anchor))) {
+      return fail(`\`decisions[${i}].anchor\` expected a kebab-case question id`)
     }
   }
   if (!nonEmptyStringArray(value.events) || value.events.length === 0) {

@@ -275,7 +275,15 @@ test.describe('§5.5 no-JS', () => {
     await expect(outline).toContainText('Client: generates and sends an idempotency key')
     await expect(outline).toContainText('The day, six events')
     await expect(outline).toContainText('Five attacks, from the posts')
-    await expect(outline).toContainText('Airbnb 2019, reads moved to a read-only copy')
+    await expect(outline).toContainText('Airbnb 2019: reads moved to a read-only copy')
+    // Polish §2: decision labels link to their comparison rows (no visible
+    // Q marker); ON A TIMEOUT has no row, so it stays plain text.
+    await expect(outline.locator('a.mo-dlabel')).toHaveCount(5)
+    await expect(outline.locator('a.mo-dlabel[href="#q1"]')).toHaveText('IDENTITY: who names the request?')
+    await expect(outline.locator('span.mo-dlabel')).toHaveText('ON A TIMEOUT: the client…')
+    await expect(outline.locator('.mo-opts li')).toHaveCount(18)
+    await expect(outline.locator('.mo-flat li')).toHaveCount(11)
+    await expect(outline).not.toContainText('Q1')
     await expect(outline).toContainText('your design becomes the sixth column in the comparison below.')
     // One fallback per artifact position, in the frames' wrappers; the
     // mission's carries the same outline as plain text.
@@ -321,12 +329,13 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   expect(html).toContain('YOU · survive a day first')
   // The mission is visible without JavaScript: the six decision labels and the
   // five attack companies are static text in the outline card. B2-10 (F23)
-  // dropped the noscript's duplicate lists, so the contiguous "<label> —
-  // <options>" now lives only in the card, which wraps the label in a span.
+  // dropped the noscript's duplicate lists, so the decision lists live only
+  // in the card: each label is its own element (a link to its comparison row,
+  // or a span), followed by one <li> per option.
   for (const label of ['IDENTITY: who names the request?', 'MEMORY: how the server remembers a request it already handled', 'READS: which copy the server checks for the key', 'ON A TIMEOUT: the client…', 'REPLY: when the server sees a repeat, it sends back…', 'WINDOW: how long the key store remembers each idempotency key']) {
-    expect(html, label).toContain(`>${label}</span> — `)
+    expect(html, label).toMatch(new RegExp(`>${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</(a|span)><ul class="mo-opts"><li>`))
   }
-  for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a read-only copy', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {
+  for (const attack of ['Stripe 2017: a reused key', 'Airbnb 2019: reads moved to a read-only copy', 'Segment 2017: traffic 10× for a week', 'AWS 2021: a known key with a different amount', 'Shopify 2022: a retry after the window']) {
     expect(html, attack).toContain(attack)
   }
   expect(html).toContain('Cause it · Build it · Survive a day · Compare with five real systems')

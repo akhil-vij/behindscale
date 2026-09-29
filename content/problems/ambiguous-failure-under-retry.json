@@ -104,12 +104,12 @@
     "intro": "You caused the failure from the victim's seat. Now let's design the solution. You need to make six decisions (the box below lists them), and the goal is a day of traffic survived with no double charges. Run it first with the naive defaults, the obvious choices you'd make before learning anything. Then observe what breaks. Each failure is your next lesson: it names the company that hit it, links to their post, and points at the one decision that would have prevented it. Clear the day, and the design faces five attacks, each a real-world failure that one of the five companies actually hit.",
     "outline": {
       "decisions": [
-        { "label": "IDENTITY: who names the request?", "options": ["Nobody: a request is just its parameters", "Server: hashes the request parameters", "Client: generates and sends an idempotency key"] },
-        { "label": "MEMORY: how the server remembers a request it already handled", "options": ["Nowhere: keep no record", "A separate store, written after the charge", "A separate store that also tracks how far the charge got, so a retry can resume", "Committed together with the charge, in one transaction"] },
-        { "label": "READS: which copy the server checks for the key", "options": ["The main database, where the record was written", "A read-only copy: cheaper, but seconds behind"] },
+        { "label": "IDENTITY: who names the request?", "anchor": "q1", "options": ["Nobody: a request is just its parameters", "Server: hashes the request parameters", "Client: generates and sends an idempotency key"] },
+        { "label": "MEMORY: how the server remembers a request it already handled", "anchor": "q3", "options": ["Nowhere: keep no record", "A separate store, written after the charge", "A separate store that also tracks how far the charge got, so a retry can resume", "Committed together with the charge, in one transaction"] },
+        { "label": "READS: which copy the server checks for the key", "anchor": "q2", "options": ["The main database, where the record was written", "A read-only copy: cheaper, but seconds behind"] },
         { "label": "ON A TIMEOUT: the client…", "options": ["Gives up, assuming the charge failed", "Retries with no key, so the server can't recognize it", "Retries with the same idempotency key"] },
-        { "label": "REPLY: when the server sees a repeat, it sends back…", "options": ["An error that says \"this was already done\"", "Return the original saved response"] },
-        { "label": "WINDOW: how long the key store remembers each idempotency key", "options": ["One minute", "About 24 hours", "Limited by size: drop the oldest keys when full, and alert an engineer if keys start expiring in under a day", "Forever"] }
+        { "label": "REPLY: when the server sees a repeat, it sends back…", "anchor": "q4", "options": ["An error that says \"this was already done\"", "Return the original saved response"] },
+        { "label": "WINDOW: how long the key store remembers each idempotency key", "anchor": "q5", "options": ["One minute", "About 24 hours", "Limited by size: drop the oldest keys when full, and alert an engineer if keys start expiring in under a day", "Forever"] }
       ],
       "events": ["A normal charge", "A lost request", "A crash mid-charge", "A lost reply", "Two genuine orders", "A late retry"],
       "attacks": [
