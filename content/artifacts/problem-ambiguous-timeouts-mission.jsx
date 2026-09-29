@@ -130,8 +130,11 @@ const CSS = `
  .art-foot a { color:var(--art-text); text-decoration:underline; }
  .artB { background:var(--art-bg); color:var(--art-text); border:1px solid var(--art-border); border-radius:14px; padding:14px; margin:0; font-family:var(--mono); font-size:12px; width: 100%; position: relative; }
  .a-eyebrow { color:var(--art-muted); font-size:10px; letter-spacing:2px; }
- .a-title { color:var(--art-text-bright); font-size:17px; font-weight:700; margin:3px 0 1px; }
- .a-sub { color:var(--art-muted); font-size:11px; }
+ /* polish §4: more air under the title; the sentence wraps to two lines
+    instead of running the full width; the same 14px gutter to the columns. */
+ .a-title { color:var(--art-text-bright); font-size:17px; font-weight:700; margin:3px 0 6px; }
+ .a-sub { color:var(--art-muted); font-size:11px; line-height:1.5; max-width:86ch; }
+ .mission-grid { margin-top:14px; }
 
  /* polish §3b: chips are one 3x2 grid at every width, each the same size
     (min-height, not text, sets it); radius 12 so two-line chips stay pills. */
@@ -320,9 +323,9 @@ const CSS = `
 const MARKUP = `
 <main id="mission-root">
 <div class="artB" id="artB" data-cue="run">
- <div class="a-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY - BUILD IT</div>
+ <div class="a-eyebrow">AMBIGUOUS FAILURE UNDER RETRY</div>
  <h1 class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></h1>
- <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.</div>
+ <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day means zero double charges, zero lost sales, zero unresolved payments.</div>
 
  <div class="mission-grid">
   <div class="col-left">
@@ -435,7 +438,7 @@ function bootEngine() {
 
  function paintDeck(){
  var vert = window.innerWidth < 700; /* §2/A3: phone shows a one-open accordion; desktop the full deck */
- var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs with whatever it says here</div>';
+ var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs on the choices you make here</div>';
  GROUPS.forEach(function(g){
   var ok = !g.needs || g.needs();
   if (!ok && g.hideLocked) return;
