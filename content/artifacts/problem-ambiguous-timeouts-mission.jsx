@@ -128,13 +128,15 @@ const CSS = `
  #mission-root b { color: var(--art-text-bright); font-weight: 600; }
  .art-foot { color:var(--art-muted); font-size:10px; margin-top:12px; border-top:1px solid var(--art-border); padding-top:8px; line-height:1.7; }
  .art-foot a { color:var(--art-text); text-decoration:underline; }
- .artB { background:var(--art-bg); color:var(--art-text); border:1px solid var(--art-border); border-radius:14px; padding:16px; margin:0; font-family:var(--mono); font-size:12px; width: 100%; position: relative; }
+ .artB { background:var(--art-bg); color:var(--art-text); border:1px solid var(--art-border); border-radius:14px; padding:14px; margin:0; font-family:var(--mono); font-size:12px; width: 100%; position: relative; }
  .a-eyebrow { color:var(--art-muted); font-size:10px; letter-spacing:2px; }
  .a-title { color:var(--art-text-bright); font-size:17px; font-weight:700; margin:3px 0 1px; }
  .a-sub { color:var(--art-muted); font-size:11px; }
 
- .evchips { display:flex; gap:6px; margin:14px 0 8px; flex-wrap:wrap; }
- .evchip { flex:1; min-width:96px; text-align:center; font-size:10px; letter-spacing:.6px; color:var(--art-muted); border:1px solid var(--art-border); border-radius:20px; padding:5px 4px; background:var(--art-surface); transition:all .25s; }
+ /* polish §3b: chips are one 3x2 grid at every width, each the same size
+    (min-height, not text, sets it); radius 12 so two-line chips stay pills. */
+ .evchips { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); grid-auto-rows:1fr; gap:6px; }
+ .evchip { min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10px; line-height:1.3; letter-spacing:.6px; color:var(--art-muted); border:1px solid var(--art-border); border-radius:12px; padding:4px 6px; background:var(--art-surface); transition:all .25s; }
  .evchip.now { border-color:var(--art-text); color:var(--art-text-bright); box-shadow:0 0 10px rgba(200,205,216,.2); }
  .evchip.clean { border-color:#22c55e; color:#22c55e; }
  .evchip.hurt { border-color:#ef4444; color:#ef4444; }
@@ -143,7 +145,7 @@ const CSS = `
     between events and shoves the stage 13-19px. Effective font is 12.5px (a
     later rule overrides the 11.5px here): 3 x 12.5 x 1.55 ~= 58px content +
     16px padding + 2px border ~= 76px (border-box); 77px pins 1-3 lines flat. */
- .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
+ .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; }
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
@@ -151,21 +153,23 @@ const CSS = `
     sticky column (stage + meters + newest card stay in view); the reader's
     ACTIONS live in the left, scrolling column (deck, commit, attacks, debrief).
     Phone collapses to one re-ordered column (§2). ===== */
- .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:20px; align-items:start; }
- .col-left, .col-right { display:flex; flex-direction:column; gap:10px; min-width:0; }
+ /* polish §3e: one 14px gutter -- between the columns, between every block
+    in them, and inside the panels. */
+ .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:14px; align-items:start; }
+ .col-left, .col-right { display:flex; flex-direction:column; gap:14px; min-width:0; }
  /* top:12px is an in-frame gap: sticky can't reference the host nav across the
     iframe boundary, so the "56px clears the nav" of the spec becomes a small
     internal offset (nav-overlap at the very top is a recorded compromise). The
     frame is a bounded scrollport on desktop (host sets min(content,100dvh-56));
     align-self:start keeps the column at content height so it can stick. */
  .col-right { position:sticky; top:12px; align-self:start; max-height:calc(100dvh - 24px); }
- .col-right .log { flex:1 1 auto; min-height:150px; max-height:none; }
- .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
+ .col-right .log { flex:1 1 auto; min-height:96px; max-height:none; } /* polish (c): the log, not the stage, gives way on short screens */
+ .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:14px; }
  #artB[data-cue="deck"] .deck { animation:deckpulse 1.6s ease infinite alternate; }
  @keyframes deckpulse { from { border-color:var(--art-border); } to { border-color:var(--accent-problem); box-shadow:0 0 14px rgba(217,70,239,.18);} }
  .deck-title { color:var(--art-text); font-size:10px; letter-spacing:1.6px; margin-bottom:2px; }
  .deck-sub { color:var(--art-muted); font-size:10px; margin-bottom:10px; }
- .kg { margin-top:12px; padding-top:10px; border-top:1px solid var(--art-border); }
+ .kg { margin-top:12px; padding-top:9px; border-top:1px solid var(--art-border); }
  .kg:first-of-type { margin-top:2px; border-top:none; padding-top:0; }
  .kg .kgl { color:var(--art-muted); font-size:10px; letter-spacing:1px; line-height:1.4; display:flex; align-items:center; gap:6px; }
  .kg .kgl .q { color:var(--art-muted); }
@@ -175,8 +179,11 @@ const CSS = `
     choice + chevron are hidden. */
  .kgchoice, .kgchev { display:none; }
  .kg .lockmsg { color:var(--art-muted); font-size:10px; font-style:italic; margin-top:3px; }
- .seg { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
- .seg button { text-align:left; padding:7px 10px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
+ .seg { display:flex; flex-direction:column; gap:5px; margin-top:6px; }
+ /* polish §3a: every option button is sized by min-height, not its text:
+    one-liners all 34px, two-liners grow evenly. */
+ .seg button, .lvl .opt { min-height:34px; display:flex; align-items:center; }
+ .seg button { text-align:left; padding:6px 9px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
  .seg button:hover:not(:disabled) { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  .seg button.sel { border-color:var(--accent-problem); background:rgba(217,70,239,.14); color:var(--accent-problem-hover); font-weight:700; }
  .seg button:disabled { opacity:.5; cursor:not-allowed; }
@@ -186,7 +193,10 @@ const CSS = `
 
  /* §1: the desktop stage fits its ~508px column (viewBox 640x336 -> ~508x267),
     so no horizontal scroll and no 560px floor. */
- .bstagewrap { overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
+ /* polish (c): overflow-x:auto made this a scroll container, so the capped
+    sticky column could shrink it below the drawing and hide the bottom of
+    the stage. It keeps its height; the log below absorbs the squeeze. */
+ .bstagewrap { flex-shrink:0; overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
  svg#bstage { display:block; width:100%; min-width:0; height:auto; }
  svg#bstage text { font-family:var(--mono); }
  .nodebox { fill:var(--art-surface-2); stroke:var(--art-border); stroke-width:1.4; }
@@ -208,7 +218,7 @@ const CSS = `
  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
  .shake { animation:shake .35s ease 2; }
 
- .ctlrow { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+ .ctlrow { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
  .runbtn { background:var(--accent-problem); color:var(--art-bg); border:none; border-radius:8px; padding:10px 20px; font-family:inherit; font-size:12.5px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
  .runbtn:hover { background:var(--accent-problem-hover); }
  .runbtn:disabled { opacity:.4; cursor:not-allowed; }
@@ -222,7 +232,7 @@ const CSS = `
  .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); margin-top:2px; display:none; }
  .meternote.on { display:block; }
 
- .log { margin-top:12px; display:grid; gap:8px; max-height:280px; overflow-y:auto; }
+ .log { display:grid; gap:8px; max-height:280px; overflow-y:auto; }
  .bcard { border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
  .bcard.bad { border-color:#ef4444; background:rgba(239,68,68,.07); }
  .bcard.warn { border-color:#eab308; background:rgba(234,179,8,.07); }
@@ -238,7 +248,7 @@ const CSS = `
  .lvl.locked2 { opacity:.5; pointer-events:none; }
  .lvl .lt { color:var(--art-text-bright); font-size:12px; font-weight:700; }
  .lvl .lq { margin-top:4px; font-size:11.5px; line-height:1.6; color:var(--art-text); }
- .lvl .opt { display:block; width:100%; text-align:left; padding:7px 9px; margin-top:6px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; }
+ .lvl .opt { width:100%; text-align:left; padding:6px 9px; margin-top:6px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; }
  .lvl .opt:hover { border-color:var(--accent-problem); }
  .lvl .done { color:#22c55e; font-weight:700; font-size:11px; display:none; }
  .lvl .verdict { margin-top:8px; padding:8px 10px; border-radius:6px; font-size:11px; line-height:1.6; display:none; }
@@ -258,7 +268,7 @@ const CSS = `
     narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
     -> debrief (evchips lead the right column). The control row is NOT sticky
     (the stage is directly above; sticky would cover the log the cards land in). */
- .mission-grid { display:flex; flex-direction:column; gap:12px; }
+ .mission-grid { display:flex; flex-direction:column; gap:14px; }
  .col-right { position:static; max-height:none; order:-1; }
  .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
  #bill { order:1; }        /* right column: log before bill on phone */
@@ -288,9 +298,10 @@ const CSS = `
  #artB .runbtn:hover { background:none; color:var(--art-text); }
  #artB #stepbtn { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  }
-  .billpanel { margin-top:10px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:10px 12px; font-size:11px; line-height:1.6; }
+  .billpanel { background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:12px 14px; font-size:11.5px; line-height:1.5; }
   .billhead { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; margin-bottom:6px; }
-  .billrow { color:var(--art-text); padding:3px 0; border-top:1px solid var(--art-surface-2); }
+  /* polish §3d: the row divider was --art-surface-2, invisible on the panel */
+  .billrow { color:var(--art-text); padding:6px 0; border-top:1px solid var(--art-border); }
   .billrow.base { color:var(--art-text-bright); }
   .billrow .bl { color:var(--art-muted); font-size:10px; letter-spacing:1px; margin-right:6px; }
   .billrow .bs { color:var(--art-muted); font-size:10px; margin-left:6px; }
