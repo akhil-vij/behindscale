@@ -124,15 +124,15 @@ svg.stage text { font-family: var(--mono); }
 
 const MARKUP = `
 <div class="artifact" id="artifact">
- <div class="art-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY - INTERACTIVE</div>
+ <div class="art-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY · INTERACTIVE</div>
  <div class="art-title">The ambiguity window <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #6B7280;color:#6B7280;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">TRY IT</span></div>
- <p class="art-sub">One $100 charge and three places it can fail. You can see whether the money actually moved — the client can't. All it gets is a timeout.</p>
+ <p class="art-sub">One $100 charge and three places it can fail. You can see whether the money actually moved, but the client can't. All it gets is a timeout.</p>
 
  <div class="art-ctx" id="artctx" style="display: none;">
-  <div class="art-ctx-head"><span>CONTEXT - IF YOU ARRIVED HERE WITHOUT THE PAGE</span><button class="art-ghost" id="ctxhide">HIDE ✕</button></div>
-  <div class="art-ctx-line"><span class="lbl">THE PROBLEM · </span>A request that times out or fails mid-flight leaves the caller unable to tell whether it already took effect - so a retry risks repeating an operation that in fact succeeded.</div>
-  <div class="art-ctx-line"><span class="lbl">THE MOVE · </span>Five companies (Stripe, AWS, Airbnb, Shopify, Segment) answer with the same tool: the caller gives the request a name — an idempotency key — and the system remembers it. This artifact lets you make the three decisions that tool forces on you - where the call dies, what the client does, and where the key's memory lives.</div>
-  <div class="art-ctx-line"><span class="lbl">TRY · </span>Cut the response after success and retry blindly - the classic double charge. Then turn the key on but keep its memory on a lagging copy of the database (a read-only copy): the double charge comes back with the key on. The ledger and key store on the right show the truth the client never sees.</div>
+  <div class="art-ctx-head"><span>CONTEXT: IF YOU ARRIVED HERE WITHOUT THE PAGE</span><button class="art-ghost" id="ctxhide">HIDE ✕</button></div>
+  <div class="art-ctx-line"><span class="lbl">THE PROBLEM · </span>A request that times out or fails mid-flight leaves the caller unable to tell whether it already took effect, so a retry risks repeating an operation that in fact succeeded.</div>
+  <div class="art-ctx-line"><span class="lbl">THE MOVE · </span>Five companies (Stripe, AWS, Airbnb, Shopify, Segment) answer with the same tool: the caller gives the request a name (an idempotency key), and the system remembers it. This artifact lets you make the three decisions that tool forces on you: where the call dies, what the client does, and where the key's memory lives.</div>
+  <div class="art-ctx-line"><span class="lbl">TRY · </span>Cut the response after success and retry blindly: the classic double charge. Then turn the key on but keep its memory on a lagging copy of the database (a read-only copy): the double charge comes back with the key on. The ledger and key store on the right show the truth the client never sees.</div>
  </div>
  <button class="art-ghost" id="ctxshow" style="margin-top: 10px;">SHOW CONTEXT ▾</button>
 
@@ -175,15 +175,15 @@ const MARKUP = `
 
  <div class="art-cols">
   <div class="art-panel art-controls">
-  <span class="art-label">THE CUT - WHERE THE CALL DIES</span>
+  <span class="art-label">THE CUT: WHERE THE CALL DIES</span>
   <button class="abtn cut" data-cut="1">✂ request never arrives<small>the network drops it before the server ever sees it</small></button>
   <button class="abtn cut" data-cut="2">✂ server dies mid-work<small>crashes somewhere between charged and not</small></button>
   <button class="abtn cut" data-cut="3">✂ response lost after success<small>the charge landed; only the response vanished</small></button>
-  <span class="art-label gap">THE CLIENT'S MOVE - ALL IT SAW WAS A TIMEOUT</span>
+  <span class="art-label gap">THE CLIENT'S MOVE: ALL IT SAW WAS A TIMEOUT</span>
   <button class="abtn move" data-act="retry" disabled>RETRY BLINDLY<small>send the charge again; the server can't recognize it</small></button>
   <button class="abtn move" data-act="giveup" disabled>GIVE UP<small>assume it failed and never retry</small></button>
   <button class="abtn move" data-act="key" disabled>RETRY WITH THE SAME KEY<small>send it again carrying the same operation name</small></button>
-  <span class="art-label gap" id="shelflabel" style="display: none;">THE KEY'S MEMORY - WHERE "HAVE I SEEN THIS KEY?" LIVES</span>
+  <span class="art-label gap" id="shelflabel" style="display: none;">THE KEY'S MEMORY: WHERE "HAVE I SEEN THIS KEY?" LIVES</span>
   <button class="abtn shelf" data-shelf="acid" style="display: none;">COMMITTED WITH THE CHARGE<small>key and charge in one all-or-nothing transaction</small></button>
   <button class="abtn shelf" data-shelf="store" style="display: none;">SEPARATE STORE, AFTER THE CHARGE<small>charge first, then record the key</small></button>
   <button class="abtn shelf" data-shelf="replica" style="display: none;">READ FROM A READ-ONLY COPY<small>the record is on the main database; the check reads a copy that is seconds behind</small></button>
@@ -193,7 +193,7 @@ const MARKUP = `
   <div class="art-right">
   <div class="averdict on" id="averdict"><div class="code" id="vcode"></div><div class="vbody" id="vbody"></div></div>
   <div class="art-panel">
-   <span class="art-label">THE TRUTH - WHAT THE CLIENT CANNOT SEE</span>
+   <span class="art-label">THE TRUTH: WHAT THE CLIENT CANNOT SEE</span>
    <div class="art-wells">
    <div class="well"><span class="art-label">BANK LEDGER</span><div class="rows" id="bankrows"></div></div>
    <div class="well" id="memwell"><span class="art-label" id="memlabel">KEY STORE</span><div class="rows" id="memrows"></div></div>
@@ -207,7 +207,7 @@ const MARKUP = `
  </div>
 
  <div class="art-foot">
-  The three failure points and their one safe case are Stripe's; the crash that separates the charge from its record, and the all-or-nothing commit that forbids it, are AWS's; the read-only-copy lag double charge is Airbnb's own scenario; the window that shrinks under load instead of failing is Segment's; the recovery-steps framing is Shopify's. The $100, the single-row ledger, and the timings are illustrative - the failure modes are the posts'.
+  The three failure points and their one safe case are Stripe's; the crash that separates the charge from its record, and the all-or-nothing commit that forbids it, are AWS's; the read-only-copy lag double charge is Airbnb's own scenario; the window that shrinks under load instead of failing is Segment's; the recovery-steps framing is Shopify's. The $100, the single-row ledger, and the timings are illustrative. The failure modes are the posts'.
   <a href="https://www.behindscale.com/problems/ambiguous-timeouts" id="tryit-backlink" style="display:none;">From the full problem page at behindscale.com →</a>
  </div>
 </div>
@@ -220,32 +220,32 @@ function bootEngine() {
  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
 
  /* Verdict-only strings (assertable); wells/meters carry the visible truth. */
- var START = { v: 'amber', code: 'YOU ARE THE CLIENT - $100 TO CHARGE', body: 'Cut the call somewhere. The interesting failure is not a clean error - it is a vanished response.', bank: [], mem: null, charged: '0×', chargedCls: '', belief: 'nothing sent yet', beliefCls: '' };
+ var START = { v: 'amber', code: 'YOU ARE THE CLIENT: $100 TO CHARGE', body: 'Cut the call somewhere. The interesting failure is not a clean error. It is a vanished response.', bank: [], mem: null, charged: '0×', chargedCls: '', belief: 'nothing sent yet', beliefCls: '' };
 
  var MID = {
- 1: { v: 'amber', code: 'TIMEOUT - AND THE TRUTH IS: NOTHING HAPPENED', body: 'The network dropped the request. The ledger on the right is empty - but the client cannot see that ledger. All it holds is a timeout. Choose the move.', bank: [], charged: '0×', chargedCls: '', belief: 'timeout - unknown', beliefCls: 'unk' },
- 2: { v: 'amber', code: 'TIMEOUT - AND THE TRUTH IS: NOBODY KNOWS', body: 'The server died somewhere inside the charge. Even the ledger holds a question mark. This is the hardest of the three cases - choose the move.', bank: ['attempt 1 · $100? · UNKNOWN'], charged: '0-1× ?', chargedCls: 'unk', belief: 'timeout - unknown', beliefCls: 'unk' },
- 3: { v: 'amber', code: 'TIMEOUT - AND THE TRUTH IS: IT WORKED', body: 'The charge landed; only the response vanished. The ledger says $100 - the client cannot see the ledger. Choose the move.', bank: ['attempt 1 · CHARGE $100'], charged: '1×', chargedCls: '', belief: 'timeout - unknown', beliefCls: 'unk' }
+ 1: { v: 'amber', code: 'TIMEOUT, AND THE TRUTH IS: NOTHING HAPPENED', body: 'The network dropped the request. The ledger on the right is empty, but the client cannot see that ledger. All it holds is a timeout. Choose the move.', bank: [], charged: '0×', chargedCls: '', belief: 'timeout · unknown', beliefCls: 'unk' },
+ 2: { v: 'amber', code: 'TIMEOUT, AND THE TRUTH IS: NOBODY KNOWS', body: 'The server died somewhere inside the charge. Even the ledger holds a question mark. This is the hardest of the three cases. Choose the move.', bank: ['attempt 1 · $100? · UNKNOWN'], charged: '0-1× ?', chargedCls: 'unk', belief: 'timeout · unknown', beliefCls: 'unk' },
+ 3: { v: 'amber', code: 'TIMEOUT, AND THE TRUTH IS: IT WORKED', body: 'The charge landed; only the response vanished. The ledger says $100, but the client cannot see the ledger. Choose the move.', bank: ['attempt 1 · CHARGE $100'], charged: '1×', chargedCls: '', belief: 'timeout · unknown', beliefCls: 'unk' }
  };
 
- var NEEDSHELF = { v: 'amber', code: 'THE KEY NEEDS A MEMORY', body: 'The retry carries the same key. Whether that saves you now depends entirely on where the server keeps its memory of the key - pick the key\'s memory.', charged: null };
+ var NEEDSHELF = { v: 'amber', code: 'THE KEY NEEDS A MEMORY', body: 'The retry carries the same key. Whether that saves you now depends entirely on where the server keeps its memory of the key. Pick the key\'s memory.', charged: null };
 
  var OUTCOMES = {
- '1|retry':  { v: 'amber', code: 'CHARGED ONCE - BY LUCK', body: 'Nothing had happened, so the blind retry was safe this time — but from the client\'s side, cut 3 looks exactly the same — same timeout, no way to tell them apart — and there the same guess charges twice.', bank: ['retry · CHARGE $100'], mem: null, charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '1|giveup':  { v: 'red', code: 'NO DOUBLE CHARGE - AND NO SALE', body: 'Nothing happened and nothing ever will; the order silently evaporates. Giving up is also a guess. Both wrong guesses cost money - they just send the bill to different people.', bank: [], mem: null, charged: '0×', chargedCls: 'bad', belief: 'failed · true, sale lost', beliefCls: 'bad' },
- '1|key|acid': { v: 'green', code: 'CHARGED ONCE', body: 'The retry carried the key, found no recorded attempt, and ran fresh - the ambiguity cost nothing. Retrying from total ignorance is safe now; Airbnb calls this write repair.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '1|key|store': { v: 'green', code: 'CHARGED ONCE', body: 'No prior state existed in any memory; the retry ran fresh and recorded its outcome. Cut 1 is the easy case - the memory\'s location only starts to matter once some state exists. Try cuts 2 and 3.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '1|key|replica': { v: 'green', code: 'CHARGED ONCE', body: 'Even a lagging read-only copy agrees on "never seen" when nothing was ever written. The read-only-copy trap needs existing state to spring - try cut 3 on this shelf.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database)', rep: 'K-1 · arrives later', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '2|retry':  { v: 'red', code: 'UP TO $200 - AND UNKNOWABLE', body: 'The first attempt may have charged before dying; the retry charges again regardless. Retrying is the only recovery available and also the one action that can double the charge - that trap is this whole problem class.', bank: ['attempt 1 · $100? · UNKNOWN', 'retry · CHARGE $100'], mem: null, charged: '1-2× ?', chargedCls: 'bad', belief: 'charged once · truth unknown', beliefCls: 'unk' },
- '2|giveup':  { v: 'red', code: 'MAYBE CHARGED - A SUPPORT TICKET WILL TELL YOU', body: 'Now nobody knows whether the charge happened. The customer finds out when their statement arrives, or when they call support. Shopify\'s answer for cases like this: reconciliation — verify the money afterward.', bank: ['attempt 1 · $100? · UNKNOWN'], mem: null, charged: '0-1× ?', chargedCls: 'unk', belief: 'failed · possibly false', beliefCls: 'bad' },
- '2|key|acid': { v: 'green', code: 'CHARGED ONCE - THE CRASH ROLLED BACK CLEAN', body: 'Key and charge were one transaction, so the crash erased both together. The retry found nothing, ran fresh, succeeded. This is AWS argument: the half-failures are not allowed to exist. Q3 has all five crash answers.', bank: ['attempt 1 · rolled back · $0', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (written by retry)', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '2|key|store': { v: 'red', code: 'DOUBLE CHARGE — THE KEY WAS NEVER RECORDED', body: 'The charge went through, but the server crashed before the key was recorded. The record and the charge came apart, so the retry found "never seen" and charged again. (The crash could just as easily have landed before the charge — a separate store can\'t guarantee which.) Stripe names this gap ("heavily dependent on implementation"); Airbnb closes it with three all-or-nothing phases — the crash cases are compared in full below.', bank: ['attempt 1 · CHARGE $100 · unrecorded', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (retry only)', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
- '2|key|replica': { v: 'red', code: 'DOUBLE CHARGE - TWO FAILURES STACKED', body: 'The crash split the charge from its record, and even a record that survived would arrive seconds late from this read-only copy. A guarantee sitting on a lagging copy is not a guarantee. Q2.', bank: ['attempt 1 · CHARGE $100 · unrecorded', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database, retry only)', rep: ' - K-1 not here yet - ', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
- '3|retry':  { v: 'red', code: 'THE CLASSIC DOUBLE CHARGE', body: 'The charge was done; only the response was lost - and you did it again. This is 0.6% of ALL traffic at Segment, not an edge case. Every system on this page exists because of this ending.', bank: ['attempt 1 · CHARGE $100', 'retry · CHARGE $100'], mem: null, charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
- '3|giveup':  { v: 'red', code: 'CHARGED - AND WRITTEN OFF', body: 'The charge landed and you treated it as failed: the customer paid $100 for an order your system believes never happened. Stripe: guessing wrong either way is catastrophic - this is the quieter catastrophe.', bank: ['attempt 1 · CHARGE $100'], mem: null, charged: '1×', chargedCls: 'bad', belief: 'failed · FALSE - customer paid', beliefCls: 'bad' },
- '3|key|acid': { v: 'green', code: 'THE RETRY WAS FREE', body: 'The retry carried the key, the server found the completed record, and returned the saved response as if it were the first one. One charge, correct response. What the duplicate hears - the saved response, a same-meaning success, or silence - is Q4 whole question.', bank: ['attempt 1 · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '3|key|store': { v: 'green', code: 'THE RETRY WAS FREE', body: 'The state was safely written when the charge finished, so the retry returned the saved response. This memory holds here - it is cut 2 that betrays it. Same input, different cut, different verdict: the key\'s memory question is really a crash question.', bank: ['attempt 1 · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
- '3|key|replica': { v: 'red', code: 'DOUBLE CHARGE WITH THE KEY ON', body: 'The record exists - on the main database. The read-only copy is seconds behind, answered "never seen this key", and the retry ran the charge again. This is Airbnb production scenario, and why Orpheus reads idempotency state from the main database only. Q2.', bank: ['attempt 1 · CHARGE $100 · K-1', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database)', rep: ' - K-1 not here yet - ', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' }
+ '1|retry':  { v: 'amber', code: 'CHARGED ONCE, BY LUCK', body: 'Nothing had happened, so the blind retry was safe this time. But you couldn\'t have known. From the client\'s side, cut 3 looks exactly the same: same timeout, no way to tell them apart. There, the same guess charges twice. Stripe: only the first of the three failure ways is harmless.', bank: ['retry · CHARGE $100'], mem: null, charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '1|giveup':  { v: 'red', code: 'NO DOUBLE CHARGE, AND NO SALE', body: 'Nothing happened and nothing ever will; the order silently evaporates. Giving up is also a guess. Both wrong guesses cost money. They just send the bill to different people.', bank: [], mem: null, charged: '0×', chargedCls: 'bad', belief: 'failed · true, sale lost', beliefCls: 'bad' },
+ '1|key|acid': { v: 'green', code: 'CHARGED ONCE', body: 'The retry carried the key, found no recorded attempt, and ran fresh, so the ambiguity cost nothing. Retrying from total ignorance is safe now; Airbnb calls this write repair.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '1|key|store': { v: 'green', code: 'CHARGED ONCE', body: 'No prior state existed in any memory; the retry ran fresh and recorded its outcome. Cut 1 is the easy case: the memory\'s location only starts to matter once some state exists. Try cuts 2 and 3.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '1|key|replica': { v: 'green', code: 'CHARGED ONCE', body: 'Even a lagging read-only copy agrees on "never seen" when nothing was ever written. The read-only-copy trap needs existing state to spring. Try cut 3 on this shelf.', bank: ['retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database)', rep: 'K-1 · arrives later', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '2|retry':  { v: 'red', code: 'UP TO $200, AND UNKNOWABLE', body: 'The first attempt may have charged before dying; the retry charges again regardless. Retrying is the only recovery available and also the one action that can double the charge. That trap is this whole problem class.', bank: ['attempt 1 · $100? · UNKNOWN', 'retry · CHARGE $100'], mem: null, charged: '1-2× ?', chargedCls: 'bad', belief: 'charged once · truth unknown', beliefCls: 'unk' },
+ '2|giveup':  { v: 'red', code: 'MAYBE CHARGED: A SUPPORT TICKET WILL TELL YOU', body: 'Now nobody knows whether the charge happened. The customer finds out when their statement arrives, or when they call support. Shopify\'s answer for cases like this is reconciliation: check the money afterward.', bank: ['attempt 1 · $100? · UNKNOWN'], mem: null, charged: '0-1× ?', chargedCls: 'unk', belief: 'failed · possibly false', beliefCls: 'bad' },
+ '2|key|acid': { v: 'green', code: 'CHARGED ONCE: THE CRASH ROLLED BACK CLEAN', body: 'Key and charge were one transaction, so the crash erased both together. The retry found nothing, ran fresh, succeeded. This is AWS\'s argument: the half-failures are not allowed to exist. Q3 has all five crash answers.', bank: ['attempt 1 · rolled back · $0', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (written by retry)', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '2|key|store': { v: 'red', code: 'DOUBLE CHARGE: THE KEY WAS NEVER RECORDED', body: 'The charge went through, but the server crashed before the key was recorded. The record and the charge came apart, so the retry found "never seen" and charged again. (The crash could just as easily have landed before the charge, and a separate store can\'t guarantee which.) Stripe names this gap ("heavily dependent on implementation"). Airbnb closes it with three all-or-nothing phases. The crash cases are compared in full below.', bank: ['attempt 1 · CHARGE $100 · unrecorded', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (retry only)', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
+ '2|key|replica': { v: 'red', code: 'DOUBLE CHARGE: TWO FAILURES STACKED', body: 'The crash split the charge from its record, and even a record that survived would arrive seconds late from this read-only copy. A guarantee sitting on a lagging copy is not a guarantee. Q2.', bank: ['attempt 1 · CHARGE $100 · unrecorded', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database, retry only)', rep: '(K-1 not here yet)', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
+ '3|retry':  { v: 'red', code: 'THE CLASSIC DOUBLE CHARGE', body: 'The charge was done; only the response was lost, and you did it again. This is 0.6% of ALL traffic at Segment, not an edge case. Every system on this page exists because of this ending.', bank: ['attempt 1 · CHARGE $100', 'retry · CHARGE $100'], mem: null, charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' },
+ '3|giveup':  { v: 'red', code: 'CHARGED, AND WRITTEN OFF', body: 'The charge landed and you treated it as failed: the customer paid $100 for an order your system believes never happened. Stripe: guessing wrong either way is catastrophic. This is the quieter catastrophe.', bank: ['attempt 1 · CHARGE $100'], mem: null, charged: '1×', chargedCls: 'bad', belief: 'failed · FALSE, customer paid', beliefCls: 'bad' },
+ '3|key|acid': { v: 'green', code: 'THE RETRY WAS FREE', body: 'The retry carried the key, the server found the completed record, and returned the saved response as if it were the first one. One charge, correct response. What the duplicate hears (the saved response, a same-meaning success, or silence) is Q4\'s whole question.', bank: ['attempt 1 · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '3|key|store': { v: 'green', code: 'THE RETRY WAS FREE', body: 'The state was safely written when the charge finished, so the retry returned the saved response. This memory holds here. It is cut 2 that betrays it. Same input, different cut, different verdict: the key\'s memory question is really a crash question.', bank: ['attempt 1 · CHARGE $100 · K-1'], mem: 'K-1 · DONE', charged: '1×', chargedCls: 'good', belief: 'charged once · true', beliefCls: 'good' },
+ '3|key|replica': { v: 'red', code: 'DOUBLE CHARGE WITH THE KEY ON', body: 'The record exists, on the main database. The read-only copy is seconds behind, answered "never seen this key", and the retry ran the charge again. This is Airbnb\'s production scenario, and why Orpheus reads idempotency state from the main database only. Q2.', bank: ['attempt 1 · CHARGE $100 · K-1', 'retry · CHARGE $100 · K-1'], mem: 'K-1 · DONE (main database)', rep: '(K-1 not here yet)', charged: '2×', chargedCls: 'bad', belief: 'charged once · FALSE', beliefCls: 'bad' }
  };
 
  function state() {
@@ -255,7 +255,7 @@ function bootEngine() {
  return OUTCOMES[act === 'key' ? cut + '|key|' + shelf : cut + '|' + act];
  }
 
- function rows(el, arr) { el.innerHTML = (arr && arr.length) ? arr.join('<br>') : ' - empty - '; }
+ function rows(el, arr) { el.innerHTML = (arr && arr.length) ? arr.join('<br>') : '(empty)'; }
 
  function render() {
  $$('.abtn[data-cut]').forEach(function (b) { b.classList.toggle('sel', b.dataset.cut === String(cut)); });
@@ -281,7 +281,7 @@ function bootEngine() {
  if (s.rep !== undefined) {
   $('#memlabel').textContent = 'KEY STORE · REPLICA BEING READ';
   memwell.classList.add('watched');
-  rows($('#memrows'), [ 'main database: ' + (s.mem || ' - '), 'read-only copy: ' + s.rep ]);
+  rows($('#memrows'), [ 'main database: ' + (s.mem || '(empty)'), 'read-only copy: ' + s.rep ]);
  } else {
   $('#memlabel').textContent = 'KEY STORE';
   memwell.classList.remove('watched');

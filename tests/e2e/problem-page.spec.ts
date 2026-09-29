@@ -272,7 +272,7 @@ test.describe('§5.5 no-JS', () => {
     const outline = page.locator('#mission-outline')
     await expect(outline).toContainText("What's inside the mission", { ignoreCase: true })
     await expect(outline).toContainText('Your six decisions')
-    await expect(outline).toContainText('Client — generates and sends an idempotency key')
+    await expect(outline).toContainText('Client: generates and sends an idempotency key')
     await expect(outline).toContainText('The day, six events')
     await expect(outline).toContainText('Five attacks, from the posts')
     await expect(outline).toContainText('Airbnb 2019, reads moved to a read-only copy')
@@ -287,7 +287,7 @@ test.describe('§5.5 no-JS', () => {
     await expect(page.locator('#artB iframe')).toBeHidden()
     await expect(page.locator('#artifact .artifact-noscript')).toBeVisible()
     await expect(page.locator('#artifact .artifact-noscript')).toContainText(
-      'Without JavaScript: this artifact lets you cut a $100 charge at three points — request lost, crash mid-charge, reply lost — and choose what the client does next.',
+      'Without JavaScript: this artifact lets you cut a $100 charge at three points (request lost, crash mid-charge, reply lost) and choose what the client does next.',
     )
     const missionFallback = page.locator('#artB .artifact-noscript')
     await expect(missionFallback).toBeVisible()
@@ -323,7 +323,7 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   // five attack companies are static text in the outline card. B2-10 (F23)
   // dropped the noscript's duplicate lists, so the contiguous "<label> —
   // <options>" now lives only in the card, which wraps the label in a span.
-  for (const label of ['Identity', 'Memory', 'Reads', 'Client on a timeout', 'Reply to a duplicate', 'Window']) {
+  for (const label of ['IDENTITY: who names the request?', 'MEMORY: how the server remembers a request it already handled', 'READS: which copy the server checks for the key', 'ON A TIMEOUT: the client…', 'REPLY: when the server sees a repeat, it sends back…', 'WINDOW: how long the key store remembers each idempotency key']) {
     expect(html, label).toContain(`>${label}</span> — `)
   }
   for (const attack of ['Stripe 2017, a reused key', 'Airbnb 2019, reads moved to a read-only copy', 'Segment 2017, traffic 10× for a week', 'AWS 2021, a known key with a different amount', 'Shopify 2022, a retry after the window']) {

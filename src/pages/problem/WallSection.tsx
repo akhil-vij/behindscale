@@ -55,7 +55,7 @@ export default function WallSection({
             wrapperClassName="pp-breakout"
             height={tryItHeight ?? DEFAULT_TRYIT_HEIGHT}
             onMessage={onTryItMessage}
-            noscript={`${tryIt.teaser} (interactive - needs JavaScript)`}
+            noscript={`${tryIt.teaser} (interactive, needs JavaScript)`}
             noscriptDetail={
               tryIt.noscript !== undefined ? `<p>${escapeHtml(tryIt.noscript)}</p>` : undefined
             }

@@ -89,7 +89,7 @@ export default function MissionSection({
         wrapperClassName="pp-breakout mission"
         height={height ?? DEFAULT_MISSION_HEIGHT}
         onMessage={onMessage}
-        noscript={`${mission.teaser} (interactive - needs JavaScript)`}
+        noscript={`${mission.teaser} (interactive, needs JavaScript)`}
         noscriptDetail={outline !== undefined ? OUTLINE_NOSCRIPT_POINTER : undefined}
       />
       {/* B2-10 (F23): with JS off the stop block's "you can stop here" promise
