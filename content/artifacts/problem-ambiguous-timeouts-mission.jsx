@@ -228,6 +228,9 @@ const CSS = `
  .nlab { fill:var(--art-text); font-size:18px; text-anchor:middle; letter-spacing:.5px; font-weight:600; }
  .nsub { fill:var(--art-muted); font-size:15px; text-anchor:middle; }
  .blab { font-size:15px; }
+ /* labels that sit on or beside a wire or pointer: a background-coloured
+    outline painted under the glyphs, so the line passes behind the letters */
+ svg#bstage .halo, svg#bstage .blab { paint-order:stroke; stroke:var(--art-bg); stroke-width:5px; stroke-linejoin:round; }
  .wire { stroke:var(--art-border); stroke-width:2; }
  .ghostbox { fill:none; stroke:var(--art-border); stroke-width:1.2; stroke-dasharray:4 3; }
  .memrow { fill:var(--art-text); font-size:15px; }
@@ -266,7 +269,7 @@ const CSS = `
  /* #slot: the newest card (or the day's result) beside the stage. It never
     scrolls inside itself; min-height is held at the tallest card shown since
     the day started, so the column doesn't flip between sticky and not. */
- .slot { display:grid; gap:14px; }
+ .slot { display:grid; gap:14px; align-content:start; } /* a card keeps its own height; the reserve is space below it */
  .slot:empty { display:none; }
  .bcard .shead { display:flex; align-items:baseline; gap:10px; }
  .bcard .shead .code { flex:1 1 auto; min-width:0; }
@@ -633,7 +636,7 @@ function bootEngine() {
  function renderBank(){
  var host = document.getElementById('bBankrows'); if(!host) return;
  host.innerHTML='';
- var BR = G.bankRows, MAX = 3, maxW = G.bank.w-24;
+ var BR = G.bankRows, MAX = 3, maxW = G.bank.w-20;
  /* draw newest-first into a scratch group to learn each row's line count,
     keep as many as fit (reserving a line for "+N earlier"), then lay out */
  var keep = [], used = 0;
@@ -686,13 +689,13 @@ function bootEngine() {
  if (K.id==='none') el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#08090D',stroke:'#6B7280','stroke-dasharray':'3 2.4','stroke-width':1.6},gId);
  if (K.id==='key') el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#B45309'},gId);
  if (K.id==='hash'){ el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#0891B2'},gId); el('text',{x:G.idDot.cx,y:G.idDot.cy+3.5,'text-anchor':'middle','font-size':'10',fill:'#08090D','font-weight':'700'},gId,'#'); }
- el('text',{class:'nsub',x:G.idDot.cx+G.idLab.dx,y:G.idDot.cy+G.idLab.dy,'text-anchor':G.idLab.anchor},gId,{none:'no identity',hash:'request hash',key:'caller key'}[K.id]);
+ el('text',{class:'nsub halo',x:G.idDot.cx+G.idLab.dx,y:G.idDot.cy+G.idLab.dy,'text-anchor':G.idLab.anchor},gId,{none:'no identity',hash:'request hash',key:'caller key'}[K.id]);
 
  /* reply annotation in the reserved top band */
  if (K.mem!=='none'){
   var gRep = el('g',{id:'sg-rep'},S);
-  el('text',{class:'nsub',x:G.repNote.x,y:G.repNote.y},gRep,'duplicate reply:');
-  el('text',{class:'nsub',x:G.repNote.x,y:G.repNote.y+17,fill:'#C8CDD8'},gRep,K.rep==='err'?'"ERROR: already processed"':'the saved result');
+  el('text',{class:'nsub halo',x:G.repNote.x,y:G.repNote.y},gRep,'duplicate reply:');
+  el('text',{class:'nsub halo',x:G.repNote.x,y:G.repNote.y+17,fill:'#C8CDD8'},gRep,K.rep==='err'?'"ERROR: already processed"':'the saved result');
  }
 
  /* server */
@@ -713,7 +716,7 @@ function bootEngine() {
  } else if (K.mem==='store'){
   var m=G.memStore;
   el('line',{class:'wire',x1:G.server.x+G.server.w-16,y1:G.server.y+G.server.h,x2:m.x+26,y2:m.y},gMem);
-  var cap = el('text',{class:'nsub',x:G.storeCap.x,y:G.storeCap.y,'text-anchor':G.storeCap.anchor},gMem,'written after the charge');
+  var cap = el('text',{class:'nsub halo',x:G.storeCap.x,y:G.storeCap.y,'text-anchor':G.storeCap.anchor},gMem,'written after the charge');
   wrapText(cap, G.storeCap.maxW, 17);
   el('rect',{class:'nodebox',x:m.x,y:m.y,width:m.w,height:m.h,rx:7},gMem);
   el('text',{class:'nsub',x:m.x+m.w/2,y:m.y+G.memText.title,fill:'#C8CDD8'},gMem,'KEY STORE');
@@ -727,11 +730,11 @@ function bootEngine() {
 
  if (K.mem!=='none'){
   /* read pointer + replica */
-  var gRead = el('g',{id:'sg-read'},S);
+  var gRead = el('g',{id:'sg-read'},S); S.insertBefore(gRead, gMem); /* under the memory labels, so their halo keeps the pointer out of the letters */
   var m2 = memRect();
-  var tx = K.read==='master' ? {x:m2.x+m2.w/2,y:m2.y+(K.mem==='acid'?m2.h:0)} : {x:G.replica.x+G.replica.w/2,y:G.replica.y};
+  var tx = K.read==='master' ? {x:m2.x+m2.w/2,y:m2.y} : {x:G.replica.x+G.replica.w/2,y:G.replica.y}; /* top edge: at 15px the box's text fills it, and a line to its bottom crossed that text */
   el('line',{class:'readptr',id:'readline',x1:G.server.x+24,y1:G.server.y+G.server.h,x2:tx.x-16,y2:tx.y+4},gRead);
-  if (G.readLab) el('text',{class:'nsub',x:G.readLab.x,y:G.readLab.y,'text-anchor':G.readLab.anchor,fill:'#eab308'},gRead,'reads: '+(K.read==='master'?'main database':'read-only copy'));
+  if (G.readLab) el('text',{class:'nsub halo',x:G.readLab.x,y:G.readLab.y,'text-anchor':G.readLab.anchor,fill:'#eab308'},gRead,'reads: '+(K.read==='master'?'main database':'read-only copy'));
   el('rect',{class:'ghostbox',x:G.replica.x,y:G.replica.y,width:G.replica.w,height:G.replica.h,rx:7,id:'replicabox'},S);
   el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+G.replica.h/2-2},S,'READ-ONLY COPY');
   el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+G.replica.h/2+15,id:'replicanote'},S,'seconds behind');
@@ -739,7 +742,7 @@ function bootEngine() {
   var gRet = el('g',{id:'sg-ret'},S);
   el('circle',{cx:G.clock.cx,cy:G.clock.cy,r:12,fill:'none',stroke:'#8A8A94','stroke-width':1.4},gRet);
   el('line',{x1:G.clock.cx,y1:G.clock.cy,x2:G.clock.cx,y2:G.clock.cy-8,stroke:'#8A8A94','stroke-width':1.4,id:'clockhand'},gRet);
-  var keeps = el('text',{class:'nsub',x:G.clock.cx+G.clockLab.dx,y:G.clock.cy+G.clockLab.dy,'text-anchor':G.clockLab.anchor},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
+  var keeps = el('text',{class:'nsub halo',x:G.clock.cx+G.clockLab.dx,y:G.clock.cy+G.clockLab.dy,'text-anchor':G.clockLab.anchor},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
   wrapText(keeps, G.clockLab.maxW, 17);
  }
  }
@@ -801,7 +804,7 @@ function bootEngine() {
  }
  function checkMemory(found, fromReplica){
  var m2 = fromReplica? G.replica : memRect();
- var yTop = fromReplica? m2.y : (K.mem==='acid'? m2.y+m2.h : m2.y);
+ var yTop = m2.y; /* top edge, as the read pointer */
  var line = el('line',{x1:G.server.x+34,y1:G.server.y+G.server.h,x2:m2.x+m2.w/2,y2:yTop,stroke: found?'#22c55e':'#ef4444','stroke-width':2,'stroke-dasharray':'4 3'},layerAnim);
  var p = placeLabel('memory', m2.x+m2.w/2); /* \u00a73: memory band, not beside the box */
  var lbl = bandText(p, found?'#22c55e':'#ef4444', found?'seen it \u2713':'never seen');
