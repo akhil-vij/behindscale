@@ -470,12 +470,12 @@ test.describe('desktop (§1): the sticky working column keeps the stage in view'
     ])
     expect(overscroll.every((v) => v !== 'contain' && v !== 'none')).toBe(true)
     // F2: the newest card is visible in the frame at the same time as the stage
-    // (both live in the sticky right column now -- no toast needed).
+    // (it sits in #slot, in the sticky right column -- no toast needed).
     const together = await mission.evaluate(() => {
       const vh = window.innerHeight
       const vis = (r: DOMRect) => Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0))
       const stage = document.getElementById('bstage')!.getBoundingClientRect()
-      const card = document.querySelector('#log .bcard')!.getBoundingClientRect()
+      const card = document.querySelector('#slot .bcard')!.getBoundingClientRect() // the slot holds the newest card
       return vis(stage) >= stage.height * 0.8 && vis(card) > 0
     })
     expect(together).toBe(true)
@@ -589,6 +589,133 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
       expect(hits, `labels landed on a node rect: ${JSON.stringify(hits)}`).toEqual([])
     })
   }
+})
+
+// Mission stage + card log spec (2026-09-30), owner-corrected: the newest
+// card sits in #slot beside the stage (never scrolling inside itself, source
+// line kept); every card is appended to the full list below both columns, in
+// order; at day end the slot shows the day's result; THE BILL renders full
+// width below the columns; stage text lands at >= 11px (13px titles).
+async function runNaiveDay(mission: Frame, page: Page): Promise<void> {
+  // the frame is sandboxed (cross-origin): Chrome pauses its rAF off-screen
+  await page.locator('#artB iframe').scrollIntoViewIfNeeded()
+  await frameClick(mission, '#runbtn')
+  await mission.waitForFunction(
+    () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && /\d/.test(document.getElementById('m-dbl')!.textContent!),
+    null,
+    { timeout: 120_000 },
+  )
+}
+async function recordSlot(mission: Frame): Promise<void> {
+  await mission.evaluate(() => {
+    const w = window as unknown as { __slot: { n: number; code: string; last: string; scrolls: boolean; logN: number }[] }
+    w.__slot = []
+    const slot = document.getElementById('slot')!
+    new MutationObserver(() => {
+      const log = document.querySelectorAll('#log .bcard')
+      w.__slot.push({
+        n: slot.querySelectorAll('.bcard').length,
+        code: slot.querySelector('.code')?.textContent ?? '',
+        last: log.length ? log[log.length - 1].querySelector('.code')!.textContent! : '',
+        scrolls: slot.scrollHeight > slot.clientHeight + 1,
+        logN: log.length,
+      })
+    }).observe(slot, { childList: true })
+  })
+}
+async function minStageText(mission: Frame): Promise<{ body: number; title: number }> {
+  return mission.evaluate(() => {
+    const svg = document.getElementById('bstage') as unknown as SVGSVGElement
+    const scale = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width
+    let body = Infinity, title = Infinity
+    for (const t of Array.from(svg.querySelectorAll('text'))) {
+      if (!t.textContent!.trim() || t.textContent!.trim() === '#') continue // the hash glyph is an icon inside the 16px dot
+      const px = parseFloat(getComputedStyle(t).fontSize) * scale
+      if (t.classList.contains('nlab')) title = Math.min(title, px)
+      else body = Math.min(body, px)
+    }
+    return { body, title }
+  })
+}
+
+test.describe('card slot + full list (mission stage + card log spec)', () => {
+  test.use({ reducedMotion: 'reduce' })
+
+  test('desktop 1440: one newest card in the slot, the full list in order, results + THE BILL below', async ({ page }) => {
+    test.setTimeout(240_000)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    await recordSlot(mission)
+    await runNaiveDay(mission, page)
+    const rec = await mission.evaluate(() => (window as unknown as { __slot: { n: number; code: string; last: string; scrolls: boolean; logN: number }[] }).__slot)
+    const events = rec.filter((r) => r.code !== 'DAY OVER' && r.n > 0)
+    expect(events.length).toBeGreaterThan(1)
+    // during the day: exactly one card in the slot, and it is the newest one
+    for (const r of rec.filter((r) => r.n > 0)) expect(r.n).toBe(1)
+    for (const r of events) expect(r.code).toBe(r.last)
+    // the full list holds every card fired, in the order they fired
+    const fired = events.map((r) => r.code) // one slot mutation per card() call
+    const listed = await mission.locator('#log .bcard .code').allTextContents()
+    expect(listed).toEqual(fired)
+    // the slot never scrolls inside itself; the event cards keep their source line
+    expect(rec.every((r) => !r.scrolls)).toBe(true)
+    // after a damaged day: the day-over summary + "all N cards"
+    await expect(mission.locator('#slot .code')).toHaveText('DAY OVER')
+    await expect(mission.locator('#slot .sjump')).toHaveText(`all ${listed.length} cards ↓`)
+
+    await surviveDay(mission, page)
+    await expect(mission.locator('#slot .bcard')).toHaveCount(1)
+    await expect(mission.locator('#slot .code')).toHaveText('DAY SURVIVED')
+    await expect(mission.locator('#slot .sjump')).toHaveText('THE BILL ↓')
+    // THE BILL is full width below both columns, above the card list
+    const geo = await mission.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect()
+      return { grid: r('.mission-grid'), bill: r('#bill'), list: r('#fulllog'), slotScrolls: document.getElementById('slot')!.scrollHeight > document.getElementById('slot')!.clientHeight + 1 }
+    })
+    expect(Math.abs(geo.bill.width - geo.grid.width)).toBeLessThan(2)
+    expect(geo.bill.top).toBeGreaterThanOrEqual(geo.grid.bottom)
+    expect(geo.list.top).toBeGreaterThan(geo.bill.top)
+    expect(geo.slotScrolls).toBe(false)
+    // the jump: on desktop the frame scrolls itself to THE BILL
+    const before = await mission.evaluate(() => window.scrollY)
+    await frameClick(mission, '#slot .sjump')
+    await mission.waitForFunction((y) => window.scrollY > y + 20, before, { timeout: 5_000 })
+    await mission.waitForFunction(() => { const b = document.getElementById('bill')!.getBoundingClientRect(); return b.top >= 0 && b.top < innerHeight / 2 }, null, { timeout: 5_000 })
+    // stage text floor at 1440
+    const px = await minStageText(mission)
+    expect(px.body).toBeGreaterThanOrEqual(11)
+    expect(px.title).toBeGreaterThanOrEqual(13)
+  })
+
+  test('phone 390: the slot sits under the stage; "all N cards" scrolls the host page to the list', async ({ page }) => {
+    test.setTimeout(180_000)
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    await runNaiveDay(mission, page)
+    const order = await mission.evaluate(() => {
+      const r = (s: string) => document.querySelector(s)!.getBoundingClientRect()
+      return { stageBottom: r('.bstagewrap').bottom, slotTop: r('#slot').top, deckTop: r('#deck').top, listTop: r('#fulllog').top }
+    })
+    expect(order.slotTop).toBeGreaterThan(order.stageBottom)
+    expect(order.deckTop).toBeGreaterThan(order.slotTop)
+    expect(order.listTop).toBeGreaterThan(order.deckTop)
+    await expect(mission.locator('#slot .bcard')).toHaveCount(1)
+    // the frame is content-height on phone: the jump goes through the host
+    await frameClick(mission, '#slot .sjump')
+    await expect
+      .poll(async () => {
+        const frameTop = await page.locator('#artB iframe').evaluate((el) => el.getBoundingClientRect().top)
+        const listTop = await mission.evaluate(() => document.getElementById('fulllog')!.getBoundingClientRect().top)
+        return frameTop + listTop
+      }, { timeout: 5_000 })
+      .toBeLessThan(844 * 0.6)
+    // stage text floor at 390
+    const px = await minStageText(mission)
+    expect(px.body).toBeGreaterThanOrEqual(11)
+    expect(px.title).toBeGreaterThanOrEqual(13)
+  })
 })
 
 test.describe('§3b verticals live: DV/TV replace the scrolling horizontals under 700px', () => {

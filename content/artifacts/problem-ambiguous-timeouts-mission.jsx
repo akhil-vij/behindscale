@@ -161,7 +161,8 @@ const CSS = `
     between events and shoves the stage 13-19px. Effective font is 12.5px (a
     later rule overrides the 11.5px here): 3 x 12.5 x 1.55 ~= 58px content +
     16px padding + 2px border ~= 76px (border-box); 77px pins 1-3 lines flat. */
- .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; }
+ .narrbox { display:flex; flex-direction:column; background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:6px 12px; min-height:77px; }
+ .narr { font-size:11.5px; line-height:1.55; }
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
@@ -178,8 +179,12 @@ const CSS = `
     internal offset (nav-overlap at the very top is a recorded compromise). The
     frame is a bounded scrollport on desktop (host sets min(content,100dvh-56));
     align-self:start keeps the column at content height so it can stick. */
- .col-right { position:sticky; top:12px; align-self:start; max-height:calc(100dvh - 24px); }
- .col-right .log { flex:1 1 auto; min-height:96px; max-height:none; } /* polish (c): the log, not the stage, gives way on short screens */
+ /* The column no longer caps its height or scrolls a log: the card log moved
+    below both columns and the newest card sits in #slot. fitColumn() measures
+    the column's content against the frame and, only when it doesn't fit,
+    adds .unstuck, so a card is never cut off and nothing scrolls inside. */
+ .col-right { position:sticky; top:12px; align-self:start; }
+ .col-right.unstuck { position:static; }
  .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:14px; }
  #artB[data-cue="deck"] .deck { animation:deckpulse 1.6s ease infinite alternate; }
  @keyframes deckpulse { from { border-color:var(--art-border); } to { border-color:var(--accent-problem); box-shadow:0 0 14px rgba(217,70,239,.18);} }
@@ -245,16 +250,35 @@ const CSS = `
  .runbtn:disabled { opacity:.4; cursor:not-allowed; }
  .bghost { background:none; border:1px solid var(--art-border-interactive); color:var(--art-muted); border-radius:8px; padding:9px 12px; font-family:inherit; font-size:11px; cursor:pointer; }
  .bghost.on { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
- .meters { display:flex; gap:8px; margin-left:auto; }
- .meter { text-align:center; background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:5px 10px; min-width:64px; }
- .meter .n { font-size:16px; font-weight:700; color:var(--art-muted); }
+ /* The meters are one compact line at the top of the narration panel,
+    right-aligned; the narration's tag sits on the same line. They cost the
+    column one short line instead of a row of boxes, which is what lets the
+    newest card fit beside the stage (with the RUN row they needed ~505px of
+    a 485px column). */
+ .meters { order:-1; display:flex; flex-wrap:wrap; justify-content:flex-end; column-gap:12px; }
+ .meter { display:flex; align-items:baseline; gap:5px; white-space:nowrap; }
+ .meter .n { font-size:13px; font-weight:700; color:var(--art-muted); min-width:1.2em; text-align:right; }
  .meter .n.bad { color:#ef4444; } .meter .n.good { color:#22c55e; } .meter .n.warn { color:#eab308; }
  .meter .t { font-size:9px; color:var(--art-muted); letter-spacing:.5px; }
- .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); margin-top:2px; display:none; }
+ .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); display:none; }
  .meternote.on { display:block; }
 
- .log { display:grid; gap:8px; max-height:280px; overflow-y:auto; }
- .bcard { border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
+ /* #slot: the newest card (or the day's result) beside the stage. It never
+    scrolls inside itself; min-height is held at the tallest card shown since
+    the day started, so the column doesn't flip between sticky and not. */
+ .slot { display:grid; gap:14px; }
+ .slot:empty { display:none; }
+ .bcard .shead { display:flex; align-items:baseline; gap:10px; }
+ .bcard .shead .code { flex:1 1 auto; min-width:0; }
+ .bcard .sjump { flex:none; margin-left:auto; color:var(--art-muted); font-size:11px; text-decoration:underline; cursor:pointer; white-space:nowrap; }
+ .bcard .sjump:hover { color:var(--art-text); }
+ /* below both columns, full width: THE BILL, then every card in order */
+ #bill { margin-top:14px; }
+ .fulllog { margin-top:14px; }
+ .fl-head { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; text-transform:uppercase; margin-bottom:8px; }
+ .log { display:grid; gap:14px; }
+ .bcard { border-radius:8px; padding:10px 12px; font-size:12.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
+ .bcard > div { max-width:68ch; }
  .bcard.bad { border-color:#ef4444; background:rgba(239,68,68,.07); }
  .bcard.warn { border-color:#eab308; background:rgba(234,179,8,.07); }
  .bcard.good { border-color:#22c55e; background:rgba(34,197,94,.08); }
@@ -292,20 +316,18 @@ const CSS = `
     Applies on phones and on any frame too narrow for two readable columns. */
  .mission-grid { display:flex; flex-direction:column; gap:14px; align-items:stretch; } /* the desktop grid's align-items:start let the nowrap .kgchoice size the column past the frame */
  .col-right { position:static; max-height:none; order:-1; align-self:stretch; } /* the desktop align-self:start would shrink it to its content */
- .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
- #bill { order:1; }        /* right column: log before bill when stacked */
  #cmtbox { order:-1; }     /* left column: commit before deck when stacked */
  }
  @media ${PHONE_MQ} {
  /* the vertical map is tall (360x632): cap its width so a 600-699px frame
     doesn't draw a 930px-tall stage; 390-class phones are unaffected. */
  svg#bstage { max-width:420px; margin:0 auto; }
- /* control row: buttons one line (RUN flexes), meters a second full-width
-    3-col line, never clipped (F11's "MYS"). */
+ /* control row: buttons one line (RUN flexes). The meter strip sits on top
+    of the narration panel as one line (the panel is too narrow for a side
+    column on a phone). */
  .runbtn { flex:1 1 auto; }
  #stepbtn, #resetbtn { flex:0 0 auto; }
- .meters { flex-basis:100%; margin-left:0; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
- .meter { min-width:0; }
+
  /* phone accordion (A3): 44px rows, one open at a time. The base .kgl is
     already flex; the choice is pushed right (label 1fr, choice auto, chevron)
     -- flex not grid so the label + .q keep the reference's innerText. */
@@ -377,22 +399,28 @@ const MARKUP = `
 
   <div class="col-right">
    <div class="evchips" id="evchips"></div>
-   <div class="narr" id="narr" aria-live="polite"></div>
+   <div class="narrbox">
+    <div class="narr" id="narr" aria-live="polite"></div>
+    <div class="meters" role="group" aria-label="Damage so far">
+    <div class="meter"><span class="n" id="m-dbl">-</span><span class="t">DOUBLES</span></div>
+    <div class="meter"><span class="n" id="m-lost">-</span><span class="t">LOST SALES</span></div>
+    <div class="meter"><span class="n" id="m-tick">-</span><span class="t">MYSTERY</span></div>
+    <div class="meternote" id="meternote"></div>
+    </div>
+   </div>
    <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key's memory; traffic animates across it"></svg></div>
    <div class="ctlrow">
     <button class="runbtn" id="runbtn">RUN THE DAY (NAIVE) ▶</button>
     <button class="bghost" id="stepbtn">STEP</button>
     <button class="bghost" id="resetbtn">reset</button>
-    <div class="meters">
-    <div class="meter"><div class="n" id="m-dbl">-</div><div class="t">DOUBLES</div></div>
-    <div class="meter"><div class="n" id="m-lost">-</div><div class="t">LOST SALES</div></div>
-    <div class="meter"><div class="n" id="m-tick">-</div><div class="t">MYSTERY</div></div>
-    </div>
-    <div class="meternote" id="meternote"></div>
    </div>
-   <div class="billpanel" id="bill" style="display:none;"></div>
-   <div class="log" id="log"></div>
+   <div class="slot" id="slot"></div>
   </div>
+ </div>
+ <div class="billpanel" id="bill" style="display:none;"></div>
+ <div class="fulllog" id="fulllog" style="display:none;">
+  <div class="fl-head">What happened, in order</div>
+  <div class="log" id="log"></div>
  </div>
 
 
@@ -833,12 +861,43 @@ function bootEngine() {
  {chip:'1 · NORMAL CHARGE'}, {chip:'2 · REQUEST LOST'}, {chip:'3 · CRASH MID-CHARGE'},
  {chip:'4 · REPLY LOST'}, {chip:'5 · TWO GENUINE ORDERS'}, {chip:'6 · LATE RETRY'}
  ];
- function card(cls, code, body, src, knob){
+ /* mission stage + card log spec: card() writes to two places. The full list
+    (#log, below both columns) gets every card, appended, so it reads in the
+    order things happened, each with its source line. The slot (#slot, beside
+    the stage) shows only the newest card, with the same source line and a
+    jump to the full list. A render change only; the game logic is untouched. */
+ function buildCard(cls, code, body, src, knob, jump){
  var d=document.createElement('div'); d.className='bcard '+cls;
- d.innerHTML='<span class="code">'+code+'</span><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
- $('#log').prepend(d);
+ d.innerHTML='<div class="shead"><span class="code">'+code+'</span>'+(jump||'')+'</div><div>'+body+(knob?' <span class="kl" data-knob="'+knob+'">\u2192 the decision</span> \u00b7 <a class="khint" href="#'+(({id:'q1',cli:'q1',read:'q2',mem:'q3',rep:'q4',ret:'q5',params:'q6',after:'q6'})[knob]||'q1')+'">hint \u2193</a>':'')+'</div>'+(src?'<div class="src">'+src+'</div>':'');
  d.querySelectorAll('.kl').forEach(function(k){ k.addEventListener('click', function(){ cueDecision(k.dataset.knob); }); });
+ return d;
  }
+ function jumpTo(target, label){ return '<a class="sjump" href="#'+target+'" data-target="'+target+'">'+label+'</a>'; }
+ function listJump(){ var n=$('#log').children.length; return jumpTo('fulllog', n===1 ? '1 card \u2193' : 'all '+n+' cards \u2193'); }
+ var slotMax = 0;
+ function showSlot(d){
+  var slot=$('#slot'); slot.innerHTML=''; slot.appendChild(d); /* the reserve (slotMax) survives across days, so a short window settles once */
+  var h = slot.getBoundingClientRect().height;
+  if (h > slotMax){ slotMax = h; slot.style.minHeight = slotMax+'px'; }
+  fitColumn();
+ }
+ function clearSlot(){ $('#slot').innerHTML=''; fitColumn(); }
+ function card(cls, code, body, src, knob){
+ $('#log').appendChild(buildCard(cls, code, body, src, knob));
+ $('#fulllog').style.display='';
+ showSlot(buildCard(cls, code, body, src, knob, listJump()));
+ }
+ /* Sticky only when it fits: the column's content (fixed blocks plus the card
+    in the slot) is measured against the frame, never a typed height, so it
+    stays right when any block changes. Two columns only; stacked is static. */
+ function fitColumn(){
+  var col=$('.col-right'); if (!col) return;
+  if (mq(STACK_MQ)){ col.classList.remove('unstuck'); return; }
+  var need = col.getBoundingClientRect().height, avail = window.innerHeight - 24;
+  col.classList.toggle('unstuck', need > avail);
+ }
+ if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fitColumn).observe($('.col-right'));
+ window.addEventListener('resize', function(){ slotMax=0; $('#slot').style.minHeight=''; fitColumn(); });
  /* F13 (A2): "→ the decision" no longer scrolls the page by default. It
     cues the target group (data-cue="group" + .cue-target for 1.6s), then
     restores the prior cue. During an attack it never steals the attack's own
@@ -1017,7 +1076,7 @@ function bootEngine() {
  }
  function freshDay(){
  dayDamage = dayTokens(K); evIdx = 0; bankEntries = [];
- $('#log').innerHTML=''; chips(); drawStage(); layerAnim = el('g',{});
+ $('#log').innerHTML=''; $('#fulllog').style.display='none'; clearSlot(); chips(); drawStage(); layerAnim = el('g',{});
  ['#m-dbl','#m-lost','#m-tick'].forEach(function(s){ $(s).textContent='-'; $(s).className='n'; });
  attackDbl = 0; anyAttackRun = false; updateMeterNote(); /* B2-4: a new day resets the meters to today */
  }
@@ -1039,11 +1098,15 @@ function bootEngine() {
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
   say('DAY SURVIVED','Nothing broke. But every safe design has a cost, and the panel below (THE BILL) lists what yours pays. Next: five real failures that still get through your design.');
-  card('good','DAY SURVIVED','Zero double charges, zero lost orders, zero unresolved payments. The bill lists what this design pays for that, each line named by the company that paid it first.','', null);
+  var survived = ['good','DAY SURVIVED','Zero double charges, zero lost orders, zero unresolved payments. The bill lists what this design pays for that, each line named by the company that paid it first.','', null];
+  card.apply(null, survived);
+  showSlot(buildCard(survived[0], survived[1], survived[2], survived[3], survived[4], jumpTo('bill', 'THE BILL \u2193'))); /* the slot's day result points at the bill below */
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';
  } else {
-  say('DAY OVER','See what broke. Each result points at one of your decisions. The five answers below show how the real companies handled it. Adjust a decision and run again.');
+  var over = 'See what broke. Each result points at one of your decisions. The five answers below show how the real companies handled it. Adjust a decision and run again.';
+  say('DAY OVER', over);
+  showSlot(buildCard('bad', 'DAY OVER', over, '', null, listJump())); /* slot only: the day's summary, not one more card in the list */
  }
  }
  async function runAll(){
@@ -1572,7 +1635,23 @@ function bootBridge(engine) {
  document.addEventListener('click', function(e){
   var t = e.target;
   if (!t || !t.closest) return;
-  var kl = t.closest('#log .kl');
+  /* slot jumps ("all N cards", "THE BILL"): the target is inside the frame.
+     Desktop: the frame is a scrollport, so it scrolls itself (window.scrollTo,
+     never scrollIntoView). Phone: the frame is content-height and can't
+     scroll, so the host scrolls the page to the target's offset in the frame.
+     Both are sent; the host ignores the frame offset when the frame scrolls. */
+  var sj = t.closest('.sjump');
+  if (sj){
+   e.preventDefault();
+   var tgt = document.getElementById(sj.getAttribute('data-target'));
+   if (tgt){
+    var tr = tgt.getBoundingClientRect(), top = tr.top + window.pageYOffset;
+    window.scrollTo({ top: Math.max(0, top - 12), behavior: 'smooth' });
+    post({ type: 'anchor', frame: { top: top, height: tr.height } });
+   }
+   return;
+  }
+  var kl = t.closest('.kl');
   if (kl){
    var kg = document.getElementById('kg-' + kl.dataset.knob);
    if (kg){ var r = kg.getBoundingClientRect(); post({ type: 'anchor', frame: { top: r.top + window.pageYOffset, height: r.height } }); }
