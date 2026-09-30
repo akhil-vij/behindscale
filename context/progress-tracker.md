@@ -7699,6 +7699,27 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-09-30: **Mission stage text + card log (option B).** Branch
+  `fix/mission-stage-and-log` off `main` (`1623fa3`). Design input: "Stage +
+  Card Log Spec" (2026-09-30) with the owner's corrections.
+  - **Measured first:** the frame caps at 960, so the desktop stage is 483.5px
+    (scale 0.755), not the spec's ~508; the spec's slot budget (216px at
+    1280x720) was 81px in reality (3x2 chips, 77px narration, wrapped meters).
+    Owner chose option B + meters in a compact strip + measured stickiness.
+  - **Breakpoints:** PHONE_MQ (<700) and STACK_MQ (<935) defined once; the CSS
+    template interpolates them and all JS uses matchMedia with the same
+    string (the old CSS 700 vs JS <700 split at exactly 700).
+  - **Stage:** 15/18px text (>=11/13px on screen), spec strings with owner
+    edits, geometry as data on the G maps, wrapping for long notes/bank rows,
+    clamped band labels, halos, a fix for text-anchor being overridden by
+    CSS. GV grows to 360x632. A stage checker found and drove every fix.
+  - **Card log:** #slot beside the stage (newest card, source line kept,
+    never scrolls), full ordered list + THE BILL below the columns, day-end
+    result cards, jumps (frame scroll on desktop, host anchor on phone),
+    sticky only when the column fits (ResizeObserver).
+  - Verification: tsc 0, validator 0 errors, 423/423 unit, 21/21 e2e (2 new),
+    §5.4 baseline re-captured.
+
 - 2026-09-29: **Ambiguous-timeouts polish: dash sweep, box layout, deck/button
   fixes, mission header.** Branch `fix/ambiguous-timeouts-polish` off `main`
   (`eda6f4c`); one commit per section; not merged (owner device pass first).

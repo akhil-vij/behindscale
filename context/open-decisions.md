@@ -161,17 +161,35 @@ _None._
 ### 24. Ambiguous-timeouts polish: follow-ups from the dash sweep (2026-09-29)
 
 - **Source:** `fix/ambiguous-timeouts-polish`.
-- **§2c stage node values:** held for the design agent's redo; merge-gate
-  check (one day-run + one attack-run, dots/kill-marks/stamps land) runs when
-  it lands. The stage clip bug is fixed independently of §2c.
+- **§2c stage node values:** superseded by the stage + card log spec
+  (`fix/mission-stage-and-log`, 2026-09-30); see #25.
 - **Copy consistency asks (not changed, outside the brief):** the try-it
   eyebrow still reads "PROBLEM CLASS · ... · INTERACTIVE"; the mission teaser
   (/problems list + iframe title) still says "Surviving the day = 0 doubles, 0
   lost sales, 0 mystery tickets"; the debrief closes "Same guarantee, different
   price" (the price->cost pass missed it).
-- **Short laptop windows:** at <=640px tall the log's top sits at the fold
-  (stage, narration, chips, controls stay fully visible). Accept, or trim the
-  chip/narration heights?
+- **Short laptop windows:** superseded by #25 (the column is sticky only
+  when it fits; otherwise it scrolls normally).
+
+### 25. Mission stage + card log: open checks after the build (2026-09-30)
+
+- **Source:** `fix/mission-stage-and-log`.
+- **Pending: real-device run (⚑1).** Headless is clean (a stage checker over
+  99 deck states per map, and 5 day runs + all 5 attacks at normal speed on
+  both maps); dots, kill marks and stamps still need the owner's on-device
+  pass, especially iOS Safari (fonts, halo rendering).
+- **Flag: phone viewBox changed 360x552 -> 360x632** (the spec said
+  unchanged): at 15px the phone map needs a full-width memory box, its own
+  row for the copy and clock, and a second memory-band row.
+- **Flag: 1440x780 fits with ~4px to spare** (worst column 696 of 700px).
+  The fit is measured live, so a font fallback or longer copy just drops the
+  column to normal scrolling there, never cuts a card; but a copy edit that
+  lengthens a slot card or narration can tip 13-inch laptops over.
+- **Flag: the hash glyph (#) inside the identity dot stays 9-10px** (an icon
+  in a 16px circle, excluded from the text floor).
+- **Ask: strings outside the approved table:** the reply label
+  '"VALIDATION: params changed"' (attack 4) still says "params" where the
+  memory status now says "details differ".
 
 ## Lower priority
 
