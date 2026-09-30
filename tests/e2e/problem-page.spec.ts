@@ -549,16 +549,18 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
       await page.setViewportSize({ width: geom.width, height: geom.height })
       await page.goto(PAGE)
       const mission = await waitForMission(page)
-      // Record every transient band label (font-size 10, in the anim layer) as
+      // Record every transient band label (class blab, in the anim layer) as
       // it is inserted, flagging any whose bbox centre falls inside a node rect.
       // Both bboxes are in the SVG's user units, so they compare directly.
       await mission.evaluate(() => {
-        const w = window as unknown as { __hits: unknown[] }
+        const w = window as unknown as { __hits: unknown[]; __seen: number }
         w.__hits = []
+        w.__seen = 0
         const stage = document.getElementById('bstage')!
         const inside = (cx: number, cy: number, r: { x: number; y: number; width: number; height: number }) =>
           cx >= r.x && cx <= r.x + r.width && cy >= r.y && cy <= r.y + r.height
         const record = (t: Element) => {
+          w.__seen++
           const bb = (t as unknown as SVGGraphicsElement).getBBox()
           const cx = bb.x + bb.width / 2
           const cy = bb.y + bb.height / 2
@@ -570,8 +572,8 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
         const scan = (n: Node) => {
           if (n.nodeType !== 1) return
           const e = n as Element
-          if (e.tagName === 'text' && e.getAttribute('font-size') === '10') record(e)
-          e.querySelectorAll?.('text[font-size="10"]').forEach(record)
+          if (e.tagName === 'text' && e.classList.contains('blab')) record(e)
+          e.querySelectorAll?.('text.blab').forEach(record)
         }
         new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach(scan))).observe(stage, {
           childList: true,
@@ -582,6 +584,8 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
       // reply lost / reply verdict) and the memory band (seen it / never seen).
       await surviveDay(mission, page)
       const hits = await mission.evaluate(() => (window as unknown as { __hits: unknown[] }).__hits)
+      // non-vacuous: the day must actually have drawn band labels
+      expect(await mission.evaluate(() => (window as unknown as { __seen: number }).__seen)).toBeGreaterThan(3)
       expect(hits, `labels landed on a node rect: ${JSON.stringify(hits)}`).toEqual([])
     })
   }

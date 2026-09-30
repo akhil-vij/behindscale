@@ -216,12 +216,17 @@ const CSS = `
  svg#bstage { display:block; width:100%; min-width:0; height:auto; }
  svg#bstage text { font-family:var(--mono); }
  .nodebox { fill:var(--art-surface-2); stroke:var(--art-border); stroke-width:1.4; }
- .nlab { fill:var(--art-text); font-size:12px; text-anchor:middle; letter-spacing:.5px; font-weight:600; }
- .nsub { fill:var(--art-muted); font-size:8.5px; text-anchor:middle; }
+ /* stage text (mission stage + card log spec, owner-approved 15/18): the
+    640-wide map draws at 483px on desktop (scale 0.755), so 15 -> 11.3px and
+    18 -> 13.6px on screen; the 360-wide phone map draws at ~318px (0.88).
+    Every stage text class is one of these; the floor is 11px / 13px titles. */
+ .nlab { fill:var(--art-text); font-size:18px; text-anchor:middle; letter-spacing:.5px; font-weight:600; }
+ .nsub { fill:var(--art-muted); font-size:15px; text-anchor:middle; }
+ .blab { font-size:15px; }
  .wire { stroke:var(--art-border); stroke-width:2; }
  .ghostbox { fill:none; stroke:var(--art-border); stroke-width:1.2; stroke-dasharray:4 3; }
- .memrow { fill:var(--art-text); font-size:8.5px; }
- .bankrow { fill:var(--art-text); font-size:9.5px; }
+ .memrow { fill:var(--art-text); font-size:15px; }
+ .bankrow { fill:var(--art-text); font-size:15px; }
  .bankrow.dbl { fill:#ef4444; font-weight:700; }
  .bankrow.gone { fill:var(--art-muted); text-decoration:line-through; }
  .readptr { stroke:#eab308; stroke-width:1.5; stroke-dasharray:5 3; }
@@ -292,7 +297,7 @@ const CSS = `
  #cmtbox { order:-1; }     /* left column: commit before deck when stacked */
  }
  @media ${PHONE_MQ} {
- /* the vertical map is tall (360x552): cap its width so a 600-699px frame
+ /* the vertical map is tall (360x632): cap its width so a 600-699px frame
     doesn't draw a 930px-tall stage; 390-class phones are unaffected. */
  svg#bstage { max-width:420px; margin:0 auto; }
  /* control row: buttons one line (RUN flexes), meters a second full-width
@@ -511,46 +516,112 @@ function bootEngine() {
 
  /* ---------- stage geometry (fixed bands, nothing floats) ---------- */
  var GH = {
- client:{x:22,y:104,w:132,h:64}, server:{x:262,y:104,w:130,h:64}, bank:{x:472,y:64,w:150,h:136},
- wireY:132, idDot:{cx:176,cy:132}, repNote:{x:170,y:88},
- memNone:{x:272,y:214,w:110,h:34}, memStore:{x:396,y:214,w:118,h:34}, memAcid:{x:262,y:168,w:130,h:30},
- replica:{x:272,y:272,w:110,h:30}, clock:{cx:222,cy:236},
+ /* mission stage + card log spec (2026-09-30), corrected by the stage checker:
+    text is authored at 15px (18px node titles) so it lands at >=11/13px on the
+    483px desktop stage (scale 0.755). wireY stays 132 and every node stays
+    centred on it, so the dots travel the same lines. Label positions that
+    used to be code constants are data here (idLab, readLab, storeCap,
+    clockLab, bankRows, memText). */
+ vb:'0 0 640 336',
+ client:{x:12,y:104,w:130,h:56}, server:{x:262,y:104,w:130,h:56}, bank:{x:444,y:60,w:192,h:140},
+ wireY:132, idDot:{cx:202,cy:132}, repNote:{x:170,y:70},
+ idLab:{dx:0,dy:24,anchor:'middle'},
+ memNone:{x:272,y:214,w:110,h:36}, memStore:{x:262,y:170,w:180,h:84}, memAcid:{x:262,y:170,w:180,h:84},
+ replica:{x:20,y:212,w:196,h:46}, clock:{cx:548,cy:228},
+ readLab:{x:254,y:190,anchor:'end'},                 /* left of the server's drop line */
+ storeCap:{x:350,y:272,anchor:'middle',maxW:300},    /* "written after the charge", under the store */
+ clockLab:{dx:0,dy:28,anchor:'middle',maxW:180},
+ bankRows:{first:50,pitch:20,maxLines:5},            /* newest rows + "+N earlier"; a wrapped row counts per line */
+ memText:{title:19,first:38,pitch:19,maxLines:3},
  /* §3 (F9): transient labels never render inside a node rect -- each takes a
     band slot. rows = the two y-slots (1st/2nd label of an event); xslots snap
-    to the nearest zone (client/server/bank on top, memory/store on bottom).
-    clock at (222,236) stays clear: bottom xslots start >= 260. */
+    to the nearest zone (client/server/bank on top, memory/store on bottom). */
  bands: { top:{rows:[24,46],xslots:[88,327,547]}, bottom:{rows:[312,330],xslots:[327,470]} }
  };
  /* vertical G-map for phones: client -> server -> bank flows top-to-bottom */
  var GV = {
- client:{x:90,y:12,w:180,h:56}, server:{x:90,y:200,w:180,h:56}, bank:{x:76,y:396,w:208,h:114},
- wireX:180, wireY:0, idDot:{cx:180,cy:120}, repNote:{x:180,y:184},
- memNone:{x:196,y:296,w:112,h:32}, memStore:{x:196,y:296,w:120,h:34}, memAcid:{x:90,y:260,w:180,h:30},
- replica:{x:52,y:344,w:110,h:30}, clock:{cx:40,cy:250},
- /* §3 (F9): wire dodges idDot cy=120; memory sits between replica-end 374 and
-    bank-top 396; bank needs the taller viewBox (0 0 360 552). */
- bands: { wire:{rows:[96,148],xslots:[180]}, memory:{rows:[382],xslots:[180]}, bank:{rows:[528,546],xslots:[180]} }
+ /* 360 wide, grown 552 -> 632 tall: at 15px text the phone map needs a
+    full-width memory box (the long attack-3 notes wrap to 2-3 lines), its own
+    row for the read-only copy and the clock, and two memory-band rows. */
+ vb:'0 0 360 632',
+ client:{x:90,y:12,w:180,h:56}, server:{x:90,y:200,w:180,h:56}, bank:{x:70,y:470,w:220,h:118},
+ wireX:180, wireY:0, idDot:{cx:180,cy:120}, repNote:{x:180,y:168},
+ idLab:{dx:14,dy:5,anchor:'start'},                  /* beside the dot, clear of the wire band rows */
+ memNone:{x:190,y:290,w:130,h:40}, memStore:{x:40,y:290,w:280,h:80}, memAcid:{x:40,y:266,w:280,h:80},
+ replica:{x:186,y:380,w:170,h:46}, clock:{cx:26,cy:392},
+ readLab:null,                                       /* the read state is carried by the pointer line alone */
+ storeCap:{x:180,y:283,anchor:'middle',maxW:300},    /* "written after the charge", above the store */
+ clockLab:{dx:20,dy:5,anchor:'start',maxW:120},
+ bankRows:{first:48,pitch:18,maxLines:4},
+ memText:{title:18,first:36,pitch:18,maxLines:3},
+ /* §3 (F9): wire dodges idDot cy=120; two memory-band rows sit between the
+    copy's bottom (426) and the bank's top (470); the bank band under it. */
+ bands: { wire:{rows:[96,148],xslots:[180]}, memory:{rows:[441,458],xslots:[180]}, bank:{rows:[604,621],xslots:[180]} }
  };
  var VERT = false, G = GH;
  var stage = $('#bstage'), layerStatic, layerAnim;
  function el(name, attrs, parent, text){
  var e = document.createElementNS(NS, name);
  for (var k in attrs) e.setAttribute(k, attrs[k]);
+ /* the .nsub class sets text-anchor:middle in CSS, which beats the attribute,
+    so an explicit anchor is also set as a style (start/end labels used to be
+    silently centred) */
+ if (attrs['text-anchor']) e.style.textAnchor = attrs['text-anchor'];
  if (text !== undefined) e.textContent = text;
  (parent||stage).appendChild(e); return e;
  }
  function memRect(){ return K.mem==='acid' ? G.memAcid : G.memStore; }
+ /* Stage text is 15/18px (>=11/13px on screen), so a few strings no longer
+    fit their box on one line. wrapText splits a <text> into tspans that fit
+    maxW, preferring the " · " breaks the strings already carry, then spaces.
+    Returns the line count. No-op where text can't be measured (jsdom). */
+ function wrapText(t, maxW, lineH){
+  var txt = t.textContent; if (!txt || !t.getComputedTextLength || !maxW) return 1;
+  if (t.getComputedTextLength() <= maxW) return 1;
+  var parts = txt.split(' ');
+  var x = t.getAttribute('x'), lines = [], cur = '';
+  t.textContent = '';
+  var probe = document.createElementNS(NS, 'tspan'); t.appendChild(probe);
+  parts.forEach(function(p){
+   var cand = cur ? cur+' '+p : p; probe.textContent = cand;
+   if (cur && t.getComputedTextLength() > maxW){ lines.push(cur); cur = p; } else cur = cand;
+  });
+  if (cur) lines.push(cur);
+  t.removeChild(probe);
+  lines.forEach(function(l, i){ var ts = document.createElementNS(NS, 'tspan'); ts.setAttribute('x', x); if (i) ts.setAttribute('dy', lineH); ts.textContent = l; t.appendChild(ts); });
+  return lines.length;
+ }
+ /* a transient band label never leaves the canvas (long replies on an edge slot) */
+ function clampLabel(t){
+  if (!t.getComputedTextLength) return t;
+  var W = VERT ? 360 : 640, w = t.getComputedTextLength(), x = +t.getAttribute('x');
+  var a = t.getAttribute('text-anchor') || 'middle', left = a==='middle' ? x-w/2 : a==='end' ? x-w : x;
+  if (left < 6) t.setAttribute('x', x + (6-left)); else if (left+w > W-6) t.setAttribute('x', x - (left+w-(W-6)));
+  return t;
+ }
+ function bandText(p, fill, txt, parent){ return clampLabel(el('text',{class:'blab',x:p.x,y:p.y,'text-anchor':p.anchor,fill:fill}, parent||layerAnim, txt)); }
 
  var bankEntries = [];
  function renderBank(){
  var host = document.getElementById('bBankrows'); if(!host) return;
  host.innerHTML='';
- var MAX=5, extra = bankEntries.length-MAX;
- var rows = bankEntries.slice(-MAX);
- var y = G.bank.y+36;
- if (extra>0){ el('text',{class:'bankrow',x:G.bank.x+12,y:y,fill:'#6B7280'},host,'+'+extra+' earlier \u2026'); y+=15; }
- rows.forEach(function(r){
-  var t = el('text',{class:'bankrow '+(r.cls||'')+(r._new?' stampin':''),x:G.bank.x+12,y:y},host,r.txt); y+=15;
+ var BR = G.bankRows, MAX = 3, maxW = G.bank.w-24;
+ /* draw newest-first into a scratch group to learn each row's line count,
+    keep as many as fit (reserving a line for "+N earlier"), then lay out */
+ var keep = [], used = 0;
+ for (var i = bankEntries.length-1; i >= 0 && keep.length < MAX; i--){
+  var probe = el('text',{class:'bankrow',x:G.bank.x+12,y:0},host,bankEntries[i].txt);
+  var n = wrapText(probe, maxW, BR.pitch); host.removeChild(probe);
+  var reserve = i > 0 ? 1 : 0;
+  if (used + n + reserve > BR.maxLines) break;
+  keep.unshift({r:bankEntries[i], n:n}); used += n;
+ }
+ var extra = bankEntries.length - keep.length;
+ var y = G.bank.y+BR.first;
+ if (extra>0){ el('text',{class:'bankrow',x:G.bank.x+12,y:y,fill:'#6B7280'},host,'+'+extra+' earlier'); y+=BR.pitch; }
+ keep.forEach(function(k){
+  var r = k.r, t = el('text',{class:'bankrow '+(r.cls||'')+(r._new?' stampin':''),x:G.bank.x+12,y:y},host,r.txt);
+  y += BR.pitch * wrapText(t, maxW, BR.pitch);
   r._el = t; r._new = false;
  });
  }
@@ -580,32 +651,29 @@ function bootEngine() {
  /* client + policy inside the box */
  var gCli = el('g',{id:'sg-cli'},S);
  el('rect',{class:'nodebox',x:G.client.x,y:G.client.y,width:G.client.w,height:G.client.h,rx:8},gCli);
- el('text',{class:'nlab',x:G.client.x+G.client.w/2,y:G.client.y+22},gCli,'CLIENT');
- var cliTxt = {giveup:'timeout \u2192 gives up', blind:'timeout \u2192 blind retry', key:'timeout \u2192 retry + key'}[K.cli];
- el('text',{class:'nsub',x:G.client.x+G.client.w/2,y:G.client.y+42},gCli,cliTxt);
+ el('text',{class:'nlab',x:G.client.x+G.client.w/2,y:G.client.y+G.client.h/2+6},gCli,'CLIENT'); /* the policy sublabel repeated the deck */
 
  /* identity dot ON the wire, label BELOW the wire */
  var gId = el('g',{id:'sg-id'},S);
  if (K.id==='none') el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#08090D',stroke:'#6B7280','stroke-dasharray':'3 2.4','stroke-width':1.6},gId);
  if (K.id==='key') el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#B45309'},gId);
  if (K.id==='hash'){ el('circle',{cx:G.idDot.cx,cy:G.idDot.cy,r:8,fill:'#0891B2'},gId); el('text',{x:G.idDot.cx,y:G.idDot.cy+3.5,'text-anchor':'middle','font-size':'10',fill:'#08090D','font-weight':'700'},gId,'#'); }
- el('text',{class:'nsub',x:G.idDot.cx,y:G.idDot.cy+22},gId,{none:'no identity',hash:'param hash',key:'caller key'}[K.id]);
+ el('text',{class:'nsub',x:G.idDot.cx+G.idLab.dx,y:G.idDot.cy+G.idLab.dy,'text-anchor':G.idLab.anchor},gId,{none:'no identity',hash:'request hash',key:'caller key'}[K.id]);
 
  /* reply annotation in the reserved top band */
  if (K.mem!=='none'){
   var gRep = el('g',{id:'sg-rep'},S);
   el('text',{class:'nsub',x:G.repNote.x,y:G.repNote.y},gRep,'duplicate reply:');
-  el('text',{class:'nsub',x:G.repNote.x,y:G.repNote.y+11,fill:'#C8CDD8'},gRep,K.rep==='err'?'"ERROR: already processed"':'the saved result');
+  el('text',{class:'nsub',x:G.repNote.x,y:G.repNote.y+17,fill:'#C8CDD8'},gRep,K.rep==='err'?'"ERROR: already processed"':'the saved result');
  }
 
  /* server */
  el('rect',{class:'nodebox',id:'serverbox',x:G.server.x,y:G.server.y,width:G.server.w,height:G.server.h,rx:8},S);
- el('text',{class:'nlab',x:G.server.x+G.server.w/2,y:G.server.y+24},S,'SERVER');
- el('text',{class:'nsub',x:G.server.x+G.server.w/2,y:G.server.y+42},S,'charges the bank');
+ el('text',{class:'nlab',x:G.server.x+G.server.w/2,y:G.server.y+G.server.h/2+6},S,'SERVER'); /* "charges the bank" repeated the node's position */
 
  /* bank */
  el('rect',{class:'nodebox',id:'bankbox',x:G.bank.x,y:G.bank.y,width:G.bank.w,height:G.bank.h,rx:8},S);
- el('text',{class:'nlab',x:G.bank.x+G.bank.w/2,y:G.bank.y+20},S,'BANK LEDGER');
+ el('text',{class:'nlab',x:G.bank.x+G.bank.w/2,y:G.bank.y+26},S,'BANK LEDGER');
  el('g',{id:'bBankrows'},S);
  renderBank();
 
@@ -613,19 +681,20 @@ function bootEngine() {
  var gMem = el('g',{id:'sg-mem'},S);
  if (K.mem==='none'){
   el('rect',{class:'ghostbox',x:G.memNone.x,y:G.memNone.y,width:G.memNone.w,height:G.memNone.h,rx:7},gMem);
-  el('text',{class:'nsub',x:G.memNone.x+G.memNone.w/2,y:G.memNone.y+21,fill:'#6B7280'},gMem,'NO MEMORY');
+  el('text',{class:'nsub',x:G.memNone.x+G.memNone.w/2,y:G.memNone.y+G.memNone.h/2+5,fill:'#6B7280'},gMem,'NO MEMORY');
  } else if (K.mem==='store'){
   var m=G.memStore;
   el('line',{class:'wire',x1:G.server.x+G.server.w-16,y1:G.server.y+G.server.h,x2:m.x+26,y2:m.y},gMem);
-  el('text',{class:'nsub',x:m.x+m.w/2,y:m.y-6},gMem,'written AFTER the work');
+  var cap = el('text',{class:'nsub',x:G.storeCap.x,y:G.storeCap.y,'text-anchor':G.storeCap.anchor},gMem,'written after the charge');
+  wrapText(cap, G.storeCap.maxW, 17);
   el('rect',{class:'nodebox',x:m.x,y:m.y,width:m.w,height:m.h,rx:7},gMem);
-  el('text',{class:'nsub',x:m.x+m.w/2,y:m.y+14,fill:'#C8CDD8'},gMem,'KEY STORE (separate)');
-  el('text',{class:'memrow',x:m.x+8,y:m.y+27,id:'memrow'},gMem,'');
+  el('text',{class:'nsub',x:m.x+m.w/2,y:m.y+G.memText.title,fill:'#C8CDD8'},gMem,'KEY STORE');
+  el('text',{class:'memrow',x:m.x+10,y:m.y+G.memText.first,id:'memrow'},gMem,'');
  } else {
   var a=G.memAcid;
   el('rect',{class:'nodebox',x:a.x,y:a.y,width:a.w,height:a.h,rx:7,'stroke-width':2.2},gMem);
-  el('text',{class:'nsub',x:a.x+a.w/2,y:a.y+13,fill:'#C8CDD8'},gMem,'MEMORY \u22C8 WORK');
-  el('text',{class:'memrow',x:a.x+8,y:a.y+25,id:'memrow'},gMem,'one commit');
+  el('text',{class:'nsub',x:a.x+a.w/2,y:a.y+G.memText.title,fill:'#C8CDD8'},gMem,'MEMORY + CHARGE');
+  el('text',{class:'memrow',x:a.x+10,y:a.y+G.memText.first,id:'memrow'},gMem,'one commit');
  }
 
  if (K.mem!=='none'){
@@ -634,18 +703,19 @@ function bootEngine() {
   var m2 = memRect();
   var tx = K.read==='master' ? {x:m2.x+m2.w/2,y:m2.y+(K.mem==='acid'?m2.h:0)} : {x:G.replica.x+G.replica.w/2,y:G.replica.y};
   el('line',{class:'readptr',id:'readline',x1:G.server.x+24,y1:G.server.y+G.server.h,x2:tx.x-16,y2:tx.y+4},gRead);
-  el('text',{class:'nsub',x:G.server.x+2,y:G.server.y+G.server.h+30,'text-anchor':'start',fill:'#eab308'},gRead,'reads: '+(K.read==='master'?'master':'REPLICA (lags)'));
+  if (G.readLab) el('text',{class:'nsub',x:G.readLab.x,y:G.readLab.y,'text-anchor':G.readLab.anchor,fill:'#eab308'},gRead,'reads: '+(K.read==='master'?'main database':'read-only copy'));
   el('rect',{class:'ghostbox',x:G.replica.x,y:G.replica.y,width:G.replica.w,height:G.replica.h,rx:7,id:'replicabox'},S);
-  el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+13},S,'REPLICA');
-  el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+24,id:'replicanote'},S,'~seconds behind');
+  el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+G.replica.h/2-2},S,'READ-ONLY COPY');
+  el('text',{class:'nsub',x:G.replica.x+G.replica.w/2,y:G.replica.y+G.replica.h/2+15,id:'replicanote'},S,'seconds behind');
   /* clock */
   var gRet = el('g',{id:'sg-ret'},S);
   el('circle',{cx:G.clock.cx,cy:G.clock.cy,r:12,fill:'none',stroke:'#8A8A94','stroke-width':1.4},gRet);
   el('line',{x1:G.clock.cx,y1:G.clock.cy,x2:G.clock.cx,y2:G.clock.cy-8,stroke:'#8A8A94','stroke-width':1.4,id:'clockhand'},gRet);
-  el('text',{class:'nsub',x:G.clock.cx,y:G.clock.cy+28},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
+  var keeps = el('text',{class:'nsub',x:G.clock.cx+G.clockLab.dx,y:G.clock.cy+G.clockLab.dy,'text-anchor':G.clockLab.anchor},gRet,'keeps: '+({min:'1 min',day:'~24 h',size:'size-bound',ever:'forever'}[K.ret]));
+  wrapText(keeps, G.clockLab.maxW, 17);
  }
  }
- function memNote(txt){ var m=document.getElementById('memrow'); if(m) m.textContent = txt; }
+ function memNote(txt){ var m=document.getElementById('memrow'); if(!m) return; m.textContent = txt; var r = memRect(); wrapText(m, r.w-18, G.memText.pitch); }
 
  /* ---------- animation primitives ---------- */
  function sleep(ms){
@@ -674,7 +744,7 @@ function bootEngine() {
  var g=el('g',{},layerAnim);
  el('line',{x1:x-7,y1:y-7,x2:x+7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
  el('line',{x1:x+7,y1:y-7,x2:x-7,y2:y+7,stroke:'#ef4444','stroke-width':2.5,'stroke-linecap':'round'},g);
- if(label){ var p=placeLabel('wire', x); el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:'#ef4444'},g,label); } /* §3: label in the wire band, never over a box (the X stays on the wire) */
+ if(label){ bandText(placeLabel('wire', x), '#ef4444', label, g); } /* §3: label in the wire band, never over a box (the X stays on the wire) */
  setTimeout(function(){ g.style.transition='opacity 1s'; g.style.opacity=0; }, Math.max(800, 1400/speed));
  return sleep(500);
  }
@@ -685,7 +755,7 @@ function bootEngine() {
     The nth label of the current event in a zone takes the nth row (1st/2nd);
     x snaps to the nearest zone x-slot. Reset per event by resetLabelSlots(). */
  var labelSlots = {};
- function resetLabelSlots(){ labelSlots = {}; }
+ function resetLabelSlots(){ labelSlots = {}; stage.querySelectorAll('text.blab').forEach(function(n){ n.remove(); }); } /* a new event/attack starts on a clear band: the last event's fading labels would otherwise sit under this one's */
  function placeLabel(kind, naturalX){
   var bands = G.bands || {};
   var zone = VERT ? kind : (kind === 'wire' ? 'top' : 'bottom');
@@ -706,14 +776,14 @@ function bootEngine() {
  var yTop = fromReplica? m2.y : (K.mem==='acid'? m2.y+m2.h : m2.y);
  var line = el('line',{x1:G.server.x+34,y1:G.server.y+G.server.h,x2:m2.x+m2.w/2,y2:yTop,stroke: found?'#22c55e':'#ef4444','stroke-width':2,'stroke-dasharray':'4 3'},layerAnim);
  var p = placeLabel('memory', m2.x+m2.w/2); /* \u00a73: memory band, not beside the box */
- var lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:found?'#22c55e':'#ef4444'},layerAnim, found?'seen it \u2713':'never seen');
+ var lbl = bandText(p, found?'#22c55e':'#ef4444', found?'seen it \u2713':'never seen');
  setTimeout(function(){ line.remove(); lbl.remove(); }, 1600/speed);
  return sleep(650);
  }
 
  var CX,SX,SXR,BX,Y;
  function refreshXY(){ CX=G.client.x+G.client.w; SX=G.server.x; SXR=G.server.x+G.server.w; BX=G.bank.x; Y=G.wireY; }
- function pickG(){ VERT = mq(PHONE_MQ); G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 552' : '0 0 640 336'); } /* §3: GV grows 520->552 for the bank band */
+ function pickG(){ VERT = mq(PHONE_MQ); G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', G.vb); } /* §3: GV grows 520->552 for the bank band */
  pickG();
  window.addEventListener('resize', function(){ var v = mq(PHONE_MQ); if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
  function reqA(){ return VERT ? {x:GV.wireX, y:G.client.y+G.client.h+10} : {x:CX+14, y:Y}; }
@@ -747,7 +817,7 @@ function bootEngine() {
   await move(r, CX+16, Y-14, 480);
  }
  var p = placeLabel('wire', VERT ? GV.wireX : CX); /* §3: reply verdict in the wire band, not on the wire */
- lbl = el('text',{x:p.x,y:p.y,'text-anchor':p.anchor,'font-size':'10',fill:fill},layerAnim, txt);
+ lbl = bandText(p, fill, txt);
  setTimeout(function(){ r.remove(); lbl.remove(); }, 1700/speed);
  await sleep(450);
  }
@@ -1022,7 +1092,7 @@ function bootEngine() {
  }
  async function animParamsMismatch(){
   var d=await animRequest('key'); await checkMemory(true);
-  memNote('params DIFFER \u26A0'); await sleep(900); return d;
+  memNote('details differ \u26A0'); await sleep(900); return d;
  }
  async function animReconcileSweep(){
   say('RECONCILIATION','A sweep compares your record against the bank\'s\u2026');
