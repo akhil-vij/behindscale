@@ -59,6 +59,30 @@ body { overflow-x: clip; }
 .problem-page .stopblock strong { color: var(--text-primary); }
 .problem-page .stuck-note { font-size: 14px; color: var(--text-secondary); margin-top: 10px; }
 
+/* ---------- "What's inside the mission" box (fix spec §1) ----------
+   Static text, no JS: the decisions are a two-column definition list (label
+   line, then one option per line), then an events | attacks row. Decision
+   labels link to their comparison rows; one without a row is a plain span. */
+.problem-page .mission-outline { padding: 16px 18px; }
+.problem-page .mission-outline .mo-section { border-top: 1px solid var(--border-default); padding-top: 12px; margin-top: 12px; }
+.problem-page .mission-outline .mo-label { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px; }
+.problem-page .mission-outline .mo-decisions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 26px; }
+.problem-page .mission-outline .mo-item { padding: 9px 0 10px; border-top: 1px solid var(--bg-subtle); }
+.problem-page .mission-outline .mo-item:nth-child(-n + 2) { border-top: 0; }
+.problem-page .mission-outline .mo-dlabel { display: block; font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; line-height: 1.45; color: var(--text-primary); text-decoration: none; }
+.problem-page .mission-outline a.mo-dlabel:hover { color: var(--accent-primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.problem-page .mission-outline .mo-opts { list-style: disc; padding-left: 18px; margin-top: 4px; font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
+.problem-page .mission-outline .mo-opts li + li { margin-top: 2px; }
+.problem-page .mission-outline .mo-row { display: grid; grid-template-columns: 1fr 1.4fr; gap: 0 26px; }
+.problem-page .mission-outline .mo-flat { font-size: 13px; line-height: 1.8; color: var(--text-secondary); margin-top: 4px; }
+.problem-page .mission-outline .mo-close { font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+@media (max-width: 700px) {
+  .problem-page .mission-outline .mo-decisions,
+  .problem-page .mission-outline .mo-row { grid-template-columns: 1fr; }
+  .problem-page .mission-outline .mo-item:nth-child(2) { border-top: 1px solid var(--bg-subtle); }
+  .problem-page .mission-outline .mo-opts { font-size: 12px; }
+}
+
 /* ---------- burden spectrum ---------- */
 .problem-page .spectrum { margin: 26px 0 8px; }
 .problem-page .spectrum-track { position: relative; height: 2px; background: var(--border-strong); margin: 60px 6px 8px; }

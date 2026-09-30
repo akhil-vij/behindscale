@@ -32,15 +32,15 @@ export function dayTokens(Q){
    if(/^TICKET/.test(x.t)) tick++;
   });
   var bill=[];
-  if(rec&&read==='master') bill.push({c:'idempotency reads hit the main database - the cost every safe design pays', s:'Airbnb 2019', base:true});
-  if(rec&&mem==='acid') bill.push({c:'the charge must live in the same database as its record - nothing that crosses to an external partner can sit inside the commit', s:'Airbnb 2019; AWS 2021'});
-  if(rec&&mem==='storerec') bill.push({c:'recovery code per step - someone writes and maintains it', s:'Shopify 2022'});
-  if(rec&&rep==='err') bill.push({c:'callers must write branching code - an error that means success', s:'AWS 2021'});
-  if(rec&&rep==='saved') bill.push({c:'responses stored for every request - the table grows with traffic and is hard to trim', s:'Airbnb 2019'});
-  if(rec&&ret==='ever') bill.push({c:'keys kept without bound - a future key can collide with an ancient one', s:'AWS 2021'});
-  if(rec&&(ret==='day'||ret==='size')) bill.push({c:'stragglers after the window - must be caught later, not prevented', s:'Shopify 2022'});
-  if(rec&&ret==='size') bill.push({c:'protection window shrinks under load - paged if it thins past a day', s:'Segment 2017'});
-  if(Q.after==='reconcile') bill.push({c:'reconciliation is a standing team cost - a job that never ends', s:'Shopify 2022'});
+  if(rec&&read==='master') bill.push({c:'idempotency reads hit the main database: the cost every safe design pays', s:'Airbnb 2019', base:true});
+  if(rec&&mem==='acid') bill.push({c:'the charge must live in the same database as its record: nothing that crosses to an external partner can sit inside the commit', s:'Airbnb 2019; AWS 2021'});
+  if(rec&&mem==='storerec') bill.push({c:'recovery code per step: someone writes and maintains it', s:'Shopify 2022'});
+  if(rec&&rep==='err') bill.push({c:'callers must write branching code: an error that means success', s:'AWS 2021'});
+  if(rec&&rep==='saved') bill.push({c:'responses stored for every request: the table grows with traffic and is hard to trim', s:'Airbnb 2019'});
+  if(rec&&ret==='ever') bill.push({c:'keys kept without bound: a future key can collide with an ancient one', s:'AWS 2021'});
+  if(rec&&(ret==='day'||ret==='size')) bill.push({c:'stragglers after the window: must be caught later, not prevented', s:'Shopify 2022'});
+  if(rec&&ret==='size') bill.push({c:'protection window shrinks under load: paged if it thins past a day', s:'Segment 2017'});
+  if(Q.after==='reconcile') bill.push({c:'reconciliation is a standing team cost: a job that never ends', s:'Shopify 2022'});
   return { ev:ev, extra:extra, dbl:dbl, lost:lost, tick:tick, bill:bill,
      win:(dbl===0&&lost===0&&tick===0) };
  }

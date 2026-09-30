@@ -128,13 +128,18 @@ const CSS = `
  #mission-root b { color: var(--art-text-bright); font-weight: 600; }
  .art-foot { color:var(--art-muted); font-size:10px; margin-top:12px; border-top:1px solid var(--art-border); padding-top:8px; line-height:1.7; }
  .art-foot a { color:var(--art-text); text-decoration:underline; }
- .artB { background:var(--art-bg); color:var(--art-text); border:1px solid var(--art-border); border-radius:14px; padding:16px; margin:0; font-family:var(--mono); font-size:12px; width: 100%; position: relative; }
+ .artB { background:var(--art-bg); color:var(--art-text); border:1px solid var(--art-border); border-radius:14px; padding:14px; margin:0; font-family:var(--mono); font-size:12px; width: 100%; position: relative; }
  .a-eyebrow { color:var(--art-muted); font-size:10px; letter-spacing:2px; }
- .a-title { color:var(--art-text-bright); font-size:17px; font-weight:700; margin:3px 0 1px; }
- .a-sub { color:var(--art-muted); font-size:11px; }
+ /* polish §4: more air under the title; the sentence wraps to two lines
+    instead of running the full width; the same 14px gutter to the columns. */
+ .a-title { color:var(--art-text-bright); font-size:17px; font-weight:700; margin:3px 0 6px; }
+ .a-sub { color:var(--art-muted); font-size:11px; line-height:1.5; max-width:86ch; }
+ .mission-grid { margin-top:14px; }
 
- .evchips { display:flex; gap:6px; margin:14px 0 8px; flex-wrap:wrap; }
- .evchip { flex:1; min-width:96px; text-align:center; font-size:10px; letter-spacing:.6px; color:var(--art-muted); border:1px solid var(--art-border); border-radius:20px; padding:5px 4px; background:var(--art-surface); transition:all .25s; }
+ /* polish §3b: chips are one 3x2 grid at every width, each the same size
+    (min-height, not text, sets it); radius 12 so two-line chips stay pills. */
+ .evchips { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); grid-auto-rows:1fr; gap:6px; }
+ .evchip { min-height:40px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:10px; line-height:1.3; letter-spacing:.6px; color:var(--art-muted); border:1px solid var(--art-border); border-radius:12px; padding:4px 6px; background:var(--art-surface); transition:all .25s; }
  .evchip.now { border-color:var(--art-text); color:var(--art-text-bright); box-shadow:0 0 10px rgba(200,205,216,.2); }
  .evchip.clean { border-color:#22c55e; color:#22c55e; }
  .evchip.hurt { border-color:#ef4444; color:#ef4444; }
@@ -143,7 +148,7 @@ const CSS = `
     between events and shoves the stage 13-19px. Effective font is 12.5px (a
     later rule overrides the 11.5px here): 3 x 12.5 x 1.55 ~= 58px content +
     16px padding + 2px border ~= 76px (border-box); 77px pins 1-3 lines flat. */
- .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; margin-bottom:10px; }
+ .narr { background:var(--art-surface-2); border:1px solid var(--art-border); border-radius:8px; padding:8px 12px; min-height:77px; font-size:11.5px; line-height:1.55; }
  .narr b { color:var(--art-text-bright); }
  .narr .tag { color:var(--art-muted); letter-spacing:1px; font-size:10px; }
 
@@ -151,21 +156,23 @@ const CSS = `
     sticky column (stage + meters + newest card stay in view); the reader's
     ACTIONS live in the left, scrolling column (deck, commit, attacks, debrief).
     Phone collapses to one re-ordered column (§2). ===== */
- .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:20px; align-items:start; }
- .col-left, .col-right { display:flex; flex-direction:column; gap:10px; min-width:0; }
+ /* polish §3e: one 14px gutter -- between the columns, between every block
+    in them, and inside the panels. */
+ .mission-grid { display:grid; grid-template-columns:minmax(0,47fr) minmax(0,53fr); gap:14px; align-items:start; }
+ .col-left, .col-right { display:flex; flex-direction:column; gap:14px; min-width:0; }
  /* top:12px is an in-frame gap: sticky can't reference the host nav across the
     iframe boundary, so the "56px clears the nav" of the spec becomes a small
     internal offset (nav-overlap at the very top is a recorded compromise). The
     frame is a bounded scrollport on desktop (host sets min(content,100dvh-56));
     align-self:start keeps the column at content height so it can stick. */
  .col-right { position:sticky; top:12px; align-self:start; max-height:calc(100dvh - 24px); }
- .col-right .log { flex:1 1 auto; min-height:150px; max-height:none; }
- .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:12px; }
+ .col-right .log { flex:1 1 auto; min-height:96px; max-height:none; } /* polish (c): the log, not the stage, gives way on short screens */
+ .deck { background:var(--art-surface); border:1px solid var(--art-border); border-radius:10px; padding:14px; }
  #artB[data-cue="deck"] .deck { animation:deckpulse 1.6s ease infinite alternate; }
  @keyframes deckpulse { from { border-color:var(--art-border); } to { border-color:var(--accent-problem); box-shadow:0 0 14px rgba(217,70,239,.18);} }
  .deck-title { color:var(--art-text); font-size:10px; letter-spacing:1.6px; margin-bottom:2px; }
  .deck-sub { color:var(--art-muted); font-size:10px; margin-bottom:10px; }
- .kg { margin-top:12px; padding-top:10px; border-top:1px solid var(--art-border); }
+ .kg { margin-top:12px; padding-top:9px; border-top:1px solid var(--art-border); }
  .kg:first-of-type { margin-top:2px; border-top:none; padding-top:0; }
  .kg .kgl { color:var(--art-muted); font-size:10px; letter-spacing:1px; line-height:1.4; display:flex; align-items:center; gap:6px; }
  .kg .kgl .q { color:var(--art-muted); }
@@ -175,8 +182,11 @@ const CSS = `
     choice + chevron are hidden. */
  .kgchoice, .kgchev { display:none; }
  .kg .lockmsg { color:var(--art-muted); font-size:10px; font-style:italic; margin-top:3px; }
- .seg { display:flex; flex-direction:column; gap:6px; margin-top:6px; }
- .seg button { text-align:left; padding:7px 10px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
+ .seg { display:flex; flex-direction:column; gap:5px; margin-top:6px; }
+ /* polish §3a: every option button is sized by min-height, not its text:
+    one-liners all 34px, two-liners grow evenly. */
+ .seg button, .lvl .opt { min-height:34px; display:flex; align-items:center; }
+ .seg button { text-align:left; padding:6px 9px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; line-height:1.4; }
  .seg button:hover:not(:disabled) { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  .seg button.sel { border-color:var(--accent-problem); background:rgba(217,70,239,.14); color:var(--accent-problem-hover); font-weight:700; }
  .seg button:disabled { opacity:.5; cursor:not-allowed; }
@@ -186,7 +196,10 @@ const CSS = `
 
  /* §1: the desktop stage fits its ~508px column (viewBox 640x336 -> ~508x267),
     so no horizontal scroll and no 560px floor. */
- .bstagewrap { overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
+ /* polish (c): overflow-x:auto made this a scroll container, so the capped
+    sticky column could shrink it below the drawing and hide the bottom of
+    the stage. It keeps its height; the log below absorbs the squeeze. */
+ .bstagewrap { flex-shrink:0; overflow-x:auto; border-radius:10px; background:radial-gradient(ellipse at 50% 0%, var(--art-surface-2) 0%, var(--art-bg) 70%); border:1px solid var(--art-border); }
  svg#bstage { display:block; width:100%; min-width:0; height:auto; }
  svg#bstage text { font-family:var(--mono); }
  .nodebox { fill:var(--art-surface-2); stroke:var(--art-border); stroke-width:1.4; }
@@ -208,7 +221,7 @@ const CSS = `
  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
  .shake { animation:shake .35s ease 2; }
 
- .ctlrow { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+ .ctlrow { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
  .runbtn { background:var(--accent-problem); color:var(--art-bg); border:none; border-radius:8px; padding:10px 20px; font-family:inherit; font-size:12.5px; font-weight:700; letter-spacing:.06em; cursor:pointer; }
  .runbtn:hover { background:var(--accent-problem-hover); }
  .runbtn:disabled { opacity:.4; cursor:not-allowed; }
@@ -222,7 +235,7 @@ const CSS = `
  .meternote { flex-basis:100%; text-align:right; font-family:var(--mono); font-size:9px; letter-spacing:.5px; color:var(--art-muted); margin-top:2px; display:none; }
  .meternote.on { display:block; }
 
- .log { margin-top:12px; display:grid; gap:8px; max-height:280px; overflow-y:auto; }
+ .log { display:grid; gap:8px; max-height:280px; overflow-y:auto; }
  .bcard { border-radius:8px; padding:9px 11px; font-size:11.5px; line-height:1.6; border:1px solid var(--art-border); background:var(--art-surface); }
  .bcard.bad { border-color:#ef4444; background:rgba(239,68,68,.07); }
  .bcard.warn { border-color:#eab308; background:rgba(234,179,8,.07); }
@@ -238,7 +251,7 @@ const CSS = `
  .lvl.locked2 { opacity:.5; pointer-events:none; }
  .lvl .lt { color:var(--art-text-bright); font-size:12px; font-weight:700; }
  .lvl .lq { margin-top:4px; font-size:11.5px; line-height:1.6; color:var(--art-text); }
- .lvl .opt { display:block; width:100%; text-align:left; padding:7px 9px; margin-top:6px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; }
+ .lvl .opt { width:100%; text-align:left; padding:6px 9px; margin-top:6px; border-radius:6px; cursor:pointer; border:1px solid var(--art-border-interactive); color:var(--art-text); background:var(--art-surface); font-family:inherit; font-size:11px; }
  .lvl .opt:hover { border-color:var(--accent-problem); }
  .lvl .done { color:#22c55e; font-weight:700; font-size:11px; display:none; }
  .lvl .verdict { margin-top:8px; padding:8px 10px; border-radius:6px; font-size:11px; line-height:1.6; display:none; }
@@ -258,7 +271,7 @@ const CSS = `
     narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
     -> debrief (evchips lead the right column). The control row is NOT sticky
     (the stage is directly above; sticky would cover the log the cards land in). */
- .mission-grid { display:flex; flex-direction:column; gap:12px; }
+ .mission-grid { display:flex; flex-direction:column; gap:14px; align-items:stretch; } /* the desktop grid's align-items:start let the nowrap .kgchoice size the column past the frame */
  .col-right { position:static; max-height:none; order:-1; }
  .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
  #bill { order:1; }        /* right column: log before bill on phone */
@@ -288,9 +301,10 @@ const CSS = `
  #artB .runbtn:hover { background:none; color:var(--art-text); }
  #artB #stepbtn { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
  }
-  .billpanel { margin-top:10px; background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:10px 12px; font-size:11px; line-height:1.6; }
+  .billpanel { background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:12px 14px; font-size:11.5px; line-height:1.5; }
   .billhead { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; margin-bottom:6px; }
-  .billrow { color:var(--art-text); padding:3px 0; border-top:1px solid var(--art-surface-2); }
+  /* polish §3d: the row divider was --art-surface-2, invisible on the panel */
+  .billrow { color:var(--art-text); padding:6px 0; border-top:1px solid var(--art-border); }
   .billrow.base { color:var(--art-text-bright); }
   .billrow .bl { color:var(--art-muted); font-size:10px; letter-spacing:1px; margin-right:6px; }
   .billrow .bs { color:var(--art-muted); font-size:10px; margin-left:6px; }
@@ -309,9 +323,9 @@ const CSS = `
 const MARKUP = `
 <main id="mission-root">
 <div class="artB" id="artB" data-cue="run">
- <div class="a-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY - BUILD IT</div>
+ <div class="a-eyebrow">AMBIGUOUS FAILURE UNDER RETRY</div>
  <h1 class="a-title">The defense loop <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #D946EF;color:#E879F9;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">BUILD IT</span></h1>
- <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day = 0 doubles, 0 lost sales, 0 mystery tickets.</div>
+ <div class="a-sub">You own this payment path. Make your six decisions below, then run the day. Surviving the day means zero double charges, zero lost sales, zero unresolved payments.</div>
 
  <div class="mission-grid">
   <div class="col-left">
@@ -331,7 +345,7 @@ const MARKUP = `
    </div>
 
    <div class="esc" id="escwrap" style="display:none;">
-    <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest"> - YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
+    <div class="esc-head"><span class="esc-lede">FIVE ATTACKS</span><span class="esc-rest">: YOUR DESIGN SURVIVED A DAY. EACH ATTACK FLIPS ONE OF YOUR DECISIONS, OR ADDS ONE YOU HADN'T MADE. FIX IT WITH YOUR DECISIONS, THEN RE-RUN THE ATTACK. (ATTACK 1 IS THE EXCEPTION, AND SAYS SO.)</span></div>
     <div id="lvls"></div>
     <div class="debrief" id="debrief"></div>
    </div>
@@ -342,7 +356,7 @@ const MARKUP = `
    <div class="narr" id="narr" aria-live="polite"></div>
    <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 336" role="img" aria-label="Payment path: client, server, bank, and the key's memory; traffic animates across it"></svg></div>
    <div class="ctlrow">
-    <button class="runbtn" id="runbtn">RUN THE DAY - NAIVE ▶</button>
+    <button class="runbtn" id="runbtn">RUN THE DAY (NAIVE) ▶</button>
     <button class="bghost" id="stepbtn">STEP</button>
     <button class="bghost" id="resetbtn">reset</button>
     <div class="meters">
@@ -387,44 +401,44 @@ function bootEngine() {
 
  /* ---------- deck ---------- */
  var GROUPS = [
- { k:'id', label:'IDENTITY — who names the request?', opts:[
-  ['none','Nobody — a request is just its parameters'],
-  ['hash','Server — hashes the request parameters'],
-  ['key','Client — generates and sends an idempotency key']] },
- { k:'mem', label:'MEMORY — how the server remembers a request it already handled', needs:function(){return K.id!=='none';}, lock:'memory needs a name - set identity first', opts:[
-  ['none','Nowhere — keep no record'],
+ { k:'id', label:'IDENTITY: who names the request?', opts:[
+  ['none','Nobody: a request is just its parameters'],
+  ['hash','Server: hashes the request parameters'],
+  ['key','Client: generates and sends an idempotency key']] },
+ { k:'mem', label:'MEMORY: how the server remembers a request it already handled', needs:function(){return K.id!=='none';}, lock:'memory needs a name: set identity first', opts:[
+  ['none','Nowhere: keep no record'],
   ['store','A separate store, written after the charge'],
   ['storerec','A separate store that also tracks how far the charge got, so a retry can resume'],
-  ['acid','Committed together with the charge — one transaction']] },
- { k:'read', label:'READS — which copy the server checks for the key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
-  ['master','The main database — where the record was written'],
-  ['replica','A read-only copy — cheaper, but seconds behind']] },
- { k:'cli', label:'ON A TIMEOUT — the client…', opts:[
-  ['giveup','Gives up — assumes the charge failed'],
-  ['blind','Retries with no key — the server can\'t recognize it'],
+  ['acid','Committed together with the charge, in one transaction']] },
+ { k:'read', label:'READS: which copy the server checks for the key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to read', opts:[
+  ['master','The main database, where the record was written'],
+  ['replica','A read-only copy: cheaper, but seconds behind']] },
+ { k:'cli', label:'ON A TIMEOUT: the client…', opts:[
+  ['giveup','Gives up, assuming the charge failed'],
+  ['blind','Retries with no key, so the server can\'t recognize it'],
   ['key','Retries with the same idempotency key']],
   optNeeds:{ key:function(){return K.id!=='none';} } },
- { k:'rep', label:'REPLY — when the server sees a repeat, it sends back…', needs:function(){return K.mem!=='none';}, lock:'needs a memory first — without one, the server can\'t tell it\'s a repeat', opts:[
+ { k:'rep', label:'REPLY: when the server sees a repeat, it sends back…', needs:function(){return K.mem!=='none';}, lock:'needs a memory first: without one, the server can\'t tell it\'s a repeat', opts:[
   ['err','An error that says "this was already done"'],
   ['saved','Return the original saved response']] },
- { k:'ret', label:'WINDOW — how long the key store remembers each idempotency key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
+ { k:'ret', label:'WINDOW: how long the key store remembers each idempotency key', needs:function(){return K.mem!=='none';}, lock:'needs a memory to keep', opts:[
   ['min','One minute'],
   ['day','About 24 hours'],
-  ['size','Limited by size — drop the oldest keys when full, and alert an engineer if keys start expiring in under a day'],
+  ['size','Limited by size: drop the oldest keys when full, and alert an engineer if keys start expiring in under a day'],
   ['ever','Forever']] },
- { k:'params', q:'', label:'SAME KEY, NEW PARAMS — the server…', needs:function(){return ROWS_ADDED.params;}, lock:'', hideLocked:true, opts:[
-  ['run','Runs it - the parameters are the request'],
+ { k:'params', q:'', label:'SAME KEY, NEW PARAMS: the server…', needs:function(){return ROWS_ADDED.params;}, lock:'', hideLocked:true, opts:[
+  ['run','Runs it: the parameters are the request'],
   ['replay','Returns the old response'],
   ['refuse','Refuses, with a validation error naming the mismatch']] },
- { k:'after', q:'', label:'AFTER THE WINDOW — stragglers are…', needs:function(){return ROWS_ADDED.after;}, lock:'', hideLocked:true, opts:[
-  ['nothing','Nobody\'s problem - the window is the guarantee'],
+ { k:'after', q:'', label:'AFTER THE WINDOW: stragglers are…', needs:function(){return ROWS_ADDED.after;}, lock:'', hideLocked:true, opts:[
+  ['nothing','Nobody\'s problem: the window is the guarantee'],
   ['reconcile','Caught by a reconciliation sweep against the bank\'s records']] }
  ];
  var STAGEMAP = { id:'sg-id', mem:'sg-mem', read:'sg-read', cli:'sg-cli', rep:'sg-rep', ret:'sg-ret' };
 
  function paintDeck(){
  var vert = window.innerWidth < 700; /* §2/A3: phone shows a one-open accordion; desktop the full deck */
- var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs with whatever it says here</div>';
+ var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs on the choices you make here</div>';
  GROUPS.forEach(function(g){
   var ok = !g.needs || g.needs();
   if (!ok && g.hideLocked) return;
@@ -779,19 +793,19 @@ function bootEngine() {
 
  var EVENTS = [
  async function routine(){
-  if (runsDone>0){ say('EVENT 1/6','Routine ✓ - compressed on repeat runs.'); bankStamp('+ $100 CHARGE'); if(K.mem!=='none') memNote('K-4 ✓'); await sleep(700); return {cls:'good'}; }
+  if (runsDone>0){ say('EVENT 1/6','Routine ✓ (compressed on repeat runs).'); bankStamp('+ $100 CHARGE'); if(K.mem!=='none') memNote('K-4 ✓'); await sleep(700); return {cls:'good'}; }
   say('EVENT 1/6','Routine traffic. A charge crosses, the bank records it, the response comes home. This is the day when nothing goes wrong.');
   var d = await animRequest(idKind()); await chargeBank(d); if(K.mem!=='none') memNote('K-4 \u2713 remembered');
   await replyBack('ok','\u2713 charged');
   return {cls:'good'};
  },
  async function cut1(t){
-  say('EVENT 2/6','<b>The network drops a request</b> - it never reaches the server. The client is left with a timeout and nothing else.');
+  say('EVENT 2/6','<b>The network drops a request</b>. It never reaches the server. The client is left with a timeout and nothing else.');
   await animRequest(idKind(), {dieOnWire:true});
-  if (t==='LOST_SALE'){ say('EVENT 2/6','The client <b>gives up</b>. Nothing was charged, and nothing ever will be - the order is silently lost.');
+  if (t==='LOST_SALE'){ say('EVENT 2/6','The client <b>gives up</b>. Nothing was charged, and nothing ever will be. The order is silently lost.');
   card('bad','ORDER LOST','The client assumed failure and never retried, so the order silently vanished.','Stripe: treat a success as a failure and the customer never gets what they paid for.','cli');
   return {cls:'bad'}; }
-  say('EVENT 2/6','The client retries'+(K.cli==='key'?' <b>carrying the same key</b>':' as a brand-new request')+'. Nothing had happened, so this one lands clean'+(K.cli==='blind'?' - <b>by luck</b>: from the client seat this cut is indistinguishable from event 4':'')+'.');
+  say('EVENT 2/6','The client retries'+(K.cli==='key'?' <b>carrying the same key</b>':' as a brand-new request')+'. Nothing had happened, so this one lands clean'+(K.cli==='blind'?', <b>by luck</b>: from the client seat this cut is indistinguishable from event 4':'')+'.');
   var d2 = await animRequest(K.cli==='key'?idKind():'plain');
   if (K.cli==='key' && K.mem!=='none') await checkMemory(false);
   await chargeBank(d2); await replyBack('ok','\u2713 charged');
@@ -803,67 +817,67 @@ function bootEngine() {
   await intoServer(d);
   await flashServer('#ef4444');
   if (t==='TICKET_MYST'){ await kill(d,'crash'); bankStamp('$100? · UNKNOWN','dbl');
-  card('warn','UNRESOLVED — NOBODY KNOWS','Did the charge go through? Neither the customer nor your system can tell. It surfaces later as a support complaint.','Shopify\'s fix for cases like this: reconciliation - check your records against the bank afterward.','cli');
+  card('warn','UNRESOLVED: NOBODY KNOWS','Did the charge go through? Neither the customer nor your system can tell. It surfaces later as a support complaint.','Shopify\'s fix for cases like this is reconciliation: check your records against the bank afterward.','cli');
   return {cls:'warn'}; }
   if (t==='DBL_CRASH'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash after charging');
-  say('EVENT 3/6','The retry arrives as a stranger - the server has no way to recognize it.');
+  say('EVENT 3/6','The retry arrives as a stranger. The server has no way to recognize it.');
   var r=await animRequest('plain'); await chargeBank(r,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE — CRASH, THEN AN UNRECOGNIZED RETRY','The first attempt charged before the server died. The retry carried no key the server could recognize, so it charged again.','Stripe 2017: the retry must carry something the server can recognize - the whole idempotency-key idea.','id');
+  card('bad','DOUBLE CHARGE: CRASH, THEN AN UNRECOGNIZED RETRY','The first attempt charged before the server died. The retry carried no key the server could recognize, so it charged again.','Stripe 2017: the retry must carry something the server can recognize. That is the whole idempotency-key idea.','id');
   return {cls:'bad'}; }
   if (t==='DBL_GAP'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash before memory write');
-  say('EVENT 3/6','The charge went through - but the server crashed <b>before the separate store recorded it</b>. The record and the charge came apart.');
+  say('EVENT 3/6','The charge went through, but the server crashed <b>before the separate store recorded it</b>. The record and the charge came apart.');
   var r2=await animRequest('key'); await checkMemory(false); await chargeBank(r2,'dbl','+ $100 AGAIN \u26A0'); memNote('K \u2713 (retry only)');
-  card('bad','DOUBLE CHARGE \u2014 THE KEY WAS NEVER RECORDED','The retry found "never seen" and charged again. (The crash could just as easily have landed before the charge - a separate store can\'t guarantee which.)','AWS: record the key and make the charge one all-or-nothing transaction. Stripe names the same gap: recovery is "heavily dependent on implementation."','mem');
+  card('bad','DOUBLE CHARGE: THE KEY WAS NEVER RECORDED','The retry found "never seen" and charged again. (The crash could just as easily have landed before the charge, and a separate store can\'t guarantee which.)','AWS: record the key and make the charge one all-or-nothing transaction. Stripe names the same gap: recovery is "heavily dependent on implementation."','mem');
   return {cls:'bad'}; }
   if (t==='CLEAN_RECOVERY'){ bankStamp('+ $100 CHARGE'); await kill(d,'crash mid-steps');
-   say('EVENT 3/6','The store tracked <b>how far the charge got</b>. The retry runs recovery steps that finish from there - so only one charge ever reaches the bank.');
+   say('EVENT 3/6','The store tracked <b>how far the charge got</b>. The retry runs recovery steps that finish from there, so only one charge ever reaches the bank.');
    var rr=await animRequest('key'); await checkMemory(true); memNote('steps recorded \u00b7 rebuilding'); await sleep(600); rr.remove(); await replyBack('ok','\u2713 charged (recovered)');
-   card('good','SURVIVED - RECOVERY STEPS REBUILT THE STATE','The crash interrupted the charge; the store knew how far it got, so the retry finished the job without charging the bank twice. The cost is on the bill: recovery code for every step.','Shopify 2022; Airbnb 2019 buys the same safety with three all-or-nothing phases.',null);
+   card('good','SURVIVED: RECOVERY STEPS REBUILT THE STATE','The crash interrupted the charge; the store knew how far it got, so the retry finished the job without charging the bank twice. The cost is on the bill: recovery code for every step.','Shopify 2022; Airbnb 2019 buys the same safety with three all-or-nothing phases.',null);
    return {cls:'good'}; }
   var stamp = bankStamp('+ $100 CHARGE'); await kill(d,'crash');
-  say('EVENT 3/6','The record and the charge were <b>one transaction</b> - the crash erases both together. Watch the bank\'s record take the charge back.');
+  say('EVENT 3/6','The record and the charge were <b>one transaction</b>, so the crash erases both together. Watch the bank\'s record take the charge back.');
   await sleep(550); bankAmend(stamp,'$100 · rolled back','gone');
   var r3=await animRequest('key'); await checkMemory(false); await chargeBank(r3); memNote('K \u2713'); await replyBack('ok','\u2713 charged');
-  card('good','CLEAN - THE CRASH ROLLED BACK','One transaction means a half-done charge can\'t exist. The retry found nothing and ran fresh.','AWS; Airbnb buys the same safety with three all-or-nothing phases; Shopify with recovery steps.',null);
+  card('good','CLEAN: THE CRASH ROLLED BACK','One transaction means a half-done charge can\'t exist. The retry found nothing and ran fresh.','AWS; Airbnb buys the same safety with three all-or-nothing phases; Shopify with recovery steps.',null);
   return {cls:'good'};
  },
  async function cut3(t){
-  say('EVENT 4/6','<b>The charge lands - and the response dies on the way back.</b> The bank\'s record says $100. The client sees only a timeout.');
+  say('EVENT 4/6','<b>The charge lands, and the response dies on the way back.</b> The bank\'s record says $100. The client sees only a timeout.');
   var d = await animRequest(idKind()); await chargeBank(d); if(K.mem!=='none') memNote('K-9 \u2713');
   await replyDies();
-  if (t==='TICKET_WRITEOFF'){ card('bad','CHARGED — THEN TREATED AS FAILED','The client thinks the charge failed, so your system has no record of it. The customer paid $100 for an order you can\'t see.','Stripe: the quiet version of the disaster - the customer pays and gets nothing.','cli'); return {cls:'bad'}; }
+  if (t==='TICKET_WRITEOFF'){ card('bad','CHARGED, THEN TREATED AS FAILED','The client thinks the charge failed, so your system has no record of it. The customer paid $100 for an order you can\'t see.','Stripe: the quiet version of the disaster. The customer pays and gets nothing.','cli'); return {cls:'bad'}; }
   if (t==='DBL_CLASSIC'){ say('EVENT 4/6','The retry arrives unrecognized and does it all again.');
   var d2=await animRequest(K.cli==='key'?idKind():'plain'); if(K.cli==='key'&&K.mem!=='none') await checkMemory(false); await chargeBank(d2,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','THE COMMON DOUBLE CHARGE','The charge went through, the response was lost, and the retry charged again. 0.6% of all events at Segment over four weeks - a constant, not an edge case.','This is the failure every system on this page is built to prevent.', K.id==='none'?'id':'mem');
+  card('bad','THE COMMON DOUBLE CHARGE','The charge went through, the response was lost, and the retry charged again. 0.6% of all events at Segment over four weeks. A constant, not an edge case.','This is the failure every system on this page is built to prevent.', K.id==='none'?'id':'mem');
   return {cls:'bad'}; }
-  if (t==='DBL_REPLICA'){ say('EVENT 4/6','The retry checks <b>the read-only copy</b> - which is seconds behind and hasn\'t heard yet.');
+  if (t==='DBL_REPLICA'){ say('EVENT 4/6','The retry checks <b>the read-only copy</b>, which is seconds behind and hasn\'t heard yet.');
   var rn=document.getElementById('replicanote'); if(rn) rn.textContent='K-9? not here yet';
   var d3=await animRequest('key'); await checkMemory(false,true); await chargeBank(d3,'dbl','+ $100 AGAIN \u26A0');
-  card('bad','DOUBLE CHARGE - WITH THE KEY ON','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb: a copy that runs seconds behind turns a correct retry into a double charge - Orpheus reads from the main database only.','read');
+  card('bad','DOUBLE CHARGE, WITH THE KEY ON','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb: a copy that runs seconds behind turns a correct retry into a double charge. Orpheus reads from the main database only.','read');
   return {cls:'bad'}; }
-  if (t==='CLEAN_ERR_REPLY'){ say('EVENT 4/6','The retry is recognized - and gets back an <b>error: "already processed"</b>. No double charge. The cost lands on the caller.');
+  if (t==='CLEAN_ERR_REPLY'){ say('EVENT 4/6','The retry is recognized and gets back an <b>error: "already processed"</b>. No double charge. The cost lands on the caller.');
   var d4=await animRequest('key'); await checkMemory(true); d4.remove(); await replyBack('err','"ERROR: already processed"');
-  card('good','SURVIVED - BUT THE CALLER PAYS','One charge, correct outcome - but every caller must now write extra code to treat this error as a success. That cost is on the bill.','AWS 2021: idempotent, but exactly what makes retry-by-default hard to offer. Stripe/Airbnb return the saved response instead - and pay in stored results.','rep');
+  card('good','SURVIVED, BUT THE CALLER PAYS','One charge, correct outcome. But every caller must now write extra code to treat this error as a success. That cost is on the bill.','AWS 2021: idempotent, but exactly what makes retry-by-default hard to offer. Stripe/Airbnb return the saved response instead, and pay in stored results.','rep');
   return {cls:'good'}; }
-  say('EVENT 4/6','The retry is recognized - and the server <b>returns the saved response</b> as if it were the first one.');
+  say('EVENT 4/6','The retry is recognized, and the server <b>returns the saved response</b> as if it were the first one.');
   var d5=await animRequest('key'); await checkMemory(true); d5.remove(); await replyBack('ok','\u2713 charged (replayed)');
-  card('good','THE RETRY WAS FREE','One charge, correct response - the saved response returned.','Stripe / Airbnb; AWS sharpens the reply to "same-meaning success".',null);
+  card('good','THE RETRY WAS FREE','One charge, correct response: the saved response returned.','Stripe / Airbnb; AWS sharpens the reply to "same-meaning success".',null);
   return {cls:'good'};
  },
  async function twins(t){
-  say('EVENT 5/6','A customer places <b>two identical $100 orders on purpose</b>. Same details - but both are genuinely wanted.');
+  say('EVENT 5/6','A customer places <b>two identical $100 orders on purpose</b>. Same details, but both are genuinely wanted.');
   var a = await animRequest(idKind()); await chargeBank(a);
   var b = await animRequest(idKind());
-  if (t==='LOST_TWIN'){ await checkMemory(true); await kill(b,'"duplicate" - dropped');
-  card('bad','TWO ORDERS COLLAPSED INTO ONE','The server built a fingerprint from the request\'s details, saw a match, and silently dropped the second order. A fingerprint can\'t tell an accidental repeat from a customer who genuinely wants two of the same.','AWS: identical request parameters do not mean identical intent — only the caller knows that, so the caller names the request.','id');
+  if (t==='LOST_TWIN'){ await checkMemory(true); await kill(b,'"duplicate": dropped');
+  card('bad','TWO ORDERS COLLAPSED INTO ONE','The server built a fingerprint from the request\'s details, saw a match, and silently dropped the second order. A fingerprint can\'t tell an accidental repeat from a customer who genuinely wants two of the same.','AWS: identical request parameters do not mean identical intent. Only the caller knows that, so the caller names the request.','id');
   return {cls:'bad'}; }
   if (K.id==='key' && K.mem!=='none') await checkMemory(false);
   await chargeBank(b,'','+ $100 CHARGE (2nd)');
-  card('good','BOTH ORDERS WENT THROUGH','Two orders, two keys'+(K.id==='key'?' - the caller generated a fresh key for the second':'')+', two charges - the customer got what they actually wanted.', K.id==='key'?'AWS: the token carries intent, so twins are distinguishable by name.':'', null);
+  card('good','BOTH ORDERS WENT THROUGH','Two orders, two keys'+(K.id==='key'?' (the caller generated a fresh key for the second)':'')+', two charges. The customer got what they actually wanted.', K.id==='key'?'AWS: the token carries intent, so twins are distinguishable by name.':'', null);
   return {cls:'good'};
  },
  async function late(t){
-  if (t==='NA'){ say('EVENT 6/6','A client wakes up late and retries - but with no way to recognize a repeat, this is just the earlier failures again. (Fix those first.)'); await sleep(700); return {cls:'good'}; }
+  if (t==='NA'){ say('EVENT 6/6','A client wakes up late and retries. But with no way to recognize a repeat, this is just the earlier failures again. (Fix those first.)'); await sleep(700); return {cls:'good'}; }
   say('EVENT 6/6','<b>Three minutes later</b>, a mobile client wakes up and retries an old charge with its old key.');
   var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform .8s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(160deg)'; }
   await sleep(850);
@@ -872,10 +886,10 @@ function bootEngine() {
   card('bad','THE MEMORY EXPIRED FIRST','The key was real, but the window had already forgotten it.','AWS: keep keys too briefly and a late retry charges again. Shopify: the window is a dial you set on purpose (~24h).','ret');
   return {cls:'bad'}; }
   if (K.ret==='ever'){ var d2=await animRequest('key'); await checkMemory(true); d2.remove(); await replyBack('ok','\u2713 (replayed)');
-  card('good','LATE, AND STILL REMEMBERED - FOREVER','Returned fine. The cost is on the bill: every key ever seen, kept forever.','AWS 2021 names both costs of the too-long window.',null);
+  card('good','LATE, AND STILL REMEMBERED, FOREVER','Returned fine. The cost is on the bill: every key ever seen, kept forever.','AWS 2021 names both costs of the too-long window.',null);
   return {cls:'good'}; }
   if (K.ret==='size'){ var d2b=await animRequest('key'); await checkMemory(true); d2b.remove(); await replyBack('ok','\u2713 (replayed)');
-  card('good','LATE, BUT INSIDE THE (CURRENTLY FULL-SIZE) WINDOW','Three minutes is nothing today. Under heavy load this window shrinks - that price is on the bill, and one of the attacks below is about exactly this.','Segment 2017: limited by size, drop the oldest first, alert an engineer if it thins past a day.',null);
+  card('good','LATE, BUT INSIDE THE (CURRENTLY FULL-SIZE) WINDOW','Three minutes is nothing today. Under heavy load this window shrinks. That cost is on the bill, and one of the attacks below is about exactly this.','Segment 2017: limited by size, drop the oldest first, alert an engineer if it thins past a day.',null);
   return {cls:'good'}; }
   var d3=await animRequest('key'); await checkMemory(true); d3.remove(); await replyBack('ok','\u2713 (replayed)');
   card('good','LATE, BUT REMEMBERED','Inside the deliberate window, a three-minute nap costs nothing.','Shopify: ~24h, chosen on purpose.',null);
@@ -925,27 +939,27 @@ function bootEngine() {
   var rows = bill.map(function(b){
    return '<div class="billrow'+(b.base?' base':'')+'">'+(b.base?'<span class="bl">BASELINE</span> ':'')+b.c+' <span class="bs">'+b.s+'</span></div>';
   }).join('');
-  host.innerHTML='<div class="billhead">THE BILL - what your surviving design pays</div>'+rows;
+  host.innerHTML='<div class="billhead">THE BILL: what your surviving design pays</div>'+rows;
  }
  async function finishDay(){
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it - so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem');
+ if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it, so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem');
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
-  say('DAY SURVIVED','Nothing broke. But every safe design has a cost — the panel below (THE BILL) lists what yours pays. Next: five real failures that still get through your design.');
-  card('good','DAY SURVIVED','Zero double charges, zero lost orders, zero unresolved payments. The bill lists what this design pays for that - each line named by the company that paid it first.','', null);
+  say('DAY SURVIVED','Nothing broke. But every safe design has a cost, and the panel below (THE BILL) lists what yours pays. Next: five real failures that still get through your design.');
+  card('good','DAY SURVIVED','Zero double charges, zero lost orders, zero unresolved payments. The bill lists what this design pays for that, each line named by the company that paid it first.','', null);
   if (!won){ won = true; buildLevels(); }
   $('#escwrap').style.display='';
  } else {
-  say('DAY OVER','See what broke. Each result points at one of your decisions. The five answers below show how the real companies handled it — adjust a decision and run again.');
+  say('DAY OVER','See what broke. Each result points at one of your decisions. The five answers below show how the real companies handled it. Adjust a decision and run again.');
  }
  }
  async function runAll(){
  if (running) return;
- if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first - fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
+ if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first: fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
  running=true; lock(true); $('#artB').dataset.cue='';
  freshDay();
  for (var i=0;i<6;i++) await playEvent(i);
@@ -953,12 +967,12 @@ function bootEngine() {
  }
  async function stepOne(){
  if (running) return;
- if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first - fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
+ if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first: fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
  if (evIdx===0 || evIdx>=6) freshDay();
  running=true; lock(true); $('#artB').dataset.cue='';
  await playEvent(evIdx); evIdx++;
  if (evIdx>=6) await finishDay();
- else say('PAUSED','Event '+evIdx+' of 6 done. STEP for the next - the day is one design, so your decisions stay fixed mid-day.');
+ else say('PAUSED','Event '+evIdx+' of 6 done. STEP for the next. The day is one design, so your decisions stay fixed mid-day.');
  lock(false); running=false;
  }
 
@@ -999,57 +1013,57 @@ function bootEngine() {
  }
 
  var LEVELS = [
-  { t:'A1 \u00b7 STRIPE - A DEVELOPER USING YOUR API REUSES LAST WEEK\'S KEY', group:null,
-   brief:'The one attack no decision fixes - and finding that out is the level. Change anything you like, then re-run.',
+  { t:'A1 \u00b7 STRIPE: A DEVELOPER USING YOUR API REUSES LAST WEEK\'S KEY', group:null,
+   brief:'The one attack no decision fixes, and finding that out is the level. Change anything you like, then re-run.',
    attack: async function(){
-    say('ATTACK 1','A request arrives wearing <b>last week\'s key</b> - for a brand-new charge.');
+    say('ATTACK 1','A request arrives wearing <b>last week\'s key</b>, for a brand-new charge.');
     await animOldKeyReplay();
-    say('ATTACK 1','The server did its job perfectly - and the new charge <b>silently never happened</b>. Nothing on your stage even looks wrong. Change any decision, then re-run the attack.');
+    say('ATTACK 1','The server did its job perfectly, and the new charge <b>silently never happened</b>. Nothing on your stage even looks wrong. Change any decision, then re-run the attack.');
    },
    rerun: async function(){
     await animOldKeyReplay(); l1Tried = true;
-    card('bad','THE NEW CHARGE STILL NEVER HAPPENED','Nothing in your decisions can see this - two requests with the same key are duplicates by definition. That is the contract itself.','Stripe 2017.',null);
+    card('bad','THE NEW CHARGE STILL NEVER HAPPENED','Nothing in your decisions can see this. Two requests with the same key are duplicates by definition. That is the contract itself.','Stripe 2017.',null);
     return { held:false, showAccept:true };
    },
    accept:'Accept: this is caller discipline, not a server decision',
-   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase - which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per request. The one attack you cannot fix with a decision.',
+   acceptBody:'Stripe\'s actual answer: correctness here depends on key hygiene in every integrating codebase, which is why the post urges APIs to make idempotency explicit and documented. Publish the key rules; scope keys per request. The one attack you cannot fix with a decision.',
    hints:[
-    ['add server-side detection of stale keys','There is no signal to detect - two requests with the same key are duplicates BY DEFINITION.'],
-    ['switch identity to a parameter hash','That reopens the identical-orders trap - a hash cannot carry what the customer wanted.'],
-    ['publish key rules; scope keys per request','This is the answer - and it lives in documentation and client code, not in your decisions here.'] ] },
+    ['add server-side detection of stale keys','There is no signal to detect. Two requests with the same key are duplicates BY DEFINITION.'],
+    ['switch identity to a parameter hash','That reopens the identical-orders trap: a hash cannot carry what the customer wanted.'],
+    ['publish key rules; scope keys per request','This is the answer, and it lives in documentation and client code, not in your decisions here.'] ] },
 
-  { t:'A2 \u00b7 AIRBNB - SOMEONE MOVES YOUR KEY READS TO THE READ-ONLY COPIES', group:'read',
+  { t:'A2 \u00b7 AIRBNB: SOMEONE MOVES YOUR KEY READS TO THE READ-ONLY COPIES', group:'read',
    brief:'This attack flips one of your decisions. Fix it with your decisions, then re-run.',
    attack: async function(){
-    say('ATTACK 2','The main database is expensive to read from. Someone points key reads at <b>a read-only copy - seconds behind</b>\u2026');
+    say('ATTACK 2','The main database is expensive to read from. Someone points key reads at <b>a read-only copy, seconds behind</b>\u2026');
     K.read='replica'; drawStage(); paintDeck(); layerAnim=el('g',{}); await sleep(650);
     await animCut3Replay();
-    say('ATTACK 2','Seconds of lag, and the double charge is back - <b>with the key on</b>. Your READS decision changed under you; it stays changed until you change it back.');
+    say('ATTACK 2','Seconds of lag, and the double charge is back, <b>with the key on</b>. Your READS decision changed under you; it stays changed until you change it back.');
    },
    rerun: async function(){
     var held = await animCut3Replay();
-    if (held){ card('good','HELD - THE RETRY ASKED THE MAIN DATABASE','The record was where it was written, and the response was free. Airbnb kept key reads on the main database and won the capacity back by splitting the key tables across machines.','Airbnb 2019.',null); }
-    else { card('bad','BROKE AGAIN - THE READ-ONLY COPY HADN\'T HEARD','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb 2019: a copy that runs seconds behind turns a correct retry into a double charge.','read'); }
+    if (held){ card('good','HELD: THE RETRY ASKED THE MAIN DATABASE','The record was where it was written, and the response was free. Airbnb kept key reads on the main database and won the capacity back by splitting the key tables across machines.','Airbnb 2019.',null); }
+    else { card('bad','BROKE AGAIN: THE READ-ONLY COPY HADN\'T HEARD','The record exists, on the main database. The read-only copy that answered was seconds behind.','Airbnb 2019: a copy that runs seconds behind turns a correct retry into a double charge.','read'); }
     return { held:held };
    },
    hints:[
-    ['approve - seconds of lag is nothing','Seconds of lag is a double charge - you watched it.'],
-    ['reads stay on the main database; shard on the key to win capacity back','Airbnb\'s answer verbatim - and the fix is the READS decision.'],
-    ['shorten the replication lag instead','A smaller gamble is still a gamble - the guarantee would ride on a race you do not control.'] ] },
+    ['approve: seconds of lag is nothing','Seconds of lag is a double charge. You watched it.'],
+    ['reads stay on the main database; shard on the key to win capacity back','Airbnb\'s answer verbatim, and the fix is the READS decision.'],
+    ['shorten the replication lag instead','A smaller gamble is still a gamble: the guarantee would ride on a race you do not control.'] ] },
 
-  { t:'A3 \u00b7 SEGMENT - TRAFFIC 10\u00D7s FOR A WEEK', group:'ret',
+  { t:'A3 \u00b7 SEGMENT: TRAFFIC 10\u00D7s FOR A WEEK', group:'ret',
    brief:'Ten times the traffic, and your window decision is under attack. Fix it, then re-run.',
    attack: async function(){
     if (K.ret==='ever'){
-     say('ATTACK 3','Ten times the traffic. Your store forgets nothing - so nothing is evicted. Watch it hold, and watch what it costs\u2026');
+     say('ATTACK 3','Ten times the traffic. Your store forgets nothing, so nothing is evicted. Watch it hold, and watch what it costs\u2026');
      await animBurstThenStraggler(); memNote('holding EVERYTHING \u00b7 store ballooning'); await sleep(800);
      await animLateKey(true);
-     say('ATTACK 3','No straggler - and a store growing with all of history. Re-run to confirm, or change the WINDOW decision and see the other trades.');
+     say('ATTACK 3','No straggler, and a store growing with all of history. Re-run to confirm, or change the WINDOW decision and see the other trades.');
     } else if (K.ret==='size'){
-     say('ATTACK 3','Ten times the traffic. Your size-bound store evicts oldest-first by design - and under this much load, honest keys age out early\u2026');
+     say('ATTACK 3','Ten times the traffic. Your size-bound store evicts oldest-first by design, and under this much load, honest keys age out early\u2026');
      await animBurstThenStraggler(); memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(800);
      await animLateKey(false);
-     say('ATTACK 3','A straggler aged out early and charged twice - the pager fired, exactly as designed. Re-run to see the posture hold, with its cost.');
+     say('ATTACK 3','A straggler aged out early and charged twice. The pager fired, exactly as designed. Re-run to see the posture hold, with its cost.');
     } else {
      say('ATTACK 3','Ten times the traffic. A fixed-time store cannot hold every key at this volume, so <b>the oldest quietly fall off</b>\u2026');
      await animBurstThenStraggler();
@@ -1063,98 +1077,98 @@ function bootEngine() {
     if (K.ret==='size'){
      memNote('evict oldest \u00b7 window shrinking \u00b7 PAGED'); await sleep(700);
      await animLateKey(true);
-     card('good','HELD - THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully - that cost is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
+     card('good','HELD: THE WINDOW SHRANK ON PURPOSE','Bound by size, evict oldest first: the spike shrinks the protection window instead of toppling the store, and a pager fires if it thins past a day. Protection degraded gracefully, and that cost is already on your bill.','Segment 2017. "Almost exactly once" is the honest name.',null);
      return { held:true };
     }
     if (K.ret==='ever'){
      memNote('holding EVERYTHING \u00b7 store ballooning'); await sleep(700);
      await animLateKey(true);
-     card('warn','HELD - BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds - at a cost the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
+     card('warn','HELD, BY REFUSING TO FORGET','No key was evicted, so no straggler doubled. The bill turns red instead: keys kept without bound, and under 10\u00D7 load the store grows without bound too. It holds, at a cost the five posts warn about.','AWS 2021; Airbnb 2019: the table grows with traffic and is hard to trim.','ret');
      return { held:true };
     }
     memNote('oldest keys evicted \u2192'); await sleep(700);
     await animLateKey(false);
-    card('bad','BROKE AGAIN - KEYS AGED OUT EARLY','A fixed-time window can\'t hold 10\u00D7 the keys; the oldest fell off before their retries arrived.','Segment 2017: the answer is to bound by size and let the window shrink, paged.','ret');
+    card('bad','BROKE AGAIN: KEYS AGED OUT EARLY','A fixed-time window can\'t hold 10\u00D7 the keys; the oldest fell off before their retries arrived.','Segment 2017: the answer is to bound by size and let the window shrink, paged.','ret');
     return { held:false };
    },
    hints:[
-    ['grow the store without limit','It holds the attack - and the bill goes red on storage. Try it and see.'],
-    ['bound by size, evict oldest, page under 24h','Segment\'s design - the WINDOW decision has this option.'],
-    ['turn dedupe off under load','The spike is when retries multiply - you would disarm the defense at peak attack.'] ] },
+    ['grow the store without limit','It holds the attack, and the bill goes red on storage. Try it and see.'],
+    ['bound by size, evict oldest, page under 24h','Segment\'s design. The WINDOW decision has this option.'],
+    ['turn dedupe off under load','The spike is when retries multiply, so you would disarm the defense at peak attack.'] ] },
 
-  { t:'A4 \u00b7 AWS - A KNOWN KEY ARRIVES WITH A DIFFERENT AMOUNT', group:'params',
-   brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer - re-run and watch it break, then fix it.',
+  { t:'A4 \u00b7 AWS: A KNOWN KEY ARRIVES WITH A DIFFERENT AMOUNT', group:'params',
+   brief:'This attack adds a decision you hadn\'t made. It defaults to the naive answer. Re-run and watch it break, then fix it.',
    attack: async function(){
-    say('ATTACK 4','Same key as this morning - but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared - defaulted to the naive answer.');
+    say('ATTACK 4','Same key as this morning, but the amount changed: <b>$250, not $100</b>. Your decisions never covered this. A new row just appeared, defaulted to the naive answer.');
     ROWS_ADDED.params = true; if(!K.params) K.params='run'; openGroup='params'; paintDeck(); focusDeckSel('params'); /* B2-7; A3: the new row opens in the phone accordion */
     var d = await animParamsMismatch(); d.remove();
    },
    rerun: async function(){
     var d = await animParamsMismatch();
     if (K.params==='refuse'){ d.remove(); await replyBack('err','"VALIDATION: params changed"');
-     card('good','HELD - THE MISMATCH WAS CAUGHT AND NAMED','The stored fingerprint exists precisely so this collision can be seen. The safest reading is that the customer meant something different - refuse, and say why.','AWS 2021: the guarantee protects what the customer actually wanted.',null);
+     card('good','HELD: THE MISMATCH WAS CAUGHT AND NAMED','The stored fingerprint exists precisely so this collision can be seen. The safest reading is that the customer meant something different. Refuse, and say why.','AWS 2021: the guarantee protects what the customer actually wanted.',null);
      return { held:true };
     }
-    if (K.params==='replay'){ d.remove(); await replyBack('ok','\u2713 ($100 - the OLD response)');
-     card('bad','BROKE - THE CUSTOMER ASKED FOR $250 AND SILENTLY GOT $100','The old response was returned for a new request. That is the reused-key failure from attack 1 - now endorsed by the server.','AWS 2021.','params');
+    if (K.params==='replay'){ d.remove(); await replyBack('ok','\u2713 ($100, the OLD response)');
+     card('bad','BROKE: THE CUSTOMER ASKED FOR $250 AND SILENTLY GOT $100','The old response was returned for a new request. That is the reused-key failure from attack 1, now endorsed by the server.','AWS 2021.','params');
      return { held:false };
     }
     await chargeBank(d,'dbl','+ $250 CHARGE \u00b7 SAME KEY \u26A0');
-    card('bad','BROKE - ONE KEY NOW MEANS TWO THINGS','The charge ran. The same key produced two different requests, so the contract that made every retry safe just dissolved.','AWS 2021: two requests with the same token are duplicates by definition - or the definition is gone.','params');
+    card('bad','BROKE: ONE KEY NOW MEANS TWO THINGS','The charge ran. The same key produced two different requests, so the contract that made every retry safe just dissolved.','AWS 2021: two requests with the same token are duplicates by definition, or the definition is gone.','params');
     return { held:false };
    },
    hints:[
-    ['run it - the parameters are the request','Then the same key means two things - re-run and watch the contract dissolve.'],
+    ['run it: the parameters are the request','Then the same key means two things. Re-run and watch the contract dissolve.'],
     ['return the old response','The customer asked for something different and silently gets the old thing.'],
-    ['refuse with a validation error','AWS\'s answer - the new row has this option.'] ] },
+    ['refuse with a validation error','AWS\'s answer. The new row has this option.'] ] },
 
-  { t:'A5 \u00b7 SHOPIFY - THE CASE YOUR WINDOW DECISION LEAVES OPEN', group:'after',
-   brief:'The window will always miss someone. This attack adds the decision about what happens after it - defaulted to nothing.',
+  { t:'A5 \u00b7 SHOPIFY: THE CASE YOUR WINDOW DECISION LEAVES OPEN', group:'after',
+   brief:'The window will always miss someone. This attack adds the decision about what happens after it, defaulted to nothing.',
    attack: async function(){
     LEVELS[4].group = (K.ret==='ever') ? 'ret' : 'after';
     if (K.ret==='ever'){
-     say('ATTACK 5','Months pass. A caller generates a fresh key that <b>collides with an ancient one</b> - your store never forgot it.');
+     say('ATTACK 5','Months pass. A caller generates a fresh key that <b>collides with an ancient one</b>. Your store never forgot it.');
      await animOldKeyReplay();
-     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened - the store recognized a key from another era and returned its old response. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
-     say('ATTACK 5','No decision prevents stragglers AND collisions at once. <b>Bound the window</b> (WINDOW is glowing), then re-run - and watch what bounding it trades away.');
+     card('bad','AN ANCIENT KEY ATE A NEW CHARGE','The new charge silently never happened. The store recognized a key from another era and returned its old response. A window with no edge makes every old key a landmine.','AWS 2021: keep tokens too long and a future key can collide with an ancient one.','ret');
+     say('ATTACK 5','No decision prevents stragglers AND collisions at once. <b>Bound the window</b> (WINDOW is glowing), then re-run, and watch what bounding it trades away.');
      return;
     }
-    say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten - on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
+    say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten, on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
-    say('ATTACK 5','A straggler outlived the window and charged twice. No decision prevents this one - the question is whether anyone ever finds out.');
+    say('ATTACK 5','A straggler outlived the window and charged twice. No decision prevents this one. The question is whether anyone ever finds out.');
    },
    rerun: async function(){
     if (K.ret==='ever'){
      await animOldKeyReplay();
-     card('bad','STILL COLLIDING','The store still never forgets, so ancient keys still eat new charges. Bound the window first - WINDOW is the decision.','AWS 2021.','ret');
+     card('bad','STILL COLLIDING','The store still never forgets, so ancient keys still eat new charges. Bound the window first: WINDOW is the decision.','AWS 2021.','ret');
      return { held:false };
     }
     if (!ROWS_ADDED.after){
      ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
-     say('ATTACK 5','Your window has an edge now - so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
+     say('ATTACK 5','Your window has an edge now, so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
      var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
      await animLateKey(false);
-     card('bad','YOU TRADED THE COLLISION FOR A STRAGGLER','Bounding the window ended the collisions - and created the case the window misses. A straggler charged twice, and nobody was looking. Decide what happens after the window, then re-run.','Shopify 2022.','after');
+     card('bad','YOU TRADED THE COLLISION FOR A STRAGGLER','Bounding the window ended the collisions, and created the case the window misses. A straggler charged twice, and nobody was looking. Decide what happens after the window, then re-run.','Shopify 2022.','after');
      return { held:false };
     }
     await animLateKey(false);
     if (K.after==='reconcile'){
      await animReconcileSweep();
      dayDamage = dayTokens(K); renderBill(dayDamage.bill);
-     card('good','HELD - CAUGHT, RECORDED, REPAIRED','The straggler still charged twice - the fix is detection, not prevention. The sweep compared your record against the bank\'s, logged the mismatch as an anomaly, and repaired it. Reconciliation joins your bill as a standing team cost.','Shopify 2022: the standing admission that prevention is never complete.',null);
+     card('good','HELD: CAUGHT, RECORDED, REPAIRED','The straggler still charged twice. The fix is detection, not prevention. The sweep compared your record against the bank\'s, logged the mismatch as an anomaly, and repaired it. Reconciliation joins your bill as a standing team cost.','Shopify 2022: the standing admission that prevention is never complete.',null);
      return { held:true };
     }
-    card('bad','BROKE - THE DOUBLE CHARGE WAS NEVER FOUND','Nobody compared the records. The merchant\'s accountant finds it in three months, as a chargeback.','Shopify 2022: verify the money afterward - your records against the bank\'s, every mismatch logged.','after');
+    card('bad','BROKE: THE DOUBLE CHARGE WAS NEVER FOUND','Nobody compared the records. The merchant\'s accountant finds it in three months, as a chargeback.','Shopify 2022: verify the money afterward (your records against the bank\'s, every mismatch logged).','after');
     return { held:false };
    },
    hints:[
-    ['keep keys forever, so nothing is ever forgotten','Then nothing straggles - and every key ever seen becomes a landmine for a future collision. If you arrived here with forever on, you watched exactly that.'],
-    ['a reconciliation sweep against the bank\'s records','Shopify\'s posture - the new row has this option. Note what it does NOT do: prevent.'],
-    ['reject retries older than the window with an error','The hour-30 client cannot tell that error from a fresh failure - the ambiguity is back for exactly the case the window missed.'] ] }
+    ['keep keys forever, so nothing is ever forgotten','Then nothing straggles, and every key ever seen becomes a landmine for a future collision. If you arrived here with forever on, you watched exactly that.'],
+    ['a reconciliation sweep against the bank\'s records','Shopify\'s posture. The new row has this option. Note what it does NOT do: prevent.'],
+    ['reject retries older than the window with an error','The hour-30 client cannot tell that error from a fresh failure, so the ambiguity is back for exactly the case the window missed.'] ] }
  ];
 
  function escEnter(i){
@@ -1162,7 +1176,7 @@ function bootEngine() {
   paintDeck(); $('#artB').dataset.cue = LEVELS[i].group ? 'group' : '';
   var lvlEl = $$('#lvls .lvl')[i];
   lvlEl.querySelector('.fixrow').style.display='';
-  say('YOUR MOVE', LEVELS[i].group ? 'Fix it with your decisions - the group that matters is glowing - then <b>re-run the attack</b>. Hints are under the level if you want them.' : 'Try any change you like, then <b>re-run the attack</b>.');
+  say('YOUR MOVE', LEVELS[i].group ? 'Fix it with your decisions (the group that matters is glowing), then <b>re-run the attack</b>. Hints are under the level if you want them.' : 'Try any change you like, then <b>re-run the attack</b>.');
  }
  function escAbandon(){
   if (escMode<0) return;
@@ -1236,31 +1250,31 @@ function bootEngine() {
  function buildDebrief(){
   var d=$('#debrief'); d.className='debrief on';
   var bill = dayTokens(K).bill;
-  var html='<span class="dt">HELD UNDER ATTACK - THE DEBRIEF</span><br><br>Your final design, decision by decision:<br><br>';
+  var html='<span class="dt">HELD UNDER ATTACK: THE DEBRIEF</span><br><br>Your final design, decision by decision:<br><br>';
   html+=drow('IDENTITY','the caller names each request with a key',
    'Stripe 2017, Airbnb 2019 and AWS 2021 state it outright. Segment 2017 generates it in the SDK because its callers can\'t cooperate. Shopify\'s post doesn\'t say who generates it.');
-  if (K.mem==='acid') html+=drow('MEMORY','committed together with the charge - one transaction',
-   'AWS 2021: the half-failures aren\'t allowed to exist. The cost is on your bill: the charge must live in the same database as its record, so nothing that crosses to an external partner can sit inside the commit. The other clean shape - a separate store plus recovery steps - is Shopify\'s, and pays in recovery code instead.');
+  if (K.mem==='acid') html+=drow('MEMORY','committed together with the charge, in one transaction',
+   'AWS 2021: the half-failures aren\'t allowed to exist. The cost is on your bill: the charge must live in the same database as its record, so nothing that crosses to an external partner can sit inside the commit. The other clean shape (a separate store plus recovery steps) is Shopify\'s, and pays in recovery code instead.');
   else html+=drow('MEMORY','a separate store, plus recovery steps that rebuild state',
-   'Shopify 2022; Airbnb 2019 in spirit, with three all-or-nothing phases. The cost is on your bill: recovery code per step. The other clean shape - one transaction - is AWS\'s, and pays by keeping the charge inside one database, away from external partners.');
-  html+=drow('READS','the main database - where the record was written',
+   'Shopify 2022; Airbnb 2019 in spirit, with three all-or-nothing phases. The cost is on your bill: recovery code per step. The other clean shape (one transaction) is AWS\'s, and pays by keeping the charge inside one database, away from external partners.');
+  html+=drow('READS','the main database, where the record was written',
    'Airbnb 2019 is the post that states it, and it is the baseline every safe design pays. Airbnb paid it by splitting the key tables across machines, by key.');
   if (K.rep==='saved') html+=drow('REPLY','a duplicate gets the saved response',
-   'Stripe 2017 and Airbnb 2019; AWS 2021 sharpens it to a same-meaning success. The cost is on your bill: responses stored for every request, a table that grows with traffic. The alternative - an error - moves that cost into every caller\'s code. Segment answers with silence; none of these map to it, because its callers can\'t use the information.');
+   'Stripe 2017 and Airbnb 2019; AWS 2021 sharpens it to a same-meaning success. The cost is on your bill: responses stored for every request, a table that grows with traffic. The alternative (an error) moves that cost into every caller\'s code. Segment answers with silence; none of these map to it, because its callers can\'t use the information.');
   else html+=drow('REPLY','a duplicate gets "error: already processed"',
-   'None of the five ship this as the design - AWS 2021 argues it is exactly what makes retry-by-default hard to offer. The cost is on your bill: every caller writes branching code. The alternative - return the saved response - is Stripe/Airbnb\'s, and pays in stored responses instead.');
+   'None of the five ship this as the design. AWS 2021 argues it is exactly what makes retry-by-default hard to offer. The cost is on your bill: every caller writes branching code. The alternative (return the saved response) is Stripe/Airbnb\'s, and pays in stored responses instead.');
   if (K.ret==='day') html+=drow('WINDOW','about 24 hours, chosen on purpose',
    'Shopify 2022. Cost: stragglers after the window. Segment\'s alternative bounds by size and shrinks under load; forever is the option none of the five chose.');
-  else if (K.ret==='size') html+=drow('WINDOW','limited by size - drop the oldest, alert an engineer under 24h',
+  else if (K.ret==='size') html+=drow('WINDOW','limited by size: drop the oldest, alert an engineer under 24h',
    'Segment 2017. Costs: stragglers, plus a window that shrinks under load. "Almost exactly once" is the honest name.');
   else html+=drow('WINDOW','forever',
-   'None of the five kept keys without bound - AWS 2021 warns a future key can collide with an ancient one. It held the load attack by paying in storage.');
+   'None of the five kept keys without bound. AWS 2021 warns a future key can collide with an ancient one. It held the load attack by paying in storage.');
   if (K.params) html+= (K.params==='refuse'
-   ? drow('SAME KEY, NEW PARAMS','refuse, naming the mismatch','AWS 2021 - the stored fingerprint exists precisely so the collision can be caught. The guarantee protects what the customer actually wanted.')
-   : drow('SAME KEY, NEW PARAMS', K.params==='run'?'run it':'return the old response','None of the five - and the attack showed why.'));
+   ? drow('SAME KEY, NEW PARAMS','refuse, naming the mismatch','AWS 2021: the stored fingerprint exists precisely so the collision can be caught. The guarantee protects what the customer actually wanted.')
+   : drow('SAME KEY, NEW PARAMS', K.params==='run'?'run it':'return the old response','None of the five, and the attack showed why.'));
   if (K.after) html+= (K.after==='reconcile'
-   ? drow('AFTER THE WINDOW','a reconciliation sweep against the bank\'s records','Shopify 2022 - verify the money afterward, log every mismatch as an anomaly. Detection, not prevention; a standing team cost, on your bill.')
-   : drow('AFTER THE WINDOW','nothing','None of the five ship this - the straggler is real, and someone else finds it.'));
+   ? drow('AFTER THE WINDOW','a reconciliation sweep against the bank\'s records','Shopify 2022: verify the money afterward, log every mismatch as an anomaly. Detection, not prevention; a standing team cost, on your bill.')
+   : drow('AFTER THE WINDOW','nothing','None of the five ship this. The straggler is real, and someone else finds it.'));
   html+='<b>THE BILL, IN FULL:</b><br>'+bill.map(function(b){ return '\u2022 '+b.c+' <span style="color:#6B7280;">('+b.s+')</span>'; }).join('<br>')+'<br><br>';
   html+='Same guarantee, different price. <b>That trade is the interview answer.</b>';
   d.innerHTML=html;
@@ -1310,13 +1324,13 @@ function bootEngine() {
  if (running) return;
  K={ id:'none', mem:'none', read:'master', cli:'blind', rep:'err', ret:'day' }; ROWS_ADDED={params:false,after:false}; delete K.params; delete K.after;
  won=false; lvlDone=[false,false,false,false,false]; evIdx=0; escMode=-1; curLvl=0; escWatched=[false,false,false,false,false]; l1Tried=false; runsDone=0;
- var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY - NAIVE ▶'; $('#artB').dataset.cue='run';
+ var rb=$('#runbtn'); rb.innerHTML='RUN THE DAY (NAIVE) ▶'; $('#artB').dataset.cue='run';
  $('#escwrap').style.display='none'; $('#debrief').className='debrief'; var bp=$('#bill'); if(bp) bp.style.display='none';
  freshDay(); paintDeck(); say('RESET','Naive decisions restored. The saved design for this wall is cleared; your sentence is kept.');
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ say('READY','Reduced motion is on - STEP plays the day one event at a time. Run it first with the naive defaults and observe what breaks.'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
+ if (REDUCED){ say('READY','Reduced motion is on. STEP plays the day one event at a time. Run it first with the naive defaults and observe what breaks.'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
  else say('READY','Run it first with the naive defaults and observe what breaks. <b>RUN the day as-is.</b>');
  return { restore: restore };
 }

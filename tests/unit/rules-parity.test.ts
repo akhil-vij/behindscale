@@ -121,7 +121,7 @@ describe('§5.1 rules parity: dayTokens() vs DECKS-v6-1.md', () => {
     const withReconcile = (dayTokens({ ...base, after: 'reconcile' }) as Day).bill.map((b) => b.c)
     expect(without.some((c) => c.startsWith('reconciliation'))).toBe(false)
     expect(withReconcile[withReconcile.length - 1]).toBe(
-      'reconciliation is a standing team cost - a job that never ends',
+      'reconciliation is a standing team cost: a job that never ends',
     )
   })
 

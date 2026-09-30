@@ -60,6 +60,20 @@ describe('checkProblemEssay: orientation fields', () => {
     expect(checkProblemEssay(essay({ mission: twoMarkers })).ok).toBe(false)
   })
 
+  it('checks outline anchors: kebab-case, and naming a comparison question', () => {
+    const withAnchor = (anchor: string) => ({
+      ...mission,
+      outline: { ...mission.outline, decisions: [{ ...mission.outline.decisions[0], anchor }, mission.outline.decisions[1]] },
+    })
+    const bad = checkProblemEssay(essay({ mission: withAnchor('#Q1') }))
+    expect(bad.ok).toBe(false)
+    expect((bad as { reason: string }).reason).toMatch(/anchor/)
+    // No comparison on the page, so no question the label could link to.
+    const dangling = checkProblemEssay(essay({ mission: withAnchor('q1') }))
+    expect(dangling.ok).toBe(false)
+    expect((dangling as { reason: string }).reason).toMatch(/names no comparison question/)
+  })
+
   it('rejects a stray {{decisions}} marker with no decisionsSummary', () => {
     const stray = { ...mission, decisionsSummary: undefined, outline: undefined }
     const r = checkProblemEssay(essay({ mission: stray }))

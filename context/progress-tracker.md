@@ -7699,6 +7699,33 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-09-29: **Ambiguous-timeouts polish: dash sweep, box layout, deck/button
+  fixes, mission header.** Branch `fix/ambiguous-timeouts-polish` off `main`
+  (`eda6f4c`); one commit per section; not merged (owner device pass first).
+  Design input: "Problem Page Fix Specs" (2026-09-20) §1 and §2 a/b/d/e; §2c
+  (stage node values) held for the design agent's redo.
+  - **New house rule, dash sweep:** no long dashes, spaced hyphens or en-dashes
+    as punctuation in user-facing copy (hyphens inside words and number ranges
+    stay). Applied to page JSON prose, the mission box, the try-it, and every
+    mission string incl. bill cost lines (rules.js wording only; parity fixture
+    synced). Comparison section out of scope. 210 exact before/after pairs.
+  - **Mission box:** spec §1 structure (two-column definition list, bulleted
+    options, events | attacks row, stacked on phone, static text). New optional
+    `outline.decisions[].anchor` (validated: kebab-case + must name a comparison
+    question); labels link to #q1..#q5 with no visible Q marker.
+  - **Deck/buttons:** min-height options, 3x2 equal-size event chips at every
+    width (spec's 6-across overridden), visible bill dividers, one 14px gutter.
+  - **Stage clip fixed:** the stage wrapper could shrink in the capped sticky
+    column and hide the bottom of the drawing; it now keeps its height and the
+    log absorbs the squeeze (floor 96px).
+  - **Phone deck overflow fixed** (pre-existing): the phone column kept the
+    desktop `align-items:start`, so a collapsed header's nowrap chosen value
+    widened the deck to 576px in a 350px frame. New e2e guard.
+  - **Header:** eyebrow "AMBIGUOUS FAILURE UNDER RETRY", new sentence (zero
+    double charges / lost sales / unresolved payments), deck subtitle, spacing.
+  - Verification: tsc 0, validator 0 errors, 423/423 unit, 19/19 e2e, §5.4
+    baseline re-captured (50 lines).
+
 - 2026-09-12: **Article enrichment round — AWS Timeouts, Retries, Backoff &
   Jitter** (enrichment of the existing `aws-timeouts-retries-backoff-jitter`
   article; slug / title / url / publishedAt / cruxTag / source frozen —

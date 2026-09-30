@@ -158,6 +158,21 @@ _None._
 
 ---
 
+### 24. Ambiguous-timeouts polish: follow-ups from the dash sweep (2026-09-29)
+
+- **Source:** `fix/ambiguous-timeouts-polish`.
+- **§2c stage node values:** held for the design agent's redo; merge-gate
+  check (one day-run + one attack-run, dots/kill-marks/stamps land) runs when
+  it lands. The stage clip bug is fixed independently of §2c.
+- **Copy consistency asks (not changed, outside the brief):** the try-it
+  eyebrow still reads "PROBLEM CLASS · ... · INTERACTIVE"; the mission teaser
+  (/problems list + iframe title) still says "Surviving the day = 0 doubles, 0
+  lost sales, 0 mystery tickets"; the debrief closes "Same guarantee, different
+  price" (the price->cost pass missed it).
+- **Short laptop windows:** at <=640px tall the log's top sits at the fold
+  (stage, narration, chips, controls stay fully visible). Accept, or trim the
+  chip/narration heights?
+
 ## Lower priority
 
 ### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)

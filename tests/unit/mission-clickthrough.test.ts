@@ -139,7 +139,7 @@ afterAll(() => {
 describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => {
   it('boots with the naive deck and the run cue', () => {
     expect(cue()).toBe('run')
-    expect(text('#runbtn')).toContain('RUN THE DAY - NAIVE')
+    expect(text('#runbtn')).toContain('RUN THE DAY (NAIVE)')
     expect(text('#narr')).toContain('Run it first with the naive defaults and observe what breaks')
     expect($('#escwrap')!.style.display).toBe('none')
     expect($('#bill')!.style.display).toBe('none')
@@ -185,7 +185,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     expect(state.decisions).toEqual({ id: 'key', mem: 'acid', read: 'master', cli: 'key', rep: 'saved', ret: 'ever' })
     expect(state.held).toEqual([false, false, false, false, false])
     expect((state.bill as Array<{ c: string }>).map((b) => b.c)).toContain(
-      'keys kept without bound - a future key can collide with an ancient one',
+      'keys kept without bound: a future key can collide with an ancient one',
     )
     assertCue()
   })
@@ -252,7 +252,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     await until(() => lvls()[2]!.querySelector<HTMLElement>('.done')!.style.display === 'inline', 'A3 held', MAX_WAIT)
     const card = $('#log .bcard')! // newest first
     expect(card.classList.contains('warn')).toBe(true)
-    expect(card.textContent).toContain('HELD - BY REFUSING TO FORGET')
+    expect(card.textContent).toContain('HELD, BY REFUSING TO FORGET')
     assertCue()
   })
 
@@ -299,7 +299,7 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     lvls()[4]!.querySelector<HTMLElement>('.rerunbtn')!.click()
     await until(() => lvls()[4]!.querySelector<HTMLElement>('.done')!.style.display === 'inline', 'A5 held', MAX_WAIT)
     await sleep(50)
-    expect($('#log .bcard')!.textContent).toContain('HELD - CAUGHT, RECORDED, REPAIRED')
+    expect($('#log .bcard')!.textContent).toContain('HELD: CAUGHT, RECORDED, REPAIRED')
     expect(text('#bill')).toContain('reconciliation is a standing team cost')
     assertCue()
   })
@@ -308,8 +308,8 @@ describe('§5.2 click-through, default path (jsdom, accelerated timers)', () => 
     await until(() => $('#debrief')!.classList.contains('on'), 'debrief on', 10000)
     await sleep(30)
     const d = text('#debrief')
-    expect(d).toContain('HELD UNDER ATTACK - THE DEBRIEF')
-    expect(d).toContain('committed together with the charge - one transaction')
+    expect(d).toContain('HELD UNDER ATTACK: THE DEBRIEF')
+    expect(d).toContain('committed together with the charge, in one transaction')
     expect(d).toContain('a duplicate gets the saved response')
     expect(d).toContain('about 24 hours, chosen on purpose')
     expect(d).toContain('refuse, naming the mismatch')

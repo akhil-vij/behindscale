@@ -51,31 +51,47 @@ export default function MissionSection({
       <h2 className="pp-h2">{mission.title}</h2>
       <p className="pp-p">{pp(composeIntro(mission))}</p>
       {outline !== undefined && (
-        <div className="card" id="mission-outline">
+        <div className="card mission-outline" id="mission-outline">
           <div className="eyebrow">{"What's inside the mission"}</div>
-          <div className="mt-2.5 grid gap-4 text-sm leading-relaxed text-text-secondary sm:grid-cols-3">
-            <div>
-              <div className="font-semibold text-text-primary">{decisionsHeading(outline)}</div>
-              <ul className="mt-1">
-                {outline.decisions.map((d) => (
-                  <li key={d.label}>
-                    <span className="text-text-primary">{d.label}</span>
-                    {` — ${d.options.join(' · ')}`}
-                  </li>
+          <div className="mo-section">
+            <div className="mo-label">{decisionsHeading(outline)}</div>
+            <div className="mo-decisions">
+              {outline.decisions.map((d) => (
+                <div className="mo-item" key={d.label}>
+                  {d.anchor !== undefined ? (
+                    <a className="mo-dlabel" href={`#${d.anchor}`}>{d.label}</a>
+                  ) : (
+                    <span className="mo-dlabel">{d.label}</span>
+                  )}
+                  <ul className="mo-opts">
+                    {d.options.map((o) => (
+                      <li key={o}>{o}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mo-row">
+            <div className="mo-section">
+              <div className="mo-label">{eventsHeading(outline)}</div>
+              <ul className="mo-flat">
+                {outline.events.map((e) => (
+                  <li key={e}>{e}</li>
                 ))}
               </ul>
             </div>
-            <div>
-              <div className="font-semibold text-text-primary">{eventsHeading(outline)}</div>
-              <p className="mt-1">{outline.events.join(' · ')}</p>
-            </div>
-            <div>
-              <div className="font-semibold text-text-primary">{attacksHeading(outline)}</div>
-              <p className="mt-1">{outline.attacks.map(attackLine).join(' · ')}</p>
+            <div className="mo-section">
+              <div className="mo-label">{attacksHeading(outline)}</div>
+              <ul className="mo-flat">
+                {outline.attacks.map((a) => (
+                  <li key={a.company}>{attackLine(a)}</li>
+                ))}
+              </ul>
             </div>
           </div>
           {comparisonColumns !== undefined && (
-            <p className="mt-3 text-[13px] text-text-muted">{closingLine(comparisonColumns)}</p>
+            <p className="mo-close">{closingLine(comparisonColumns)}</p>
           )}
         </div>
       )}
@@ -89,7 +105,7 @@ export default function MissionSection({
         wrapperClassName="pp-breakout mission"
         height={height ?? DEFAULT_MISSION_HEIGHT}
         onMessage={onMessage}
-        noscript={`${mission.teaser} (interactive - needs JavaScript)`}
+        noscript={`${mission.teaser} (interactive, needs JavaScript)`}
         noscriptDetail={outline !== undefined ? OUTLINE_NOSCRIPT_POINTER : undefined}
       />
       {/* B2-10 (F23): with JS off the stop block's "you can stop here" promise
@@ -136,7 +152,7 @@ function attacksHeading(o: ProblemMissionOutline): string {
   return `${capitalize(numberWord(o.attacks.length))} attacks, from the posts`
 }
 function attackLine(a: ProblemMissionOutline['attacks'][number]): string {
-  return `${a.company} ${a.year}, ${a.text}`
+  return `${a.company} ${a.year}: ${a.text}`
 }
 function closingLine(comparisonColumns: number): string {
   return `Survive the day and the attacks, and your design becomes the ${ordinalWord(comparisonColumns + 1)} column in the comparison below.`

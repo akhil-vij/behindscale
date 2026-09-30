@@ -175,8 +175,10 @@ export interface ProblemMission {
 }
 
 export interface ProblemMissionOutline {
-  // The decision groups: label + the options, in deck order.
-  decisions: { label: string; options: string[] }[]
+  // The decision groups: label + the options, in deck order. `anchor` is the
+  // comparison question id (without `#`) the label links to; omit it for a
+  // decision with no comparison row (the label renders as plain text).
+  decisions: { label: string; options: string[]; anchor?: string }[]
   // The day's events, in order.
   events: string[]
   // The attacks: company, year, and a short description.
