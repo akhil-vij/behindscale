@@ -114,6 +114,19 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 
 const WALL = 'ambiguous-failure-under-retry'
 
+// The frame's two layout breakpoints, defined once. The CSS template below
+// interpolates these strings and every JS check goes through matchMedia with
+// the same string, so CSS and JS can never disagree at a boundary pixel (the
+// old CSS "max-width: 700px" and JS "innerWidth < 700" split at exactly 700).
+//   PHONE: under 700px -- the vertical stage map (GV), the deck accordion, the
+//          phone control row.
+//   STACK: under 935px -- the two columns stack. Below that frame width the
+//          stage column is under ~470px and the 15/18px stage text would land
+//          under the 11/13px on-screen floor (mission stage + card log spec).
+const PHONE_MQ = '(max-width: 699.98px)'
+const STACK_MQ = '(max-width: 934.98px)'
+function mq(q) { return typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(q).matches }
+
 const CSS = `
  :root {
  --art-bg: #08090D; --art-surface: #0F1118; --art-surface-2: #161922;
@@ -265,17 +278,23 @@ const CSS = `
 
  #artB[data-cue="run"] .runbtn { animation: runpulse 1.4s ease infinite alternate; }
  @keyframes runpulse { from { box-shadow: 0 0 0 rgba(217,70,239,0); } to { box-shadow: 0 0 18px rgba(217,70,239,.55); } }
- @media (max-width: 700px) {
+ @media ${STACK_MQ} {
  .bstagewrap { overflow-x: visible; }
- /* §1/§2: one natural-height column, re-ordered to the phone reading order:
+ /* §1/§2: one natural-height column, re-ordered to the reading order:
     narration -> stage -> controls -> log -> bill -> commit -> deck -> attacks
     -> debrief (evchips lead the right column). The control row is NOT sticky
-    (the stage is directly above; sticky would cover the log the cards land in). */
+    (the stage is directly above; sticky would cover the log the cards land in).
+    Applies on phones and on any frame too narrow for two readable columns. */
  .mission-grid { display:flex; flex-direction:column; gap:14px; align-items:stretch; } /* the desktop grid's align-items:start let the nowrap .kgchoice size the column past the frame */
- .col-right { position:static; max-height:none; order:-1; }
+ .col-right { position:static; max-height:none; order:-1; align-self:stretch; } /* the desktop align-self:start would shrink it to its content */
  .col-right .log { flex:0 1 auto; min-height:0; max-height:280px; }
- #bill { order:1; }        /* right column: log before bill on phone */
- #cmtbox { order:-1; }     /* left column: commit before deck on phone */
+ #bill { order:1; }        /* right column: log before bill when stacked */
+ #cmtbox { order:-1; }     /* left column: commit before deck when stacked */
+ }
+ @media ${PHONE_MQ} {
+ /* the vertical map is tall (360x552): cap its width so a 600-699px frame
+    doesn't draw a 930px-tall stage; 390-class phones are unaffected. */
+ svg#bstage { max-width:420px; margin:0 auto; }
  /* control row: buttons one line (RUN flexes), meters a second full-width
     3-col line, never clipped (F11's "MYS"). */
  .runbtn { flex:1 1 auto; }
@@ -437,7 +456,7 @@ function bootEngine() {
  var STAGEMAP = { id:'sg-id', mem:'sg-mem', read:'sg-read', cli:'sg-cli', rep:'sg-rep', ret:'sg-ret' };
 
  function paintDeck(){
- var vert = window.innerWidth < 700; /* §2/A3: phone shows a one-open accordion; desktop the full deck */
+ var vert = mq(PHONE_MQ); /* §2/A3: phone shows a one-open accordion; desktop the full deck */
  var h = '<div class="deck-title">YOUR DECISIONS</div><div class="deck-sub">the day runs on the choices you make here</div>';
  GROUPS.forEach(function(g){
   var ok = !g.needs || g.needs();
@@ -480,7 +499,7 @@ function bootEngine() {
  });
  /* §2/A3: accordion toggle on the group header (phone only; desktop = full deck) */
  $$('#deck .kgl[data-acc]').forEach(function(hd){
-  function toggle(){ if (window.innerWidth >= 700) return; var k=hd.getAttribute('data-acc'); openGroup = (openGroup===k) ? null : k; paintDeck(); }
+  function toggle(){ if (!mq(PHONE_MQ)) return; var k=hd.getAttribute('data-acc'); openGroup = (openGroup===k) ? null : k; paintDeck(); }
   hd.addEventListener('click', toggle);
   hd.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); } });
  });
@@ -694,9 +713,9 @@ function bootEngine() {
 
  var CX,SX,SXR,BX,Y;
  function refreshXY(){ CX=G.client.x+G.client.w; SX=G.server.x; SXR=G.server.x+G.server.w; BX=G.bank.x; Y=G.wireY; }
- function pickG(){ VERT = window.innerWidth < 700; G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 552' : '0 0 640 336'); } /* §3: GV grows 520->552 for the bank band */
+ function pickG(){ VERT = mq(PHONE_MQ); G = VERT ? GV : GH; refreshXY(); stage.setAttribute('viewBox', VERT ? '0 0 360 552' : '0 0 640 336'); } /* §3: GV grows 520->552 for the bank band */
  pickG();
- window.addEventListener('resize', function(){ var v = window.innerWidth < 700; if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
+ window.addEventListener('resize', function(){ var v = mq(PHONE_MQ); if (v !== VERT && !running){ pickG(); drawStage(); layerAnim = el('g',{}); paintDeck(); /* §2/A3: repaint the deck so it matches the new breakpoint (accordion vs full) */ } });
  function reqA(){ return VERT ? {x:GV.wireX, y:G.client.y+G.client.h+10} : {x:CX+14, y:Y}; }
  function reqB(){ return VERT ? {x:GV.wireX, y:G.server.y-8} : {x:SX-8, y:Y}; }
  async function animRequest(kind, opts){
@@ -765,7 +784,7 @@ function bootEngine() {
   var kg = document.getElementById('kg-'+knob); if (!kg) return;
   /* §2/A3: on phone open the target group in the accordion first, then cue it;
      the host does the page scroll (bridge anchor). */
-  if (window.innerWidth < 700){ openGroup = knob; paintDeck(); kg = document.getElementById('kg-'+knob); if (!kg) return; }
+  if (mq(PHONE_MQ)){ openGroup = knob; paintDeck(); kg = document.getElementById('kg-'+knob); if (!kg) return; }
   var artB = $('#artB');
   var attackActive = escMode >= 0;
   var attackGroup = (attackActive && LEVELS[escMode]) ? LEVELS[escMode].group : null;
