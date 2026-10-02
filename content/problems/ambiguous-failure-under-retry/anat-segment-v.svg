@@ -1,10 +1,10 @@
-<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Segment: messageId born in the client SDK, state in a RocksDB ledger on each worker, duplicates are silently dropped; the window shrinks under load" xmlns="http://www.w3.org/2000/svg">
+<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Segment: messageId made by the caller's SDK, memory in a RocksDB ledger on each worker, duplicates are silently dropped. The window shrinks under load" xmlns="http://www.w3.org/2000/svg">
   <path class="replay ns" d="M 90 144 C 40 116, 40 62, 78 34"></path>
   <polygon class="rhead ns" points="90,34 78,28 78,40"></polygon>
-  <text class="rlabel ns" x="180" y="198">nothing - the duplicate is dropped</text>
+  <text class="rlabel ns" x="180" y="198">nothing: the duplicate is dropped</text>
   <rect class="node" x="90" y="10" width="180" height="48" rx="7"></rect>
   <text class="nlabel" x="180" y="30">PHONE</text>
-  <text class="nsub" x="180" y="44">can't follow rules</text>
+  <text class="nsub" x="180" y="44">out of its control</text>
   <circle class="keydot" cx="180" cy="58" r="6"></circle>
   <line class="arrow" x1="180" y1="66" x2="180" y2="79"></line>
   <line class="arrow" x1="180" y1="97" x2="180" y2="110"></line>

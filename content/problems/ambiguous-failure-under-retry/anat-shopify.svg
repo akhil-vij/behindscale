@@ -1,9 +1,9 @@
-<svg class="anat" viewBox="0 0 640 150" role="img" aria-label="Shopify: key origin not stated, state records which steps ran in the payment service, only one request ever reaches the financial partner; a retry after 24 hours is uncovered">
+<svg class="anat" viewBox="0 0 640 150" role="img" aria-label="Shopify: key origin not stated, memory records which steps ran in the payment service, only one request ever reaches the payment partner. A retry after about 24 hours is not covered">
   <path class="replay ns" d="M 300 34 C 250 8, 150 8, 92 30"/>
   <polygon class="rhead ns" points="88,32 98,26 98,34"/>
   <text class="rlabel ns" x="196" y="14">not stated in the post</text>
   <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
-  <text class="nlabel" x="62" y="61">CLIENT</text>
+  <text class="nlabel" x="62" y="61">CALLER</text>
   <circle class="keydot ns" cx="116" cy="57" r="6"/>
   <text class="klabel" x="116" y="82">key origin: not stated</text>
   <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
@@ -18,7 +18,7 @@
   <polygon class="ahead" points="504,57 496,53 496,61"/>
   <text class="alabel" x="443" y="50">×1 ONLY, EVER</text>
   <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
-  <text class="nlabel" x="569" y="55">FINANCIAL</text>
+  <text class="nlabel" x="569" y="55">PAYMENT</text>
   <text class="nsub" x="569" y="68">PARTNER</text>
   <circle class="clockmark" cx="458" cy="107" r="10"/>
   <line class="clockmark" x1="458" y1="107" x2="458" y2="101"/>

@@ -1,4 +1,4 @@
-<svg class="win" viewBox="0 0 640 196" role="img" aria-label="Five shapes of the protection window: policy-set, resource lifetime plus grace, lease plus cap, a fixed 24 hours, and size-bound">
+<svg class="win" viewBox="0 0 640 196" role="img" aria-label="Five ways the protection window ends: set by policy, resource lifetime plus grace, a lease plus a retry cap, about 24 hours, and set by size">
   <defs>
     <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
       <line x1="0" y1="0" x2="0" y2="7" stroke="#D6D2CA" stroke-width="2.4"/>
@@ -6,7 +6,7 @@
   </defs>
   <text class="wlabel" x="8" y="30">Stripe</text>
   <rect class="wbar" x="112" y="16" width="290" height="20" rx="5" fill="url(#hatch)"/>
-  <text class="wtag" x="412" y="30">POLICY-SET - MUST OUTLIVE RETRIES</text>
+  <text class="wtag" x="412" y="30">SET BY POLICY: MUST OUTLAST RETRIES</text>
 
   <text class="wlabel" x="8" y="66">AWS</text>
   <rect class="wbar solid" x="112" y="52" width="380" height="20" rx="5"/>
@@ -27,6 +27,6 @@
   <text class="wlabel" x="8" y="174">Segment</text>
   <polygon class="wbar solid" points="112,160 372,160 372,166 332,180 112,180"/>
   <line class="wmark" x1="252" y1="154" x2="252" y2="186"/>
-  <text class="wtag" x="118" y="174">SIZE-BOUND - SHRINKS UNDER LOAD</text>
-  <text class="wtag" x="260" y="196" fill="#DC2626">PAGED IF &lt; 24H</text>
+  <text class="wtag" x="118" y="174">SET BY SIZE: HEAVY TRAFFIC SHRINKS IT</text>
+  <text class="wtag" x="260" y="196" fill="#DC2626">ALERT IF &lt; 24H</text>
 </svg>

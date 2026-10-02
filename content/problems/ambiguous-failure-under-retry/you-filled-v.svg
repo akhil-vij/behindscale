@@ -1,8 +1,8 @@
-<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Your design on the same skeleton: client, server, memory, bank - drawn from your decisions after a survived day" xmlns="http://www.w3.org/2000/svg">
+<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Your design on the same skeleton: caller, server, memory, bank, drawn from your decisions after a survived day" xmlns="http://www.w3.org/2000/svg">
   <path class="replay" d="M 90 144 C 40 116, 40 62, 78 34"></path>
   <polygon class="rhead" points="90,34 78,28 78,40"></polygon>
   <rect class="node" x="90" y="10" width="180" height="48" rx="7"></rect>
-  <text class="nlabel" x="180" y="38">CLIENT</text>
+  <text class="nlabel" x="180" y="38">CALLER</text>
   <circle class="keydot" cx="180" cy="58" r="6"></circle>
   <line class="arrow" x1="180" y1="66" x2="180" y2="79"></line>
   <line class="arrow" x1="180" y1="97" x2="180" y2="110"></line>
