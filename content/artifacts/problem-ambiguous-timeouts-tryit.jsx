@@ -124,7 +124,7 @@ svg.stage text { font-family: var(--mono); }
 
 const MARKUP = `
 <div class="artifact" id="artifact">
- <div class="art-eyebrow">PROBLEM CLASS · AMBIGUOUS FAILURE UNDER RETRY · INTERACTIVE</div>
+ <div class="art-eyebrow">WALL · AMBIGUOUS FAILURE UNDER RETRY · INTERACTIVE</div>
  <div class="art-title">The ambiguity window <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #6B7280;color:#6B7280;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">TRY IT</span></div>
  <p class="art-sub">One $100 charge and three places it can fail. You can see whether the money actually moved, but the client can't. All it gets is a timeout.</p>
 
