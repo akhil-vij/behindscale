@@ -262,9 +262,9 @@ test.describe('§5.5 no-JS', () => {
   test('the prerendered copy, both frame fallbacks, and the noscript figure render', async ({ page }) => {
     await page.goto(PAGE)
     await expect(page.getByRole('heading', { level: 1, name: 'Ambiguous failure under retry' })).toBeVisible()
-    await expect(page.getByText('Six systems, one diagram - the sixth is yours')).toBeVisible()
-    await expect(page.getByText('Every key store is a clock.')).toBeVisible()
-    await expect(page.getByText('The difference is the bill. Staff answers have one.')).toBeVisible()
+    await expect(page.getByText('Five designs and yours, drawn the same way')).toBeVisible()
+    await expect(page.getByText("Every key's memory runs out.")).toBeVisible()
+    await expect(page.getByText('The difference is the bill. A Staff answer comes with one.')).toBeVisible()
     // The orientation follow-up: the strip, the composed sentence, the
     // outline card -- all static.
     await expect(page.locator('#howitworks')).toHaveText('Cause it · Build it · Survive a day · Compare with five real systems')
@@ -318,8 +318,8 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   const html = readFileSync(DIST_PAGE, 'utf8')
   for (const sentence of [
     'A request that returns a clear error is easy.',
-    'Only the caller knows intent - every post that takes a position lands there.',
-    'The difference is the bill. Staff answers have one. The bill panel above is yours.',
+    'Only the caller knows what it meant to do, and every post that takes a position agrees.',
+    'The difference is the bill. A Staff answer comes with one. The bill in the mission above is yours.',
   ]) {
     expect(html, sentence).toContain(sentence)
   }
