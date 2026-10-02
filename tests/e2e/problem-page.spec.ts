@@ -119,14 +119,14 @@ test.describe('§5.2 real iframe round-trip', () => {
 
     // state -> the YOU column, the diagram slots, the ticks.
     await expect(page.locator('#you-th')).toHaveText('YOU')
-    await expect(page.locator('#you-c-state')).toHaveText('With the work, one commit, master only')
+    await expect(page.locator('#you-c-state')).toHaveText('In the same commit as the charge, main database only')
     await expect(page.locator('#you-c-crash')).toHaveText("Can't half-happen")
-    await expect(page.locator('#you-c-rep')).toHaveText('The saved result')
+    await expect(page.locator('#you-c-rep')).toHaveText('The saved response')
     await expect(page.locator('#you-c-win')).toHaveText('Forever')
     await expect(page.locator('#you-c-breaks')).toHaveText(
-      'Key reused · Replica reads · Traffic 10× · Parameters change · Retry after the window',
+      'Key reused · Read-only copy reads · Traffic 10× · Details change · Retry after window',
     )
-    await expect(page.locator('#you-d-state')).toHaveText('WITH THE WORK, ONE COMMIT, MASTER ONLY')
+    await expect(page.locator('#you-d-state')).toHaveText('IN THE SAME COMMIT AS THE CHARGE, MAIN DATABASE ONLY')
     await expect(page.locator('#you-iv-1')).toHaveText('not yet')
 
     // Commit: locks in the artifact, appears under the YOU diagram, persists.
@@ -162,7 +162,7 @@ test.describe('§5.2 real iframe round-trip', () => {
     // The restored design refills the YOU column, and the mission shows the
     // restored survived state (attacks revealed, RESTORED narration).
     await expect(page.locator('#you-th')).toHaveText('YOU', { timeout: 20_000 })
-    await expect(page.locator('#you-c-state')).toHaveText('With the work, one commit, master only')
+    await expect(page.locator('#you-c-state')).toHaveText('In the same commit as the charge, main database only')
     await expect(page.locator('#you-c-win')).toHaveText('Forever')
     await expect(mission2.locator('#escwrap')).toBeVisible()
     await expect(mission2.locator('#narr')).toContainText('RESTORED')
