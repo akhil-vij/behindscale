@@ -7733,6 +7733,12 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     label overflows its box and its red line overflows the phone canvas.
   - Verification: tsc 0, validator 0 errors, 423/423 unit, 21/21 e2e, §5.4
     baseline re-captured (68 lines, all intended).
+  - **Follow-up, same day (owner's answers):** new `stripNote` (names both
+    meanings of a dashed mark); `mission.stopblock` links "the comparison";
+    six more diagram words changed, each measured to fit ("AFTER ~24H" kept);
+    **the 390px overflow is fixed** (`svg.anat-v { min-width: 0 }`: diagrams
+    324px wide, page 390px, smallest diagram text 7.7px) with an e2e
+    assertion over all six verticals. Pushed; not merged.
 
 - 2026-09-30: **Mission stage text + card log (option B).** Branch
   `fix/mission-stage-and-log` off `main` (`1623fa3`). Design input: "Stage +
