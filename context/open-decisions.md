@@ -163,11 +163,10 @@ _None._
 - **Source:** `fix/ambiguous-timeouts-polish`.
 - **§2c stage node values:** superseded by the stage + card log spec
   (`fix/mission-stage-and-log`, 2026-09-30); see #25.
-- **Copy consistency asks (not changed, outside the brief):** the try-it
-  eyebrow still reads "PROBLEM CLASS · ... · INTERACTIVE"; the mission teaser
-  (/problems list + iframe title) still says "Surviving the day = 0 doubles, 0
-  lost sales, 0 mystery tickets"; the debrief closes "Same guarantee, different
-  price" (the price->cost pass missed it).
+- **Copy consistency asks:** resolved in the comparison copy pass
+  (`fix/ambiguous-timeouts-comparison-copy`, 2026-10-02): the try-it eyebrow
+  says "WALL · ...", the mission teaser is a sentence, the debrief closes on
+  "different cost".
 - **Short laptop windows:** superseded by #25 (the column is sticky only
   when it fits; otherwise it scrolls normally).
 
@@ -187,9 +186,47 @@ _None._
   lengthens a slot card or narration can tip 13-inch laptops over.
 - **Flag: the hash glyph (#) inside the identity dot stays 9-10px** (an icon
   in a 16px circle, excluded from the text floor).
-- **Ask: strings outside the approved table:** the reply label
-  '"VALIDATION: params changed"' (attack 4) still says "params" where the
-  memory status now says "details differ".
+- **Ask: strings outside the approved table:** resolved 2026-10-02. Attack
+  4's reply label now reads "REFUSED: details changed" (stage checker clean).
+
+### 26. Comparison copy pass: held string, design asks, a phone layout bug (2026-10-02)
+
+- **Source:** `fix/ambiguous-timeouts-comparison-copy` (not pushed).
+- **Held: `comparison.stripNote`.** Dashed amber means one thing (Shopify's
+  key dot: the post doesn't say who makes the key). Dashed gray means two:
+  Shopify's reply arc is "not stated in the post", Segment's is "nothing: the
+  duplicate is dropped" (stated, and the answer is that no reply is sent).
+  The current note still has a spaced hyphen and a semicolon. Needs a string
+  from the owner.
+- **Bug, not fixed (the pass was copy only): the vertical diagrams overflow
+  at 390px.** `.problem-page svg.anat { min-width: 560px }` also applies to
+  the vertical files (class `anat anat-v`), so each is drawn 560px wide in a
+  324px column, is cut off on the right, and makes the page 593px wide (it
+  scrolls sideways). One line fixes it (`svg.anat-v { min-width: 0 }`); the
+  smallest diagram text is then about 7.7px, down from 13.2px. Reply: fix
+  now / hand to design.
+- **For design: the sixth (YOU) diagram's slots.** The memory label is wider
+  than its box (was 224 in a 140 box, now 306 with the approved string; it
+  hits nothing and stays inside the canvas). On the vertical file the red
+  line with no attack held is 552 wide in a 360 canvas and is clipped (same
+  before this pass).
+- **For design: strings that don't fit, or already collide.** Stripe's red
+  line should read "OLD RESPONSE" but already runs 12 units into the memory
+  box. Also from before: AWS "SDK fills the token in" is 2 units wider than
+  its box, Segment's ledger label is 0.7 over, and the windows chart's
+  "ALERT IF < 24H" is cut by the bottom of the canvas. The windows chart has
+  no vertical file: its text is 4.4px at 390px.
+- **Ask: diagram words no rule covers** (left as they are): SECONDS OF LAG,
+  WINDOW SHRINKS UNDER LOAD, AFTER ~24H, ~24 HOURS, SAME-MEANING SUCCESS,
+  key origin, + GRACE, LEASE. The page copy now says delay, heavy traffic,
+  about 24 hours, a success, margin. Reply: which to change (all fit except
+  "AFTER ABOUT 24H, NOT COVERED").
+- **Ask: three rendered strings outside the brief.** `mission.stopblock`
+  still links "the hint sheet"; `interview.asks[1]` says "The client's
+  request timed out" (marked no change); two aria-labels in
+  `ComparisonSection.tsx` use a long dash.
+- **Note: the pattern chip is still named "Master-Only Reads"** (pattern
+  library, out of scope).
 
 ## Lower priority
 
