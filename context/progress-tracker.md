@@ -7730,6 +7730,47 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   live uncommitted problem-page changes, so this round was committed with git
   plumbing (no checkout, no stash) and verified in a throwaway export under
   the gitignored `.cache/`; the other session's files were not touched.
+- 2026-10-02: **Comparison section copy pass (/problems/ambiguous-timeouts).**
+  Branch `fix/ambiguous-timeouts-comparison-copy` off `main` (`ce70cab`, after
+  PR #20 merged); four commits (page JSON, `youMapping`, diagram text, tests +
+  baseline); not pushed (owner review first). Copy only: no layout, behaviour
+  or rules changes.
+  - **House rules, comparison section:** the first pass's rules plus three new
+    ones: the key's stored record is **memory** (never state), the sender is
+    **the caller** (never the client), what the server sends back is a
+    **response**. Also payment partner, trade-off/downside (cost belongs to
+    the bill), alerts. Two deliberate "replica" exceptions (Q2 Airbnb's first
+    definition, a quoted candidate in red flag 2).
+  - **Page JSON:** 132 strings by exact textual replacement (links, qref,
+    highlights, ids, open/hot, ns cells untouched). New row labels (Key made
+    by / Memory lives / Crash halfway / Duplicate gets back). Each question's
+    "why" ends with its deck decision. Four accuracy fixes from the brief.
+    `interview.staff` uses THE BILL's wording for its three costs.
+    `comparison.stripNote` held (see open-decisions #26).
+  - **youMapping:** every output string reworded, logic unchanged. The five
+    attack phrases keep their old total length because the sixth diagram
+    prints them on one row that ends 16 units from the canvas edge.
+  - **Diagram text:** 15 SVG files measured with a fit checker (text vs its
+    box, other text, other boxes, lines, canvas) before and after; a string
+    changed only where it fits as well as the old one. One left for design
+    (Stripe's red line). Font sizes and shapes untouched.
+  - **Polish leftovers closed:** try-it eyebrow says WALL; `mission.teaser` is
+    a sentence; debrief says "different cost"; attack 4's reply label is
+    "REFUSED: details changed" (stage checker clean on both maps).
+  - **Found, not changed (report-only):** at 390px the vertical diagrams are
+    drawn 560px wide in a 324px column (`svg.anat`'s `min-width: 560px` also
+    hits `.anat-v`), so the page is 593px wide and scrolls sideways; the
+    windows chart's smallest text is 4.4px there; the sixth diagram's memory
+    label overflows its box and its red line overflows the phone canvas.
+  - Verification: tsc 0, validator 0 errors, 423/423 unit, 21/21 e2e, §5.4
+    baseline re-captured (68 lines, all intended).
+  - **Follow-up, same day (owner's answers):** new `stripNote` (names both
+    meanings of a dashed mark); `mission.stopblock` links "the comparison";
+    six more diagram words changed, each measured to fit ("AFTER ~24H" kept);
+    **the 390px overflow is fixed** (`svg.anat-v { min-width: 0 }`: diagrams
+    324px wide, page 390px, smallest diagram text 7.7px) with an e2e
+    assertion over all six verticals. Pushed; not merged.
+
 - 2026-09-30: **Mission stage text + card log (option B).** Branch
   `fix/mission-stage-and-log` off `main` (`1623fa3`). Design input: "Stage +
   Card Log Spec" (2026-09-30) with the owner's corrections.

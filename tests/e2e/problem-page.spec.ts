@@ -119,14 +119,14 @@ test.describe('§5.2 real iframe round-trip', () => {
 
     // state -> the YOU column, the diagram slots, the ticks.
     await expect(page.locator('#you-th')).toHaveText('YOU')
-    await expect(page.locator('#you-c-state')).toHaveText('With the work, one commit, master only')
+    await expect(page.locator('#you-c-state')).toHaveText('In the same commit as the charge, main database only')
     await expect(page.locator('#you-c-crash')).toHaveText("Can't half-happen")
-    await expect(page.locator('#you-c-rep')).toHaveText('The saved result')
+    await expect(page.locator('#you-c-rep')).toHaveText('The saved response')
     await expect(page.locator('#you-c-win')).toHaveText('Forever')
     await expect(page.locator('#you-c-breaks')).toHaveText(
-      'Key reused · Replica reads · Traffic 10× · Parameters change · Retry after the window',
+      'Key reused · Read-only copy reads · Traffic 10× · Details change · Retry after window',
     )
-    await expect(page.locator('#you-d-state')).toHaveText('WITH THE WORK, ONE COMMIT, MASTER ONLY')
+    await expect(page.locator('#you-d-state')).toHaveText('IN THE SAME COMMIT AS THE CHARGE, MAIN DATABASE ONLY')
     await expect(page.locator('#you-iv-1')).toHaveText('not yet')
 
     // Commit: locks in the artifact, appears under the YOU diagram, persists.
@@ -162,7 +162,7 @@ test.describe('§5.2 real iframe round-trip', () => {
     // The restored design refills the YOU column, and the mission shows the
     // restored survived state (attacks revealed, RESTORED narration).
     await expect(page.locator('#you-th')).toHaveText('YOU', { timeout: 20_000 })
-    await expect(page.locator('#you-c-state')).toHaveText('With the work, one commit, master only')
+    await expect(page.locator('#you-c-state')).toHaveText('In the same commit as the charge, main database only')
     await expect(page.locator('#you-c-win')).toHaveText('Forever')
     await expect(mission2.locator('#escwrap')).toBeVisible()
     await expect(mission2.locator('#narr')).toContainText('RESTORED')
@@ -262,9 +262,9 @@ test.describe('§5.5 no-JS', () => {
   test('the prerendered copy, both frame fallbacks, and the noscript figure render', async ({ page }) => {
     await page.goto(PAGE)
     await expect(page.getByRole('heading', { level: 1, name: 'Ambiguous failure under retry' })).toBeVisible()
-    await expect(page.getByText('Six systems, one diagram - the sixth is yours')).toBeVisible()
-    await expect(page.getByText('Every key store is a clock.')).toBeVisible()
-    await expect(page.getByText('The difference is the bill. Staff answers have one.')).toBeVisible()
+    await expect(page.getByText('Five designs and yours, drawn the same way')).toBeVisible()
+    await expect(page.getByText("Every key's memory runs out.")).toBeVisible()
+    await expect(page.getByText('The difference is the bill. A Staff answer comes with one.')).toBeVisible()
     // The orientation follow-up: the strip, the composed sentence, the
     // outline card -- all static.
     await expect(page.locator('#howitworks')).toHaveText('Cause it · Build it · Survive a day · Compare with five real systems')
@@ -318,8 +318,8 @@ test('§5.6 prerender: the served HTML carries the copy', async () => {
   const html = readFileSync(DIST_PAGE, 'utf8')
   for (const sentence of [
     'A request that returns a clear error is easy.',
-    'Only the caller knows intent - every post that takes a position lands there.',
-    'The difference is the bill. Staff answers have one. The bill panel above is yours.',
+    'Only the caller knows what it meant to do, and every post that takes a position agrees.',
+    'The difference is the bill. A Staff answer comes with one. The bill in the mission above is yours.',
   ]) {
     expect(html, sentence).toContain(sentence)
   }
@@ -730,6 +730,20 @@ test.describe('§3b verticals live: DV/TV replace the scrolling horizontals unde
     const row = page.locator('.anat-row.has-vert').first()
     await expect(row.locator('.anat-vert')).toBeVisible()
     await expect(row.locator('.anat-scroll')).toBeHidden()
+    // The vertical fits its column: it must not inherit the horizontal's 560px
+    // floor, which drew it wider than the phone and made the page scroll
+    // sideways. Every row is opened so all six verticals are measured.
+    const fit = await page.evaluate(() => {
+      document.querySelectorAll<HTMLDetailsElement>('details.anat-row').forEach((d) => (d.open = true))
+      const over = [...document.querySelectorAll('.anat-vert')].filter((v) => {
+        const svg = v.querySelector('svg')
+        return svg !== null && svg.getBoundingClientRect().width > v.clientWidth + 1
+      }).length
+      return { verticals: document.querySelectorAll('.anat-vert svg').length, over, pageW: document.documentElement.scrollWidth, innerW: window.innerWidth }
+    })
+    expect(fit.verticals).toBe(6)
+    expect(fit.over).toBe(0)
+    expect(fit.pageW).toBeLessThanOrEqual(fit.innerW)
     // The try-it frame (iframe < 700 here) shows the vertical (TV) wire.
     const tryIt = frameOf(page, 'problem-ambiguous-timeouts-tryit')
     await expect(tryIt.locator('svg.stage.stage-v')).toBeVisible()
