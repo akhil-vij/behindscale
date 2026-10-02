@@ -127,6 +127,10 @@ body { overflow-x: clip; }
 .problem-page .anat-vert { display: none; }
 .problem-page .anat-vert svg { width: 100%; height: auto; display: block; }
 .problem-page svg.anat { width: 100%; min-width: 560px; height: auto; display: block; }
+/* The vertical files carry class "anat" too. Without this they inherit the
+   560px floor, are drawn wider than a phone column, and the page scrolls
+   sideways. They fit the column instead. */
+.problem-page svg.anat-v { min-width: 0; }
 .problem-page svg.anat text { font-family: var(--font-mono); }
 .problem-page .keydot { fill: var(--cat-amber); }
 .problem-page .keydot.ns { fill: none; stroke: var(--cat-amber); stroke-width: 1.5; stroke-dasharray: 3 2.4; }

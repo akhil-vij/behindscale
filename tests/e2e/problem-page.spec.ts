@@ -730,6 +730,20 @@ test.describe('§3b verticals live: DV/TV replace the scrolling horizontals unde
     const row = page.locator('.anat-row.has-vert').first()
     await expect(row.locator('.anat-vert')).toBeVisible()
     await expect(row.locator('.anat-scroll')).toBeHidden()
+    // The vertical fits its column: it must not inherit the horizontal's 560px
+    // floor, which drew it wider than the phone and made the page scroll
+    // sideways. Every row is opened so all six verticals are measured.
+    const fit = await page.evaluate(() => {
+      document.querySelectorAll<HTMLDetailsElement>('details.anat-row').forEach((d) => (d.open = true))
+      const over = [...document.querySelectorAll('.anat-vert')].filter((v) => {
+        const svg = v.querySelector('svg')
+        return svg !== null && svg.getBoundingClientRect().width > v.clientWidth + 1
+      }).length
+      return { verticals: document.querySelectorAll('.anat-vert svg').length, over, pageW: document.documentElement.scrollWidth, innerW: window.innerWidth }
+    })
+    expect(fit.verticals).toBe(6)
+    expect(fit.over).toBe(0)
+    expect(fit.pageW).toBeLessThanOrEqual(fit.innerW)
     // The try-it frame (iframe < 700 here) shows the vertical (TV) wire.
     const tryIt = frameOf(page, 'problem-ambiguous-timeouts-tryit')
     await expect(tryIt.locator('svg.stage.stage-v')).toBeVisible()
