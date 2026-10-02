@@ -1,4 +1,4 @@
-<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Shopify: key origin not stated, memory records which steps ran in the payment service, only one request ever reaches the payment partner. A retry after about 24 hours is not covered" xmlns="http://www.w3.org/2000/svg">
+<svg class="anat anat-v" viewBox="0 0 360 420" role="img" aria-label="Shopify: who makes the key is not stated, memory records which steps ran in the payment service, only one request ever reaches the payment partner. A retry after about 24 hours is not covered" xmlns="http://www.w3.org/2000/svg">
   <path class="replay ns" d="M 90 144 C 40 116, 40 62, 78 34"></path>
   <polygon class="rhead ns" points="90,34 78,28 78,40"></polygon>
   <text class="rlabel ns" x="180" y="198">not stated in the post</text>
@@ -8,7 +8,7 @@
   <line class="arrow" x1="180" y1="66" x2="180" y2="79"></line>
   <line class="arrow" x1="180" y1="97" x2="180" y2="110"></line>
   <polygon class="ahead" points="180,118 176,110 184,110"></polygon>
-  <text class="klabel" x="180" y="88">key origin: not stated</text>
+  <text class="klabel" x="180" y="88">key made by: not stated</text>
   <rect class="node" x="90" y="120" width="180" height="48" rx="7"></rect>
   <text class="nlabel" x="180" y="140">PAYMENT SERVICE</text>
   <text class="nsub" x="180" y="156">ULID keys</text>

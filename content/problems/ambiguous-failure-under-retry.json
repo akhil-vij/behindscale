@@ -120,7 +120,7 @@
         { "company": "Shopify", "year": "2022", "text": "a retry after the window" }
       ]
     },
-    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it. That's the core of it. Everything below is for going deeper: the five real answers side by side ([the hint sheet](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
+    "stopblock": "**Once your design survives a day, you can stop here.** By then you have caused the failure and built a design that survives it. That's the core of it. Everything below is for going deeper: the five real answers side by side ([the comparison](#hintsheet)), which answer fits which constraints, and the original posts. If you are preparing for an interview, [the interview note](#interview) walks the same trades in interview order.",
     "stuckNote": "Stuck on a failure card? The five companies below made the same decisions you are making, and wrote down why. Reading their posts while debugging is how most engineers first find them."
   },
   "comparison": {
@@ -228,7 +228,7 @@
       "filledSvg": "you-filled",
       "open": true
     },
-    "stripNote": "Dashed amber and dashed gray marks mean the post doesn't say - drawn as gaps, never guessed. The table below is the same comparison at a glance; each row expands into the full answers.",
+    "stripNote": "Dashed marks are gaps. On Shopify, the post doesn't say, so we leave a gap rather than guess. On Segment, the gap is the answer: a duplicate gets nothing back. The table below shows the same comparison at a glance, and the full answers follow it.",
     "matrixLead": "Start with the first row. Who the callers are decides almost everything below it.",
     "columns": [
       "Stripe",

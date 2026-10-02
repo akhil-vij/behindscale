@@ -23,7 +23,7 @@
   <polygon class="ahead" points="180,330 176,322 184,322"></polygon>
   <line class="bx" x1="100" y1="300" x2="112" y2="312"></line>
   <line class="bx" x1="112" y1="300" x2="100" y2="312"></line>
-  <text class="blabel" x="120" y="310">SECONDS OF LAG = DOUBLE CHARGE</text>
+  <text class="blabel" x="120" y="310">SECONDS BEHIND = DOUBLE CHARGE</text>
   <rect class="node" x="76" y="330" width="208" height="56" rx="7"></rect>
   <text class="nlabel" x="180" y="362">BANK</text>
 </svg>
