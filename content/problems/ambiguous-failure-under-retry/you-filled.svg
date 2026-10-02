@@ -1,10 +1,10 @@
-<svg class="anat" id="you-svg" viewBox="0 0 640 150" role="img" aria-label="Your design on the same skeleton: client, server, memory, bank - drawn from your decisions after a survived day">
+<svg class="anat" id="you-svg" viewBox="0 0 640 150" role="img" aria-label="Your design on the same skeleton: caller, server, memory, bank, drawn from your decisions after a survived day">
   <g id="you-fill">
     <path class="replay" d="M 300 34 C 250 8, 150 8, 92 30"/>
     <polygon class="rhead" points="88,32 98,26 98,34"/>
     <text class="rlabel" id="you-d-rep" x="196" y="14">{{dRep}}</text>
     <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
-    <text class="nlabel" x="62" y="61">CLIENT</text>
+    <text class="nlabel" x="62" y="61">CALLER</text>
     <circle class="keydot" cx="116" cy="57" r="6"/>
     <text class="klabel" id="you-d-key" x="150" y="82" text-anchor="start">{{dKey}}</text>
     <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>

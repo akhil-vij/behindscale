@@ -1260,7 +1260,7 @@ function bootEngine() {
    },
    rerun: async function(){
     var d = await animParamsMismatch();
-    if (K.params==='refuse'){ d.remove(); await replyBack('err','"VALIDATION: params changed"');
+    if (K.params==='refuse'){ d.remove(); await replyBack('err','"REFUSED: details changed"');
      card('good','HELD: THE MISMATCH WAS CAUGHT AND NAMED','The stored fingerprint exists precisely so this collision can be seen. The safest reading is that the customer meant something different. Refuse, and say why.','AWS 2021: the guarantee protects what the customer actually wanted.',null);
      return { held:true };
     }
@@ -1431,7 +1431,7 @@ function bootEngine() {
    ? drow('AFTER THE WINDOW','a reconciliation sweep against the bank\'s records','Shopify 2022: verify the money afterward, log every mismatch as an anomaly. Detection, not prevention; a standing team cost, on your bill.')
    : drow('AFTER THE WINDOW','nothing','None of the five ship this. The straggler is real, and someone else finds it.'));
   html+='<b>THE BILL, IN FULL:</b><br>'+bill.map(function(b){ return '\u2022 '+b.c+' <span style="color:#6B7280;">('+b.s+')</span>'; }).join('<br>')+'<br><br>';
-  html+='Same guarantee, different price. <b>That trade is the interview answer.</b>';
+  html+='Same guarantee, different cost. <b>That trade is the interview answer.</b>';
   d.innerHTML=html;
  }
  function debrief(){ buildDebrief(); }

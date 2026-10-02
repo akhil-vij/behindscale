@@ -163,11 +163,10 @@ _None._
 - **Source:** `fix/ambiguous-timeouts-polish`.
 - **§2c stage node values:** superseded by the stage + card log spec
   (`fix/mission-stage-and-log`, 2026-09-30); see #25.
-- **Copy consistency asks (not changed, outside the brief):** the try-it
-  eyebrow still reads "PROBLEM CLASS · ... · INTERACTIVE"; the mission teaser
-  (/problems list + iframe title) still says "Surviving the day = 0 doubles, 0
-  lost sales, 0 mystery tickets"; the debrief closes "Same guarantee, different
-  price" (the price->cost pass missed it).
+- **Copy consistency asks:** resolved in the comparison copy pass
+  (`fix/ambiguous-timeouts-comparison-copy`, 2026-10-02): the try-it eyebrow
+  says "WALL · ...", the mission teaser is a sentence, the debrief closes on
+  "different cost".
 - **Short laptop windows:** superseded by #25 (the column is sticky only
   when it fits; otherwise it scrolls normally).
 
@@ -187,9 +186,37 @@ _None._
   lengthens a slot card or narration can tip 13-inch laptops over.
 - **Flag: the hash glyph (#) inside the identity dot stays 9-10px** (an icon
   in a 16px circle, excluded from the text floor).
-- **Ask: strings outside the approved table:** the reply label
-  '"VALIDATION: params changed"' (attack 4) still says "params" where the
-  memory status now says "details differ".
+- **Ask: strings outside the approved table:** resolved 2026-10-02. Attack
+  4's reply label now reads "REFUSED: details changed" (stage checker clean).
+
+### 26. Comparison copy pass: what is left for design (2026-10-02)
+
+- **Source:** `fix/ambiguous-timeouts-comparison-copy` (pushed; owner checks
+  by hand before merging).
+- **Resolved 2026-10-02 by the owner's answers:** the new `stripNote`; the
+  390px overflow (fixed, `svg.anat-v { min-width: 0 }`); the diagram words
+  (all changed except "AFTER ~24H", kept on purpose); `mission.stopblock`
+  links "the comparison"; `interview.asks[1]` keeps "client" (an
+  interviewer's own words).
+- **For design: diagram text size on phones.** After the overflow fix the
+  vertical diagrams' smallest text is 7.7px on screen at 390px (9px labels
+  are 8.1px). The windows chart has no vertical file: its text is 4.4px.
+- **For design: Segment's "nothing" needs its own mark.** Dashed gray means
+  "not stated" on Shopify and "nothing is sent back" on Segment; the strip
+  note now explains both in words.
+- **For design: the sixth (YOU) diagram's slots.** The memory label is wider
+  than its box (306 units in a 140 box; it hits nothing and stays inside the
+  canvas). On the vertical file the red line with no attack held is 552 wide
+  in a 360 canvas and is clipped.
+- **For design: strings that don't fit, or already collide.** Stripe's red
+  line should read "OLD RESPONSE" but already runs 12 units into the memory
+  box. AWS "SDK fills the token in" is 2 units wider than its box, Segment's
+  ledger label is 0.7 over, and the windows chart's "ALERT IF < 24H" is cut
+  by the bottom of the canvas.
+- **Ask: two aria-labels in `ComparisonSection.tsx` use a long dash**
+  ("... — how it works (scrollable diagram)"). Not visible; left alone.
+- **Note: the pattern chip is still named "Master-Only Reads"** (pattern
+  library, out of scope).
 
 ## Lower priority
 
