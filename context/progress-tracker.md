@@ -7699,6 +7699,37 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-02: **Pattern review round — Known-Answer Testing** (enrichment of
+  the minimal-floor `content/patterns/known-answer-testing.json`; slug, name
+  and category frozen — observability). Branch
+  `round/known-answer-testing-enrichment` off `main` (`ce70cab`). Placed the
+  round package: updated JSON (authored `oneLineDefinition`,
+  readability-passed `definition` with one figure marker
+  `{{figure:up-but-wrong}}`, a two-item list, and one inline cross-link
+  `[independent observability](/patterns/independent-observability)` that
+  draws the boundary between the two patterns; `whenItApplies` 3 /
+  `tradeoffs` 3 bold-lead cards; `mechanism`; `artifact`; `aliases`: silent
+  data corruption · correctness check · test vectors), the authored artifact
+  `content/artifacts/known-answer-testing.jsx`, and one figure
+  `content/figures/known-answer-testing/up-but-wrong.svg`. **Repo-truth
+  correction on drop:** stripped the C2PA content-credentials manifest from
+  the SVG (`xmlns:c2pa` attr + `<metadata>` block, ~7.8KB). Revision-preview
+  HTML not placed (PP-50). Gates, run on a clean export of `main` + this
+  change: validate 23 checks / 0 errors, compile-artifacts
+  `ok known-answer-testing`, copy-figures ok, **423 tests**, full build 0
+  errors. Prerendered `/patterns/known-answer-testing` verified: lede drives
+  the meta description, figure img, real anchor to
+  `/patterns/independent-observability`, bold list leads, artifact embed,
+  mechanism caption, no leaked `{{figure}}` or markdown. The in-content
+  aliases union with the findability overlay (`keywords/patterns.json`: sdc,
+  storage scrubbing, checksum, canary query, …) — no conflict. **Notes for the
+  review agent (not blocking):** `mechanism.idea` 125 words, `blurb` 44,
+  `whatToTry` 49, `teaser` 24 and `whenItApplies[2]` 43 sit over the §2
+  working bands (same shape as the Dead Man's Switch round, which shipped
+  as-is). **Process note:** a concurrent session held the working tree with
+  live uncommitted problem-page changes, so this round was committed with git
+  plumbing (no checkout, no stash) and verified in a throwaway export under
+  the gitignored `.cache/`; the other session's files were not touched.
 - 2026-09-30: **Mission stage text + card log (option B).** Branch
   `fix/mission-stage-and-log` off `main` (`1623fa3`). Design input: "Stage +
   Card Log Spec" (2026-09-30) with the owner's corrections.
