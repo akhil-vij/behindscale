@@ -1,16 +1,40 @@
 {
   "slug": "known-answer-testing",
   "name": "Known-Answer Testing",
-  "category": "observability",
-  "definition": "When a failure mode produces no passive signal — no log line, no error counter, no failed health check — because the failing component doesn't know it's failing, detection must be manufactured: inject inputs whose correct outputs are predetermined, execute them on the component under suspicion, and treat any disagreement between produced and expected answers as the detection event. The component's honesty is tested directly rather than inferred from its self-reported health. Cryptographic module validation named the technique (known-answer tests); fleet-scale silicon screening, storage scrubbing, end-to-end checksum patrols, and canary queries against serving systems are the same move at different layers.\n\nThe pattern's deployment shape is two-tiered, and the tiers are complements rather than alternatives. Shallow-and-constant: sub-second known-answer probes co-located with live workloads, always on, scheduled and sized to be a polite guest — buying fast time-to-detection and coverage of defects that only manifest under production-like conditions, mode transitions, or accumulated iterations. Deep-and-rare: minutes-long intrusive test batteries run when the component is already out of service (maintenance windows, upgrades, repairs) — buying coverage of defects the quick probes structurally cannot reach. Evidence from fleet practice shows each tier detecting faults the other never finds; running only one chooses between slow detection and permanent blind spots. Boundary against health checking: a health check asks 'are you up?'; known-answer testing asks 'are you right?' — a component can pass every liveness probe while failing every known-answer probe. Boundary against Independent Observability: that pattern moves the WATCHER out of the failure domain so passive signals survive; this pattern applies when no passive signal exists to preserve, and evidence must be actively created.",
+  "oneLineDefinition": "Catch a component that is silently returning wrong answers by testing it with inputs whose correct answers are known, and treating any mismatch as the failure it will never report itself.",
+  "definition": "Some failures leave no trace. A chip with a defect, a corrupted patch of storage, or mis-built code can keep running and answering as if all is well, while quietly returning wrong answers. There is no error, no log line, no failed health check, because the component does not know it is broken. You cannot wait for a signal that will never come. So you create one: test the component with inputs whose correct answers are known, and treat any wrong answer as the failure. You check whether it is right, instead of trusting it to tell you it is fine.\n\n{{figure:up-but-wrong}}\n\nThis is a different question from the usual one. A health check asks 'are you up?' and a silently faulty component happily answers yes; a known-answer test asks 'are you right?', which it cannot fake. It is also different from [independent observability](/patterns/independent-observability). That pattern makes sure your monitor survives an outage, so it can still see the errors and alerts the system gives off. Known-answer testing is for the opposite case: the faulty component gives off no errors or alerts at all, so there is nothing to see - you have to create the evidence yourself.\n\nIn practice you run two kinds of tests, because neither alone is enough:\n\n- **quick and constant** - small checks that run all the time, right beside live work, to catch most faults within seconds\n- **thorough and occasional** - long, careful checks run while the component is offline for maintenance, to catch the faults which quick checks miss\n\nEach kind catches faults the other misses. Run only the quick tests and some faults are never found; run only the thorough ones and faults are found late, after they have already done damage.",
   "whenItApplies": [
-    "Failure modes that corrupt outputs without raising errors: silicon defects, bit rot, memory corruption, miscompiled or misdeployed logic returning plausible-but-wrong results",
-    "Components whose self-reported health is structurally uninformative about correctness — the thing being verified is the truthfulness of computation or storage itself",
-    "Fleets large enough that rare per-unit defect rates become certainties, and exposure windows (time between defect onset and detection) carry real data-loss or propagation cost"
+    "The failure corrupts the output but raises no error. A faulty chip, corrupted storage, bad memory, or mis-built code can return answers that look perfectly reasonable but are wrong - and nothing flags them.",
+    "The thing you doubt is whether the answers are correct. When a component's own 'I'm healthy' report tells you nothing about whether its computation or storage is actually right, you have to check the work directly.",
+    "You run so many machines that rare defects become certain. Across thousands of servers, a one-in-a-million fault happens all the time, and every hour it goes uncaught it corrupts or spreads more bad data - so catching it fast is worth a lot."
   ],
   "tradeoffs": [
-    "Almost every test interrogates an innocent component: the steady-state cost is billions of probes against healthy hardware to catch the silent few, and that overhead ledger must be defended continuously",
-    "Coverage is only as good as the question bank: defects triggered by data patterns, modes, or iteration counts the probes never exercise remain invisible — the test-vector library needs the same curation as the fleet",
-    "In-production probes are guests with obligations: co-location footprint, residual-configuration risk, and per-workload politeness controls all become permanent operational surface"
-  ]
+    "Almost every test checks something that is fine: you run billions of them against healthy hardware just to catch the rare broken one, and that constant overhead has to be justified over and over.",
+    "You only catch the faults your tests happen to trigger: some defects show up only for certain inputs, so if no test ever uses that input, the fault stays hidden. The set of tests needs regular updating to keep up.",
+    "Tests that run in production are a permanent cost: they take up room next to real work, risk leaving stray settings behind, and need controls to stay out of the way - all of which you have to maintain forever."
+  ],
+  "aliases": [
+    "silent data corruption",
+    "correctness check",
+    "test vectors"
+  ],
+  "category": "observability",
+  "artifact": {
+    "path": "/artifacts/known-answer-testing/index.html",
+    "teaser": "The health check says the server is fine while it quietly returns wrong answers - a known-answer test asks a question it can't fake."
+  },
+  "figures": [
+    {
+      "slug": "up-but-wrong",
+      "eyebrow": "UP, BUT STILL WRONG",
+      "caption": "A health check asks 'are you up?' and a silently faulty component answers yes; a known-answer test asks 'are you right?' by sending inputs with known answers, so a wrong result gives it away.",
+      "ariaLabel": "Left, a health check passes on a faulty component; right, a known-answer test catches its wrong result."
+    }
+  ],
+  "mechanism": {
+    "caption": "TEST IF IT'S RIGHT",
+    "blurb": "At its core: some components fail silently, returning wrong answers while every health check says they are fine. A known-answer test catches them by asking questions whose answers are already known - the moment a reply does not match, you have found the fault.",
+    "idea": "Most monitoring assumes a broken component will say so - throw an error, fail a check, stop responding. But some faults are silent: a defective chip or a corrupted byte makes the component return a wrong answer with total confidence, and every health check still reads green. Known-answer testing gets around this by not trusting the component's word. You test it with inputs whose correct answers are known, and a single wrong reply gives the fault away. In practice you run two kinds of tests: quick ones that run all the time alongside real work to catch most faults fast, and long, thorough ones run while the component is offline for maintenance, to catch the faults the quick tests miss. Neither test alone is enough.",
+    "whatToTry": "Break the chip with no tests mixed in: wrong answers start reaching users while the health check stays green, and nothing flags them. Then slide in some known-answer tests - soon one comes back wrong and the chip is caught. More tests catch it sooner, but cost more work."
+  }
 }
