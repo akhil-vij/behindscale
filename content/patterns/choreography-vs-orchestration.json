@@ -1,16 +1,40 @@
 {
   "slug": "choreography-vs-orchestration",
   "name": "Choreography vs Orchestration",
-  "category": "resilience",
-  "definition": "Two ways to coordinate a multi-service process: choreography, where each service consumes events and emits the next with no component owning the whole, and orchestration, where an engine owns the process definition and drives participants through it. Choreography minimizes coupling and central dependencies — there is nothing shared to operate or to fail — but the process itself is unrepresented: it exists only as an emergent property of queues and handlers, invisible to query, hard to change, and impossible to enumerate when it stalls. Orchestration makes the process a first-class object — definable, queryable, resumable — at the price of a central engine on which every flow now depends.\n\nBoundary against Embedded vs Centralized Orchestration: that pattern assumes an engine exists and asks where it lives (inside the service or as a platform); this one asks whether the process has an owner at all. A system usually crosses this boundary first — from choreography to some orchestrator — before the embedded-vs-centralized question arises.",
+  "oneLineDefinition": "Two ways to run a process that spans several services: let each service react to the previous one's event with no one in charge, or let one engine own the steps and direct each service.",
+  "definition": "When one job needs several services to finish it - take the order, charge the card, ship the box - something has to decide what happens next. There are two ways to arrange that:\n\n- **choreography** - no one is in charge. Each service listens for an event, does its own step, and announces a new event for the next service to pick up\n- **orchestration** - one engine is in charge. It holds the list of steps and tells each service when to do its part\n\n{{figure:who-owns-the-process}}\n\nChoreography keeps services loosely tied, and there is nothing central to run or to fail. The catch is that the process itself is written down nowhere: it only exists in the chain of events passing between services. That makes it hard to change, and when something stalls you cannot simply ask which orders are stuck and where. Orchestration turns the process into a real thing you can look up, change, and restart from where it stopped. The price is a central engine that every flow now depends on.\n\nThis is the first choice to make. Once you decide the process needs an owner, the next question is where that engine should live - inside your service, or as a shared platform - which is what [embedded vs centralized orchestration](/patterns/embedded-vs-centralized-orchestration) covers. Most systems start with choreography and move to some kind of engine before that second question comes up.",
   "whenItApplies": [
-    "Multi-step, multi-service business processes — especially long-running ones where stalls are routine and 'what remains?' must be answerable",
-    "Flows whose logic is currently smeared across pub/sub consumers, making change risky and visibility forensic",
-    "Choosing coordination style for a new domain: simple, short, loosely coupled flows tolerate choreography; complex or long-lived ones repay an engine"
+    "The process has many steps across many services. Especially long-running ones, where stalls are normal and you need to answer 'what is left to do for this order?' at any moment.",
+    "The flow's logic is scattered across event handlers. When each step lives in a different service's listener, changing the flow is risky and finding out what happened means digging through logs.",
+    "You are choosing a style for a new process. Short, simple flows between loosely tied services do fine with choreography. Long or complicated ones are worth an engine."
   ],
   "tradeoffs": [
-    "Orchestration's engine is a shared operational dependency sized for every flow at once — availability and scale become platform problems",
-    "Choreography's decoupling is real: no engine outage can stop all flows, and teams ship handlers without central coordination",
-    "The blueprint or definition language becomes a program in data's clothing — versioning, testing, and review discipline move to the definition layer"
-  ]
+    "The engine becomes something every flow depends on. It has to be big enough and reliable enough for all of them at once, so keeping it up becomes a platform-wide job.",
+    "Choreography's independence is real: no single outage can stop every flow, and teams can ship their own handlers without waiting on anyone.",
+    "The process definition is really code. It may look like a config file or a diagram, but it needs versioning, testing, and review just like any other code."
+  ],
+  "aliases": [
+    "event choreography",
+    "workflow engine",
+    "central coordinator"
+  ],
+  "category": "resilience",
+  "artifact": {
+    "path": "/artifacts/choreography-vs-orchestration/index.html",
+    "teaser": "Break a service and see who can still say where order #42 is - and what happens when the thing that knows goes down."
+  },
+  "figures": [
+    {
+      "slug": "who-owns-the-process",
+      "eyebrow": "WHO OWNS THE PROCESS?",
+      "caption": "In choreography each service reacts to the event before it and nothing owns the process, so no one can say where an order is. In orchestration an engine holds the steps and always can, but every flow depends on it.",
+      "ariaLabel": "Left, services pass events along with no owner. Right, an engine holds the process and directs each service."
+    }
+  ],
+  "mechanism": {
+    "caption": "WHO OWNS THE PROCESS?",
+    "blurb": "At its core: when several services handle one job, either nobody is in charge and each reacts to the last one's event, or one engine holds the steps and directs everyone. The first has nothing central to fail but cannot tell you the current status of the job. The second can, but everything depends on the engine. The engine becomes a single, shared dependency.",
+    "idea": "Take an order that needs three services: take the order, charge payment, ship it. In choreography, each service listens for the event before it, does its step, and sends out the next event. Nobody owns the whole thing, so there is nothing central to break - but the process is written down nowhere. When payment stalls, orders pile up and no part of the system can tell you which ones or where. In orchestration, an engine holds the list of steps and tells each service when to act, so it always knows exactly where every order is. When a broken service comes back, the engine picks each order up again from the step it was on. The cost is that the engine itself becomes the one piece every order depends on.",
+    "whatToTry": "Start in choreography and click Payment to break it - orders pile up, and asking where one is gets no answer. Switch to orchestration and break Payment again: the engine lists every stuck order and its step. Then fail the engine, and every order stops."
+  }
 }
