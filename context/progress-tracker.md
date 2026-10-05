@@ -7699,6 +7699,36 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-05: **Pattern review round — Choreography vs Orchestration**
+  (enrichment of `content/patterns/choreography-vs-orchestration.json`; slug,
+  name and category frozen — resilience). Branch
+  `round/choreography-vs-orchestration-enrichment` off `main` (`a422501`).
+  Placed the round package: updated JSON (authored `oneLineDefinition`,
+  plain-language rewrite of `definition` with one figure marker
+  `{{figure:who-owns-the-process}}`, a two-item list, and one inline
+  cross-link `[embedded vs centralized orchestration](/patterns/embedded-vs-centralized-orchestration)`
+  that hands off to the "where does the engine live" question;
+  `whenItApplies` 3 / `tradeoffs` 3 rewritten as bold-lead cards;
+  `mechanism`; `artifact`; `aliases`: event choreography · workflow engine ·
+  central coordinator), the authored artifact
+  `content/artifacts/choreography-vs-orchestration.jsx`, and one figure
+  `content/figures/choreography-vs-orchestration/who-owns-the-process.svg`
+  (no C2PA manifest this time; nothing stripped). Revision-preview HTML not
+  placed (PP-50). Gates, run on a clean export of `main` + this change:
+  validate / compile-artifacts / copy-figures / tests / full build (see the
+  commit). **Notes for the review agent (not blocking):**
+  `oneLineDefinition` 35 words (band 20–34), `mechanism.idea` 131 words,
+  `blurb` 64, `whatToTry` 45 and `teaser` 24 sit over the §2 working bands
+  (same shape as the KAT and Dead Man's Switch rounds, which shipped as-is).
+  Alias `workflow engine` is also an alias of `durable-workflows` (in-content
+  and overlay) and a substring of the `embedded-vs-centralized-orchestration`
+  overlay alias "embedded workflow engine", so that query now surfaces three
+  patterns — owner call under PP-24. Figure nits: the amber "no one knows …"
+  line touches the dashed box edges, and the "do your step" label sits on the
+  centre arrow. **Process note:** a concurrent session holds the working tree
+  (problem-page review), so this round was committed with git plumbing and
+  verified in a throwaway export under the gitignored `.cache/`; the other
+  session's files were not touched.
 - 2026-10-02: **Pattern review round — Known-Answer Testing** (enrichment of
   the minimal-floor `content/patterns/known-answer-testing.json`; slug, name
   and category frozen — observability). Branch
