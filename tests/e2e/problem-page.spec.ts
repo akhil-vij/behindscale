@@ -126,7 +126,11 @@ test.describe('§5.2 real iframe round-trip', () => {
     await expect(page.locator('#you-c-breaks')).toHaveText(
       'Key reused · Read-only copy reads · Traffic 10× · Details change · Retry after window',
     )
-    await expect(page.locator('#you-d-state')).toHaveText('IN THE SAME COMMIT AS THE CHARGE, MAIN DATABASE ONLY')
+    // diagrams v2: the memory slot wraps into rows (tspans); read back in order
+    // they are the same string, nothing cut.
+    const stateRows = await page.locator('#you-d-state tspan').allTextContents()
+    expect(stateRows.join(' ')).toBe('IN THE SAME COMMIT AS THE CHARGE, MAIN DATABASE ONLY')
+    expect(stateRows.length).toBeGreaterThan(1)
     await expect(page.locator('#you-iv-1')).toHaveText('not yet')
 
     // Commit: locks in the artifact, appears under the YOU diagram, persists.
@@ -849,4 +853,54 @@ test.describe('normal motion: the first day reads at reading pace, repeat days k
     expect(repeat.short.length).toBeGreaterThan(0) // no hold: today's pace
     expect(repeat.secs).toBeLessThan(first.secs / 2)
   })
+})
+
+// ---- comparison diagrams v2: every label at least 11px on screen -------------
+
+test.describe('comparison diagrams: every label is at least 11px as rendered', () => {
+  for (const [w, h] of [[1440, 900], [390, 844]] as const) {
+    test(`${w}px: the five company diagrams, YOU (empty and filled) and the windows chart`, async ({ browser }) => {
+      test.setTimeout(120_000)
+      const measure = async (filled: boolean) => {
+        const ctx = await browser.newContext({ viewport: { width: w, height: h } })
+        const page = await ctx.newPage()
+        if (filled) {
+          // a restored survived design fills the YOU row without running a day
+          await page.addInitScript(() => localStorage.setItem('bs:wall:ambiguous-failure-under-retry', JSON.stringify({
+            v: 1, checkpoints: { caused: true, survived: true, held: false },
+            saved: { decisions: { id: 'key', mem: 'storerec', read: 'master', cli: 'key', rep: 'saved', ret: 'day' }, survived: true },
+          })))
+        }
+        await page.goto(PAGE)
+        await waitForMission(page)
+        if (filled) await expect(page.locator('#you-th')).toHaveText('YOU', { timeout: 30_000 })
+        await page.evaluate(() => document.fonts.ready)
+        const res = await page.evaluate(() => {
+          document.querySelectorAll<HTMLDetailsElement>('details.anat-row, details#q5').forEach((d) => (d.open = true))
+          const rows: { name: string; min: number; text: string }[] = []
+          for (const svg of Array.from(document.querySelectorAll<SVGSVGElement>('svg.anat, svg.win'))) {
+            const r = svg.getBoundingClientRect()
+            if (r.width === 0) continue // the copy hidden at this width
+            const k = r.width / svg.viewBox.baseVal.width
+            let min = Infinity, text = ''
+            for (const t of Array.from(svg.querySelectorAll('text'))) {
+              if (!t.textContent!.trim()) continue
+              const px = parseFloat(getComputedStyle(t).fontSize) * k
+              if (px < min) { min = px; text = t.textContent!.trim() }
+            }
+            const name = svg.closest('details')?.querySelector('.co, .qtext')?.textContent?.trim() ?? '?'
+            rows.push({ name, min, text })
+          }
+          return rows
+        })
+        await ctx.close()
+        return res
+      }
+      const empty = await measure(false)
+      const filled = (await measure(true)).filter((r) => r.name === 'You')
+      expect(empty.length).toBe(7) // 5 companies + YOU + the windows chart
+      expect(filled.length).toBe(1)
+      for (const r of [...empty, ...filled]) expect(r.min, `${r.name}: "${r.text}"`).toBeGreaterThanOrEqual(11)
+    })
+  }
 })
