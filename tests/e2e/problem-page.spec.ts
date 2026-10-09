@@ -758,15 +758,60 @@ test.describe('§3b verticals live: DV/TV replace the scrolling horizontals unde
   })
 })
 
-// ---- reduced motion keeps reading time ----------------------------------------
+// ---- reading time: reduced motion on every day, normal motion on the first --
 
-test.describe('reduced motion: movement off, reading time kept', () => {
+// Run one day from RUN and report every narration and slot card that was
+// replaced before its reading time (its words at 4 a second, never under
+// 1.5s; 50ms timer slack). The last narration and card of the day are still
+// on screen, so they are not checked.
+async function readingDay(mission: Frame, page: Page): Promise<{ secs: number; checked: number; short: string[] }> {
+  await mission.evaluate(() => {
+    const w = window as unknown as { __shown: { where: string; t: number; text: string }[]; __obs?: boolean }
+    w.__shown = []
+    if (w.__obs) return
+    w.__obs = true
+    for (const where of ['narr', 'slot']) {
+      const el = document.getElementById(where)!
+      new MutationObserver(() => {
+        const text = el.innerText.replace(/\s+/g, ' ').trim()
+        const last = w.__shown.filter((x) => x.where === where).pop()
+        if (!last || last.text !== text) w.__shown.push({ where, t: performance.now(), text })
+      }).observe(el, { childList: true, subtree: true, characterData: true })
+    }
+  })
+  await page.locator('#artB iframe').scrollIntoViewIfNeeded()
+  const t0 = Date.now()
+  await frameClick(mission, '#runbtn')
+  await mission.waitForFunction(
+    () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && /RUN AGAIN/.test(document.getElementById('runbtn')!.textContent!),
+    null,
+    { timeout: 200_000 },
+  )
+  const secs = (Date.now() - t0) / 1000
+  const shown = await mission.evaluate(() => (window as unknown as { __shown: { where: string; t: number; text: string }[] }).__shown)
+  const short: string[] = []
+  let checked = 0
+  for (const where of ['narr', 'slot']) {
+    const items = shown.filter((x) => x.where === where)
+    for (let i = 0; i + 1 < items.length; i++) {
+      if (!items[i].text) continue // the slot cleared at the start of the day
+      const words = items[i].text.split(' ').length
+      const need = Math.max(1500, (words * 1000) / 4)
+      const on = items[i + 1].t - items[i].t
+      checked++
+      if (on + 50 < need) short.push(`${where} "${items[i].text.slice(0, 50)}" ${words} words: ${Math.round(on)}ms < ${need}ms`)
+    }
+  }
+  return { secs, checked, short }
+}
+
+test.describe('reduced motion: movement off, reading time kept on every day', () => {
   // reducedMotion is a context option, so it goes through contextOptions; a
   // top-level `reducedMotion` key in test.use is silently ignored.
   test.use({ contextOptions: { reducedMotion: 'reduce' }, viewport: { width: 390, height: 844 } })
 
-  test('no narration or card is replaced before its reading time; RUN is the primary button', async ({ page }) => {
-    test.setTimeout(240_000)
+  test('no narration or card is replaced before its reading time, first day or repeat; RUN is the primary button', async ({ page }) => {
+    test.setTimeout(420_000)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
     expect(await mission.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true)
@@ -781,44 +826,27 @@ test.describe('reduced motion: movement off, reading time kept', () => {
     await expect(mission.locator('#stepbtn')).toBeEnabled()
     expect(look.narr).not.toMatch(/STEP/)
 
-    // Record every narration and slot card with the time it appeared.
-    await mission.evaluate(() => {
-      const w = window as unknown as { __shown: { where: string; t: number; text: string }[] }
-      w.__shown = []
-      for (const where of ['narr', 'slot']) {
-        const el = document.getElementById(where)!
-        new MutationObserver(() => {
-          const text = el.innerText.replace(/\s+/g, ' ').trim()
-          const last = w.__shown.filter((x) => x.where === where).pop()
-          if (!last || last.text !== text) w.__shown.push({ where, t: performance.now(), text })
-        }).observe(el, { childList: true, subtree: true, characterData: true })
-      }
-    })
-    await page.locator('#artB iframe').scrollIntoViewIfNeeded()
-    await frameClick(mission, '#runbtn')
-    await mission.waitForFunction(
-      () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && /RUN AGAIN/.test(document.getElementById('runbtn')!.textContent!),
-      null,
-      { timeout: 200_000 },
-    )
-    const shown = await mission.evaluate(() => (window as unknown as { __shown: { where: string; t: number; text: string }[] }).__shown)
-    // Each item that was replaced during the day stayed for its words at 4 a
-    // second, never under 1.5s (50ms timer slack). The last narration and
-    // card of the day are still on screen, so they are not checked.
-    const short: string[] = []
-    let checked = 0
-    for (const where of ['narr', 'slot']) {
-      const items = shown.filter((x) => x.where === where)
-      for (let i = 0; i + 1 < items.length; i++) {
-        if (!items[i].text) continue // the slot cleared at the start of the day
-        const words = items[i].text.split(' ').length
-        const need = Math.max(1500, (words * 1000) / 4)
-        const on = items[i + 1].t - items[i].t
-        checked++
-        if (on + 50 < need) short.push(`${where} "${items[i].text.slice(0, 50)}" ${words} words: ${Math.round(on)}ms < ${need}ms`)
-      }
+    for (const day of [1, 2]) {
+      const r = await readingDay(mission, page)
+      expect(r.checked, `day ${day}`).toBeGreaterThan(day === 1 ? 8 : 6)
+      expect(r.short, `day ${day}`).toEqual([])
     }
-    expect(checked).toBeGreaterThan(8)
-    expect(short).toEqual([])
+  })
+})
+
+test.describe('normal motion: the first day reads at reading pace, repeat days keep their pace', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  test('first day holds every narration and card; the second day runs at the old pace', async ({ page }) => {
+    test.setTimeout(300_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    expect(await mission.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(false)
+    const first = await readingDay(mission, page)
+    expect(first.checked).toBeGreaterThan(8)
+    expect(first.short).toEqual([])
+    const repeat = await readingDay(mission, page)
+    expect(repeat.short.length).toBeGreaterThan(0) // no hold: today's pace
+    expect(repeat.secs).toBeLessThan(first.secs / 2)
   })
 })

@@ -55,10 +55,12 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     keeps its length; only travel (move(), the sweep, the clock hand, the
 //     stamp scale, smooth scrolls) is skipped, so dots, stamps and kill marks
 //     appear in place.
-//   - A reading-time hold (reduced motion only): each narration and each
-//     card in the slot must stay on screen for its words at 4 a second, and
-//     never under 1.5s, before the engine moves on. Real time, never divided
-//     by speed; the 900ms double-charge dwell stays as a floor.
+//   - A reading-time hold: each narration and each card in the slot must
+//     stay on screen for its words at 4 a second, and never under 1.5s,
+//     before the engine moves on. Real time, never divided by speed; the
+//     900ms double-charge dwell stays as a floor. Reduced motion holds on
+//     every day and attack; normal motion holds on the first day only
+//     (owner ruling, open-decisions #27) and keeps its own pace after.
 //   - The READY line no longer tells reduced-motion readers to use STEP.
 //
 // Sanctioned edits (Batch 1, 2026-09-08 layout spec) -- markup/CSS moves plus
@@ -758,7 +760,7 @@ function bootEngine() {
  /* ---------- animation primitives ---------- */
  function sleep(ms){
  var wait = ms/speed; /* reduced motion keeps every pause: it removes movement, not time */
- if (REDUCED) wait = Math.max(wait, readUntil() - Date.now()); /* reading-time hold: real time, never /speed */
+ if (holding()) wait = Math.max(wait, readUntil() - Date.now()); /* reading-time hold: real time, never /speed */
  wait = Math.max(wait, dwellUntil - Date.now()); /* R3: double-charge stamps hold their dwell */
  return new Promise(function(r){ setTimeout(r, wait); }); }
  function dot(x,y,kind){
@@ -788,13 +790,16 @@ function bootEngine() {
  return sleep(500);
  }
  function say(tag, html){ $('#narr').innerHTML = '<span class="tag">'+tag+'</span> · '+html; holdToRead('narr', textOf($('#narr'))); }
- /* Reading-time hold (reduced motion only). Each narration and the card in
-    the slot get readMs() from the moment they appear; sleep() waits until
-    both are read before the engine moves on. Replacing one starts its clock
-    again, so a reader who clicks on is never held for text already gone. */
- var READ_WPS = 4, READ_MIN_MS = 1500, readBy = { narr:0, slot:0 };
+ /* Reading-time hold. Each narration and the card in the slot get readMs()
+    from the moment they appear; while holding(), sleep() waits until both
+    are read before the engine moves on. Replacing one starts its clock
+    again, so a reader who clicks on is never held for text already gone.
+    Reduced motion holds always; normal motion only during the first day
+    (holdDay is fixed when a day starts, dayOn while it plays). */
+ var READ_WPS = 4, READ_MIN_MS = 1500, readBy = { narr:0, slot:0 }, holdDay = true, dayOn = false;
+ function holding(){ return REDUCED || (dayOn && holdDay); }
  function readMs(text){ var n = (String(text).match(/\S+/g) || []).length; return Math.max(READ_MIN_MS, n * 1000 / READ_WPS); }
- function holdToRead(where, text){ if (REDUCED) readBy[where] = text ? Date.now() + readMs(text) : 0; }
+ function holdToRead(where, text){ readBy[where] = text ? Date.now() + readMs(text) : 0; }
  function readUntil(){ return Math.max(readBy.narr, readBy.slot); }
  function textOf(n){ return (n.innerText !== undefined && n.innerText !== '' ? n.innerText : n.textContent) || ''; } /* innerText keeps the spaces between elements */
  /* §3 (F9): every transient stage label goes through here -- it never lands in
@@ -1095,7 +1100,7 @@ function bootEngine() {
  await sleep(600);
  }
  function freshDay(){
- dayDamage = dayTokens(K); evIdx = 0; bankEntries = [];
+ dayDamage = dayTokens(K); evIdx = 0; bankEntries = []; holdDay = runsDone === 0; /* the first day reads at reading pace in both modes */
  $('#log').innerHTML=''; $('#fulllog').style.display='none'; clearSlot(); chips(); drawStage(); layerAnim = el('g',{});
  ['#m-dbl','#m-lost','#m-tick'].forEach(function(s){ $(s).textContent='-'; $(s).className='n'; });
  attackDbl = 0; anyAttackRun = false; updateMeterNote(); /* B2-4: a new day resets the meters to today */
@@ -1113,7 +1118,7 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it, so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem'); await sleep(0); /* reduced motion: the card is read before the day's result replaces it in the slot (a no-op otherwise) */
+ if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it, so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem'); await sleep(0); /* while holding: the card is read before the day's result replaces it in the slot (a no-op otherwise) */
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
@@ -1133,19 +1138,19 @@ function bootEngine() {
  if (running) return;
  if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first: fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
  running=true; lock(true); $('#artB').dataset.cue='';
- freshDay();
+ freshDay(); dayOn = true;
  for (var i=0;i<6;i++) await playEvent(i);
- await finishDay(); lock(false); running=false;
+ await finishDay(); dayOn = false; lock(false); running=false;
  }
  async function stepOne(){
  if (running) return;
  if (escMode>=0){ if (!FREE){ say('ATTACK ACTIVE','Finish the attack first: fix it with your decisions and re-run it. The day waits.'); return; } escAbandon(); }
  if (evIdx===0 || evIdx>=6) freshDay();
- running=true; lock(true); $('#artB').dataset.cue='';
+ running=true; lock(true); $('#artB').dataset.cue=''; dayOn = true;
  await playEvent(evIdx); evIdx++;
  if (evIdx>=6) await finishDay();
  else say('PAUSED','Event '+evIdx+' of 6 done. STEP for the next. The day is one design, so your decisions stay fixed mid-day.');
- lock(false); running=false;
+ dayOn = false; lock(false); running=false;
  }
 
  /* ---------- escalations ---------- */
