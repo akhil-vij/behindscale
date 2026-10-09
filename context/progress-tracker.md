@@ -7699,6 +7699,28 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-09: **Mission reduced-motion fix.** Branch `fix/mission-reduced-motion`
+  off `main` (`c25d134`); not pushed. The owner's Android phone had "Remove
+  animations" on by default, so the first day raced past in 5.3s.
+  - **New rule: reduced motion removes movement and nothing else.** No wait
+    cap (sleep() used to cap every wait at 300ms); travel is skipped (dots,
+    sweep, clock hand, stamp scale, smooth scrolls) so things appear in place.
+  - **Reading-time hold (reduced motion only):** each narration and slot card
+    stays for its words at 4/s, never under 1.5s, real time; the 900ms
+    double-charge dwell stays as a floor. First day: 73s (was 5.3s); no item
+    replaced early (was every item).
+  - RUN is the primary button again under reduced motion (B2-11 swap undone);
+    the READY line no longer advises STEP.
+  - **Owner ruling (#27):** the hold also applies to the first day in normal
+    motion (`holdDay`, fixed when a day starts); repeat days keep today's
+    pace; reduced motion holds on every day and attack.
+  - **Test finding:** `test.use({ reducedMotion })` is silently ignored; it
+    must go through `contextOptions`. The card-slot tests had asked for
+    reduced motion that way and always ran in normal motion; they now say so.
+    The new reduced-motion e2e asserts the frame really sees the setting.
+  - Verification: tsc 0, 423/423 unit, 23/23 e2e (2 new: reduced motion over
+    two days; normal motion first day held, repeat day at its old pace).
+
 - 2026-10-05: **Pattern review round — Choreography vs Orchestration**
   (enrichment of `content/patterns/choreography-vs-orchestration.json`; slug,
   name and category frozen — resilience). Branch
