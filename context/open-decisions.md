@@ -170,24 +170,17 @@ _None._
 - **Short laptop windows:** superseded by #25 (the column is sticky only
   when it fits; otherwise it scrolls normally).
 
-### 25. Mission stage + card log: open checks after the build (2026-09-30)
+### 25. Mission stage + card log: the real-device run (2026-09-30)
 
 - **Source:** `fix/mission-stage-and-log`.
 - **Pending: real-device run (⚑1).** Headless is clean (a stage checker over
   99 deck states per map, and 5 day runs + all 5 attacks at normal speed on
   both maps); dots, kill marks and stamps still need the owner's on-device
-  pass, especially iOS Safari (fonts, halo rendering).
-- **Flag: phone viewBox changed 360x552 -> 360x632** (the spec said
-  unchanged): at 15px the phone map needs a full-width memory box, its own
-  row for the copy and clock, and a second memory-band row.
-- **Flag: 1440x780 fits with ~4px to spare** (worst column 696 of 700px).
-  The fit is measured live, so a font fallback or longer copy just drops the
-  column to normal scrolling there, never cuts a card; but a copy edit that
-  lengthens a slot card or narration can tip 13-inch laptops over.
-- **Flag: the hash glyph (#) inside the identity dot stays 9-10px** (an icon
-  in a 16px circle, excluded from the text floor).
-- **Ask: strings outside the approved table:** resolved 2026-10-02. Attack
-  4's reply label now reads "REFUSED: details changed" (stage checker clean).
+  pass, especially iOS Safari (fonts, halo rendering). Now also covers the
+  reduced-motion fix: check a first day on a phone with "Remove animations"
+  on.
+- The three flags (the 360x632 phone canvas, the ~4px margin at 1440x780,
+  the 9-10px hash glyph) were accepted 2026-10-09; see Recently resolved.
 
 ### 26. Comparison copy pass: what is left for design (2026-10-02)
 
@@ -217,21 +210,6 @@ _None._
   ("... — how it works (scrollable diagram)"). Not visible; left alone.
 - **Note: the pattern chip is still named "Master-Only Reads"** (pattern
   library, out of scope).
-
-### 27. Mission pacing in normal motion on phones (2026-10-09)
-
-- **Source:** `fix/mission-reduced-motion` (report only; normal motion not
-  changed).
-- **Numbers at 390, first day, naive defaults:** 18.8s total; events take
-  2.7 / 3.7 / 4.0 / 4.0 / 2.9 / 1.3s. Of the 12 narrations and cards shown,
-  none stays up for its words at 4 a second. For example, event 3's card is
-  54 words and is up for 4.0s; event 6's narration is 28 words and is up for
-  1.3s. Second run: 17.4s (event 1 is compressed on repeat runs).
-- **What's needed:** decide whether normal motion should get the same
-  reading-time hold (the first day would take about as long as under reduced
-  motion, ~70s), a lighter version, or stay as is because the animation
-  carries the story.
-- **Reply:** same hold / lighter / leave.
 
 ## Lower priority
 
@@ -613,6 +591,14 @@ same class of question.
 
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
+
+- **#27 Mission pacing in normal motion** — RESOLVED 2026-10-09 (owner):
+  the reading-time hold also applies to the first day in normal motion;
+  repeat days keep their pace; reduced motion holds on every day. Landed
+  on `fix/mission-reduced-motion`.
+- **#25 flags** — ACCEPTED 2026-10-09 (owner): the 360x632 phone canvas,
+  the ~4px margin at 1440x780, and the 9-10px hash glyph in the identity
+  dot. Only the real-device run stays open in #25.
 
 - **Pattern-artifacts design: all 4 sub-decisions** (collision A,
   placement above-Definition, prop rename now, scope patterns-only)

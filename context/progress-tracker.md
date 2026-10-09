@@ -7711,13 +7711,15 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     replaced early (was every item).
   - RUN is the primary button again under reduced motion (B2-11 swap undone);
     the READY line no longer advises STEP.
-  - Normal motion unchanged (18.8s first day); its own pacing is open-decisions
-    #27.
+  - **Owner ruling (#27):** the hold also applies to the first day in normal
+    motion (`holdDay`, fixed when a day starts); repeat days keep today's
+    pace; reduced motion holds on every day and attack.
   - **Test finding:** `test.use({ reducedMotion })` is silently ignored; it
     must go through `contextOptions`. The card-slot tests had asked for
     reduced motion that way and always ran in normal motion; they now say so.
     The new reduced-motion e2e asserts the frame really sees the setting.
-  - Verification: tsc 0, 423/423 unit, 22/22 e2e (1 new).
+  - Verification: tsc 0, 423/423 unit, 23/23 e2e (2 new: reduced motion over
+    two days; normal motion first day held, repeat day at its old pace).
 
 - 2026-10-05: **Pattern review round — Choreography vs Orchestration**
   (enrichment of `content/patterns/choreography-vs-orchestration.json`; slug,
