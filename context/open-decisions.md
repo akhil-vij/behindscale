@@ -218,6 +218,21 @@ _None._
 - **Note: the pattern chip is still named "Master-Only Reads"** (pattern
   library, out of scope).
 
+### 27. Mission pacing in normal motion on phones (2026-10-09)
+
+- **Source:** `fix/mission-reduced-motion` (report only; normal motion not
+  changed).
+- **Numbers at 390, first day, naive defaults:** 18.8s total; events take
+  2.7 / 3.7 / 4.0 / 4.0 / 2.9 / 1.3s. Of the 12 narrations and cards shown,
+  none stays up for its words at 4 a second. For example, event 3's card is
+  54 words and is up for 4.0s; event 6's narration is 28 words and is up for
+  1.3s. Second run: 17.4s (event 1 is compressed on repeat runs).
+- **What's needed:** decide whether normal motion should get the same
+  reading-time hold (the first day would take about as long as under reduced
+  motion, ~70s), a lighter version, or stay as is because the animation
+  carries the story.
+- **Reply:** same hold / lighter / leave.
+
 ## Lower priority
 
 ### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)
