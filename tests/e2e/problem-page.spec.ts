@@ -639,7 +639,8 @@ async function minStageText(mission: Frame): Promise<{ body: number; title: numb
 }
 
 test.describe('card slot + full list (mission stage + card log spec)', () => {
-  test.use({ reducedMotion: 'reduce' })
+  // Normal motion: these tests are about where cards go, and a reduced-motion
+  // day now holds every narration and card for its reading time (~70s a day).
 
   test('desktop 1440: one newest card in the slot, the full list in order, results + THE BILL below', async ({ page }) => {
     test.setTimeout(240_000)
@@ -754,5 +755,70 @@ test.describe('§3b verticals live: DV/TV replace the scrolling horizontals unde
     const youVert = page.locator('#you-row .anat-vert')
     await expect(youVert).toBeVisible()
     await expect(youVert).toContainText(/commit/i)
+  })
+})
+
+// ---- reduced motion keeps reading time ----------------------------------------
+
+test.describe('reduced motion: movement off, reading time kept', () => {
+  // reducedMotion is a context option, so it goes through contextOptions; a
+  // top-level `reducedMotion` key in test.use is silently ignored.
+  test.use({ contextOptions: { reducedMotion: 'reduce' }, viewport: { width: 390, height: 844 } })
+
+  test('no narration or card is replaced before its reading time; RUN is the primary button', async ({ page }) => {
+    test.setTimeout(240_000)
+    await page.goto(PAGE)
+    const mission = await waitForMission(page)
+    expect(await mission.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true)
+    // RUN reads as the primary control (filled), STEP stays available, and
+    // the opening line no longer sends reduced-motion readers to STEP.
+    const look = await mission.evaluate(() => {
+      const bg = (id: string) => getComputedStyle(document.getElementById(id)!).backgroundColor
+      return { run: bg('runbtn'), step: bg('stepbtn'), narr: document.getElementById('narr')!.innerText }
+    })
+    expect(look.run).not.toBe('rgba(0, 0, 0, 0)')
+    expect(look.run).not.toBe(look.step)
+    await expect(mission.locator('#stepbtn')).toBeEnabled()
+    expect(look.narr).not.toMatch(/STEP/)
+
+    // Record every narration and slot card with the time it appeared.
+    await mission.evaluate(() => {
+      const w = window as unknown as { __shown: { where: string; t: number; text: string }[] }
+      w.__shown = []
+      for (const where of ['narr', 'slot']) {
+        const el = document.getElementById(where)!
+        new MutationObserver(() => {
+          const text = el.innerText.replace(/\s+/g, ' ').trim()
+          const last = w.__shown.filter((x) => x.where === where).pop()
+          if (!last || last.text !== text) w.__shown.push({ where, t: performance.now(), text })
+        }).observe(el, { childList: true, subtree: true, characterData: true })
+      }
+    })
+    await page.locator('#artB iframe').scrollIntoViewIfNeeded()
+    await frameClick(mission, '#runbtn')
+    await mission.waitForFunction(
+      () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && /RUN AGAIN/.test(document.getElementById('runbtn')!.textContent!),
+      null,
+      { timeout: 200_000 },
+    )
+    const shown = await mission.evaluate(() => (window as unknown as { __shown: { where: string; t: number; text: string }[] }).__shown)
+    // Each item that was replaced during the day stayed for its words at 4 a
+    // second, never under 1.5s (50ms timer slack). The last narration and
+    // card of the day are still on screen, so they are not checked.
+    const short: string[] = []
+    let checked = 0
+    for (const where of ['narr', 'slot']) {
+      const items = shown.filter((x) => x.where === where)
+      for (let i = 0; i + 1 < items.length; i++) {
+        if (!items[i].text) continue // the slot cleared at the start of the day
+        const words = items[i].text.split(' ').length
+        const need = Math.max(1500, (words * 1000) / 4)
+        const on = items[i + 1].t - items[i].t
+        checked++
+        if (on + 50 < need) short.push(`${where} "${items[i].text.slice(0, 50)}" ${words} words: ${Math.round(on)}ms < ${need}ms`)
+      }
+    }
+    expect(checked).toBeGreaterThan(8)
+    expect(short).toEqual([])
   })
 })

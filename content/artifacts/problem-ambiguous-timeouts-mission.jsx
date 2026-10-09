@@ -45,9 +45,21 @@ import { dayTokens } from './problem-ambiguous-timeouts-rules.js'
 //     MEMORY deck label q "Q2" -> "Q3" (READS keeps Q2); the standalone
 //     footer backlink is same-tab (target dropped). Other year-less card
 //     srcs are conversational teaching notes, listed in the PR, left as-is.
-//   B2-11 (F24): STEP-promote + RUN-demote-to-ghost is now one reduced-motion
-//     CSS rule (the JS inline STEP styling moved into it), so exactly one
-//     control reads as primary under reduced motion.
+//   B2-11 (F24): SUPERSEDED by the reduced-motion fix (2026-10): RUN is the
+//     primary button in both modes again; STEP stays available, unpromoted.
+//
+// Sanctioned edits (reduced-motion fix, 2026-10) -- many Android phones turn
+// "Remove animations" on by default or with battery saver, so reduced motion
+// is a normal case. It now removes movement and nothing else:
+//   - sleep() no longer caps waits at 300ms (R18 superseded). Every pause
+//     keeps its length; only travel (move(), the sweep, the clock hand, the
+//     stamp scale, smooth scrolls) is skipped, so dots, stamps and kill marks
+//     appear in place.
+//   - A reading-time hold (reduced motion only): each narration and each
+//     card in the slot must stay on screen for its words at 4 a second, and
+//     never under 1.5s, before the engine moves on. Real time, never divided
+//     by speed; the 900ms double-charge dwell stays as a floor.
+//   - The READY line no longer tells reduced-motion readers to use STEP.
 //
 // Sanctioned edits (Batch 1, 2026-09-08 layout spec) -- markup/CSS moves plus
 // the four allowed engine touches; the RULES block, GROUPS/LEVELS, copy and the
@@ -343,12 +355,7 @@ const CSS = `
  @media (prefers-reduced-motion: reduce) {
  #artB[data-cue="deck"] .deck, #artB[data-cue="run"] .runbtn, #artB[data-cue="group"] .kg.cue-target, .bpulse, .shake { animation: none !important; }
  .averdict { transition: none !important; transform: none !important; }
- /* B2-11 (F24): one rule, one state - under reduced motion STEP is the
-    control that works, so it is the promoted (outlined) button and RUN drops
-    to the ghost style; two primaries no longer compete. */
- #artB .runbtn { background:none; border:1px solid var(--art-border-interactive); color:var(--art-muted); font-weight:600; }
- #artB .runbtn:hover { background:none; color:var(--art-text); }
- #artB #stepbtn { border-color:var(--accent-problem); color:var(--accent-problem-hover); }
+ .bankrow.stampin { animation: none !important; }
  }
   .billpanel { background:var(--art-surface); border:1px solid var(--art-border); border-radius:8px; padding:12px 14px; font-size:11.5px; line-height:1.5; }
   .billhead { color:var(--art-muted); font-size:10px; letter-spacing:1.2px; margin-bottom:6px; }
@@ -750,7 +757,8 @@ function bootEngine() {
 
  /* ---------- animation primitives ---------- */
  function sleep(ms){
- var wait = REDUCED ? Math.min(ms, 300) : ms/speed; /* R18: reduced beats are not speed-divided */
+ var wait = ms/speed; /* reduced motion keeps every pause: it removes movement, not time */
+ if (REDUCED) wait = Math.max(wait, readUntil() - Date.now()); /* reading-time hold: real time, never /speed */
  wait = Math.max(wait, dwellUntil - Date.now()); /* R3: double-charge stamps hold their dwell */
  return new Promise(function(r){ setTimeout(r, wait); }); }
  function dot(x,y,kind){
@@ -779,7 +787,16 @@ function bootEngine() {
  setTimeout(function(){ g.style.transition='opacity 1s'; g.style.opacity=0; }, Math.max(800, 1400/speed));
  return sleep(500);
  }
- function say(tag, html){ $('#narr').innerHTML = '<span class="tag">'+tag+'</span> · '+html; }
+ function say(tag, html){ $('#narr').innerHTML = '<span class="tag">'+tag+'</span> · '+html; holdToRead('narr', textOf($('#narr'))); }
+ /* Reading-time hold (reduced motion only). Each narration and the card in
+    the slot get readMs() from the moment they appear; sleep() waits until
+    both are read before the engine moves on. Replacing one starts its clock
+    again, so a reader who clicks on is never held for text already gone. */
+ var READ_WPS = 4, READ_MIN_MS = 1500, readBy = { narr:0, slot:0 };
+ function readMs(text){ var n = (String(text).match(/\S+/g) || []).length; return Math.max(READ_MIN_MS, n * 1000 / READ_WPS); }
+ function holdToRead(where, text){ if (REDUCED) readBy[where] = text ? Date.now() + readMs(text) : 0; }
+ function readUntil(){ return Math.max(readBy.narr, readBy.slot); }
+ function textOf(n){ return (n.innerText !== undefined && n.innerText !== '' ? n.innerText : n.textContent) || ''; } /* innerText keeps the spaces between elements */
  /* §3 (F9): every transient stage label goes through here -- it never lands in
     a node rect. kind is the logical zone ('wire'|'memory'|'bank'); it maps to
     the current map's band (GH: wire->top, memory/bank->bottom; GV: same names).
@@ -879,12 +896,12 @@ function bootEngine() {
  function listJump(){ var n=$('#log').children.length; return jumpTo('fulllog', n===1 ? '1 card \u2193' : 'all '+n+' cards \u2193'); }
  var slotMax = 0;
  function showSlot(d){
-  var slot=$('#slot'); slot.innerHTML=''; slot.appendChild(d); /* the reserve (slotMax) survives across days, so a short window settles once */
+  var slot=$('#slot'); slot.innerHTML=''; slot.appendChild(d); holdToRead('slot', textOf(d)); /* the reserve (slotMax) survives across days, so a short window settles once */
   var h = slot.getBoundingClientRect().height;
   if (h > slotMax){ slotMax = h; slot.style.minHeight = slotMax+'px'; }
   fitColumn();
  }
- function clearSlot(){ $('#slot').innerHTML=''; fitColumn(); }
+ function clearSlot(){ $('#slot').innerHTML=''; holdToRead('slot', ''); fitColumn(); }
  function card(cls, code, body, src, knob){
  $('#log').appendChild(buildCard(cls, code, body, src, knob));
  $('#fulllog').style.display='';
@@ -938,7 +955,7 @@ function bootEngine() {
   function arrive(){ if (done) return; done = true; window.removeEventListener('scrollend', arrive); flash(); }
   window.addEventListener('scrollend', arrive);
   setTimeout(arrive, 400); /* fallback: Safari < 16 has no scrollend */
-  window.scrollTo({ top: Math.max(0, r.top + window.pageYOffset - window.innerHeight * 0.3), behavior:'smooth' });
+  window.scrollTo({ top: Math.max(0, r.top + window.pageYOffset - window.innerHeight * 0.3), behavior: REDUCED ? 'auto' : 'smooth' });
  }
  function idKind(){ return K.id==='key'?'key': K.id==='hash'?'hash':'plain'; }
 
@@ -1030,7 +1047,7 @@ function bootEngine() {
  async function late(t){
   if (t==='NA'){ say('EVENT 6/6','A client wakes up late and retries. But with no way to recognize a repeat, this is just the earlier failures again. (Fix those first.)'); await sleep(700); return {cls:'good'}; }
   say('EVENT 6/6','<b>Three minutes later</b>, a mobile client wakes up and retries an old charge with its old key.');
-  var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform .8s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(160deg)'; }
+  var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition=REDUCED?'none':'transform .8s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(160deg)'; }
   await sleep(850);
   if (t==='DBL_EXPIRE'){ say('EVENT 6/6','The one-minute window <b>has already forgotten the key</b>.');
   var d=await animRequest('key'); await checkMemory(false); await chargeBank(d,'dbl','+ $100 AGAIN \u26A0');
@@ -1096,7 +1113,7 @@ function bootEngine() {
  runsDone++;
  var rb=$('#runbtn'); rb.innerHTML='RUN AGAIN ▶';
  $('#artB').dataset.cue = dayDamage.win ? '' : 'deck';
- if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it, so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem');
+ if (dayDamage.extra==='NONAME') card('warn','A NAME WITH NO MEMORY','Requests carry a key, but the server keeps no record of it, so it can never recognize a repeat.','Stripe: the key only works if the server also stores a record of it. The key by itself does nothing.','mem'); await sleep(0); /* reduced motion: the card is read before the day's result replaces it in the slot (a no-op otherwise) */
  meters(dayDamage);
  renderBill(dayDamage.win ? dayDamage.bill : null);
  if (dayDamage.win){
@@ -1163,7 +1180,8 @@ function bootEngine() {
  async function animReconcileSweep(){
   say('RECONCILIATION','A sweep compares your record against the bank\'s\u2026');
   var sweep=el('line',{x1:G.bank.x,y1:G.bank.y+8,x2:G.bank.x,y2:G.bank.y+G.bank.h-8,stroke:'#22c55e','stroke-width':2},layerAnim);
-  var t0=null; await new Promise(function(res){ function f(ts){ if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/(1200/speed)); sweep.setAttribute('x1',G.bank.x+p*G.bank.w); sweep.setAttribute('x2',G.bank.x+p*G.bank.w); if(p<1)requestAnimationFrame(f); else res(); } requestAnimationFrame(f); });
+  if (REDUCED){ sweep.setAttribute('x1',G.bank.x+G.bank.w); sweep.setAttribute('x2',G.bank.x+G.bank.w); await sleep(1200); } /* in place, same time */
+  else { var t0=null; await new Promise(function(res){ function f(ts){ if(!t0)t0=ts; var p=Math.min(1,(ts-t0)/(1200/speed)); sweep.setAttribute('x1',G.bank.x+p*G.bank.w); sweep.setAttribute('x2',G.bank.x+p*G.bank.w); if(p<1)requestAnimationFrame(f); else res(); } requestAnimationFrame(f); }); }
   sweep.remove(); bankStamp('\u2212 $100 ANOMALY \u00b7 refunded \u2713');
  }
 
@@ -1290,7 +1308,7 @@ function bootEngine() {
     }
     say('ATTACK 5','The clock spins past your window. The memory has legitimately forgotten, on schedule. A new row just appeared: what happens AFTER the window? It defaults to nothing.');
     ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
-    var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
+    var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition=REDUCED?'none':'transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
     await sleep(1250);
     await animLateKey(false);
     say('ATTACK 5','A straggler outlived the window and charged twice. No decision prevents this one. The question is whether anyone ever finds out.');
@@ -1304,7 +1322,7 @@ function bootEngine() {
     if (!ROWS_ADDED.after){
      ROWS_ADDED.after = true; if(!K.after) K.after='nothing'; LEVELS[4].group='after'; openGroup='after'; paintDeck(); focusDeckSel('after'); /* B2-7; A3 */
      say('ATTACK 5','Your window has an edge now, so a new decision exists: what happens AFTER it? It defaults to nothing. Watch what the edge costs\u2026');
-     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition='transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
+     var hand=document.getElementById('clockhand'); if(hand){ hand.style.transition=REDUCED?'none':'transform 1.2s'; hand.style.transformOrigin=G.clock.cx+'px '+G.clock.cy+'px'; hand.style.transform='rotate(1000deg)'; }
      await sleep(1250);
      await animLateKey(false);
      card('bad','YOU TRADED THE COLLISION FOR A STRAGGLER','Bounding the window ended the collisions, and created the case the window misses. A straggler charged twice, and nobody was looking. Decide what happens after the window, then re-run.','Shopify 2022.','after');
@@ -1485,8 +1503,7 @@ function bootEngine() {
  });
 
  chips(); drawStage(); paintDeck();
- if (REDUCED){ say('READY','Reduced motion is on. STEP plays the day one event at a time. Run it first with the naive defaults and observe what breaks.'); } /* B2-11: STEP-promote / RUN-demote is now one reduced-motion CSS rule */
- else say('READY','Run it first with the naive defaults and observe what breaks. <b>RUN the day as-is.</b>');
+ say('READY','Run it first with the naive defaults and observe what breaks. <b>RUN the day as-is.</b>');
  return { restore: restore };
 }
 
@@ -1649,7 +1666,7 @@ function bootBridge(engine) {
    var tgt = document.getElementById(sj.getAttribute('data-target'));
    if (tgt){
     var tr = tgt.getBoundingClientRect(), top = tr.top + window.pageYOffset;
-    window.scrollTo({ top: Math.max(0, top - 12), behavior: 'smooth' });
+    window.scrollTo({ top: Math.max(0, top - 12), behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) ? 'auto' : 'smooth' });
     post({ type: 'anchor', frame: { top: top, height: tr.height } });
    }
    return;
