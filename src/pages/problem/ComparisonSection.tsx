@@ -5,6 +5,7 @@ import type {
   ProblemQuestion,
 } from '../../types'
 import { escapeHtml, pp } from './inline'
+import { wrapSpecOf, wrappedTspans } from './fillWrapped'
 import type { YouState } from './youState'
 
 // The hint sheet: burden spectrum, the anatomy strip (N company rows + the
@@ -246,7 +247,17 @@ function Question({
       {q.why !== undefined && <div className="qwhy">{pp(q.why)}</div>}
       {q.figure !== undefined && (
         <div className="winfig">
-          <div dangerouslySetInnerHTML={{ __html: svg(q.figure.svg) ?? '' }} />
+          {svg(`${q.figure.svg}-v`) === undefined ? (
+            <div dangerouslySetInnerHTML={{ __html: svg(q.figure.svg) ?? '' }} />
+          ) : (
+            // Diagrams v2: the phone file replaces the chart under 700px, the
+            // same switch as the diagram rows (useWallHost mirrors it with
+            // aria-hidden on the copy that is hidden).
+            <>
+              <div className="win-horiz" dangerouslySetInnerHTML={{ __html: svg(q.figure.svg) ?? '' }} />
+              <div className="win-vert" aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg(`${q.figure.svg}-v`) ?? '' }} />
+            </>
+          )}
           {q.figure.caption !== undefined && (
             <p className="win-cap">{pp(q.figure.caption)}</p>
           )}
@@ -270,7 +281,12 @@ function Question({
 // Substitute `{{slot}}` placeholders in the YOU row's filled SVG with the
 // youMapping() strings (HTML-escaped; the SVG is inlined into the page).
 export function fillSlots(template: string, cells: Readonly<Record<string, string>>): string {
-  return template.replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_, key: string) =>
-    escapeHtml(cells[key] ?? ''),
-  )
+  // Diagrams v2: a slot whose <text> carries data-wrap (dState, dBreaks) is
+  // filled as tspan rows; every other slot is plain text, as before.
+  return template
+    .replace(/(<text\b([^>]*)>)\{\{([a-zA-Z0-9_]+)\}\}(<\/text>)/g, (all, open: string, attrs: string, key: string, close: string) => {
+      const spec = wrapSpecOf(attrs)
+      return spec === undefined ? all : open + wrappedTspans(attrs, cells[key] ?? '', spec, escapeHtml) + close
+    })
+    .replace(/\{\{([a-zA-Z0-9_]+)\}\}/g, (_, key: string) => escapeHtml(cells[key] ?? ''))
 }

@@ -131,29 +131,40 @@ body { overflow-x: clip; }
    560px floor, are drawn wider than a phone column, and the page scrolls
    sideways. They fit the column instead. */
 .problem-page svg.anat-v { min-width: 0; }
+/* diagrams v2: every label is authored for at least 11px on screen. The
+   horizontal files draw at ~614px of 640 (x0.959), the vertical ones at
+   ~324px of 360 (x0.900), so the vertical sizes step up by one. */
+.problem-page svg.anat-v .nlabel { font-size: 14px; }
+.problem-page svg.anat-v .nsub, .problem-page svg.anat-v .klabel, .problem-page svg.anat-v .alabel,
+.problem-page svg.anat-v .slabel, .problem-page svg.anat-v .rlabel, .problem-page svg.anat-v .blabel { font-size: 13px; }
 .problem-page svg.anat text { font-family: var(--font-mono); }
 .problem-page .keydot { fill: var(--cat-amber); }
 .problem-page .keydot.ns { fill: none; stroke: var(--cat-amber); stroke-width: 1.5; stroke-dasharray: 3 2.4; }
-.problem-page .klabel { font-size: 9px; fill: var(--cat-amber); text-anchor: middle; letter-spacing: 0.03em; }
+.problem-page .klabel { font-size: 12px; fill: var(--cat-amber); text-anchor: middle; letter-spacing: 0.03em; }
 .problem-page .node { fill: var(--bg-subtle); stroke: var(--border-strong); stroke-width: 1.3; }
-.problem-page .nlabel { font-size: 11px; fill: var(--text-secondary); text-anchor: middle; letter-spacing: 0.03em; }
-.problem-page .nsub { font-size: 8.5px; fill: var(--text-muted); text-anchor: middle; }
+.problem-page .nlabel { font-size: 13px; fill: var(--text-secondary); text-anchor: middle; letter-spacing: 0.03em; }
+.problem-page .nsub { font-size: 12px; fill: var(--text-muted); text-anchor: middle; }
 .problem-page .arrow { stroke: var(--muted-ghost); stroke-width: 1.3; } /* §6: decorative connector -> ghost */
 .problem-page .ahead { fill: var(--muted-ghost); } /* §6: decorative arrowhead -> ghost */
-.problem-page .alabel { font-size: 9px; fill: var(--text-muted); text-anchor: middle; letter-spacing: 0.04em; }
+.problem-page .alabel { font-size: 12px; fill: var(--text-muted); text-anchor: middle; letter-spacing: 0.04em; }
 .problem-page .state { fill: var(--bg-surface); stroke: var(--accent-primary); stroke-width: 1.4; }
 .problem-page .state.faded { stroke: var(--border-strong); fill: var(--bg-subtle); }
-.problem-page .slabel { font-size: 9.5px; fill: var(--accent-primary); text-anchor: middle; letter-spacing: 0.02em; }
+.problem-page .slabel { font-size: 12px; fill: var(--accent-primary); text-anchor: middle; letter-spacing: 0.02em; }
 .problem-page .slabel.faded { fill: var(--text-muted); }
 .problem-page .drop { stroke: var(--accent-primary); stroke-width: 1.2; }
 .problem-page .replay { fill: none; stroke: var(--state-success); stroke-width: 1.4; stroke-dasharray: 4 3; }
 .problem-page .replay.ns { stroke: var(--border-strong); }
 .problem-page .rhead { fill: var(--state-success); }
 .problem-page .rhead.ns { fill: var(--border-strong); }
-.problem-page .rlabel { font-size: 9px; fill: var(--state-success); text-anchor: middle; letter-spacing: 0.03em; }
+.problem-page .rlabel { font-size: 12px; fill: var(--state-success); text-anchor: middle; letter-spacing: 0.03em; }
 .problem-page .rlabel.ns { fill: var(--text-muted); font-style: italic; }
+/* Segment's stated "nothing comes back": a solid ghost arc that stops at a
+   bar, with an upright label, so a dashed mark only ever means "not stated". */
+.problem-page .replay.none { stroke: var(--muted-ghost); stroke-dasharray: none; }
+.problem-page .rstop { stroke: var(--muted-ghost); stroke-width: 2; stroke-linecap: round; }
+.problem-page .rlabel.none { fill: var(--text-muted); font-style: normal; }
 .problem-page .bx { stroke: var(--state-error); stroke-width: 2; stroke-linecap: round; }
-.problem-page .blabel { font-size: 9px; fill: var(--state-error); letter-spacing: 0.02em; }
+.problem-page .blabel { font-size: 12px; fill: var(--state-error); letter-spacing: 0.02em; }
 .problem-page .acid { fill: none; stroke: var(--accent-primary); stroke-width: 1.4; }
 .problem-page .clockmark { stroke: var(--muted-ghost); stroke-width: 1.3; fill: none; } /* §6: decorative clock -> ghost */
 .problem-page .anat-cap { font-size: 12.5px; color: var(--text-muted); margin: 2px 2px 6px; }
@@ -211,11 +222,19 @@ body { overflow-x: clip; }
 .problem-page .winfig { padding: 8px 16px 2px; }
 .problem-page svg.win { width: 100%; height: auto; display: block; }
 .problem-page svg.win text { font-family: var(--font-mono); }
-.problem-page .wlabel { font-size: 10.5px; fill: var(--text-secondary); }
+.problem-page .wlabel { font-size: 12px; fill: var(--text-secondary); }
 .problem-page .wbar { fill: var(--bg-subtle); stroke: var(--border-strong); stroke-width: 1.2; }
 .problem-page .wbar.solid { fill: var(--bar-fill); stroke: var(--border-strong); }
-.problem-page .wtag { font-size: 9px; fill: var(--text-muted); letter-spacing: 0.03em; }
+.problem-page .wtag { font-size: 12px; fill: var(--text-muted); letter-spacing: 0.03em; }
 .problem-page .wmark { stroke: var(--state-error); stroke-width: 1.4; stroke-dasharray: 3 2.4; }
+/* The windows chart switches to its phone file under 700px, like the
+   diagram rows; the hidden copy is aria-hidden in the markup. */
+.problem-page svg.win-v .wlabel, .problem-page svg.win-v .wtag { font-size: 13px; }
+.problem-page .winfig .win-vert { display: none; }
+@media (max-width: 700px) {
+  .problem-page .winfig .win-horiz { display: none; }
+  .problem-page .winfig .win-vert { display: block; }
+}
 .problem-page .win-cap { font-size: 12.5px; color: var(--text-muted); margin: 6px 16px 8px; }
 
 /* ---------- decision guide ---------- */
