@@ -199,7 +199,7 @@ function landingMeta(): Meta {
   }
 
   return {
-    title: `${SITE_NAME} — real production systems, taken apart. You break them, then fix them.`,
+    title: `${SITE_NAME}: real production systems, taken apart. You break them, then fix them.`,
     description,
     canonical: `${SITE_URL}/`,
     ogType: 'website',
@@ -282,7 +282,7 @@ function problemsMeta(): Meta {
     '@type': 'CollectionPage',
     '@id': `${SITE_URL}/problems`,
     url: `${SITE_URL}/problems`,
-    name: `Problems — ${SITE_NAME}`,
+    name: `Problems · ${SITE_NAME}`,
     description:
       'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
@@ -294,7 +294,7 @@ function problemsMeta(): Meta {
   }
 
   return {
-    title: `Problems — ${SITE_NAME}`,
+    title: `Problems · ${SITE_NAME}`,
     description:
       'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
     canonical: `${SITE_URL}/problems`,
@@ -331,8 +331,8 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   const useSeoTitle = sq !== undefined && companies.length > 0
 
   const pageTitle = useSeoTitle
-    ? `${group.label} — how ${formatList(companies)} ${sq!.titleClause} · ${SITE_NAME}`
-    : `${pageName} — ${SITE_NAME}`
+    ? `${group.label}: how ${formatList(companies)} ${sq!.titleClause} · ${SITE_NAME}`
+    : `${pageName} · ${SITE_NAME}`
   // Description prefers the authored searchQuestion copy, then the lede, then an
   // authored intro's first sentence (usually a better hook than the registry
   // definition), then the definition (docs/problem-page-design.md §7).
@@ -352,7 +352,7 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
     '@type': 'CollectionPage',
     '@id': pageUrl,
     url: pageUrl,
-    name: `${pageName} — ${SITE_NAME}`,
+    name: `${pageName} · ${SITE_NAME}`,
     description: pageDescription,
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
@@ -444,7 +444,7 @@ function patternsIndexMeta(): Meta {
   return {
     // Lead with "System Design Patterns" to match the page H1's exact-match
     // query (the one permitted SEO touch, /patterns rebuild §2b).
-    title: `System Design Patterns — ${SITE_NAME}`,
+    title: `System Design Patterns · ${SITE_NAME}`,
     description:
       'System Design Patterns grouped by the job they do — each shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
@@ -556,7 +556,7 @@ function articleMeta(article: Article): Meta {
   }
 
   return {
-    title: `${article.title} — ${SITE_NAME}`,
+    title: `${article.title} · ${SITE_NAME}`,
     description: truncateForMeta(article.summary),
     canonical: `${SITE_URL}/articles/${article.slug}`,
     ogType: 'article',
@@ -615,7 +615,7 @@ function patternMeta(pattern: PatternDefinition): Meta {
   }
 
   return {
-    title: `${pattern.name} — patterns — ${SITE_NAME}`,
+    title: `${pattern.name} · patterns · ${SITE_NAME}`,
     // Permitted SEO touch (nav-IA v1.4): the authored one-line definition is
     // the meta description when present; otherwise the first definition
     // paragraph (current derivation). The DefinedTerm node above keeps the
@@ -662,7 +662,7 @@ function sourcesMeta(): Meta {
     '@type': 'CollectionPage',
     '@id': `${SITE_URL}/sources`,
     url: `${SITE_URL}/sources`,
-    name: `Sources — ${SITE_NAME}`,
+    name: `Sources · ${SITE_NAME}`,
     description:
       'The official engineering blogs behindscale draws every dissection from — first-party sources only, no aggregators or third-party summaries.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
@@ -674,7 +674,7 @@ function sourcesMeta(): Meta {
   }
 
   return {
-    title: `Sources — ${SITE_NAME}`,
+    title: `Sources · ${SITE_NAME}`,
     description:
       'The official engineering blogs behindscale draws every dissection from — first-party sources only.',
     canonical: `${SITE_URL}/sources`,
@@ -685,7 +685,7 @@ function sourcesMeta(): Meta {
 
 function notFoundMeta(): Meta {
   return {
-    title: `Page not found — ${SITE_NAME}`,
+    title: `Page not found · ${SITE_NAME}`,
     description: 'The page you are looking for does not exist on behindscale.',
     canonical: `${SITE_URL}/404`,
     ogType: 'website',
@@ -709,6 +709,7 @@ function headTags(m: Meta): string {
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:image:alt" content="${escapeAttr(OG_IMAGE_ALT)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${escapeAttr(m.title)}" />`,
     `<meta name="twitter:image" content="${escapeAttr(OG_IMAGE)}" />`,
     // Atom feed discovery (findability task 10) -- advertised on every page.
     `<link rel="alternate" type="application/atom+xml" title="${SITE_NAME}" href="/rss.xml" />`,
