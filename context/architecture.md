@@ -181,9 +181,10 @@ referencing article landed or was revised).
 
 **Share image, standalone pages, feed dates** (pre-distribution batch A,
 2026-10-10). Every page's `og:image` / `twitter:image` is the absolute
-`https://www.behindscale.com/og-default.png` (1200x630, committed in
-`public/`, rendered by `scripts/make-og-image.ts`), with `twitter:card`
-`summary_large_image`; `scripts/check-share-images.ts` runs last in the build
+`https://www.behindscale.com/og-default.png?v=<hash>` (1200x630, committed in
+`public/`, rendered by `scripts/make-og-image.ts`; the hash of its contents,
+from `scripts/share-image.ts`, makes preview caches refetch it whenever it
+changes), with `twitter:card` `summary_large_image`; `scripts/check-share-images.ts` runs last in the build
 and fails it if any HTML page in `dist/` names a share image that isn't there.
 The standalone artifact page (`/artifacts/<slug>/index.html`, the "Open full
 screen" target) carries its own head: "<name> · behindscale", the teaser as
@@ -200,6 +201,14 @@ the URL in `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`; elsewhere from
 `origin`) and fails only if it can't. `VERCEL_DEEP_CLONE=true` did not give
 a full clone on Vercel. A build-time fetch from our own public repo; the
 website itself still fetches nothing at runtime.
+
+**Page titles** (owner, 2026-10-10): no long dashes. A colon splits the
+title itself ("Ambiguous failure under retry: how Stripe, ... prevent double
+payments"), " · behindscale" ends every title but the homepage's
+("behindscale: real production systems, taken apart. ..."), and pattern
+pages read "<name> · patterns · behindscale". `og:title` and `twitter:title`
+repeat the `<title>` exactly. `tests/e2e/share-tags.spec.ts` checks every
+sitemap page.
 
 **Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
 placed before the main.tsx script tag in `index.html` so it runs on

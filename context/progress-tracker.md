@@ -7706,6 +7706,17 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   and a new e2e test checks the prerendered HTML of every sitemap page: no ↗
   on a link to our own site, no → on an outside link. The ask is closed in
   open-decisions #29; the rest of #29 stays open.
+  - **Share previews (owner report: blurry on LinkedIn for the homepage and
+    /patterns/fault-isolation, sharp on problem pages).** The built and live
+    HTML carry identical share tags on every page type (same og:image and
+    twitter:image URL, 1200x630 size tags, no duplicates; the same 69KB
+    1200x630 PNG), so the difference is LinkedIn's per-page cache, keyed on
+    og:url (a `?v=2` on the page URL doesn't reach it, since og:url and the
+    canonical drop it). The image URL now carries a content hash
+    (`og-default.png?v=9e140389`), so every service fetches it fresh.
+  - **Titles:** long dashes out of every page title (colon inside the title,
+    " · behindscale" as the suffix), `twitter:title` added; new
+    `share-tags.spec.ts` checks titles and share tags on every sitemap page.
 
 - 2026-10-10: **Pre-distribution batch A (small fixes before sharing).** Branch
   `fix/pre-distribution-a` off `main` (`8d31c99`); not pushed. One commit per
