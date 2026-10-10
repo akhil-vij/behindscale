@@ -38,7 +38,7 @@ for (const s of SAMPLES) {
     expect(description?.length ?? 0).toBeGreaterThan(20)
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       'content',
-      'https://www.behindscale.com/og-default.png',
+      /^https:\/\/www\.behindscale\.com\/og-default\.png\?v=[0-9a-f]{8}$/,
     )
 
     const bar = page.locator('#bs-standalone-bar')

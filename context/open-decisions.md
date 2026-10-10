@@ -49,10 +49,6 @@ lives here it needs the owner's input to resolve.
 - Decide also whether the internal notes stay public (context/, docs/,
   handoff/, keywords/, CLAUDE.md; listed in the batch A report).
 - **On hold (owner, 2026-10-10):** tracking waits for the Vercel Pro decision.
-- **Ask: the two full-screen links still use ↗ for our own pages** ("Open in
-  full ↗" under article simulations, "OPEN FULL SCREEN ↗" on pattern pages).
-  The new arrow rule says → for our own pages, but these open in a new tab and
-  weren't in the batch's scope (wall-page links only). Change them too?
 
 ---
 
@@ -225,6 +221,26 @@ lives here it needs the owner's input to resolve.
   ("... — how it works (scrollable diagram)"). Not visible; left alone.
 - **Note: the pattern chip is still named "Master-Only Reads"** (pattern
   library, out of scope).
+
+### 30. Long dashes in 24 content-sourced descriptions (2026-10-10)
+
+- **Source:** `fix/full-screen-arrows`. Page titles, the four index-page
+  descriptions and the RSS titles are dash-free and tested. These meta
+  descriptions come verbatim from content and still use a long dash:
+  - article `summary`: doordash-aperture-global-failure-mitigation,
+    google-colossus-ssd-placement (also their RSS summaries);
+  - pattern `definition` first paragraph (no `oneLineDefinition`):
+    checkpoint-bounded-scans, compile-time-boundary-enforcement,
+    content-free-change-events, database-as-a-queue, dead-letter-queue,
+    deadline-propagation, designated-source-of-truth, hibernation-vs-polling,
+    hot-data-first-migration, id-encoded-placement, loose-foreign-keys,
+    rehearsed-restore, selective-acknowledgment, sharding-behind-a-proxy,
+    simulated-policy-selection, throttled-readmission, violation-ratchet;
+  - problem `lede`: gray-failure, blind-data-placement, blind-load-shedding,
+    outgrowing-one-cluster, outgrowing-one-table.
+- **Ask:** rewrite them (an editorial pass; the same text shows on the page),
+  or give those patterns a `oneLineDefinition`. The e2e test allows exactly
+  this list and fails on any new dash or on a listed page that's been fixed.
 
 ## Lower priority
 

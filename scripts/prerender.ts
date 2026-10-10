@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { catalogGroups, type CatalogGroup } from '../src/lib/catalogGroups'
 import { proseText } from '../src/lib/proseText'
+import { ogImageUrl } from './share-image'
 import type {
   Article,
   CruxTagRegistry,
@@ -37,9 +38,10 @@ const DIST_SSR = join(ROOT, 'dist-ssr')
 const SITE_URL = 'https://www.behindscale.com'
 const SITE_NAME = 'behindscale'
 // The default share image (public/og-default.png, rendered by
-// scripts/make-og-image.ts). scripts/check-share-images.ts fails the build if
-// any emitted page's share-image URL has no file behind it.
-const OG_IMAGE = `${SITE_URL}/og-default.png`
+// scripts/make-og-image.ts), with its content hash in the URL (see
+// scripts/share-image.ts). scripts/check-share-images.ts fails the build if any
+// emitted page's share-image URL has no file behind it.
+const OG_IMAGE = ogImageUrl()
 const OG_IMAGE_ALT =
   'behindscale. Real production systems, taken apart. You break them, then fix them.'
 
@@ -164,14 +166,14 @@ function landingMeta(): Meta {
   // surface that describes the page may fall back to the old "a library of..."
   // line (decision D, landing rewrite Stage 0).
   const description =
-    'Top engineering blog posts from Stripe, Netflix, Uber and 20 others, dissected down to the one bottleneck that made each hard — with an interactive artifact for every system. Drag the load, cut the request, watch it break, flip the fix.'
+    'Top engineering blog posts from Stripe, Netflix, Uber and 20 others, dissected down to the one bottleneck that made each hard. An interactive artifact for every system: drag the load, cut the request, watch it break, flip the fix.'
 
   const organization = {
     '@type': 'Organization',
     '@id': `${SITE_URL}#organization`,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: `${SITE_URL}/og-default.png`,
+    logo: OG_IMAGE,
   }
 
   // WebSite with a SearchAction pointing at /problems?q=... so Google
@@ -199,7 +201,7 @@ function landingMeta(): Meta {
   }
 
   return {
-    title: `${SITE_NAME} — real production systems, taken apart. You break them, then fix them.`,
+    title: `${SITE_NAME}: real production systems, taken apart. You break them, then fix them.`,
     description,
     canonical: `${SITE_URL}/`,
     ogType: 'website',
@@ -282,9 +284,9 @@ function problemsMeta(): Meta {
     '@type': 'CollectionPage',
     '@id': `${SITE_URL}/problems`,
     url: `${SITE_URL}/problems`,
-    name: `Problems — ${SITE_NAME}`,
+    name: `Problems · ${SITE_NAME}`,
     description:
-      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+      'Browse behindscale dissections by problem class, with a company filter and search. Grouped by the crux: the bottleneck that made each system hard.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
       '@type': 'ItemList',
@@ -294,9 +296,9 @@ function problemsMeta(): Meta {
   }
 
   return {
-    title: `Problems — ${SITE_NAME}`,
+    title: `Problems · ${SITE_NAME}`,
     description:
-      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+      'Browse behindscale dissections by problem class, with a company filter and search. Grouped by the crux: the bottleneck that made each system hard.',
     canonical: `${SITE_URL}/problems`,
     ogType: 'website',
     jsonLd: [collectionPage, definedTermSet],
@@ -331,8 +333,8 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
   const useSeoTitle = sq !== undefined && companies.length > 0
 
   const pageTitle = useSeoTitle
-    ? `${group.label} — how ${formatList(companies)} ${sq!.titleClause} · ${SITE_NAME}`
-    : `${pageName} — ${SITE_NAME}`
+    ? `${group.label}: how ${formatList(companies)} ${sq!.titleClause} · ${SITE_NAME}`
+    : `${pageName} · ${SITE_NAME}`
   // Description prefers the authored searchQuestion copy, then the lede, then an
   // authored intro's first sentence (usually a better hook than the registry
   // definition), then the definition (docs/problem-page-design.md §7).
@@ -352,7 +354,7 @@ function problemMeta(group: CatalogGroup, urlSlug: string): Meta {
     '@type': 'CollectionPage',
     '@id': pageUrl,
     url: pageUrl,
-    name: `${pageName} — ${SITE_NAME}`,
+    name: `${pageName} · ${SITE_NAME}`,
     description: pageDescription,
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
@@ -444,9 +446,9 @@ function patternsIndexMeta(): Meta {
   return {
     // Lead with "System Design Patterns" to match the page H1's exact-match
     // query (the one permitted SEO touch, /patterns rebuild §2b).
-    title: `System Design Patterns — ${SITE_NAME}`,
+    title: `System Design Patterns · ${SITE_NAME}`,
     description:
-      'System Design Patterns grouped by the job they do — each shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
+      'System Design Patterns grouped by the job they do. Each is shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
     ogType: 'website',
     jsonLd: [definedTermSet],
@@ -556,7 +558,7 @@ function articleMeta(article: Article): Meta {
   }
 
   return {
-    title: `${article.title} — ${SITE_NAME}`,
+    title: `${article.title} · ${SITE_NAME}`,
     description: truncateForMeta(article.summary),
     canonical: `${SITE_URL}/articles/${article.slug}`,
     ogType: 'article',
@@ -615,7 +617,7 @@ function patternMeta(pattern: PatternDefinition): Meta {
   }
 
   return {
-    title: `${pattern.name} — patterns — ${SITE_NAME}`,
+    title: `${pattern.name} · patterns · ${SITE_NAME}`,
     // Permitted SEO touch (nav-IA v1.4): the authored one-line definition is
     // the meta description when present; otherwise the first definition
     // paragraph (current derivation). The DefinedTerm node above keeps the
@@ -662,9 +664,9 @@ function sourcesMeta(): Meta {
     '@type': 'CollectionPage',
     '@id': `${SITE_URL}/sources`,
     url: `${SITE_URL}/sources`,
-    name: `Sources — ${SITE_NAME}`,
+    name: `Sources · ${SITE_NAME}`,
     description:
-      'The official engineering blogs behindscale draws every dissection from — first-party sources only, no aggregators or third-party summaries.',
+      'The official engineering blogs behindscale draws every dissection from: first-party sources only, no aggregators or third-party summaries.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
       '@type': 'ItemList',
@@ -674,9 +676,9 @@ function sourcesMeta(): Meta {
   }
 
   return {
-    title: `Sources — ${SITE_NAME}`,
+    title: `Sources · ${SITE_NAME}`,
     description:
-      'The official engineering blogs behindscale draws every dissection from — first-party sources only.',
+      'The official engineering blogs behindscale draws every dissection from: first-party sources only.',
     canonical: `${SITE_URL}/sources`,
     ogType: 'website',
     jsonLd: [collectionPage],
@@ -685,7 +687,7 @@ function sourcesMeta(): Meta {
 
 function notFoundMeta(): Meta {
   return {
-    title: `Page not found — ${SITE_NAME}`,
+    title: `Page not found · ${SITE_NAME}`,
     description: 'The page you are looking for does not exist on behindscale.',
     canonical: `${SITE_URL}/404`,
     ogType: 'website',
@@ -709,6 +711,7 @@ function headTags(m: Meta): string {
     `<meta property="og:image:height" content="630" />`,
     `<meta property="og:image:alt" content="${escapeAttr(OG_IMAGE_ALT)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:title" content="${escapeAttr(m.title)}" />`,
     `<meta name="twitter:image" content="${escapeAttr(OG_IMAGE)}" />`,
     // Atom feed discovery (findability task 10) -- advertised on every page.
     `<link rel="alternate" type="application/atom+xml" title="${SITE_NAME}" href="/rss.xml" />`,

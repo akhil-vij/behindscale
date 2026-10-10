@@ -23,6 +23,7 @@ import {
 import { basename, join } from 'node:path'
 import { standalonePageFor, standalonePages, type StandaloneResult } from './artifact-pages'
 import { loadContent } from './load-content'
+import { ogImageUrl } from './share-image'
 
 const ARTIFACTS_SRC_DIR = 'content/artifacts'
 const ARTIFACTS_OUT_DIR = 'public/artifacts'
@@ -30,7 +31,7 @@ const ARTIFACTS_OUT_DIR = 'public/artifacts'
 // scripts/prerender.ts and scripts/check-share-images.ts).
 const SITE_URL = 'https://www.behindscale.com'
 const SITE_NAME = 'behindscale'
-const OG_IMAGE = `${SITE_URL}/og-default.png`
+const OG_IMAGE = ogImageUrl()
 
 // Minimal HTML shell. Inline styles for dark background + font fallback
 // so the artifact paints something coherent even before its bundle

@@ -102,7 +102,7 @@ for (const [cruxTag, essay] of problemEssayByCruxTag) {
     ),
   ]
   wallEntries.push({
-    title: `${label} — ${members.length} systems, side by side`,
+    title: `${label}: ${members.length} systems, side by side`,
     summary:
       essay.searchQuestion?.description ??
       essay.lede ??

@@ -374,7 +374,7 @@ function MechanismSection({
             rel="noopener noreferrer"
             className="font-mono text-[11px] tracking-[0.05em] text-art-text-muted no-underline transition-colors hover:text-brand-gold hover:no-underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           >
-            OPEN FULL SCREEN ↗
+            OPEN FULL SCREEN →
           </a>
         </div>
 
