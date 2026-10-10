@@ -7,11 +7,19 @@
 //     "not a content change", e.g. the SVG metadata strip).
 // Used by scripts/generate-feed.ts for each entry's <updated>.
 //
-// Needs the full history. A shallow clone (Vercel's default is the last 10
-// commits; actions/checkout's is 1) would date every older file to the clone
-// boundary, so a shallow repo is an error, not a fallback. Vercel needs the
-// VERCEL_DEEP_CLONE=true environment variable; CI checks out with
-// fetch-depth: 0.
+// Needs the full history. A shallow clone would date every older file to the
+// clone boundary, so the build never dates from one: ensureFullHistory()
+// deepens a shallow clone first, or fails the build.
+//   - Vercel clones the last 10 commits with no git remote configured, and
+//     VERCEL_DEEP_CLONE=true did not change that (2026-10-10 deploy failed
+//     with it set). The repository URL comes from Vercel's system variables
+//     (VERCEL_GIT_PROVIDER, VERCEL_GIT_REPO_OWNER, VERCEL_GIT_REPO_SLUG).
+//   - GitHub Actions (and a local shallow clone) fetch from `origin`. CI also
+//     checks out with fetch-depth: 0, but the 2026-10-10 pull_request run was
+//     still shallow, so the build no longer relies on it.
+// The fetch asks for HEAD's own commit, so a preview or pull-request build
+// gets its own history. The repo is public, so no token is needed; a private
+// repo would need one in the URL.
 
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
@@ -23,13 +31,49 @@ function git(root: string, args: readonly string[]): string {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 }
 
-export function assertFullHistory(root: string): void {
-  if (git(root, ['rev-parse', '--is-shallow-repository']).trim() === 'true') {
-    throw new Error(
-      'content-dates: this is a shallow git clone, so file change dates would be wrong. ' +
-        'Build from a full clone (Vercel: set VERCEL_DEEP_CLONE=true; GitHub Actions: checkout with fetch-depth: 0).',
-    )
+const isShallow = (root: string) =>
+  git(root, ['rev-parse', '--is-shallow-repository']).trim() === 'true'
+
+// The URL to unshallow from on a Vercel build, or undefined elsewhere.
+export function vercelRepoUrl(env: NodeJS.ProcessEnv): string | undefined {
+  const provider = env.VERCEL_GIT_PROVIDER
+  const owner = env.VERCEL_GIT_REPO_OWNER
+  const slug = env.VERCEL_GIT_REPO_SLUG
+  if (!provider || !owner || !slug) return undefined
+  const host = { github: 'github.com', gitlab: 'gitlab.com', bitbucket: 'bitbucket.org' }[provider]
+  return host ? `https://${host}/${owner}/${slug}.git` : undefined
+}
+
+// Where to fetch the missing history from: the repository Vercel names, else
+// the `origin` remote, else nowhere.
+function historySource(root: string, env: NodeJS.ProcessEnv): string | undefined {
+  const url = vercelRepoUrl(env)
+  if (url !== undefined) return url
+  return git(root, ['remote']).split('\n').includes('origin') ? 'origin' : undefined
+}
+
+// Make the clone complete, or throw. A full clone is left alone; a shallow one
+// is deepened from historySource(); with no source, or if it stays shallow,
+// the build fails rather than publish wrong dates.
+export function ensureFullHistory(root: string, env: NodeJS.ProcessEnv = process.env): void {
+  if (!isShallow(root)) return
+  const source = historySource(root, env)
+  if (source !== undefined) {
+    const head = git(root, ['rev-parse', 'HEAD']).trim()
+    console.log(`content-dates: shallow clone; fetching the full history of ${head.slice(0, 7)} from ${source}`)
+    try {
+      git(root, ['fetch', '--quiet', '--unshallow', source, head])
+    } catch (err) {
+      const stderr = (err as { stderr?: string }).stderr?.trim()
+      throw new Error(`content-dates: could not fetch the full history from ${source}: ${stderr || (err as Error).message}`)
+    }
+    if (!isShallow(root)) return
   }
+  throw new Error(
+    'content-dates: this is a shallow git clone with nowhere to fetch the rest of its history from, ' +
+      'so file change dates would be wrong. Build from a full clone, or one with an `origin` remote ' +
+      '(on Vercel the repository comes from VERCEL_GIT_REPO_OWNER / VERCEL_GIT_REPO_SLUG).',
+  )
 }
 
 // Full hashes from .git-blame-ignore-revs (comments and blank lines skipped).

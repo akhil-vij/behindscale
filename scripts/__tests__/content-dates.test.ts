@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
-import { assertFullHistory, ignoredRevs, lastContentChange } from '../content-dates'
+import { ensureFullHistory, ignoredRevs, lastContentChange, vercelRepoUrl } from '../content-dates'
 
 // A throwaway repo (OS temp dir, removed after) with dated commits.
 const repo = mkdtempSync(join(tmpdir(), 'content-dates-'))
@@ -24,7 +24,18 @@ commit('2026-08-01', 'a.json', '{"title": "Two"}\n', 'real edit')
 commit('2026-09-01', 'a.json', '{\n  "title": "Two"\n}\n', 'reformat only')
 const meta = commit('2026-10-01', 'a.json', '{\n  "title": "Two",\n  "meta": 1\n}\n', 'metadata strip')
 
-afterAll(() => rmSync(repo, { recursive: true, force: true }))
+// A depth-1 clone of it, with no remote (like Vercel's clone).
+const shallow = mkdtempSync(join(tmpdir(), 'content-dates-shallow-'))
+execFileSync('git', ['clone', '-q', '--depth', '1', `file://${repo}`, shallow])
+execFileSync('git', ['remote', 'remove', 'origin'], { cwd: shallow })
+
+// A depth-1 clone that keeps its origin (like a GitHub Actions checkout).
+const shallowWithOrigin = mkdtempSync(join(tmpdir(), 'content-dates-origin-'))
+execFileSync('git', ['clone', '-q', '--depth', '1', `file://${repo}`, shallowWithOrigin])
+
+afterAll(() => {
+  for (const dir of [repo, shallow, shallowWithOrigin]) rmSync(dir, { recursive: true, force: true })
+})
 
 describe('lastContentChange', () => {
   it('skips whitespace-only commits', () => {
@@ -42,7 +53,32 @@ describe('lastContentChange', () => {
     expect(lastContentChange(repo, ['missing.json'], new Set())).toBeUndefined()
   })
 
-  it('accepts a full clone', () => {
-    expect(() => assertFullHistory(repo)).not.toThrow()
+  it('leaves a full clone alone', () => {
+    expect(() => ensureFullHistory(repo, {})).not.toThrow()
+  })
+
+  it('refuses a shallow clone with nowhere to fetch from', () => {
+    expect(() => ensureFullHistory(shallow, {})).toThrow(/shallow git clone/)
+  })
+
+  it('deepens a shallow clone from origin, and then dates correctly', () => {
+    ensureFullHistory(shallowWithOrigin, {})
+    expect(execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: shallowWithOrigin, encoding: 'utf8' }).trim()).toBe('false')
+    expect(lastContentChange(shallowWithOrigin, ['a.json'], new Set([meta]))).toBe('2026-08-01')
+  })
+})
+
+describe('vercelRepoUrl', () => {
+  it('names the repository from the Vercel system variables', () => {
+    expect(
+      vercelRepoUrl({ VERCEL_GIT_PROVIDER: 'github', VERCEL_GIT_REPO_OWNER: 'akhil-vij', VERCEL_GIT_REPO_SLUG: 'behindscale' }),
+    ).toBe('https://github.com/akhil-vij/behindscale.git')
+  })
+
+  it('is undefined off Vercel or for an unknown provider', () => {
+    expect(vercelRepoUrl({})).toBeUndefined()
+    expect(
+      vercelRepoUrl({ VERCEL_GIT_PROVIDER: 'other', VERCEL_GIT_REPO_OWNER: 'o', VERCEL_GIT_REPO_SLUG: 's' }),
+    ).toBeUndefined()
   })
 })

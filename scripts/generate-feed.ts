@@ -19,7 +19,7 @@ import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { Article, CruxTagRegistry, ProblemEssay } from '../src/types'
-import { assertFullHistory, ignoredRevs, lastContentChange } from './content-dates'
+import { ensureFullHistory, ignoredRevs, lastContentChange } from './content-dates'
 
 const __filename_feed = fileURLToPath(import.meta.url)
 const ssrEntryPath = join(dirname(__filename_feed), '..', 'dist-ssr', 'ssr-entry.js')
@@ -54,7 +54,7 @@ interface FeedEntry {
   category: 'breakdown' | 'wall'
 }
 
-assertFullHistory(ROOT)
+ensureFullHistory(ROOT)
 const ignore = ignoredRevs(ROOT)
 const artifactSource = (path: string) =>
   `content/artifacts/${path.replace(/^\/artifacts\//, '').replace(/\/index\.html$/, '')}.jsx`
