@@ -263,6 +263,18 @@ lives here it needs the owner's input to resolve.
 
 ## Lower priority
 
+### 32. Page 1's survived-day card shows twice in the slot (2026-10-10)
+
+- **Source:** found while porting the queue-backlog mission.
+- On a survived day, page 1's mission (`finishDay()` in
+  `problem-ambiguous-timeouts-mission.jsx`) puts the DAY SURVIVED card in the
+  slot, then at once replaces it with the same card plus the "THE BILL ↓"
+  link. It reads as a flicker, and under the reading hold the first copy is
+  replaced before its reading time. Queue-backlog shows it once.
+- **Owner (2026-10-10):** leave page 1 as it is for now; fix later. The fix is
+  three lines (append the card to the full list, then show the slot copy with
+  the link once), plus page 1's tests.
+
 ### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)
 
 - **Source:** findability Batch 3 search-terms authoring (`keywords/REPORT.md`,
