@@ -143,6 +143,9 @@ export interface ProblemWall {
 
 export interface ProblemTryIt {
   artifactSlug: string
+  // The simulation's name on its standalone page ("<name> · behindscale").
+  // Absent: "The wall: <class label>".
+  name?: string
   // One line naming what the reader can DO; the iframe title + no-JS line.
   teaser: string
   // Caption under the artifact (inline markup allowed).
@@ -154,6 +157,9 @@ export interface ProblemTryIt {
 
 export interface ProblemMission {
   artifactSlug: string
+  // The simulation's name on its standalone page ("<name> · behindscale").
+  // Absent: "<title>: <class label>".
+  name?: string
   // The break-it teaser shown on the /problems list beside the Playable badge.
   teaser: string
   // Section heading + intro paragraph above the artifact. With

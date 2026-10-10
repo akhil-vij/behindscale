@@ -1,17 +1,25 @@
 #!/usr/bin/env tsx
 // Atom feed emitter (findability task 10). Runs after scripts/prerender.ts,
 // alongside generate-sitemap. Emits dist/rss.xml -- an Atom feed of the article
-// dissections (title, summary, link, date) plus, as SEPARATE entries, the walls
+// breakdowns (title, summary, link, date) plus, as SEPARATE entries, the walls
 // that carry a side-by-side comparison. Linked from <head> and the footer. A
 // distribution surface as much as a findability one.
 //
 // Content routes through the SSR bundle, same as generate-sitemap, so
 // import.meta.glob's build-time resolution applies (it doesn't run under tsx).
+//
+// Dates (pre-distribution batch A, item 6): each entry keeps its published
+// date (<published>) and gets <updated> = the last real change to its page's
+// source files in git (scripts/content-dates.ts), never earlier than
+// published. The feed's own <updated> is the newest entry's. Entries are
+// ordered newest update first, so a page that grew into a full lesson leads
+// the feed even though it was first published months ago.
 
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import type { Article, CruxTagRegistry, ProblemEssay } from '../src/types'
+import { ensureFullHistory, ignoredRevs, lastContentChange } from './content-dates'
 
 const __filename_feed = fileURLToPath(import.meta.url)
 const ssrEntryPath = join(dirname(__filename_feed), '..', 'dist-ssr', 'ssr-entry.js')
@@ -41,17 +49,33 @@ interface FeedEntry {
   title: string
   summary: string
   url: string
-  date: string // YYYY-MM-DD
-  category: 'dissection' | 'wall'
+  published: string // YYYY-MM-DD
+  updated: string // YYYY-MM-DD, >= published
+  category: 'breakdown' | 'wall'
 }
 
-// Article dissections: date = addedAt (when it appeared on behindscale).
+ensureFullHistory(ROOT)
+const ignore = ignoredRevs(ROOT)
+const artifactSource = (path: string) =>
+  `content/artifacts/${path.replace(/^\/artifacts\//, '').replace(/\/index\.html$/, '')}.jsx`
+const updatedFor = (published: string, paths: readonly string[]): string => {
+  const changed = lastContentChange(ROOT, paths, ignore)
+  return changed !== undefined && changed > published ? changed : published
+}
+
+// Article breakdowns: published = addedAt (when it appeared on behindscale).
+// Its page's sources: the article JSON, its artifact, its figures.
 const articleEntries: FeedEntry[] = articles.map((a) => ({
   title: a.title,
   summary: a.summary,
   url: `${SITE_URL}/articles/${a.slug}`,
-  date: a.addedAt,
-  category: 'dissection',
+  published: a.addedAt,
+  updated: updatedFor(a.addedAt, [
+    `content/articles/${a.slug}.json`,
+    ...(a.artifact ? [artifactSource(a.artifact.path)] : []),
+    `content/figures/${a.slug}`,
+  ]),
+  category: 'breakdown',
 }))
 
 // Walls with a comparison, as separate entries. A wall's date is its newest
@@ -67,6 +91,16 @@ for (const [cruxTag, essay] of problemEssayByCruxTag) {
     essay.firstSentAt ??
     '1970-01-01'
   const label = essay.headline ?? cruxtags[cruxTag]?.label ?? cruxTag
+  // The wall page's sources: its essay JSON, its diagrams and figures, and
+  // the artifacts it owns (try-it, mission).
+  const wallPaths = [
+    `content/problems/${cruxTag}.json`,
+    `content/problems/${cruxTag}`,
+    `content/figures/${cruxTag}`,
+    ...[essay.tryIt, essay.mission].flatMap((x) =>
+      x ? [`content/artifacts/${x.artifactSlug}.jsx`] : [],
+    ),
+  ]
   wallEntries.push({
     title: `${label} — ${members.length} systems, side by side`,
     summary:
@@ -75,15 +109,17 @@ for (const [cruxTag, essay] of problemEssayByCruxTag) {
       cruxtags[cruxTag]?.definition ??
       '',
     url: `${SITE_URL}/problems/${urlSlug}`,
-    date,
+    published: date,
+    updated: updatedFor(date, wallPaths),
     category: 'wall',
   })
 }
 
-const entries = [...articleEntries, ...wallEntries].sort((a, b) =>
-  b.date.localeCompare(a.date),
+const entries = [...articleEntries, ...wallEntries].sort(
+  (a, b) =>
+    b.updated.localeCompare(a.updated) || b.published.localeCompare(a.published),
 )
-const updated = atomDate(entries[0]?.date ?? '1970-01-01')
+const updated = atomDate(entries[0]?.updated ?? '1970-01-01')
 
 const xmlEntries = entries
   .map(
@@ -91,7 +127,8 @@ const xmlEntries = entries
     <title>${esc(e.title)}</title>
     <link href="${esc(e.url)}"/>
     <id>${esc(e.url)}</id>
-    <updated>${atomDate(e.date)}</updated>
+    <published>${atomDate(e.published)}</published>
+    <updated>${atomDate(e.updated)}</updated>
     <category term="${e.category}"/>
     <summary>${esc(e.summary)}</summary>
   </entry>`,
@@ -101,7 +138,7 @@ const xmlEntries = entries
 const feed = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>${SITE_NAME}</title>
-  <subtitle>Real production systems, taken apart — the dissections and the walls, side by side.</subtitle>
+  <subtitle>Real production systems, taken apart. The breakdowns and the walls, side by side.</subtitle>
   <link href="${SITE_URL}/rss.xml" rel="self"/>
   <link href="${SITE_URL}/"/>
   <id>${SITE_URL}/</id>
@@ -112,5 +149,8 @@ ${xmlEntries}
 
 writeFileSync(join(DIST, 'rss.xml'), feed)
 console.log(
-  `generate-feed: ${entries.length} entries (${articleEntries.length} dissections + ${wallEntries.length} walls) in rss.xml.`,
+  `generate-feed: ${entries.length} entries (${articleEntries.length} breakdowns + ${wallEntries.length} walls) in rss.xml, updated ${updated}.`,
 )
+if (process.env.FEED_DATES === '1') {
+  for (const e of entries) console.log(`  ${e.published}  ${e.updated}  ${e.url.replace(SITE_URL, '')}`)
+}

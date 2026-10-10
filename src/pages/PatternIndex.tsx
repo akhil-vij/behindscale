@@ -173,7 +173,7 @@ export default function PatternIndex() {
           ))}
         </div>
 
-        <p className="font-mono text-xs text-text-muted">
+        <p id="patterns-count" className="font-mono text-xs text-text-muted">
           Showing {shownCount} of {totalCount} patterns across {shownCats}{' '}
           {shownCats === 1 ? 'category' : 'categories'}.
         </p>

@@ -31,7 +31,28 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-_None._
+### 28. Full git history on Vercel: resolved 2026-10-10
+
+- `VERCEL_DEEP_CLONE=true` was set (Production and Preview) but the deploy
+  still got a 10-commit clone and failed. The build now fetches the full
+  history itself (`scripts/content-dates.ts`), so the variable is no longer
+  needed. It's harmless; remove it from Vercel or leave it. If the repo ever
+  goes private, the fetch will need a token. Remove this item after one round.
+
+### 29. Repo transfer and analytics plan (2026-10-10)
+
+- **Source:** batch A report items 7 and 8.
+- Moving the repo to a `behindscale` GitHub organization: Vercel's Hobby plan
+  can't deploy from an organization-owned repo, and Vercel custom events
+  (simulation started, mission completed, signup, click to the original post)
+  need Pro or Enterprise. Both questions point at the same plan decision.
+- Decide also whether the internal notes stay public (context/, docs/,
+  handoff/, keywords/, CLAUDE.md; listed in the batch A report).
+- **On hold (owner, 2026-10-10):** tracking waits for the Vercel Pro decision.
+- **Ask: the two full-screen links still use ↗ for our own pages** ("Open in
+  full ↗" under article simulations, "OPEN FULL SCREEN ↗" on pattern pages).
+  The new arrow rule says → for our own pages, but these open in a new tab and
+  weren't in the batch's scope (wall-page links only). Change them too?
 
 ---
 

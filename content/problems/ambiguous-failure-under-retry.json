@@ -93,12 +93,14 @@
   },
   "tryIt": {
     "artifactSlug": "problem-ambiguous-timeouts-tryit",
+    "name": "Cut a $100 charge",
     "noscript": "Without JavaScript: this artifact lets you cut a $100 charge at three points (request lost, crash mid-charge, reply lost) and choose what the client does next.",
     "teaser": "One $100 charge, three places to cut it, and a ledger the client can't see. The only thing in doubt is what the retry finds.",
     "caption": "Cause the failure yourself before reading how anyone fixed it."
   },
   "mission": {
     "artifactSlug": "problem-ambiguous-timeouts-mission",
+    "name": "Survive a day of payments",
     "teaser": "You own this payment path. Make six decisions, then run the day. You survive it with no double charges, no lost sales and no mystery tickets.",
     "title": "Build the defense",
     "intro": "You caused the failure from the victim's seat. Now let's design the solution. You need to make six decisions (the box below lists them), and the goal is a day of traffic survived with no double charges. Run it first with the naive defaults, the obvious choices you'd make before learning anything. Then observe what breaks. Each failure is your next lesson: it names the company that hit it, links to their post, and points at the one decision that would have prevented it. Clear the day, and the design faces five attacks, each a real-world failure that one of the five companies actually hit.",

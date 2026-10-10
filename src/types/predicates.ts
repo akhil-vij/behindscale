@@ -466,7 +466,7 @@ function checkProblemWall(value: unknown): Result {
 
 function checkProblemTryIt(value: unknown): Result {
   if (!isObject(value)) return fail('expected object')
-  const r = checkStringFields(value, ['artifactSlug', 'teaser', 'caption'], ['noscript'])
+  const r = checkStringFields(value, ['artifactSlug', 'teaser', 'caption'], ['noscript', 'name'])
   if (!r.ok) return r
   if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')
   return ok
@@ -481,7 +481,7 @@ function checkProblemMission(value: unknown): Result {
   const r = checkStringFields(
     value,
     ['artifactSlug', 'teaser', 'title', 'intro'],
-    ['stopblock', 'stuckNote', 'decisionsSummary'],
+    ['stopblock', 'stuckNote', 'decisionsSummary', 'name'],
   )
   if (!r.ok) return r
   if (!KEBAB_CASE.test(value.artifactSlug as string)) return fail('`artifactSlug` expected kebab-case')

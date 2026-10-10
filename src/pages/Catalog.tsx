@@ -126,9 +126,6 @@ export default function Catalog() {
     registry: cruxtags,
   })
 
-  const totalShown = filteredArticles.length
-  const totalCount = articles.length
-
   // For taxonomy-hit groups, re-derive without the query narrowing
   // (but keep the company filter respected).
   const taxonomyGroups = useMemo(() => {
@@ -138,6 +135,17 @@ export default function Catalog() {
       registry: cruxtags,
     })
   }, [taxonomyMatches, taxonomySet, companyFiltered])
+
+  // The result line counts exactly what is listed: the article-match groups
+  // plus the taxonomy clusters above them. The two never overlap (a class
+  // surfaced as a cluster is excluded from the article matches), so the sums
+  // are distinct breakdowns and classes. (Oct 9 review: "kafka" listed 6
+  // breakdowns under "Showing 1 of 41" because the clusters weren't counted.)
+  const totalShown =
+    filteredArticles.length +
+    taxonomyGroups.reduce((n, g) => n + g.articles.length, 0)
+  const classesShown = groups.length + taxonomyGroups.length
+  const totalCount = articles.length
 
   const hasResults = groups.length > 0 || taxonomyGroups.length > 0
 
@@ -192,13 +200,9 @@ export default function Catalog() {
           })}
         </div>
 
-        <p className="font-mono text-xs text-text-muted">
+        <p id="problems-count" className="font-mono text-xs text-text-muted">
           Showing {totalShown} of {totalCount} breakdowns across{' '}
-          {groups.length} problem {groups.length === 1 ? 'class' : 'classes'}
-          {taxonomyGroups.length > 0 && q
-            ? ` (plus ${taxonomyGroups.length} taxonomy match${taxonomyGroups.length === 1 ? '' : 'es'})`
-            : ''}
-          .
+          {classesShown} problem {classesShown === 1 ? 'class' : 'classes'}.
         </p>
       </div>
 

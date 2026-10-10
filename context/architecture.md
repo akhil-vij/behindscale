@@ -179,6 +179,28 @@ original prod-add date. Pattern `lastmod` is derived as
 (truthful: the page's content last changed when its newest
 referencing article landed or was revised).
 
+**Share image, standalone pages, feed dates** (pre-distribution batch A,
+2026-10-10). Every page's `og:image` / `twitter:image` is the absolute
+`https://www.behindscale.com/og-default.png` (1200x630, committed in
+`public/`, rendered by `scripts/make-og-image.ts`), with `twitter:card`
+`summary_large_image`; `scripts/check-share-images.ts` runs last in the build
+and fails it if any HTML page in `dist/` names a share image that isn't there.
+The standalone artifact page (`/artifacts/<slug>/index.html`, the "Open full
+screen" target) carries its own head: "<name> · behindscale", the teaser as
+description, a canonical to `/artifacts/<slug>`, and the share tags. It also
+carries a bar back to the site (wordmark home, "Read the full breakdown" to the
+owning article, pattern or problem page; `scripts/artifact-pages.ts`). The bar
+ships `hidden` and an inline script reveals it only when `window.self ===
+window.top`, so it never shows inside an embed. The Atom feed gives each entry
+`<published>` (unchanged dates) and `<updated>` = the last real change to the
+page's sources in git (`scripts/content-dates.ts`: formatting-only commits and
+`.git-blame-ignore-revs` skipped). The build never dates from a shallow clone:
+it fetches the missing history first (Vercel's clone has no remote, so from
+the URL in `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`; elsewhere from
+`origin`) and fails only if it can't. `VERCEL_DEEP_CLONE=true` did not give
+a full clone on Vercel. A build-time fetch from our own public repo; the
+website itself still fetches nothing at runtime.
+
 **Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
 placed before the main.tsx script tag in `index.html` so it runs on
 first paint before React mounts. On detecting a `#/` prefix in

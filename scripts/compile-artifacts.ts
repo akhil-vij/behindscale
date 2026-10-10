@@ -21,9 +21,16 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, join } from 'node:path'
+import { standalonePageFor, standalonePages, type StandaloneResult } from './artifact-pages'
+import { loadContent } from './load-content'
 
 const ARTIFACTS_SRC_DIR = 'content/artifacts'
 const ARTIFACTS_OUT_DIR = 'public/artifacts'
+// The site's default share image (public/og-default.png; see
+// scripts/prerender.ts and scripts/check-share-images.ts).
+const SITE_URL = 'https://www.behindscale.com'
+const SITE_NAME = 'behindscale'
+const OG_IMAGE = `${SITE_URL}/og-default.png`
 
 // Minimal HTML shell. Inline styles for dark background + font fallback
 // so the artifact paints something coherent even before its bundle
@@ -37,24 +44,74 @@ const ARTIFACTS_OUT_DIR = 'public/artifacts'
 // `./index.js` against `/artifacts/`, asking for `/artifacts/index.js`
 // (404). A slug-absolute path always resolves correctly regardless
 // of how Vercel rewrites the iframe URL.
-function htmlShell(slug: string): string {
+//
+// The same file is the "Open full screen" page people share directly, so it
+// carries its own head (name, teaser, canonical, share image; see
+// scripts/artifact-pages.ts) and a slim bar back to the site: the wordmark
+// home and "Read the full breakdown" to the page the artifact belongs to.
+// The bar ships `hidden` and an inline script reveals it only when the page
+// is the top-level window, so it can never show inside our own embeds (the
+// sandboxed iframe still sees window.top, just not its contents). Colours are
+// the ui-context.md artifact tokens (--art-bg, --art-border, --art-text,
+// --art-text-muted, --brand-gold), inlined because the shell loads no CSS.
+function htmlShell(slug: string, standalone: StandaloneResult): string {
+  const page = standalone.ok ? standalone.page : undefined
+  const title = page ? `${page.name} · ${SITE_NAME}` : `${SITE_NAME} simulation`
+  const canonical = `${SITE_URL}/artifacts/${slug}`
+  const describe = page
+    ? `
+    <meta name="description" content="${escapeAttr(page.description)}" />
+    <meta property="og:description" content="${escapeAttr(page.description)}" />`
+    : ''
+  const breakdown = page
+    ? `<a class="bs-bar-link" href="${escapeAttr(page.parentPath)}">Read the full breakdown <span aria-hidden="true">→</span></a>`
+    : ''
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>behindscale artifact</title>
+    <title>${escapeAttr(title)}</title>${describe}
+    <link rel="canonical" href="${canonical}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="${SITE_NAME}" />
+    <meta property="og:title" content="${escapeAttr(title)}" />
+    <meta property="og:url" content="${canonical}" />
+    <meta property="og:image" content="${OG_IMAGE}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="${OG_IMAGE}" />
     <style>
       html, body, #root { margin: 0; padding: 0; min-height: 100%; }
       body { background: #08090D; color: #C8CDD8; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      .bs-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 16px; border-bottom: 1px solid #1F2333; font-size: 14px; line-height: 1.3; }
+      .bs-bar[hidden] { display: none; }
+      .bs-bar a { color: #C8CDD8; text-decoration: none; }
+      .bs-bar a:hover, .bs-bar a:focus-visible { color: #EDEFF3; text-decoration: underline; }
+      .bs-bar-home { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+      .bs-bar-home::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: #F5B841; }
+      .bs-bar-link { text-align: right; }
     </style>
   </head>
   <body>
+    <header class="bs-bar" id="bs-standalone-bar" hidden>
+      <a class="bs-bar-home" href="/">${SITE_NAME}</a>
+      ${breakdown}
+    </header>
+    <script>if (window.self === window.top) document.getElementById('bs-standalone-bar').hidden = false</script>
     <div id="root"></div>
     <script type="module" src="/artifacts/${slug}/index.js"></script>
   </body>
 </html>
 `
+}
+
+function escapeAttr(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 // The per-artifact entry that esbuild bundles. Imports the artifact's
@@ -151,6 +208,7 @@ interface CompileResult {
 async function compileArtifact(
   slug: string,
   sourcePath: string,
+  standalone: StandaloneResult,
 ): Promise<CompileResult> {
   const outDir = join(ARTIFACTS_OUT_DIR, slug)
   try {
@@ -171,7 +229,7 @@ async function compileArtifact(
       loader: { '.jsx': 'jsx' },
       logLevel: 'silent',
     })
-    writeFileSync(join(outDir, 'index.html'), htmlShell(slug))
+    writeFileSync(join(outDir, 'index.html'), htmlShell(slug, standalone))
     return { slug, ok: true }
   } catch (err) {
     // Clean up partial output so a failed compile leaves no trace.
@@ -213,11 +271,20 @@ async function main(): Promise<void> {
     `compile-artifacts: compiling ${files.length} artifact${files.length === 1 ? '' : 's'}`,
   )
 
+  // Who owns each artifact, for its standalone page head + bar. `validate`
+  // has already run, so the content loads clean here.
+  const pages = standalonePages(loadContent().content)
+
   const results: CompileResult[] = []
+  const orphans: string[] = []
   for (const file of files) {
     const slug = basename(file, '.jsx')
     const sourcePath = join(ARTIFACTS_SRC_DIR, file)
-    const result = await compileArtifact(slug, sourcePath)
+    const standalone = standalonePageFor(pages, slug)
+    if (!standalone.ok) {
+      orphans.push(`${slug} (${standalone.reason}${standalone.owners.length ? `: ${standalone.owners.join(', ')}` : ''})`)
+    }
+    const result = await compileArtifact(slug, sourcePath, standalone)
     results.push(result)
     if (result.ok) {
       console.log(`  ok   ${slug}`)
@@ -225,6 +292,12 @@ async function main(): Promise<void> {
       const oneLine = result.error?.split('\n')[0] ?? 'unknown error'
       console.error(`  skip ${slug}: ${oneLine}`)
     }
+  }
+
+  if (orphans.length > 0) {
+    console.warn(
+      `compile-artifacts: ${orphans.length} standalone page${orphans.length === 1 ? '' : 's'} with no single parent page (no breakdown link): ${orphans.join('; ')}`,
+    )
   }
 
   const skipped = results.filter((r) => !r.ok).length

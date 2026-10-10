@@ -36,7 +36,12 @@ const DIST_SSR = join(ROOT, 'dist-ssr')
 
 const SITE_URL = 'https://www.behindscale.com'
 const SITE_NAME = 'behindscale'
+// The default share image (public/og-default.png, rendered by
+// scripts/make-og-image.ts). scripts/check-share-images.ts fails the build if
+// any emitted page's share-image URL has no file behind it.
 const OG_IMAGE = `${SITE_URL}/og-default.png`
+const OG_IMAGE_ALT =
+  'behindscale. Real production systems, taken apart. You break them, then fix them.'
 
 // --- Load SSR render function from the vite --ssr output ---
 
@@ -700,7 +705,11 @@ function headTags(m: Meta): string {
     `<meta property="og:description" content="${escapeAttr(m.description)}" />`,
     `<meta property="og:url" content="${escapeAttr(m.canonical)}" />`,
     `<meta property="og:image" content="${escapeAttr(OG_IMAGE)}" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${escapeAttr(OG_IMAGE_ALT)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
+    `<meta name="twitter:image" content="${escapeAttr(OG_IMAGE)}" />`,
     // Atom feed discovery (findability task 10) -- advertised on every page.
     `<link rel="alternate" type="application/atom+xml" title="${SITE_NAME}" href="/rss.xml" />`,
   ]
