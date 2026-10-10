@@ -31,15 +31,10 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-### 28. Set `VERCEL_DEEP_CLONE=true` before merging batch A (2026-10-10)
+### 28. `VERCEL_DEEP_CLONE=true`: resolved 2026-10-10 (owner)
 
-- **Source:** `fix/pre-distribution-a` (not pushed), item 6.
-- The RSS `<updated>` dates come from git history. Vercel clones only the last
-  10 commits by default, which would date every older file to the clone
-  boundary, so the build now refuses a shallow clone. **Without the variable
-  the first deploy after merge fails.** Set it in Vercel → Project Settings →
-  Environment Variables (all environments), then merge. CI already checks out
-  the full history.
+- Set in Vercel for Production and Preview, so the build's full-history
+  requirement for the RSS `<updated>` dates is met. Remove after one round.
 
 ### 29. Repo transfer and analytics plan (2026-10-10)
 
@@ -50,6 +45,11 @@ lives here it needs the owner's input to resolve.
   need Pro or Enterprise. Both questions point at the same plan decision.
 - Decide also whether the internal notes stay public (context/, docs/,
   handoff/, keywords/, CLAUDE.md; listed in the batch A report).
+- **On hold (owner, 2026-10-10):** tracking waits for the Vercel Pro decision.
+- **Ask: the two full-screen links still use ↗ for our own pages** ("Open in
+  full ↗" under article simulations, "OPEN FULL SCREEN ↗" on pattern pages).
+  The new arrow rule says → for our own pages, but these open in a new tab and
+  weren't in the batch's scope (wall-page links only). Change them too?
 
 ---
 

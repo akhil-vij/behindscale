@@ -7726,6 +7726,15 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     open-decisions #28). Adds ~15s to the build.
   - Verification: tsc 0, validator 0 errors, 445/445 unit (11 new), 38/38
     e2e (13 new: standalone x3 + embeds, search count x6, 404 x3).
+  - **Owner follow-ups (same day):** problem simulations get authored names
+    (new optional `name` on `tryIt` / `mission`): "Cut a $100 charge" and
+    "Survive a day of payments". Link arrows: → for our own pages, ↗ only for
+    outside links; the ambiguous-timeouts comparison's "Read the article ↗"
+    is now "Read the breakdown →" like every other wall (rule in
+    ui-context.md, new e2e over every wall page; §5.4 baseline string
+    updated). RSS says "breakdowns", not "dissections". `VERCEL_DEEP_CLONE`
+    set by the owner (#28 resolved); tracking held for the Pro decision (#29).
+    Verification: tsc 0, validator 0 errors, 446/446 unit, 39/39 e2e.
 
 - 2026-10-09: **Comparison diagrams v2 (drop-in).** Branch
   `fix/comparison-diagrams-v2` off `main` (`6926533`); not pushed. Design input:
