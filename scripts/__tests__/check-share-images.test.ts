@@ -11,6 +11,11 @@ describe('shareImageProblems', () => {
     expect(shareImageProblems([{ file: 'index.html', html: head(IMG, IMG) }], exists)).toEqual([])
   })
 
+  it('checks the path of a versioned URL', () => {
+    const v = `${IMG}?v=1a2b3c4d`
+    expect(shareImageProblems([{ file: 'index.html', html: head(v, v) }], exists)).toEqual([])
+  })
+
   it('fails when the image file is missing', () => {
     const missing = `${SITE_URL}/og-missing.png`
     const problems = shareImageProblems([{ file: 'index.html', html: head(missing, IMG) }], exists)

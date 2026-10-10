@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
 // sitemap page (2026-10-10):
 //   - no long dash in the title (a colon splits the title, "·" sets off the
 //     site name), and og:title and twitter:title say exactly the same;
-//   - every page points at the same share image, as og:image and
+//   - every page points at the same versioned share image, as og:image and
 //     twitter:image, once each, with the same width and height, so no page
 //     type can drift from the others.
 
@@ -40,6 +40,7 @@ test('every page: dash-free title matching og:title and twitter:title; one share
   }
   expect(problems).toEqual([])
   expect([...images]).toHaveLength(1)
+  expect([...images][0]).toMatch(/^https:\/\/www\.behindscale\.com\/og-default\.png\?v=[0-9a-f]{8}$/)
 })
 
 test('homepage and a problem page carry the owner\'s titles', async ({ request }) => {

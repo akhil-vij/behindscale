@@ -21,6 +21,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { catalogGroups, type CatalogGroup } from '../src/lib/catalogGroups'
 import { proseText } from '../src/lib/proseText'
+import { ogImageUrl } from './share-image'
 import type {
   Article,
   CruxTagRegistry,
@@ -37,9 +38,10 @@ const DIST_SSR = join(ROOT, 'dist-ssr')
 const SITE_URL = 'https://www.behindscale.com'
 const SITE_NAME = 'behindscale'
 // The default share image (public/og-default.png, rendered by
-// scripts/make-og-image.ts). scripts/check-share-images.ts fails the build if
-// any emitted page's share-image URL has no file behind it.
-const OG_IMAGE = `${SITE_URL}/og-default.png`
+// scripts/make-og-image.ts), with its content hash in the URL (see
+// scripts/share-image.ts). scripts/check-share-images.ts fails the build if any
+// emitted page's share-image URL has no file behind it.
+const OG_IMAGE = ogImageUrl()
 const OG_IMAGE_ALT =
   'behindscale. Real production systems, taken apart. You break them, then fix them.'
 
@@ -171,7 +173,7 @@ function landingMeta(): Meta {
     '@id': `${SITE_URL}#organization`,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: `${SITE_URL}/og-default.png`,
+    logo: OG_IMAGE,
   }
 
   // WebSite with a SearchAction pointing at /problems?q=... so Google
