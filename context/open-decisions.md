@@ -49,10 +49,6 @@ lives here it needs the owner's input to resolve.
 - Decide also whether the internal notes stay public (context/, docs/,
   handoff/, keywords/, CLAUDE.md; listed in the batch A report).
 - **On hold (owner, 2026-10-10):** tracking waits for the Vercel Pro decision.
-- **Ask: the two full-screen links still use ↗ for our own pages** ("Open in
-  full ↗" under article simulations, "OPEN FULL SCREEN ↗" on pattern pages).
-  The new arrow rule says → for our own pages, but these open in a new tab and
-  weren't in the batch's scope (wall-page links only). Change them too?
 
 ---
 

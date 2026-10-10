@@ -7699,6 +7699,14 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-10: **Full-screen link arrows.** Branch `fix/full-screen-arrows` off
+  `main` (`2df9661`); not pushed. Owner ruling: "Open in full ↗" (article
+  simulations) and "OPEN FULL SCREEN ↗" (pattern pages) open our own pages,
+  so both now use →. The arrow rule in ui-context.md now covers every page,
+  and a new e2e test checks the prerendered HTML of every sitemap page: no ↗
+  on a link to our own site, no → on an outside link. The ask is closed in
+  open-decisions #29; the rest of #29 stays open.
+
 - 2026-10-10: **Pre-distribution batch A (small fixes before sharing).** Branch
   `fix/pre-distribution-a` off `main` (`8d31c99`); not pushed. One commit per
   build item.

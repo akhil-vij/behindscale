@@ -64,8 +64,11 @@ the expanded body as its first line (`Read the breakdown →`) so the summary ro
 is one predictable control.
 
 **Link arrows (2026-10-10, owner):** → for our own pages, ↗ only for outside
-links. Every link from a wall page to one of our breakdowns reads "Read the
-breakdown →" (`tests/e2e/link-arrows.spec.ts` checks every wall page).
+links, wherever the link sits and whether or not it opens a new tab ("Open in
+full →" under article simulations, "OPEN FULL SCREEN →" on pattern pages).
+Every link from a wall page to one of our breakdowns reads "Read the
+breakdown →". `tests/e2e/link-arrows.spec.ts` checks every wall page, and the
+arrows on every page in the sitemap.
 
 ### Artifact / dark tokens (for artifact bundles and any dark embed)
 

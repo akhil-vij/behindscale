@@ -278,7 +278,7 @@ export default function ArtifactEmbed({
           rel="noopener noreferrer"
           className="font-mono text-xs text-art-text-muted transition-colors hover:text-art-text"
         >
-          Open in full <span aria-hidden="true">↗</span>
+          Open in full <span aria-hidden="true">→</span>
         </a>
       </div>
     </div>
