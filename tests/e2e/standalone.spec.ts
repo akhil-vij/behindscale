@@ -21,7 +21,7 @@ const SAMPLES = [
   {
     kind: 'problem-page artifact',
     slug: 'problem-ambiguous-timeouts-mission',
-    title: 'Build the defense: Ambiguous failure under retry · behindscale',
+    title: 'Survive a day of payments · behindscale',
     parent: '/problems/ambiguous-timeouts',
   },
 ] as const

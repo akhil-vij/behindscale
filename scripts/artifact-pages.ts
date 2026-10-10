@@ -60,14 +60,14 @@ export function standalonePages(content: ContentSet): Map<string, StandaloneResu
     const label = entry!.label
     if (e.tryIt !== undefined) {
       add(e.tryIt.artifactSlug, {
-        name: `The wall: ${label}`,
+        name: e.tryIt.name ?? `The wall: ${label}`,
         description: e.tryIt.teaser,
         parentPath: `/problems/${urlSlug}`,
       }, `problem ${urlSlug} (try it)`)
     }
     if (e.mission !== undefined) {
       add(e.mission.artifactSlug, {
-        name: `${e.mission.title}: ${label}`,
+        name: e.mission.name ?? `${e.mission.title}: ${label}`,
         description: e.mission.teaser,
         parentPath: `/problems/${urlSlug}`,
       }, `problem ${urlSlug} (mission)`)

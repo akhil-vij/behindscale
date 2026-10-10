@@ -37,6 +37,27 @@ describe('standalonePages', () => {
     })
   })
 
+  it('uses an authored name for a problem artifact when there is one', () => {
+    const e = problemEssay('crux-x', {
+      tryIt: { artifactSlug: 'x-tryit', name: 'Cut a charge', teaser: 'Try teaser.', caption: 'c' },
+      mission: { artifactSlug: 'x-mission', name: 'Survive a day', teaser: 'Mission teaser.', title: 'Build it', intro: 'i' },
+    } as never)
+    const pages = standalonePages(
+      makeContent({
+        articles: [],
+        patterns: [],
+        problemEssays: [e],
+        cruxTagRegistry: { 'crux-x': { label: 'Crux X', definition: 'd', urlSlug: 'crux-x-page' } },
+      }),
+    )
+    const name = (slug: string) => {
+      const r = standalonePageFor(pages, slug)
+      return r.ok ? r.page.name : undefined
+    }
+    expect(name('x-tryit')).toBe('Cut a charge')
+    expect(name('x-mission')).toBe('Survive a day')
+  })
+
   it('reports an artifact with no owner, or two, instead of guessing', () => {
     const a = { ...article('a1', []), artifact: { path: '/artifacts/shared/index.html' } }
     const b = { ...article('b1', []), artifact: { path: '/artifacts/shared/index.html' } }
