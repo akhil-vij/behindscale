@@ -7718,6 +7718,12 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   - Verification: tsc 0, validator 0 errors, 430/430 unit (7 new: no
     youMapping string is cut, centring), 25/25 e2e (2 new: every comparison
     diagram at least 11px at 1440 and 390), §5.4 baseline re-captured (2 lines).
+  - **C2PA stripped (owner ruling, 2026-10-10):** every v2 SVG carried a
+    signed content-credentials manifest (~7.7KB each), inlined into the page
+    and the bundle. Removed from the files, plus 17 older figure SVGs the new
+    `svg-no-c2pa` check found (364KB -> 107KB). The loader now reads every SVG
+    under content/ and the top of public/ (`allSvgs`) so the check sees
+    unreferenced files too. New standard in code-standards.md.
 
 - 2026-10-09: **Mission reduced-motion fix.** Branch `fix/mission-reduced-motion`
   off `main` (`c25d134`); not pushed. The owner's Android phone had "Remove

@@ -192,11 +192,10 @@ _None._
   RESPONSE", the YOU slots (memory and red line wrap; no youMapping string is
   ever cut, unit-tested), AWS/Segment labels inside their boxes, the windows
   chart's phone file and bottom margin.
-- **Ask: the C2PA content-credentials block in every v2 SVG** (~7.7KB of
-  base64 each). It is inlined into the page and the client bundle: the
-  prerendered page goes from 80KB to 189KB (19KB to 30KB gzipped) and the JS
-  bundle grows 124KB (11KB gzipped). Kept as delivered. Reply: keep / strip
-  at build time / strip from the files.
+- **C2PA blocks: resolved 2026-10-10 (owner).** Stripped from the files
+  themselves (the 16 v2 SVGs and 17 older figure SVGs: 364KB -> 107KB in
+  total), and the new `svg-no-c2pa` validator check fails the build on any
+  SVG that carries one.
 - **For design: you-wrap.js centres the memory label the wrong way.** It
   shifts a block with unused rows up; since y is the first row's baseline it
   must shift down, or a two-row label crosses the top edge of its box (seen at
