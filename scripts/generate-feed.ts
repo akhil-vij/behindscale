@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 // Atom feed emitter (findability task 10). Runs after scripts/prerender.ts,
 // alongside generate-sitemap. Emits dist/rss.xml -- an Atom feed of the article
-// dissections (title, summary, link, date) plus, as SEPARATE entries, the walls
+// breakdowns (title, summary, link, date) plus, as SEPARATE entries, the walls
 // that carry a side-by-side comparison. Linked from <head> and the footer. A
 // distribution surface as much as a findability one.
 //
@@ -51,7 +51,7 @@ interface FeedEntry {
   url: string
   published: string // YYYY-MM-DD
   updated: string // YYYY-MM-DD, >= published
-  category: 'dissection' | 'wall'
+  category: 'breakdown' | 'wall'
 }
 
 assertFullHistory(ROOT)
@@ -63,7 +63,7 @@ const updatedFor = (published: string, paths: readonly string[]): string => {
   return changed !== undefined && changed > published ? changed : published
 }
 
-// Article dissections: published = addedAt (when it appeared on behindscale).
+// Article breakdowns: published = addedAt (when it appeared on behindscale).
 // Its page's sources: the article JSON, its artifact, its figures.
 const articleEntries: FeedEntry[] = articles.map((a) => ({
   title: a.title,
@@ -75,7 +75,7 @@ const articleEntries: FeedEntry[] = articles.map((a) => ({
     ...(a.artifact ? [artifactSource(a.artifact.path)] : []),
     `content/figures/${a.slug}`,
   ]),
-  category: 'dissection',
+  category: 'breakdown',
 }))
 
 // Walls with a comparison, as separate entries. A wall's date is its newest
@@ -138,7 +138,7 @@ const xmlEntries = entries
 const feed = `<?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>${SITE_NAME}</title>
-  <subtitle>Real production systems, taken apart — the dissections and the walls, side by side.</subtitle>
+  <subtitle>Real production systems, taken apart. The breakdowns and the walls, side by side.</subtitle>
   <link href="${SITE_URL}/rss.xml" rel="self"/>
   <link href="${SITE_URL}/"/>
   <id>${SITE_URL}/</id>
@@ -149,7 +149,7 @@ ${xmlEntries}
 
 writeFileSync(join(DIST, 'rss.xml'), feed)
 console.log(
-  `generate-feed: ${entries.length} entries (${articleEntries.length} dissections + ${wallEntries.length} walls) in rss.xml, updated ${updated}.`,
+  `generate-feed: ${entries.length} entries (${articleEntries.length} breakdowns + ${wallEntries.length} walls) in rss.xml, updated ${updated}.`,
 )
 if (process.env.FEED_DATES === '1') {
   for (const e of entries) console.log(`  ${e.published}  ${e.updated}  ${e.url.replace(SITE_URL, '')}`)
