@@ -166,7 +166,7 @@ function landingMeta(): Meta {
   // surface that describes the page may fall back to the old "a library of..."
   // line (decision D, landing rewrite Stage 0).
   const description =
-    'Top engineering blog posts from Stripe, Netflix, Uber and 20 others, dissected down to the one bottleneck that made each hard — with an interactive artifact for every system. Drag the load, cut the request, watch it break, flip the fix.'
+    'Top engineering blog posts from Stripe, Netflix, Uber and 20 others, dissected down to the one bottleneck that made each hard. An interactive artifact for every system: drag the load, cut the request, watch it break, flip the fix.'
 
   const organization = {
     '@type': 'Organization',
@@ -286,7 +286,7 @@ function problemsMeta(): Meta {
     url: `${SITE_URL}/problems`,
     name: `Problems · ${SITE_NAME}`,
     description:
-      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+      'Browse behindscale dissections by problem class, with a company filter and search. Grouped by the crux: the bottleneck that made each system hard.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
       '@type': 'ItemList',
@@ -298,7 +298,7 @@ function problemsMeta(): Meta {
   return {
     title: `Problems · ${SITE_NAME}`,
     description:
-      'Browse behindscale dissections by problem class. Grouped by the crux — the bottleneck that made each system hard — with a company filter and search.',
+      'Browse behindscale dissections by problem class, with a company filter and search. Grouped by the crux: the bottleneck that made each system hard.',
     canonical: `${SITE_URL}/problems`,
     ogType: 'website',
     jsonLd: [collectionPage, definedTermSet],
@@ -448,7 +448,7 @@ function patternsIndexMeta(): Meta {
     // query (the one permitted SEO touch, /patterns rebuild §2b).
     title: `System Design Patterns · ${SITE_NAME}`,
     description:
-      'System Design Patterns grouped by the job they do — each shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
+      'System Design Patterns grouped by the job they do. Each is shown with the real breakdowns and companies behind it, identified across engineering blog dissections on behindscale.',
     canonical: `${SITE_URL}/patterns`,
     ogType: 'website',
     jsonLd: [definedTermSet],
@@ -666,7 +666,7 @@ function sourcesMeta(): Meta {
     url: `${SITE_URL}/sources`,
     name: `Sources · ${SITE_NAME}`,
     description:
-      'The official engineering blogs behindscale draws every dissection from — first-party sources only, no aggregators or third-party summaries.',
+      'The official engineering blogs behindscale draws every dissection from: first-party sources only, no aggregators or third-party summaries.',
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },
     mainEntity: {
       '@type': 'ItemList',
@@ -678,7 +678,7 @@ function sourcesMeta(): Meta {
   return {
     title: `Sources · ${SITE_NAME}`,
     description:
-      'The official engineering blogs behindscale draws every dissection from — first-party sources only.',
+      'The official engineering blogs behindscale draws every dissection from: first-party sources only.',
     canonical: `${SITE_URL}/sources`,
     ogType: 'website',
     jsonLd: [collectionPage],
