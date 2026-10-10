@@ -263,6 +263,27 @@ export function loadContent(): LoadResult {
     }
   }
 
+  // Every authored SVG source (content/** and the top of public/), for
+  // file-hygiene checks that cover unreferenced files too.
+  const allSvgs = new Map<string, string>()
+  const walkSvgs = (dir: string, recurse: boolean) => {
+    if (!existsSync(dir)) return
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        if (recurse) walkSvgs(path, true)
+      } else if (entry.name.endsWith('.svg')) {
+        try {
+          allSvgs.set(path, readFileSync(path, 'utf8'))
+        } catch (err) {
+          schemaErrors.push({ file: path, message: `could not read SVG: ${(err as Error).message}` })
+        }
+      }
+    }
+  }
+  walkSvgs('content', true)
+  walkSvgs('public', false)
+
   return {
     content: {
       articles,
@@ -275,6 +296,7 @@ export function loadContent(): LoadResult {
       figureSvgs,
       artifactSourceSlugs,
       problemSvgs,
+      allSvgs,
     },
     schemaErrors,
     skippedFileCount,

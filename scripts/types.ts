@@ -53,6 +53,11 @@ export interface ContentSet {
     string,
     { readonly path: string; readonly contents: string }
   >
+  // Every authored SVG source, referenced or not: each .svg under content/
+  // (recursive) plus the top level of public/ (the favicon; public/figures is
+  // a build copy). Key: on-disk path. Read for file-hygiene checks that must
+  // see every file a design delivery could drop in (svg-no-c2pa).
+  readonly allSvgs: ReadonlyMap<string, string>
 }
 
 export interface CheckError {
