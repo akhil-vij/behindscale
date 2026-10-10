@@ -1,0 +1,7 @@
+# Commits that touched content files without changing what a reader sees.
+# git blame skips them (git config blame.ignoreRevsFile .git-blame-ignore-revs),
+# and scripts/content-dates.ts skips them when dating a page's last real change
+# (the RSS feed's <updated>). One full hash per line.
+
+# chore(svg): strip C2PA content-credentials blocks from 33 SVGs (metadata only)
+fc78ffc82a8f49a040079832e035dc3299a20724
