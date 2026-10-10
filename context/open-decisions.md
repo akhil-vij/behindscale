@@ -242,6 +242,25 @@ lives here it needs the owner's input to resolve.
   or give those patterns a `oneLineDefinition`. The e2e test allows exactly
   this list and fails on any new dash or on a listed page that's been fixed.
 
+### 31. Queue-backlog lesson: waiting on the design files (2026-10-10)
+
+- **Source:** `feat/queue-backlog-lesson` (not pushed).
+- Everything but the art is built and tested. The mission stage, the try-it
+  stage (horizontal + vertical), the five comparison diagrams, YOU empty and
+  filled (with `{{dLives}}`, `{{dSlows}}`, `{{dFull}}`, `{{dBreaks}}` and any
+  `data-wrap` specs), their `-v` phone versions, and the wall figure
+  (`buffer-turns-on-its-owner.svg`) are interim. The 390 diagram-text e2e
+  fails until the verticals arrive.
+- The try-it script drives stage parts by `data-part` (`buf`, `bufl`,
+  `stuckmark`, `drainbox`), so both stage copies need those attributes.
+- The mission stage is drawn by script (`drawStage()` / `paintSim()`), so the
+  design becomes code there. The engine updates these hooks: the decision
+  groups `sg-buf`, `sg-full`, `sg-stuck`, `sg-order`, `sg-done`, `sg-retry`
+  (flash on a change); the queue bar `bufill` and its label `buftxt`; the
+  overflow `spilltxt`; `draintxt`, `dupetxt`, `downtxt`, `rpstxt`; the three
+  customer lanes `laneA..C` / `lanefillA..C` / `lanetxtA..C`; the stuck-job
+  mark `poisonmark`; and the boxes `bufbox`, `drainbox`, `downbox`.
+
 ## Lower priority
 
 ### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)

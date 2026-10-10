@@ -7714,6 +7714,31 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   - Not done (owner's call): more workers locally and in CI; tagging the
     pacing tests so a quick local run can skip them.
 
+- 2026-10-10: **Queue-backlog becomes the second full lesson (Step 2, in
+  progress).** Branch `feat/queue-backlog-lesson` off `main` (`3a42815`); not
+  pushed (waiting on the design agent's stage and diagram files). Source:
+  queue-backlog v1.3 (fact-checked copy pass).
+  - **Shell:** the eyebrow's year range is in words ("2017 to 2022") on every
+    wall (owner: no dashes as punctuation).
+  - **Content:** the v1.3 JSON in the repo schema (approved Step 1 mapping),
+    page 1's stations and minutes, the owner's legend kinds, the mission
+    outline and the new search description. `src/walls/queue-backlog.ts`
+    ports host.js `youMapping` ("not chosen" for an unset decision).
+  - **Try-it:** the prototype's script and markup in page 1's try-it shell.
+  - **Mission:** its own artifact (`problem-queue-backlog-mission.jsx` +
+    `-rules.js`), the prototype's rules, decisions, stage, events, attacks and
+    debrief with page 1's mechanics carried in (layout, slot + log, accordion,
+    reading hold, reduced motion, restore, bridge). Page 1 untouched; a shared
+    engine is parked until after launch. The reading hold here applies when a
+    narration or card is replaced (say()/card() wait), not inside every pause,
+    because each event is an animated phase.
+  - **Interim art:** the comparison SVGs and the wall figure are the
+    prototype's drawings until the design files land (the 390 diagram-text
+    check fails until the verticals arrive).
+  - Tests: rules parity on 128,304 combinations, a jsdom click-through, and
+    e2e for the round trip, ticks, reduced-motion reading time, phones and
+    diagram text.
+
 - 2026-10-10: **Full-screen link arrows.** Branch `fix/full-screen-arrows` off
   `main` (`2df9661`); not pushed. Owner ruling: "Open in full ↗" (article
   simulations) and "OPEN FULL SCREEN ↗" (pattern pages) open our own pages,
