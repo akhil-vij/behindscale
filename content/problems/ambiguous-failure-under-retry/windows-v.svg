@@ -1,0 +1,28 @@
+<svg class="win win-v" viewBox="0 0 360 320" role="img" aria-label="Five ways the protection window ends: set by policy, resource lifetime plus a margin, a lease plus a retry cap, about 24 hours, and set by size" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="hatch-v" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#D6D2CA" stroke-width="2.4"></line>
+    </pattern>
+  </defs>
+  <text class="wlabel" x="12" y="16">Stripe</text>
+  <rect class="wbar" x="12" y="24" width="228" height="22" rx="5" style="fill:url(#hatch-v)"></rect>
+  <text class="wtag" x="12" y="62">SET BY POLICY: MUST OUTLAST RETRIES</text>
+  <text class="wlabel" x="12" y="78">AWS</text>
+  <rect class="wbar solid" x="12" y="86" width="284" height="22" rx="5"></rect>
+  <rect class="wbar" x="300" y="86" width="44" height="22" rx="5" style="fill:url(#hatch-v)"></rect>
+  <text class="wtag" x="12" y="124">RESOURCE LIFETIME</text>
+  <text class="wtag" x="344" y="124" text-anchor="end">+ MARGIN</text>
+  <text class="wlabel" x="12" y="140">Airbnb</text>
+  <rect class="wbar solid" x="12" y="148" width="50" height="22" rx="5"></rect>
+  <rect class="wbar solid" x="70" y="148" width="98" height="22" rx="5"></rect>
+  <text class="wtag" x="12" y="186">LEASE</text>
+  <text class="wtag" x="70" y="186">TOTAL RETRY CAP</text>
+  <text class="wlabel" x="12" y="202">Shopify</text>
+  <rect class="wbar solid" x="12" y="210" width="118" height="22" rx="5"></rect>
+  <text class="wtag" x="12" y="248">ABOUT 24 HOURS, USUALLY</text>
+  <text class="wlabel" x="12" y="264">Segment</text>
+  <polygon class="wbar solid" points="12,272 216,272 216,278 184,294 12,294"></polygon>
+  <line class="wmark" x1="120" y1="258" x2="120" y2="300"></line>
+  <text class="wtag" x="128" y="264" fill="var(--state-error)">ALERT IF &lt; 24H</text>
+  <text class="wtag" x="12" y="310">SET BY SIZE: HEAVY TRAFFIC SHRINKS IT</text>
+</svg>

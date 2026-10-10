@@ -34,6 +34,7 @@ import { listBlockWellFormed } from './checks/list-block-well-formed'
 import { cruxtagUrlslug } from './checks/cruxtag-urlslug'
 import { problemEssay } from './checks/problem-essay'
 import { patternCategory } from './checks/pattern-category'
+import { svgNoC2pa } from './checks/svg-no-c2pa'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -63,6 +64,7 @@ const CHECKS: readonly Check[] = [
   cruxtagUrlslug,
   problemEssay,
   patternCategory,
+  svgNoC2pa,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

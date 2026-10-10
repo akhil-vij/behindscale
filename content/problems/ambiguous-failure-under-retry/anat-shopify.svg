@@ -1,29 +1,29 @@
-<svg class="anat" viewBox="0 0 640 150" role="img" aria-label="Shopify: who makes the key is not stated, memory records which steps ran in the payment service, only one request ever reaches the payment partner. A retry after about 24 hours is not covered">
-  <path class="replay ns" d="M 300 34 C 250 8, 150 8, 92 30"/>
-  <polygon class="rhead ns" points="88,32 98,26 98,34"/>
-  <text class="rlabel ns" x="196" y="14">not stated in the post</text>
-  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
-  <text class="nlabel" x="62" y="61">CALLER</text>
-  <circle class="keydot ns" cx="116" cy="57" r="6"/>
-  <text class="klabel" x="116" y="82">key made by: not stated</text>
-  <line class="arrow" x1="126" y1="57" x2="240" y2="57"/>
-  <polygon class="ahead" points="248,57 240,53 240,61"/>
-  <rect class="node" x="250" y="40" width="140" height="34" rx="7"/>
-  <text class="nlabel" x="320" y="55">PAYMENT SERVICE</text>
-  <text class="nsub" x="320" y="68">ULID keys</text>
-  <line class="drop" x1="320" y1="74" x2="320" y2="94"/>
-  <rect class="state" x="250" y="94" width="140" height="26" rx="6"/>
-  <text class="slabel" x="320" y="111">WHICH STEPS ALREADY RAN</text>
-  <line class="arrow" x1="390" y1="57" x2="496" y2="57"/>
-  <polygon class="ahead" points="504,57 496,53 496,61"/>
-  <text class="alabel" x="443" y="50">×1 ONLY, EVER</text>
-  <rect class="node" x="506" y="40" width="126" height="34" rx="7"/>
-  <text class="nlabel" x="569" y="55">PAYMENT</text>
-  <text class="nsub" x="569" y="68">PARTNER</text>
-  <circle class="clockmark" cx="458" cy="107" r="10"/>
-  <line class="clockmark" x1="458" y1="107" x2="458" y2="101"/>
-  <line class="clockmark" x1="458" y1="107" x2="463" y2="107"/>
-  <line class="bx" x1="472" y1="100" x2="484" y2="112"/>
-  <line class="bx" x1="484" y1="100" x2="472" y2="112"/>
-  <text class="blabel" x="492" y="110">AFTER ~24H, UNCOVERED</text>
+<svg class="anat" viewBox="0 0 640 190" role="img" aria-label="Shopify: who makes the key is not stated, memory records which steps ran in the payment service, only one request ever reaches the payment partner. A retry after about 24 hours is not covered" xmlns="http://www.w3.org/2000/svg">
+  <path class="replay ns" d="M 300 60 C 256 20, 140 20, 98 56"></path>
+  <polygon class="rhead ns" points="92,58 102,52 102,60"></polygon>
+  <text class="rlabel ns" x="196" y="16">not stated in the post</text>
+  <rect class="node" x="8" y="60" width="108" height="52" rx="7"></rect>
+  <text class="nlabel" x="62" y="91">CALLER</text>
+  <circle class="keydot ns" cx="116" cy="86" r="6.5"></circle>
+  <text class="klabel" x="116" y="128">key made by: not stated</text>
+  <line class="arrow" x1="126" y1="86" x2="240" y2="86"></line>
+  <polygon class="ahead" points="248,86 240,82 240,90"></polygon>
+  <rect class="node" x="250" y="60" width="140" height="52" rx="7"></rect>
+  <text class="nlabel" x="320" y="81">PAYMENT SERVICE</text>
+  <text class="nsub" x="320" y="98">ULID keys</text>
+  <line class="drop" x1="320" y1="112" x2="320" y2="124"></line>
+  <rect class="state" x="228" y="124" width="184" height="26" rx="6"></rect>
+  <text class="slabel" x="320" y="141">WHICH STEPS ALREADY RAN</text>
+  <line class="arrow" x1="390" y1="86" x2="496" y2="86"></line>
+  <polygon class="ahead" points="504,86 496,82 496,90"></polygon>
+  <text class="alabel" x="448" y="78">×1 ONLY, EVER</text>
+  <rect class="node" x="506" y="60" width="126" height="52" rx="7"></rect>
+  <text class="nlabel" x="569" y="81">PAYMENT</text>
+  <text class="nsub" x="569" y="98">PARTNER</text>
+  <circle class="clockmark" cx="32" cy="176" r="8"></circle>
+  <line class="clockmark" x1="32" y1="176" x2="32" y2="171"></line>
+  <line class="clockmark" x1="32" y1="176" x2="36" y2="176"></line>
+  <line class="bx" x1="52" y1="170" x2="64" y2="182"></line>
+  <line class="bx" x1="64" y1="170" x2="52" y2="182"></line>
+  <text class="blabel" x="72" y="180">AFTER ~24H, UNCOVERED</text>
 </svg>

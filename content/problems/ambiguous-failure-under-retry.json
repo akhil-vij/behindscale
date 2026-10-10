@@ -228,7 +228,7 @@
       "filledSvg": "you-filled",
       "open": true
     },
-    "stripNote": "Dashed marks are gaps. On Shopify, the post doesn't say, so we leave a gap rather than guess. On Segment, the gap is the answer: a duplicate gets nothing back. The table below shows the same comparison at a glance, and the full answers follow it.",
+    "stripNote": "A dashed mark means the company's post doesn't say. We leave a gap rather than guess. The table below shows the same comparison at a glance, and the full answers follow it.",
     "matrixLead": "Start with the first row. Who the callers are decides almost everything below it.",
     "columns": [
       "Stripe",

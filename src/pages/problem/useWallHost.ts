@@ -276,6 +276,11 @@ export function useWallHost(input: WallHostInput): WallHost {
         row.querySelector('.anat-scroll')?.setAttribute('aria-hidden', String(mq.matches))
         row.querySelector('.anat-vert')?.setAttribute('aria-hidden', String(!mq.matches))
       }
+      // Diagrams v2: the windows chart switches the same way.
+      for (const fig of Array.from(document.querySelectorAll('.winfig'))) {
+        fig.querySelector('.win-horiz')?.setAttribute('aria-hidden', String(mq.matches))
+        fig.querySelector('.win-vert')?.setAttribute('aria-hidden', String(!mq.matches))
+      }
     }
     apply()
     mq.addEventListener('change', apply)

@@ -182,30 +182,24 @@ _None._
 - The three flags (the 360x632 phone canvas, the ~4px margin at 1440x780,
   the 9-10px hash glyph) were accepted 2026-10-09; see Recently resolved.
 
-### 26. Comparison copy pass: what is left for design (2026-10-02)
+### 26. Comparison diagrams: after the v2 drop-in (2026-10-09)
 
-- **Source:** `fix/ambiguous-timeouts-comparison-copy` (pushed; owner checks
-  by hand before merging).
-- **Resolved 2026-10-02 by the owner's answers:** the new `stripNote`; the
-  390px overflow (fixed, `svg.anat-v { min-width: 0 }`); the diagram words
-  (all changed except "AFTER ~24H", kept on purpose); `mission.stopblock`
-  links "the comparison"; `interview.asks[1]` keeps "client" (an
-  interviewer's own words).
-- **For design: diagram text size on phones.** After the overflow fix the
-  vertical diagrams' smallest text is 7.7px on screen at 390px (9px labels
-  are 8.1px). The windows chart has no vertical file: its text is 4.4px.
-- **For design: Segment's "nothing" needs its own mark.** Dashed gray means
-  "not stated" on Shopify and "nothing is sent back" on Segment; the strip
-  note now explains both in words.
-- **For design: the sixth (YOU) diagram's slots.** The memory label is wider
-  than its box (306 units in a 140 box; it hits nothing and stays inside the
-  canvas). On the vertical file the red line with no attack held is 552 wide
-  in a 360 canvas and is clipped.
-- **For design: strings that don't fit, or already collide.** Stripe's red
-  line should read "OLD RESPONSE" but already runs 12 units into the memory
-  box. AWS "SDK fills the token in" is 2 units wider than its box, Segment's
-  ledger label is 0.7 over, and the windows chart's "ALERT IF < 24H" is cut
-  by the bottom of the canvas.
+- **Source:** `fix/comparison-diagrams-v2` (not pushed).
+- **Resolved by diagrams v2:** text size (smallest on screen now 11.4px on
+  the windows chart, 11.5px on the horizontals and 11.7px on the verticals; e2e
+  asserts at least 11px at 1440 and 390), Segment's own "nothing" mark (dashed
+  now only means "not stated"; the strip note says so), Stripe's "OLD
+  RESPONSE", the YOU slots (memory and red line wrap; no youMapping string is
+  ever cut, unit-tested), AWS/Segment labels inside their boxes, the windows
+  chart's phone file and bottom margin.
+- **C2PA blocks: resolved 2026-10-10 (owner).** Stripped from the files
+  themselves (the 16 v2 SVGs and 17 older figure SVGs: 364KB -> 107KB in
+  total), and the new `svg-no-c2pa` validator check fails the build on any
+  SVG that carries one.
+- **For design: you-wrap.js centres the memory label the wrong way.** It
+  shifts a block with unused rows up; since y is the first row's baseline it
+  must shift down, or a two-row label crosses the top edge of its box (seen at
+  390). The TypeScript port shifts down; the shared helper should match.
 - **Ask: two aria-labels in `ComparisonSection.tsx` use a long dash**
   ("... — how it works (scrollable diagram)"). Not visible; left alone.
 - **Note: the pattern chip is still named "Master-Only Reads"** (pattern

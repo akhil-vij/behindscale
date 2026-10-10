@@ -1,32 +1,28 @@
-<svg class="win" viewBox="0 0 640 196" role="img" aria-label="Five ways the protection window ends: set by policy, resource lifetime plus a margin, a lease plus a retry cap, about 24 hours, and set by size">
+<svg class="win" viewBox="0 0 640 208" role="img" aria-label="Five ways the protection window ends: set by policy, resource lifetime plus a margin, a lease plus a retry cap, about 24 hours, and set by size" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="0" y2="7" stroke="#D6D2CA" stroke-width="2.4"/>
+      <line x1="0" y1="0" x2="0" y2="7" stroke="#D6D2CA" stroke-width="2.4"></line>
     </pattern>
   </defs>
   <text class="wlabel" x="8" y="30">Stripe</text>
-  <rect class="wbar" x="112" y="16" width="290" height="20" rx="5" fill="url(#hatch)"/>
-  <text class="wtag" x="412" y="30">SET BY POLICY: MUST OUTLAST RETRIES</text>
-
+  <rect class="wbar" x="112" y="16" width="218" height="20" rx="5" style="fill:url(#hatch)"></rect>
+  <text class="wtag" x="340" y="30">SET BY POLICY: MUST OUTLAST RETRIES</text>
   <text class="wlabel" x="8" y="66">AWS</text>
-  <rect class="wbar solid" x="112" y="52" width="380" height="20" rx="5"/>
+  <rect class="wbar solid" x="112" y="52" width="380" height="20" rx="5"></rect>
   <text class="wtag" x="118" y="66">RESOURCE LIFETIME</text>
-  <rect class="wbar" x="500" y="52" width="60" height="20" rx="5" fill="url(#hatch)"/>
+  <rect class="wbar" x="500" y="52" width="60" height="20" rx="5" style="fill:url(#hatch)"></rect>
   <text class="wtag" x="566" y="66">+ MARGIN</text>
-
   <text class="wlabel" x="8" y="102">Airbnb</text>
-  <rect class="wbar solid" x="112" y="88" width="64" height="20" rx="5"/>
+  <rect class="wbar solid" x="112" y="88" width="64" height="20" rx="5"></rect>
   <text class="wtag" x="118" y="102">LEASE</text>
-  <rect class="wbar solid" x="188" y="88" width="120" height="20" rx="5"/>
+  <rect class="wbar solid" x="188" y="88" width="134" height="20" rx="5"></rect>
   <text class="wtag" x="196" y="102">TOTAL RETRY CAP</text>
-
   <text class="wlabel" x="8" y="138">Shopify</text>
-  <rect class="wbar solid" x="112" y="124" width="150" height="20" rx="5"/>
+  <rect class="wbar solid" x="112" y="124" width="190" height="20" rx="5"></rect>
   <text class="wtag" x="118" y="138">ABOUT 24 HOURS, USUALLY</text>
-
   <text class="wlabel" x="8" y="174">Segment</text>
-  <polygon class="wbar solid" points="112,160 372,160 372,166 332,180 112,180"/>
-  <line class="wmark" x1="252" y1="154" x2="252" y2="186"/>
+  <polygon class="wbar solid" points="112,160 432,160 432,166 392,180 112,180"></polygon>
+  <line class="wmark" x1="252" y1="154" x2="252" y2="188"></line>
   <text class="wtag" x="118" y="174">SET BY SIZE: HEAVY TRAFFIC SHRINKS IT</text>
-  <text class="wtag" x="260" y="196" fill="#DC2626">ALERT IF &lt; 24H</text>
+  <text class="wtag" x="260" y="200" fill="var(--state-error)">ALERT IF &lt; 24H</text>
 </svg>

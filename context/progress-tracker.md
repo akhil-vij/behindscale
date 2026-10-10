@@ -7699,6 +7699,32 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-09: **Comparison diagrams v2 (drop-in).** Branch
+  `fix/comparison-diagrams-v2` off `main` (`6926533`); not pushed. Design input:
+  the design agent's diagrams-v2 zip (16 SVGs, you-wrap.js, README).
+  - **SVGs:** all 16 dropped in (`windows-v.svg` new). Only text changes: the
+    approved Stripe "OLD RESPONSE" and line wraps. Every token they use exists.
+    The two you-empty aria-labels still said "client ... - drawn" (missed in the
+    copy pass) and were fixed.
+  - **CSS:** the README's sizes (12px base, 13/14px on the vertical files), the
+    Segment "nothing" mark (`.replay.none`, `.rstop`, `.rlabel.none`), and the
+    windows phone switch (`.win-horiz` / `.win-vert`, mirrored with
+    aria-hidden in useWallHost like the diagram rows).
+  - **YOU slots:** `fillWrapped` ported to TypeScript as pure string functions
+    (`src/pages/problem/fillWrapped.ts`); `fillSlots` writes tspan rows for any
+    slot with data-wrap (dState, dBreaks). One deviation from you-wrap.js: the
+    memory label's centring shift goes down, not up (open-decisions #26).
+  - **Copy:** `comparison.stripNote` back to one meaning (dashed = not stated).
+  - Verification: tsc 0, validator 0 errors, 430/430 unit (7 new: no
+    youMapping string is cut, centring), 25/25 e2e (2 new: every comparison
+    diagram at least 11px at 1440 and 390), §5.4 baseline re-captured (2 lines).
+  - **C2PA stripped (owner ruling, 2026-10-10):** every v2 SVG carried a
+    signed content-credentials manifest (~7.7KB each), inlined into the page
+    and the bundle. Removed from the files, plus 17 older figure SVGs the new
+    `svg-no-c2pa` check found (364KB -> 107KB). The loader now reads every SVG
+    under content/ and the top of public/ (`allSvgs`) so the check sees
+    unreferenced files too. New standard in code-standards.md.
+
 - 2026-10-09: **Mission reduced-motion fix.** Branch `fix/mission-reduced-motion`
   off `main` (`c25d134`); not pushed. The owner's Android phone had "Remove
   animations" on by default, so the first day raced past in 5.3s.

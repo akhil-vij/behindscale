@@ -80,6 +80,13 @@
 - The aggregated pattern library is derived data: it is regenerated from the
   per-article summaries, never hand-edited.
 
+- **SVGs carry no C2PA content-credentials block.** Design deliveries can
+  embed a signed manifest (`<metadata><c2pa:manifest>` plus `xmlns:c2pa`,
+  ~8KB each); strip it from the file before committing. Inline diagrams are
+  copied into the prerendered page and the client bundle, so it costs real
+  bytes. The `svg-no-c2pa` validator check fails the build on any SVG under
+  `content/` or the top of `public/` that still has one.
+
 ## Testing Strategy
 
 - **Schema validation tests with vitest.** One test file per content type,

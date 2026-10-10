@@ -107,6 +107,8 @@ export function makeContent(input: {
   artifactSourceSlugs?: ReadonlySet<string>
   // Preloaded inline problem-page SVGs, keyed `<cruxTag>/<name>`.
   problemSvgs?: ReadonlyMap<string, { readonly path: string; readonly contents: string }>
+  // Every authored SVG source, keyed by path (svg-no-c2pa).
+  allSvgs?: ReadonlyMap<string, string>
 }): ContentSet {
   const problemEssays = input.problemEssays ?? []
   return {
@@ -137,5 +139,6 @@ export function makeContent(input: {
           .map((h) => h.slug),
       ),
     problemSvgs: input.problemSvgs ?? new Map(),
+    allSvgs: input.allSvgs ?? new Map(),
   }
 }
