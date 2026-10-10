@@ -24,6 +24,9 @@ import { basename, join } from 'node:path'
 
 const ARTIFACTS_SRC_DIR = 'content/artifacts'
 const ARTIFACTS_OUT_DIR = 'public/artifacts'
+// The site's default share image (public/og-default.png; see
+// scripts/prerender.ts and scripts/check-share-images.ts).
+const OG_IMAGE = 'https://www.behindscale.com/og-default.png'
 
 // Minimal HTML shell. Inline styles for dark background + font fallback
 // so the artifact paints something coherent even before its bundle
@@ -44,6 +47,9 @@ function htmlShell(slug: string): string {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>behindscale artifact</title>
+    <meta property="og:image" content="${OG_IMAGE}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="${OG_IMAGE}" />
     <style>
       html, body, #root { margin: 0; padding: 0; min-height: 100%; }
       body { background: #08090D; color: #C8CDD8; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
