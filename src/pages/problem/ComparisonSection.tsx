@@ -105,7 +105,7 @@ export default function ComparisonSection({
             </summary>
             {row.articleSlug !== undefined && (
               <Link to={`/articles/${row.articleSlug}`} className="anat-readlink">
-                Read the article ↗
+                Read the breakdown →
               </Link>
             )}
             <div

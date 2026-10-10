@@ -60,8 +60,12 @@ these `--muted` / `--muted-ghost`; the codebase keeps the existing
 at rest (1px, `text-underline-offset: 2px`) — colour alone is ~1.5:1 against
 body text. Nav items, chips, card titles and mono eyebrow links stay bare
 (affordances by position). A link inside a `<details>` `<summary>` moves into
-the expanded body as its first line (`Read the article ↗`) so the summary row
+the expanded body as its first line (`Read the breakdown →`) so the summary row
 is one predictable control.
+
+**Link arrows (2026-10-10, owner):** → for our own pages, ↗ only for outside
+links. Every link from a wall page to one of our breakdowns reads "Read the
+breakdown →" (`tests/e2e/link-arrows.spec.ts` checks every wall page).
 
 ### Artifact / dark tokens (for artifact bundles and any dark embed)
 
