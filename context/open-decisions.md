@@ -31,7 +31,25 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-_None._
+### 28. Set `VERCEL_DEEP_CLONE=true` before merging batch A (2026-10-10)
+
+- **Source:** `fix/pre-distribution-a` (not pushed), item 6.
+- The RSS `<updated>` dates come from git history. Vercel clones only the last
+  10 commits by default, which would date every older file to the clone
+  boundary, so the build now refuses a shallow clone. **Without the variable
+  the first deploy after merge fails.** Set it in Vercel → Project Settings →
+  Environment Variables (all environments), then merge. CI already checks out
+  the full history.
+
+### 29. Repo transfer and analytics plan (2026-10-10)
+
+- **Source:** batch A report items 7 and 8.
+- Moving the repo to a `behindscale` GitHub organization: Vercel's Hobby plan
+  can't deploy from an organization-owned repo, and Vercel custom events
+  (simulation started, mission completed, signup, click to the original post)
+  need Pro or Enterprise. Both questions point at the same plan decision.
+- Decide also whether the internal notes stay public (context/, docs/,
+  handoff/, keywords/, CLAUDE.md; listed in the batch A report).
 
 ---
 

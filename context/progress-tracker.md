@@ -7699,6 +7699,34 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-10: **Pre-distribution batch A (small fixes before sharing).** Branch
+  `fix/pre-distribution-a` off `main` (`8d31c99`); not pushed. One commit per
+  build item.
+  - **1 Share image:** `og-default.png` was referenced everywhere and never
+    existed (every unfurl blank). Rendered by `scripts/make-og-image.ts`
+    (site background, gold square, hero line in the hero serif), committed to
+    `public/`. Pages gain `twitter:image` and the image size and alt. New
+    post-build `scripts/check-share-images.ts` fails the build on a missing,
+    relative or off-site share image or a wrong `twitter:card`.
+  - **2 Standalone simulation pages:** title "<name> · behindscale", teaser
+    description, canonical, share tags, and a bar (home + "Read the full
+    breakdown") shown only when the page is top-level. Every one of the 72
+    artifacts has exactly one parent (`scripts/artifact-pages.ts`). Problem
+    artifacts have no authored name, so: "The wall: <class>" (try-it) and
+    "<mission.title>: <class>" (mission).
+  - **3 robots.txt:** already points to the sitemap (generator and live). No
+    change.
+  - **4 Search count:** /problems left the problem-class clusters out of the
+    count ("kafka": 6 listed, "Showing 1 of 41"). Now counts what's listed;
+    the "(plus N taxonomy matches)" clause is gone. /patterns was right.
+  - **5 404:** "Back to home" (also on the unknown-article state).
+  - **6 RSS:** `<published>` keeps the old dates, `<updated>` comes from git
+    (`scripts/content-dates.ts`); entries ordered by update. Needs full
+    history: CI `fetch-depth: 0`, Vercel `VERCEL_DEEP_CLONE=true` (owner,
+    open-decisions #28). Adds ~15s to the build.
+  - Verification: tsc 0, validator 0 errors, 445/445 unit (11 new), 38/38
+    e2e (13 new: standalone x3 + embeds, search count x6, 404 x3).
+
 - 2026-10-09: **Comparison diagrams v2 (drop-in).** Branch
   `fix/comparison-diagrams-v2` off `main` (`6926533`); not pushed. Design input:
   the design agent's diagrams-v2 zip (16 SVGs, you-wrap.js, README).
