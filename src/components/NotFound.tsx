@@ -17,7 +17,7 @@ export default function NotFound() {
           to="/"
           className="text-accent-primary hover:text-accent-hover transition-colors"
         >
-          ← Back to articles
+          ← Back to home
         </Link>
       </p>
     </main>
