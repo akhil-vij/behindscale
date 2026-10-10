@@ -1,0 +1,21 @@
+<svg class="anat" viewBox="0 0 640 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Segment: the backlog lives in mysql rows · one db per owner. What slows as it fills: nothing: few jobs in use, dbs replaced ~30 min. When full: the partner: 100,000/s against a normal 16,000. Still breaks: its retries pile onto the partner">
+  <path class="replay" d="M 330 34 C 400 8, 500 8, 560 30"/><polygon class="rhead" points="564,32 554,26 554,34"/>
+  <text class="rlabel" x="320" y="14">THE PARTNER: 100,000/S AGAINST A NORMAL 16,000</text>
+  <rect class="node" x="8" y="40" width="108" height="34" rx="7"/>
+  <text class="nlabel" x="62" y="55">SENDERS</text><text class="nsub" x="62" y="68">42,000 SOURCES</text>
+  <line class="arrow" x1="126" y1="57" x2="192" y2="57"/><polygon class="ahead" points="200,57 192,53 192,61"/>
+  <rect class="node" x="202" y="40" width="176" height="34" rx="7"/>
+  <text class="nlabel" x="290" y="55">THE QUEUE</text><text class="nsub" x="290" y="68">CENTRIFUGE</text>
+  <line class="drop" x1="290" y1="74" x2="290" y2="88"/>
+  <rect class="state" x="202" y="88" width="176" height="26" rx="6"/>
+  <text class="slabel" x="290" y="105">MYSQL ROWS · ONE DB PER OWNER</text>
+  <circle class="keydot" cx="378" cy="40" r="6"/>
+  <text class="klabel" x="290" y="128">NOTHING: FEW JOBS IN USE, DBS REPLACED ~30 MIN</text>
+  <line class="arrow" x1="388" y1="57" x2="418" y2="57"/><polygon class="ahead" points="426,57 418,53 418,61"/>
+  <rect class="node" x="428" y="40" width="70" height="34" rx="7"/><text class="nlabel" x="463" y="61">WORKERS</text>
+  <line class="arrow" x1="498" y1="57" x2="518" y2="57"/><polygon class="ahead" points="526,57 518,53 518,61"/>
+  <rect class="node" x="528" y="40" width="104" height="34" rx="7"/>
+  <text class="nlabel" x="580" y="55">DOWNSTREAM</text><text class="nsub" x="580" y="68">200+ DESTINATIONS</text>
+  <line class="bx" x1="440" y1="120" x2="452" y2="132"/><line class="bx" x1="452" y1="120" x2="440" y2="132"/>
+  <text class="blabel" x="460" y="130">ITS RETRIES PILE ONTO THE PARTNER</text>
+ </svg>
