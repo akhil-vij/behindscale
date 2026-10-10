@@ -31,10 +31,13 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-### 28. `VERCEL_DEEP_CLONE=true`: resolved 2026-10-10 (owner)
+### 28. Full git history on Vercel: resolved 2026-10-10
 
-- Set in Vercel for Production and Preview, so the build's full-history
-  requirement for the RSS `<updated>` dates is met. Remove after one round.
+- `VERCEL_DEEP_CLONE=true` was set (Production and Preview) but the deploy
+  still got a 10-commit clone and failed. The build now fetches the full
+  history itself (`scripts/content-dates.ts`), so the variable is no longer
+  needed. It's harmless; remove it from Vercel or leave it. If the repo ever
+  goes private, the fetch will need a token. Remove this item after one round.
 
 ### 29. Repo transfer and analytics plan (2026-10-10)
 

@@ -194,8 +194,12 @@ ships `hidden` and an inline script reveals it only when `window.self ===
 window.top`, so it never shows inside an embed. The Atom feed gives each entry
 `<published>` (unchanged dates) and `<updated>` = the last real change to the
 page's sources in git (`scripts/content-dates.ts`: formatting-only commits and
-`.git-blame-ignore-revs` skipped); the build refuses a shallow clone, so Vercel
-needs `VERCEL_DEEP_CLONE=true` and CI checks out with `fetch-depth: 0`.
+`.git-blame-ignore-revs` skipped). The build never dates from a shallow clone:
+it fetches the missing history first (Vercel's clone has no remote, so from
+the URL in `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`; elsewhere from
+`origin`) and fails only if it can't. `VERCEL_DEEP_CLONE=true` did not give
+a full clone on Vercel. A build-time fetch from our own public repo; the
+website itself still fetches nothing at runtime.
 
 **Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
 placed before the main.tsx script tag in `index.html` so it runs on

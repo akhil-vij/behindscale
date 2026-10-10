@@ -7735,6 +7735,15 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     updated). RSS says "breakdowns", not "dissections". `VERCEL_DEEP_CLONE`
     set by the owner (#28 resolved); tracking held for the Pro decision (#29).
     Verification: tsc 0, validator 0 errors, 446/446 unit, 39/39 e2e.
+  - **Shallow-clone failures (same day, after push):** the Vercel deploy
+    (with `VERCEL_DEEP_CLONE=true` set) and the GitHub pull_request run (with
+    `fetch-depth: 0`) both came out shallow, and the feed step stopped the
+    build as designed. `ensureFullHistory` now deepens a shallow clone itself:
+    from the URL in Vercel's `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`
+    (Vercel's clone has no remote), else from `origin`, fetching HEAD's own
+    commit. Rehearsed against GitHub: a Vercel-style clone (10 commits, no
+    remote) went to 407, a pull-request checkout (merge ref, depth 1) to
+    408, each in under 3s, with matching dates.
 
 - 2026-10-09: **Comparison diagrams v2 (drop-in).** Branch
   `fix/comparison-diagrams-v2` off `main` (`6926533`); not pushed. Design input:
