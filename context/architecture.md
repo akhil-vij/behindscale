@@ -207,8 +207,11 @@ title itself ("Ambiguous failure under retry: how Stripe, ... prevent double
 payments"), " · behindscale" ends every title but the homepage's
 ("behindscale: real production systems, taken apart. ..."), and pattern
 pages read "<name> · patterns · behindscale". `og:title` and `twitter:title`
-repeat the `<title>` exactly. `tests/e2e/share-tags.spec.ts` checks every
-sitemap page.
+repeat the `<title>` exactly. Meta descriptions and the RSS feed follow the
+same rule (colon or full stop, no long dash). `tests/e2e/share-tags.spec.ts`
+checks every sitemap page and the feed; 24 descriptions taken verbatim from
+content still carry a dash and are listed there (`KNOWN_CONTENT_DASHES`, which
+can only shrink) until they're rewritten (open-decisions #30).
 
 **Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
 placed before the main.tsx script tag in `index.html` so it runs on

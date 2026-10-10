@@ -7717,6 +7717,13 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
   - **Titles:** long dashes out of every page title (colon inside the title,
     " · behindscale" as the suffix), `twitter:title` added; new
     `share-tags.spec.ts` checks titles and share tags on every sitemap page.
+  - **Descriptions and RSS (owner):** long dashes out of the homepage,
+    /problems, /patterns and /sources descriptions (colon or full stop) and
+    the RSS wall title ("Ambiguous failure under retry: 5 systems, side by
+    side"). share-tags.spec.ts now also checks every description and the
+    feed. 24 content-sourced descriptions still carry a dash (2 article
+    summaries, 17 pattern definition first paragraphs, 5 problem ledes); they
+    are a known list in the test, logged as open-decisions #30.
 
 - 2026-10-10: **Pre-distribution batch A (small fixes before sharing).** Branch
   `fix/pre-distribution-a` off `main` (`8d31c99`); not pushed. One commit per
