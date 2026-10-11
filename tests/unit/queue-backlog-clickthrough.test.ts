@@ -129,8 +129,17 @@ describe('queue-backlog click-through (jsdom, accelerated timers)', () => {
   it('starting decisions -> 1 lost, 2 stalled, 2 outages, a caused checkpoint', async () => {
     const bufTexts = new Set<string>()
     const poisonAt = new Set<string>()
+    // the narration showing when the queue first reads LOCKED, and whether
+    // the bar was red by then
+    let lockedUnder: string | null = null
+    let lockedRed = false
     const seen = new MutationObserver(() => {
-      bufTexts.add(text('#buftxt'))
+      const b = text('#buftxt')
+      bufTexts.add(b)
+      if (b === 'LOCKED 100/100' && lockedUnder === null) {
+        lockedUnder = text('#narr')
+        lockedRed = $('#bufill')!.style.fill === 'var(--art-red)'
+      }
       const c = document.querySelector('#poisonmark circle')
       if (c) poisonAt.add(`${c.getAttribute('cx')},${c.getAttribute('cy')}`)
     })
@@ -142,6 +151,13 @@ describe('queue-backlog click-through (jsdom, accelerated timers)', () => {
     // memory reads "32/100" (approved: no spaces round the slash, no middot)
     expect([...bufTexts].filter(Boolean).length).toBeGreaterThan(10)
     expect([...bufTexts].filter((t) => t && !/^(LOCKED )?\d+\/100$/.test(t))).toEqual([])
+    // event 2 (the slowdown) fills memory to 100/100 and locks it, red,
+    // before the "Full." line; no event takes the count past 100
+    expect(lockedUnder).toMatch(/^EVENT 2\/6 · The workers slow/)
+    expect(lockedRed).toBe(true)
+    const counts = [...bufTexts].filter(Boolean).map((t) => Number(/(\d+)\/100$/.exec(t)![1]))
+    expect(Math.max(...counts)).toBe(100)
+    expect([...bufTexts].filter((t) => t.startsWith('LOCKED'))).toEqual(['LOCKED 100/100'])
     // the stuck job sits on the wire into WORKERS, a fixed point
     expect([...poisonAt]).toEqual(['322,81'])
     await sleep(100)

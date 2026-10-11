@@ -517,7 +517,11 @@ function bootEngine() {
   sub(wx,dy+142,gR,'0/s',{id:'rpstxt'});
   paintSim();
  }
+ /* a memory queue holds at most its capacity: every event stops at 100/100
+    (only the slowdown and attack 4 lock it) */
+ function capMem(s){ if(K.where==='mem'&&s.backlog>s.cap) s.backlog=s.cap; }
  function paintSim(){
+  capMem(SIM);
   var pct=Math.min(1,SIM.backlog/SIM.cap);
   var f=document.getElementById('bufill'); if(f){ f.setAttribute('width',G.track.w*pct); f.style.fill=SIM.seized?'var(--art-red)': pct>0.7?'var(--art-amber)':'var(--art-blue)'; }
   var t=document.getElementById('buftxt'); if(t) t.textContent=(SIM.seized?'LOCKED ':'')+Math.round(SIM.backlog)+(K.where==='mem'?'/'+SIM.cap:' waiting');
@@ -546,8 +550,8 @@ function bootEngine() {
  function dwell(ms){ return new Promise(function(r){setTimeout(r,ms);}); } /* real time, never speed-divided */
  async function phase(n,fn,ms){
   ms=ms||130;
-  if(REDUCED){ for(var j=0;j<n;j++) fn(SIM,j); paintSim(); await sleep(n*ms); return; }
-  for(var i=0;i<n;i++){ fn(SIM,i); paintSim(); await sleep(ms); }
+  if(REDUCED){ for(var j=0;j<n;j++){ fn(SIM,j); capMem(SIM); } paintSim(); await sleep(n*ms); return; }
+  for(var i=0;i<n;i++){ fn(SIM,i); capMem(SIM); paintSim(); await sleep(ms); }
  }
  var READ_WPS=4, READ_MIN_MS=1500, readBy={ narr:0, slot:0 }, holdDay=true, dayOn=false;
  function holding(){ return REDUCED||(dayOn&&holdDay); }
@@ -631,7 +635,10 @@ function bootEngine() {
    await say('EVENT 2/6','<b>The workers slow to a fifth of their speed</b>, because the database behind them is overloaded. Jobs keep arriving at the same rate. Watch the queue.');
    var d=drainAlert(true);
    if(t==='SEIZED'){
-    await phase(22,function(s){ var eff=Math.max(0.2,1-(s.backlog/s.cap)*0.8); var dr=6*0.15*eff; s.backlog=Math.min(s.cap,s.backlog+14*0.15-dr); s.drainNow=dr/0.15; if(s.backlog>=s.cap-0.5){s.seized=true;s.drainNow=0;} });
+    /* the memory queue fills to 100/100 and locks (red, LOCKED) before the
+       "Full." line; under reduced motion this end state is what shows */
+    var b0=SIM.backlog;
+    await phase(22,function(s,i){ s.backlog=b0+(s.cap-b0)*(i+1)/22; s.drainNow=6*Math.max(0.2,1-(s.backlog/s.cap)*0.8); if(i===21){s.backlog=s.cap;s.seized=true;s.drainNow=0;} });
     await dwell(900);
     await say('EVENT 2/6','Full. And <b>a full queue can\'t empty itself</b>: taking a job out needs a little free memory, and the backlog has used it all. Watch: the slowdown ends, and the queue stays locked.');
     await phase(8,function(s){ s.drainNow=0; }); drainAlert(false); await phase(6,function(s){ s.drainNow=0; });

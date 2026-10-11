@@ -89,12 +89,14 @@ test.describe('queue-backlog: a fully held design', () => {
 
 // ---- reduced motion: reading time on every day ----------------------------
 
-async function readingDay(mission: Frame, page: Page): Promise<{ checked: number; short: string[] }> {
+async function readingDay(mission: Frame, page: Page): Promise<{ checked: number; short: string[]; buf: string[] }> {
   await mission.evaluate(() => {
-    const w = window as unknown as { __shown: { where: string; t: number; text: string }[]; __obs?: boolean }
+    const w = window as unknown as { __shown: { where: string; t: number; text: string }[]; __buf: string[]; __obs?: boolean }
     w.__shown = []
+    w.__buf = []
     if (w.__obs) return
     w.__obs = true
+    new MutationObserver(() => w.__buf.push(document.getElementById('buftxt')?.textContent ?? '')).observe(document.getElementById('bstage')!, { childList: true, subtree: true, characterData: true })
     for (const where of ['narr', 'slot']) {
       const el = document.getElementById(where)!
       new MutationObserver(() => {
@@ -112,6 +114,7 @@ async function readingDay(mission: Frame, page: Page): Promise<{ checked: number
     { timeout: 240_000 },
   )
   const shown = await mission.evaluate(() => (window as unknown as { __shown: { where: string; t: number; text: string }[] }).__shown)
+  const buf = await mission.evaluate(() => (window as unknown as { __buf: string[] }).__buf)
   const short: string[] = []
   let checked = 0
   for (const where of ['narr', 'slot']) {
@@ -125,7 +128,7 @@ async function readingDay(mission: Frame, page: Page): Promise<{ checked: number
       if (on + 50 < need) short.push(`${where} "${items[i].text.slice(0, 50)}" ${words} words: ${Math.round(on)}ms < ${need}ms`)
     }
   }
-  return { checked, short }
+  return { checked, short, buf }
 }
 
 test.describe('queue-backlog: reduced motion keeps reading time on every day', () => {
@@ -146,6 +149,9 @@ test.describe('queue-backlog: reduced motion keeps reading time on every day', (
       const r = await readingDay(mission, page)
       expect(r.checked, `day ${day}`).toBeGreaterThan(8)
       expect(r.short, `day ${day}`).toEqual([])
+      // the slowdown's end state is the locked bar; memory never passes 100
+      expect(r.buf, `day ${day}`).toContain('LOCKED 100/100')
+      expect(Math.max(...r.buf.filter(Boolean).map((t) => Number(/(\d+)\/100$/.exec(t)![1]))), `day ${day}`).toBe(100)
     }
   })
 })
