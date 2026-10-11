@@ -242,24 +242,34 @@ lives here it needs the owner's input to resolve.
   or give those patterns a `oneLineDefinition`. The e2e test allows exactly
   this list and fails on any new dash or on a listed page that's been fixed.
 
-### 31. Queue-backlog lesson: waiting on the design files (2026-10-10)
+### 31. Queue-backlog lesson: one drawing may still change (2026-10-11)
 
 - **Source:** `feat/queue-backlog-lesson` (not pushed).
-- Everything but the art is built and tested. The mission stage, the try-it
-  stage (horizontal + vertical), the five comparison diagrams, YOU empty and
-  filled (with `{{dLives}}`, `{{dSlows}}`, `{{dFull}}`, `{{dBreaks}}` and any
-  `data-wrap` specs), their `-v` phone versions, and the wall figure
-  (`buffer-turns-on-its-owner.svg`) are interim. The 390 diagram-text e2e
-  fails until the verticals arrive.
-- The try-it script drives stage parts by `data-part` (`buf`, `bufl`,
-  `stuckmark`, `drainbox`), so both stage copies need those attributes.
-- The mission stage is drawn by script (`drawStage()` / `paintSim()`), so the
-  design becomes code there. The engine updates these hooks: the decision
-  groups `sg-buf`, `sg-full`, `sg-stuck`, `sg-order`, `sg-done`, `sg-retry`
-  (flash on a change); the queue bar `bufill` and its label `buftxt`; the
-  overflow `spilltxt`; `draintxt`, `dupetxt`, `downtxt`, `rpstxt`; the three
-  customer lanes `laneA..C` / `lanefillA..C` / `lanetxtA..C`; the stuck-job
-  mark `poisonmark`; and the boxes `bufbox`, `drainbox`, `downbox`.
+- The design agent's wall 2 drawings are in (first delivery + return-1, C2PA
+  metadata stripped): the mission stage (now drawn from the drawings in
+  `drawStage()`), the try-it's two stages, the five comparison diagrams and
+  YOU empty/filled, each with its `-v` phone file, and the wall figure with
+  its phone twin (`wall.figurePhoneSlug`, a `<picture>` source under 700px).
+- **Open:** `buffer-turns-on-its-owner-v.svg` (the designer's
+  `wall-figure-queue-v.svg`, phones with JavaScript off only) may get a
+  tidy-up: its two red labels sit close and the grey arrow line runs through
+  "gets slower as it fills". If it arrives before the push, swap it in;
+  otherwise it ships as is and is swapped later.
+
+### 33. Queue-backlog mission: two stage numbers the engine never caps (2026-10-11)
+
+- **Source:** found while testing the new stage (the same arithmetic is in
+  the v1.3 prototype, `mission.js` lines 223 and 287).
+- On the first day with a memory queue, the slowdown adds about two jobs a
+  step for 22 steps, so the bar tops out near 48/100. The narration says
+  "Watch: the slowdown ends, and the queue stays locked" and the card says
+  LOCKED, but the stage never shows LOCKED 100/100 (the design agent drew
+  that state for the phone).
+- The big customer adds 40 jobs a step for 10 steps with no cap, so a memory
+  queue reads "408/100" (the bar itself stops at full).
+- **Ask:** fix both in the engine (let the slowdown reach the cap and lock,
+  and cap a memory queue's count at 100)? Animation only; the rules and the
+  scores don't change, so the parity tests stay green.
 
 ## Lower priority
 
