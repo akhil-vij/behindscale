@@ -105,6 +105,13 @@
   those three pages render real content (Unit 3c onward). Catches
   routing/rendering regressions cheaply; not a substitute for component
   tests where they're warranted.
+- **Mission days in e2e run on a fake clock unless pacing is the subject.**
+  A mission day is paced for reading in real time (about 90s). A test that
+  needs a day's end state (cards, labels, the YOU column, a round trip)
+  installs Playwright's clock before the page loads (`fastClock`) and runs
+  it forward (`runUntil`); only tests that measure pacing (reading time,
+  reduced motion) play a day in real time. Prefer a seeded saved state
+  when a test needs only the result, not the run.
 - **No preemptive unit tests for pipeline glue code.** The orchestrator's
   per-article success/failure reporting is the real safety net. Add
   targeted tests only for non-trivial pure functions (e.g. slug

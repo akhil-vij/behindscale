@@ -55,8 +55,27 @@ async function waitForMission(page: Page): Promise<Frame> {
   return f
 }
 
+// Fake time for the tests that need a day's END STATE, not its pacing. A day
+// is paced for reading in real time (the reading hold, the phases, the
+// dwells: about 90s), so these tests install Playwright's clock before the
+// page loads -- it reaches the sandboxed artifact frames too -- and run the
+// clock forward in one-second steps until the day is done. Seconds instead
+// of minutes, and the engine runs exactly the same code. The pacing tests
+// (reduced motion, normal motion) stay on real time: pacing is what they test.
+async function fastClock(page: Page): Promise<void> {
+  await page.clock.install()
+}
+async function runUntil(page: Page, frame: Frame, done: () => boolean, label: string): Promise<void> {
+  for (let fakeSecs = 0; fakeSecs < 600; fakeSecs++) {
+    if (await frame.evaluate(done)) return
+    await page.clock.runFor(1000)
+  }
+  throw new Error(`fake clock: still waiting for ${label} after 600 simulated seconds`)
+}
+
 // Set the AWS winning deck (the §5.2 path) and run one day to survival (the 2×
-// speed control was removed in the copy pass, so the run is 1×).
+// speed control was removed in the copy pass, so the run is 1×), on the fake
+// clock (callers install it with fastClock before the page loads).
 // Leaves the attacks revealed (#escwrap visible), RUN re-enabled.
 async function surviveDay(mission: Frame, page: Page): Promise<void> {
   const click = (k: string, v: string) => frameClick(mission, `#deck button[data-k="${k}"][data-v="${v}"]`)
@@ -67,18 +86,19 @@ async function surviveDay(mission: Frame, page: Page): Promise<void> {
   await click('ret', 'ever')
   await frameClick(mission, '#runbtn')
   await page.locator('#artB iframe').scrollIntoViewIfNeeded()
-  await mission.waitForFunction(
+  await runUntil(
+    page,
+    mission,
     () =>
       !(document.getElementById('runbtn') as HTMLButtonElement).disabled &&
       document.getElementById('escwrap')!.style.display !== 'none',
-    null,
-    { timeout: 120_000 },
+    'a survived day',
   )
 }
 
 test.describe('§5.2 real iframe round-trip', () => {
   test('ready -> init, a survived day fills YOU, commit persists across reload', async ({ page }) => {
-    test.setTimeout(180_000)
+    await fastClock(page)
     await page.addInitScript(() => {
       const w = window as unknown as { __msgs: unknown[] }
       w.__msgs = []
@@ -111,10 +131,11 @@ test.describe('§5.2 real iframe round-trip', () => {
     // engine's animations advance on rAF (a reader watching the run is, by
     // definition, looking at it).
     await page.locator('#artB iframe').scrollIntoViewIfNeeded()
-    await mission.waitForFunction(
+    await runUntil(
+      page,
+      mission,
       () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && document.getElementById('escwrap')!.style.display !== 'none',
-      null,
-      { timeout: 120_000 },
+      'a survived day',
     )
 
     // state -> the YOU column, the diagram slots, the ticks.
@@ -458,7 +479,7 @@ test.describe('desktop (§1): the sticky working column keeps the stage in view'
   test.use({ viewport: { width: 1440, height: 900 } })
 
   test('F1/F2: the frame is a bounded scrollport; the newest card sits beside the stage', async ({ page }) => {
-    test.setTimeout(150_000)
+    await fastClock(page)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
     // §1: on desktop the frame is a bounded scrollport, min(content, 100dvh-56),
@@ -549,7 +570,7 @@ test.describe('§3 (F9): transient stage labels stay in their bands, never on a 
     { name: 'GV phone', width: 390, height: 780 },
   ]) {
     test(`${geom.name}: no band label's centre lands inside a node rect`, async ({ page }) => {
-      test.setTimeout(150_000)
+      await fastClock(page)
       await page.setViewportSize({ width: geom.width, height: geom.height })
       await page.goto(PAGE)
       const mission = await waitForMission(page)
@@ -604,10 +625,11 @@ async function runNaiveDay(mission: Frame, page: Page): Promise<void> {
   // the frame is sandboxed (cross-origin): Chrome pauses its rAF off-screen
   await page.locator('#artB iframe').scrollIntoViewIfNeeded()
   await frameClick(mission, '#runbtn')
-  await mission.waitForFunction(
+  await runUntil(
+    page,
+    mission,
     () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && /\d/.test(document.getElementById('m-dbl')!.textContent!),
-    null,
-    { timeout: 120_000 },
+    'the starting day',
   )
 }
 async function recordSlot(mission: Frame): Promise<void> {
@@ -643,11 +665,11 @@ async function minStageText(mission: Frame): Promise<{ body: number; title: numb
 }
 
 test.describe('card slot + full list (mission stage + card log spec)', () => {
-  // Normal motion: these tests are about where cards go, and a reduced-motion
-  // day now holds every narration and card for its reading time (~70s a day).
+  // Normal motion on the fake clock: these tests are about where cards go,
+  // not how long each one stays.
 
   test('desktop 1440: one newest card in the slot, the full list in order, results + THE BILL below', async ({ page }) => {
-    test.setTimeout(240_000)
+    await fastClock(page)
     await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto(PAGE)
     const mission = await waitForMission(page)
@@ -694,7 +716,7 @@ test.describe('card slot + full list (mission stage + card log spec)', () => {
   })
 
   test('phone 390: the slot sits under the stage; "all N cards" scrolls the host page to the list', async ({ page }) => {
-    test.setTimeout(180_000)
+    await fastClock(page)
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto(PAGE)
     const mission = await waitForMission(page)
@@ -727,7 +749,7 @@ test.describe('§3b verticals live: DV/TV replace the scrolling horizontals unde
   test.use({ viewport: { width: 390, height: 780 } })
 
   test('comparison + try-it show the vertical variant; the YOU vertical fills', async ({ page }) => {
-    test.setTimeout(150_000)
+    await fastClock(page)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
     // A comparison diagram row swaps to its vertical (DV) SVG; the horizontal

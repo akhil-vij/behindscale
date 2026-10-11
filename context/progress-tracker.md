@@ -7699,6 +7699,21 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
 
 ## Session Notes
 
+- 2026-10-11: **Faster e2e: mission days on a fake clock.** Branch
+  `test/faster-e2e` off `main` (`3a42815`). Diagnosis (one timed run, 51
+  tests): 11.3 min on the clock, 21.3 min of test time; 11 tests that play a
+  mission day in real time took 93% of it (80-183s each, about 90s a day for
+  the reading hold, phases and dwells), the other 40 took 94s together, and
+  only 2 workers run (Playwright's default, half of 4 cores; CI runs 1).
+  - Page 1's 7 end-state tests (round trip, F1/F2, GH/GV band labels, both
+    card-slot tests, verticals) install Playwright's clock (it reaches the
+    sandboxed frames) and run it forward: 10-17s each instead of 80-106s.
+  - The 3 pacing tests stay on real time.
+  - Queue-backlog's round-trip test (on `feat/queue-backlog-lesson`, not yet
+    on main) gets the same change once that PR lands.
+  - Not done (owner's call): more workers locally and in CI; tagging the
+    pacing tests so a quick local run can skip them.
+
 - 2026-10-10: **Full-screen link arrows.** Branch `fix/full-screen-arrows` off
   `main` (`2df9661`); not pushed. Owner ruling: "Open in full ↗" (article
   simulations) and "OPEN FULL SCREEN ↗" (pattern pages) open our own pages,
