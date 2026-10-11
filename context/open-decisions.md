@@ -256,21 +256,6 @@ lives here it needs the owner's input to resolve.
   "gets slower as it fills". If it arrives before the push, swap it in;
   otherwise it ships as is and is swapped later.
 
-### 33. Queue-backlog mission: two stage numbers the engine never caps (2026-10-11)
-
-- **Source:** found while testing the new stage (the same arithmetic is in
-  the v1.3 prototype, `mission.js` lines 223 and 287).
-- On the first day with a memory queue, the slowdown adds about two jobs a
-  step for 22 steps, so the bar tops out near 48/100. The narration says
-  "Watch: the slowdown ends, and the queue stays locked" and the card says
-  LOCKED, but the stage never shows LOCKED 100/100 (the design agent drew
-  that state for the phone).
-- The big customer adds 40 jobs a step for 10 steps with no cap, so a memory
-  queue reads "408/100" (the bar itself stops at full).
-- **Ask:** fix both in the engine (let the slowdown reach the cap and lock,
-  and cap a memory queue's count at 100)? Animation only; the rules and the
-  scores don't change, so the parity tests stay green.
-
 ## Lower priority
 
 ### 32. Page 1's survived-day card shows twice in the slot (2026-10-10)
@@ -664,6 +649,11 @@ same class of question.
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
+- **#33 Queue-backlog stage numbers** — RESOLVED 2026-10-11 (owner):
+  animation only. The slowdown fills a memory queue to 100/100 and shows it
+  LOCKED, red, before the "Full." line (the end state under reduced motion);
+  a memory queue is capped at 100 in every event; only the slowdown and
+  attack 4's memory case lock. Landed on `feat/queue-backlog-lesson`.
 - **#27 Mission pacing in normal motion** — RESOLVED 2026-10-09 (owner):
   the reading-time hold also applies to the first day in normal motion;
   repeat days keep their pace; reduced motion holds on every day. Landed

@@ -7743,8 +7743,14 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     new optional `wall.figurePhoneSlug`.
   - `.wire` exists in the mission block at page 1's stroke width (2; the
     designer's note said 1.4, page 1 has 2).
-  - Open: #31 (the phone wall figure may get one more tidy-up), #33 (two
-    stage numbers the v1.3 engine never caps).
+  - **#33 (owner: yes, animation only):** the slowdown fills a memory queue
+    to 100/100 and shows it LOCKED, red, before the "Full." line (the end
+    state under reduced motion); `capMem()` holds a memory queue at 100 in
+    every phase and paint, so the big customer stops at 100/100. Scores and
+    the parity tests are unchanged. Tested in the click-through (event 2,
+    red, max 100) and the reduced-motion e2e (both days).
+  - Open: #31 (the phone wall figure may get one more tidy-up; it ships as
+    is if the tidy-up comes later).
 
 - 2026-10-10: **Queue-backlog becomes the second full lesson (Step 2, in
   progress).** Branch `feat/queue-backlog-lesson` off `main` (`3a42815`); not
