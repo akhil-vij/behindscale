@@ -222,6 +222,7 @@ export default function ProblemDetail() {
           wall={essay.wall}
           tryIt={essay.tryIt}
           figure={wallFigure}
+          figurePhoneSlug={wallFigure !== undefined ? essay?.wall?.figurePhoneSlug : undefined}
           hostSlug={cruxTag}
           hostTitle={label}
           tryItWrapperId={TRYIT_WRAPPER_ID}

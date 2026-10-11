@@ -11,6 +11,8 @@ interface WallSectionProps {
   wall: ProblemWall
   tryIt?: ProblemTryIt
   figure?: Figure
+  // The figure's phone twin (wall.figurePhoneSlug), shown under 700px.
+  figurePhoneSlug?: string
   hostSlug: string
   hostTitle: string
   // Host-side embed control (undefined until the host hook mounts).
@@ -25,6 +27,7 @@ export default function WallSection({
   wall,
   tryIt,
   figure,
+  figurePhoneSlug,
   hostSlug,
   hostTitle,
   tryItWrapperId,
@@ -33,7 +36,7 @@ export default function WallSection({
 }: WallSectionProps) {
   const figureHtml =
     figure !== undefined
-      ? `<figure class="pp-figure"><span class="eyebrow">${escapeHtml(figure.eyebrow)}</span><img src="/figures/${hostSlug}/${figure.slug}.svg" alt="${escapeHtml(figure.ariaLabel)}" class="block h-auto w-full" /><p class="fig-cap">${escapeHtml(figure.caption)}</p></figure>`
+      ? `<figure class="pp-figure"><span class="eyebrow">${escapeHtml(figure.eyebrow)}</span>${figurePhoneSlug !== undefined ? `<picture><source media="(max-width: 700px)" srcset="/figures/${hostSlug}/${figurePhoneSlug}.svg" />` : ''}<img src="/figures/${hostSlug}/${figure.slug}.svg" alt="${escapeHtml(figure.ariaLabel)}" class="block h-auto w-full" />${figurePhoneSlug !== undefined ? '</picture>' : ''}<p class="fig-cap">${escapeHtml(figure.caption)}</p></figure>`
       : null
   return (
     <section>

@@ -447,10 +447,15 @@ function checkProblemWall(value: unknown): Result {
   if (!nonEmptyStringArray(value.prose) || value.prose.length === 0) {
     return fail('`prose` expected non-empty array of non-empty strings')
   }
-  const r = checkStringFields(value, [], ['figureSlug', 'statsCaption'])
+  const r = checkStringFields(value, [], ['figureSlug', 'figurePhoneSlug', 'statsCaption'])
   if (!r.ok) return r
-  if (value.figureSlug !== undefined && !KEBAB_CASE.test(value.figureSlug as string)) {
-    return fail('`figureSlug` expected kebab-case')
+  for (const key of ['figureSlug', 'figurePhoneSlug'] as const) {
+    if (value[key] !== undefined && !KEBAB_CASE.test(value[key] as string)) {
+      return fail(`\`${key}\` expected kebab-case`)
+    }
+  }
+  if (value.figurePhoneSlug !== undefined && value.figureSlug === undefined) {
+    return fail('`figurePhoneSlug` needs `figureSlug`')
   }
   if (value.stats !== undefined) {
     if (!Array.isArray(value.stats)) return fail('`stats` expected array when present')

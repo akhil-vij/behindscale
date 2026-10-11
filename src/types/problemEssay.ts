@@ -136,6 +136,11 @@ export interface ProblemWall {
   // Slug of a `figures[]` entry rendered inside <noscript> as the no-JS
   // stand-in for the try-it artifact.
   figureSlug?: string
+  // Slug of a second `figures[]` entry: the figure's 360-wide phone twin,
+  // shown in its place under 700px (a <picture> source, so no script and
+  // only one file is fetched). Its own eyebrow/caption are not shown; the
+  // main figure's are.
+  figurePhoneSlug?: string
   stats?: ProblemWallStat[]
   // Muted line under the stat strip.
   statsCaption?: string

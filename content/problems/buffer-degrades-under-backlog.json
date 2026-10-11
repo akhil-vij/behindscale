@@ -21,6 +21,12 @@
       "eyebrow": "TWO WAYS A QUEUE FAILS",
       "caption": "Two ways a queue fails at exactly the moment the backlog arrives.",
       "ariaLabel": "A queue fails two ways: it slows as it fills, or one stuck job holds up everything behind it."
+    },
+    {
+      "slug": "buffer-turns-on-its-owner-v",
+      "eyebrow": "TWO WAYS A QUEUE FAILS",
+      "caption": "Two ways a queue fails at exactly the moment the backlog arrives.",
+      "ariaLabel": "A queue fails two ways: it slows as it fills, or one stuck job holds up everything behind it."
     }
   ],
   "stations": [
@@ -71,6 +77,7 @@
       "It always starts the same way: work arrives faster than it can be done, and a queue holds the difference. The wall is what that backlog does to the queue. Cause it yourself before reading anyone's answer: pick where the backlog lives, slow the workers down, and get one job stuck."
     ],
     "figureSlug": "buffer-turns-on-its-owner",
+    "figurePhoneSlug": "buffer-turns-on-its-owner-v",
     "stats": [
       {
         "value": "1.4 billion+",
