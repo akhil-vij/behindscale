@@ -205,3 +205,43 @@ test.describe('queue-backlog: comparison diagrams, every label at least 11px', (
     })
   }
 })
+
+// ---- the stages: wall 2 drawings ------------------------------------------
+
+test.describe('stages: every label at least 11px on screen', () => {
+  for (const [w, h] of [[1440, 900], [390, 844]] as const) {
+    test(`${w}px: both walls' try-it stage and this wall's mission stage`, async ({ browser }) => {
+      test.setTimeout(120_000)
+      const ctx = await browser.newContext({ viewport: { width: w, height: h } })
+      const page = await ctx.newPage()
+      const smallest = (frame: Frame, sel: string) =>
+        frame.evaluate((s) => {
+          const svg = Array.from(document.querySelectorAll<SVGSVGElement>(s)).find((x) => x.getBoundingClientRect().width > 0)!
+          const k = svg.getBoundingClientRect().width / svg.viewBox.baseVal.width
+          let min = Infinity, text = ''
+          for (const t of Array.from(svg.querySelectorAll('text'))) {
+            if (!t.textContent!.trim() || t.closest('[data-part="stuckmark"], #poisonmark, .s-cutzone')) continue // "!" and "1" are icon marks
+            const px = parseFloat(getComputedStyle(t).fontSize) * k
+            if (px < min) { min = px; text = t.textContent!.trim() }
+          }
+          return { min, text, vb: svg.getAttribute('viewBox') }
+        }, sel)
+      for (const [path, slug] of [[PAGE, 'problem-queue-backlog-tryit'], ['/problems/ambiguous-timeouts', 'problem-ambiguous-timeouts-tryit']] as const) {
+        await page.goto(path)
+        await page.waitForLoadState('networkidle')
+        const f = frameOf(page, slug)
+        await f.locator('svg.stage').first().waitFor({ state: 'attached' })
+        const r = await smallest(f, 'svg.stage')
+        expect(r.vb).toBe(w < 700 ? '0 0 360 300' : '0 0 640 138')
+        // the horizontal try-it labels are 8.5 units at a 918px frame (12.2px)
+        expect(r.min, `${slug} "${r.text}"`).toBeGreaterThanOrEqual(11)
+      }
+      await page.goto(PAGE)
+      const mission = await waitForMission(page)
+      const m = await smallest(mission, '#bstage')
+      expect(m.vb).toBe(w < 700 ? '0 0 360 514' : '0 0 640 244')
+      expect(m.min, `mission "${m.text}"`).toBeGreaterThanOrEqual(11)
+      await ctx.close()
+    })
+  }
+})
