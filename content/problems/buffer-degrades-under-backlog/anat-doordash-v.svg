@@ -1,0 +1,31 @@
+<svg class="anat anat-v" viewBox="0 0 360 496" role="img" aria-label="DoorDash: the backlog lives in one RabbitMQ server, then Kafka. What slows as it fills: the old queue slowed its own senders. When full: before, the app servers, as delay. Still breaks: a deploy briefly stops the workers." xmlns="http://www.w3.org/2000/svg">
+  <path class="replay" d="M 72 152 C 36 140, 36 52, 66 38"></path>
+  <polygon class="rhead" points="72,38 63,33 63,43"></polygon>
+  <rect class="node" x="72" y="10" width="216" height="56" rx="7"></rect>
+  <text class="nlabel" x="180" y="29">SENDERS</text>
+  <text class="nsub" x="180" y="45">APP SERVERS</text>
+  <text class="nsub" x="180" y="60">900+ TASK TYPES</text>
+  <line class="arrow" x1="180" y1="66" x2="180" y2="74"></line>
+  <text class="rlabel" x="180" y="97">BEFORE: THE APP SERVERS, AS DELAY</text>
+  <line class="arrow" x1="180" y1="112" x2="180" y2="118"></line>
+  <polygon class="ahead" points="180,124 176,118 184,118"></polygon>
+  <rect class="node" x="72" y="124" width="216" height="56" rx="7"></rect>
+  <text class="nlabel" x="180" y="147">THE QUEUE</text>
+  <text class="nsub" x="180" y="166">SWITCHED OVER BY A FLAG</text>
+  <line class="drop" x1="180" y1="180" x2="180" y2="192"></line>
+  <rect class="state" x="51" y="192" width="258" height="30" rx="6"></rect>
+  <text class="slabel" x="180" y="211">ONE RABBITMQ SERVER, THEN KAFKA</text>
+  <circle class="keydot" cx="86" cy="240" r="5"></circle>
+  <text class="klabel" x="180" y="244">OLD: THE QUEUE SLOWED</text>
+  <text class="klabel" x="180" y="260">ITS OWN SENDERS</text>
+  <rect class="node" x="72" y="282" width="216" height="56" rx="7"></rect>
+  <text class="nlabel" x="180" y="315">WORKERS</text>
+  <line class="arrow" x1="180" y1="338" x2="180" y2="374"></line>
+  <polygon class="ahead" points="180,382 176,374 184,374"></polygon>
+  <rect class="node" x="72" y="386" width="216" height="56" rx="7"></rect>
+  <text class="nlabel" x="180" y="409">DOWNSTREAM</text>
+  <text class="nsub" x="180" y="428">CELERY WORKERS</text>
+  <line class="bx" x1="24" y1="454" x2="36" y2="466"></line>
+  <line class="bx" x1="36" y1="454" x2="24" y2="466"></line>
+  <text class="blabel" x="44" y="464">A DEPLOY BRIEFLY STOPS THE WORKERS</text>
+</svg>
