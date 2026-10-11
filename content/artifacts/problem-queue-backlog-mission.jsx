@@ -43,7 +43,7 @@ const CSS = `
  --art-bg: #08090D; --art-surface: #0F1118; --art-surface-2: #161922;
  --art-border: #1F2333; --art-text: #C8CDD8; --art-muted: #98A1B0; /* legibility: #6B7280 is 3.9:1 on --art-surface; this is 7.2:1 for the 9-10px labels */
  --art-border-interactive: #3a4158; --art-text-bright: #EDEFF3;
- --art-red: #ef4444; --art-amber: #eab308; --art-green: #22c55e;
+ --art-red: #ef4444; --art-amber: #eab308; --art-green: #22c55e; --art-blue: #3b82f6;
  --accent-problem: #D946EF; --accent-problem-hover: #E879F9;
  --mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
  }
@@ -319,7 +319,7 @@ const MARKUP = `
     <div class="meter"><span class="n" id="m-out">-</span><span class="t">OUTAGES</span></div>
     </div>
    </div>
-   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 648 240" role="img" aria-label="Senders with three customers, the queue, workers, and a partner downstream. The bar in the queue fills and empties as the day runs."></svg></div>
+   <div class="bstagewrap"><svg id="bstage" viewBox="0 0 640 244" role="img" aria-label="Senders with three customers, the queue, workers, and a partner downstream. The bar in the queue fills and empties as the day runs."></svg></div>
    <div class="ctlrow">
     <button class="runbtn" id="runbtn">RUN THE DAY ▶</button>
     <button class="bghost" id="stepbtn">STEP</button>
@@ -436,71 +436,101 @@ function bootEngine() {
  function focusDeckSel(k){ var nb=document.querySelector('#deck button[data-k="'+k+'"].sel'); if(nb&&nb.focus) nb.focus(); }
  function setCue(v){ $('#artB').setAttribute('data-cue',v); }
 
- /* ---------- stage: producers | buffer | drain | downstream ---------- */
+ /* ---------- stage: senders | the queue | workers | partner ----------
+    Drawn from the design agent's wall 2 drawings (mission-stage-h.svg 640x244,
+    mission-stage-v.svg 360x514; same ids in both). Everything fixed is the
+    drawing's geometry; the engine sets the decision rows, the fill bar, the
+    lane bars, the counters and the stuck-job mark. The first word of each
+    decision ("when full:", "stuck job:", "done =", "retries:", "receiving")
+    is part of the drawing; the value fills the rows reserved below it.
+    Colours on a classed text or box go through el.style (the class rule
+    outranks a fill or stroke attribute). */
  var stage=$('#bstage'), S;
- var GH={ prod:{x:16,y:70,w:120,h:150}, buf:{x:200,y:70,w:180,h:150}, drain:{x:430,y:96,w:80,h:100}, down:{x:544,y:96,w:88,h:100} };
- var GV={ prod:{x:20,y:14,w:320,h:90}, buf:{x:20,y:130,w:320,h:150}, drain:{x:20,y:306,w:150,h:90}, down:{x:190,y:306,w:150,h:90} };
+ var GH={ vb:'0 0 640 244', track:{x:158,y:68,w:144}, lane:{w:104},
+  poison:{x:322,y:81}, spill:{x:166,y:142,w:128,ty:157} };
+ var GV={ vb:'0 0 360 514', track:{x:20,y:194,w:320}, lane:{w:108},
+  poison:{x:89,y:326}, spill:{x:116,y:252,w:128,ty:267} };
  var VERT=false,G=GH;
  function el(name,attrs,parent,text){var e=document.createElementNS(NS,name);for(var k in attrs)e.setAttribute(k,attrs[k]);if(text!==undefined)e.textContent=text;(parent||stage).appendChild(e);return e;}
  var SIM={backlog:8,cap:100,drainCap:30,arr:14,waitA:0,waitB:0,waitC:0,partner:'up',spill:0};
+ /* the decision values, one array entry per row (the drawing's breaks) */
+ var QSUB={mem:'in memory',log:'log on disk',rows:'database rows'};
+ var FULLV={accept:'keep accepting',reject:'refuse new jobs',throttle:'slow the senders',relay:'overflow to disk'};
+ var STUCKV={block:'blocks the line',requeue:'back of the line',ackaround:'set aside',localq:'local queue'};
+ var DONEV={fetch:['handed out'],lease:['confirmed,','time limit'],watermark:['confirmed,','marker']};
+ var RETRYV={forever:['full speed'],backoff:['wait longer'],cutoff:['wait, then','cut off']};
+ var LANEV={tenant:'own schedule',priority:'by priority',fifo:'shared line'};
+ function sub(x,y,parent,text,attrs){ var a={class:'nsub',x:x,y:y}; for(var k in attrs) a[k]=attrs[k]; return el('text',a,parent,text); }
+ function rows(x,y0,parent,lines){ lines.forEach(function(t,i){ sub(x,y0+16*i,parent,t); }); }
  function drawStage(){
   stage.innerHTML=''; S=el('g',{});
-  var P=G.prod,B=G.buf,D=G.drain,W=G.down;
-  /* producers + tenant lanes */
+  var lanes=['A','B','C'], laneTxt=LANEV[K.order]||LANEV.fifo;
+  var wires=VERT?[[180,106,180,140],[89,308,89,344],[170,388,190,388]]:[[126,81,150,81],[310,81,334,81],[486,81,510,81]];
+  wires.forEach(function(w){ el('line',{class:'wire',x1:w[0],y1:w[1],x2:w[2],y2:w[3]},S); });
+  /* senders + the three customer lanes */
   var gP=el('g',{id:'sg-order'},S);
-  el('rect',{class:'nodebox',x:P.x,y:P.y,width:P.w,height:P.h,rx:8},gP);
-  el('text',{class:'nlab',x:P.x+P.w/2,y:P.y+20},gP,'SENDERS');
-  ['A','B','C'].forEach(function(t,i){
-   var ly=VERT?P.y+40:P.y+44+i*32, lx=VERT?P.x+16+i*100:P.x+12;
-   el('text',{class:'nsub',x:lx,y:ly,'text-anchor':'start'},gP,'customer '+t);
-   el('rect',{id:'lane'+t,x:lx,y:ly+5,width:VERT?80:P.w-24,height:10,rx:3,fill:'#161922',stroke:'#1F2333'},gP);
-   el('rect',{id:'lanefill'+t,x:lx,y:ly+5,width:0,height:10,rx:3,fill:'#6B7280'},gP);
-   el('text',{id:'lanetxt'+t,class:'nsub',x:lx+(VERT?40:(P.w-24)/2),y:ly+30},gP, K.order==='tenant'?'own schedule':K.order==='priority'?'by priority':'one shared line');
+  if(VERT){ el('rect',{class:'nodebox',x:8,y:14,width:344,height:92,rx:8},gP); el('text',{class:'nlab',x:180,y:36},gP,'SENDERS'); }
+  else { el('rect',{class:'nodebox',x:6,y:14,width:120,height:190,rx:8},gP); el('text',{class:'nlab',x:66,y:36},gP,'SENDERS'); }
+  lanes.forEach(function(t,i){
+   var lx=VERT?12+114*i:14, ly=VERT?64:64+52*i, lw=G.lane.w;
+   sub(lx,ly-6,gP,'customer '+t,{style:'text-anchor:start'});
+   el('rect',{id:'lane'+t,x:lx,y:ly,width:lw,height:10,rx:3,fill:'var(--art-surface-2)',stroke:'var(--art-border)'},gP);
+   el('rect',{id:'lanefill'+t,x:lx,y:ly,width:0,height:10,rx:3,fill:'#6B7280'},gP);
+   sub(lx+lw/2,ly+26,gP,laneTxt,{id:'lanetxt'+t});
   });
-  /* wires */
-  if(!VERT){ el('line',{class:'wire',x1:P.x+P.w,y1:145,x2:B.x,y2:145},S); el('line',{class:'wire',x1:B.x+B.w,y1:145,x2:D.x,y2:145},S); el('line',{class:'wire',x1:D.x+D.w,y1:145,x2:W.x,y2:145},S); }
-  else { el('line',{class:'wire',x1:180,y1:P.y+P.h,x2:180,y2:B.y},S); el('line',{class:'wire',x1:95,y1:B.y+B.h,x2:95,y2:D.y},S); el('line',{class:'wire',x1:D.x+D.w,y1:D.y+45,x2:W.x,y2:W.y+45},S); }
-  /* buffer */
+  /* the queue */
+  var T=G.track, cx=VERT?180:230;
   var gB=el('g',{id:'sg-buf'},S);
-  el('rect',{class:'nodebox',id:'bufbox',x:B.x,y:B.y,width:B.w,height:B.h,rx:8},gB);
-  el('text',{class:'nlab',x:B.x+B.w/2,y:B.y+20},gB,'THE QUEUE');
-  el('text',{class:'nsub',x:B.x+B.w/2,y:B.y+36},gB,{mem:'in memory',log:'log on disk, one line per worker',rows:'rows in a database'}[K.where]);
-  el('rect',{x:B.x+16,y:B.y+48,width:B.w-32,height:26,rx:5,fill:'#161922',stroke:'#3a4158'},gB);
-  el('rect',{id:'bufill',x:B.x+16,y:B.y+48,width:0,height:26,rx:5,fill:'#3b82f6'},gB);
-  el('text',{id:'buftxt',class:'nsub',x:B.x+B.w/2,y:B.y+66,fill:'#EDEFF3'},gB,'');
+  if(VERT){ el('rect',{class:'nodebox',id:'bufbox',x:8,y:140,width:344,height:168,rx:8},gB); el('text',{class:'nlab',x:180,y:162},gB,'THE QUEUE'); sub(180,182,gB,QSUB[K.where]); }
+  else { el('rect',{class:'nodebox',id:'bufbox',x:150,y:14,width:160,height:212,rx:8},gB); el('text',{class:'nlab',x:230,y:36},gB,'THE QUEUE'); sub(230,56,gB,QSUB[K.where]); }
+  el('rect',{x:T.x,y:T.y,width:T.w,height:26,rx:5,fill:'var(--art-surface-2)',stroke:'var(--art-border)'},gB);
+  el('rect',{id:'bufill',x:T.x,y:T.y,width:0,height:26,rx:5,fill:'var(--art-blue)'},gB);
+  sub(cx,T.y+18,gB,'',{id:'buftxt',class:'nsub halo',style:'fill:var(--art-text-bright)'});
+  /* when full (phone: one line) + the overflow box */
   var gF=el('g',{id:'sg-full'},S);
-  el('text',{class:'nsub',x:B.x+B.w/2,y:B.y+92},gF,'when full: '+{accept:'keep accepting',reject:'refuse new jobs',throttle:'slow the senders',relay:'overflow to disk'}[K.full]);
-  if(K.full==='relay'){ el('rect',{class:'ghostbox',x:B.x+16,y:B.y+100,width:B.w-32,height:22,rx:5},gF); el('text',{id:'spilltxt',class:'nsub',x:B.x+B.w/2,y:B.y+115},gF,'on disk: 0'); }
+  if(VERT) sub(180,242,gF,'when full: '+FULLV[K.full]);
+  else { sub(230,116,gF,'when full:'); sub(230,132,gF,FULLV[K.full]); }
+  if(K.full==='relay'){ var SP=G.spill; el('rect',{x:SP.x,y:SP.y,width:SP.w,height:22,rx:5,fill:'var(--art-surface)',stroke:'var(--art-border)'},gF); sub(cx,SP.ty,gF,'on disk: 0',{id:'spilltxt'}); }
+  /* stuck job + its mark (drawn by poison() on the wire into WORKERS) */
   var gS=el('g',{id:'sg-stuck'},S);
-  el('text',{class:'nsub',x:B.x+B.w/2,y:B.y+138},gS,'stuck job: '+{block:'blocks the line',requeue:'back of the line',ackaround:'set aside',localq:'local queue'}[K.stuck]);
+  if(VERT) sub(180,296,gS,'stuck job: '+STUCKV[K.stuck]);
+  else { sub(230,186,gS,'stuck job:'); sub(230,202,gS,STUCKV[K.stuck]); }
   el('g',{id:'poisonmark'},gS);
-  /* drain */
+  /* workers */
+  var dx=VERT?89:410, dy=VERT?344:14;
   var gD=el('g',{id:'sg-done'},S);
-  el('rect',{class:'nodebox',id:'drainbox',x:D.x,y:D.y,width:D.w,height:D.h,rx:8},gD);
-  el('text',{class:'nlab',x:D.x+D.w/2,y:D.y+20},gD,'WORKERS');
-  el('text',{id:'draintxt',class:'nsub',x:D.x+D.w/2,y:D.y+40},gD,'');
-  el('text',{class:'nsub',x:D.x+D.w/2,y:D.y+60},gD,'done = '+{fetch:'handed out',lease:'confirmed, time limit',watermark:'confirmed, marker'}[K.done]);
-  el('text',{id:'dupetxt',class:'nsub',x:D.x+D.w/2,y:D.y+78,fill:'#eab308'},gD,'');
-  /* downstream */
+  el('rect',{class:'nodebox',id:'drainbox',x:VERT?8:334,y:dy,width:VERT?162:152,height:VERT?156:140,rx:8},gD);
+  el('text',{class:'nlab',x:dx,y:dy+22},gD,'WORKERS');
+  sub(dx,dy+44,gD,'',{id:'draintxt'});
+  sub(dx,dy+68,gD,'done =');
+  rows(dx,dy+84,gD,DONEV[K.done]);
+  sub(dx,dy+126,gD,'',{id:'dupetxt',style:'fill:var(--art-amber)'});
+  /* partner */
+  var wx=VERT?271:572;
   var gR=el('g',{id:'sg-retry'},S);
-  el('rect',{class:'nodebox',id:'downbox',x:W.x,y:W.y,width:W.w,height:W.h,rx:8},gR);
-  el('text',{class:'nlab',x:W.x+W.w/2,y:W.y+20},gR,'PARTNER');
-  el('text',{id:'downtxt',class:'nsub',x:W.x+W.w/2,y:W.y+40},gR,'up');
-  el('text',{class:'nsub',x:W.x+W.w/2,y:W.y+62},gR,'retries: '+{forever:'full speed',backoff:'wait longer',cutoff:'wait, then cut off'}[K.retry]);
-  el('text',{id:'rpstxt',class:'nsub',x:W.x+W.w/2,y:W.y+80},gR,'');
+  el('rect',{class:'nodebox',id:'downbox',x:VERT?190:510,y:dy,width:VERT?162:124,height:VERT?156:160,rx:8},gR);
+  el('text',{class:'nlab',x:wx,y:dy+22},gR,'PARTNER');
+  sub(wx,dy+44,gR,'up',{id:'downtxt',style:'fill:var(--art-green)'});
+  sub(wx,dy+68,gR,'retries:');
+  rows(wx,dy+84,gR,RETRYV[K.retry]);
+  sub(wx,dy+126,gR,'receiving');
+  sub(wx,dy+142,gR,'0/s',{id:'rpstxt'});
   paintSim();
  }
  function paintSim(){
-  var B=G.buf, pct=Math.min(1,SIM.backlog/SIM.cap);
-  var f=document.getElementById('bufill'); if(f){ f.setAttribute('width',(B.w-32)*pct); f.setAttribute('fill', SIM.seized?'#ef4444': pct>0.7?'#eab308':'#3b82f6'); }
-  var t=document.getElementById('buftxt'); if(t) t.textContent=(SIM.seized?'LOCKED · ':'')+Math.round(SIM.backlog)+(K.where==='mem'?' / '+SIM.cap:' waiting');
+  var pct=Math.min(1,SIM.backlog/SIM.cap);
+  var f=document.getElementById('bufill'); if(f){ f.setAttribute('width',G.track.w*pct); f.style.fill=SIM.seized?'var(--art-red)': pct>0.7?'var(--art-amber)':'var(--art-blue)'; }
+  var t=document.getElementById('buftxt'); if(t) t.textContent=(SIM.seized?'LOCKED ':'')+Math.round(SIM.backlog)+(K.where==='mem'?'/'+SIM.cap:' waiting');
   var sp=document.getElementById('spilltxt'); if(sp) sp.textContent='on disk: '+Math.round(SIM.spill);
   var d=document.getElementById('draintxt'); if(d) d.textContent='draining '+Math.round(SIM.drainNow||0)+'/s';
-  ['A','B','C'].forEach(function(x){ var lf=document.getElementById('lanefill'+x); if(!lf) return; var w=Math.min(1,(SIM['wait'+x]||0)/60); lf.setAttribute('width',(VERT?80:G.prod.w-24)*w); lf.setAttribute('fill', w>0.5?'#ef4444':'#6B7280'); });
-  var dn=document.getElementById('downtxt'); if(dn){ dn.textContent=SIM.partner; dn.setAttribute('fill', SIM.partner==='up'?'#22c55e':'#ef4444'); }
-  var rp=document.getElementById('rpstxt'); if(rp) rp.textContent=SIM.rps?('receiving '+Math.round(SIM.rps)+'/s'):'';
+  ['A','B','C'].forEach(function(x){ var lf=document.getElementById('lanefill'+x); if(!lf) return; var w=Math.min(1,(SIM['wait'+x]||0)/60); lf.setAttribute('width',G.lane.w*w); lf.style.fill=w>0.5?'var(--art-red)':'#6B7280'; });
+  var dn=document.getElementById('downtxt'); if(dn){ dn.textContent=SIM.partner; dn.style.fill=SIM.partner==='up'?'var(--art-green)':'var(--art-red)'; }
+  var rp=document.getElementById('rpstxt'); if(rp) rp.textContent=Math.round(SIM.rps||0)+'/s';
  }
- function pickG(){ VERT=mq(PHONE_MQ); G=VERT?GV:GH; stage.setAttribute('viewBox',VERT?'0 0 360 410':'0 0 648 240'); }
+ /* the workers box outline: red while the workers are hurt, the class's own
+    colour otherwise (style, because .nodebox outranks a stroke attribute) */
+ function drainAlert(on){ var d=document.getElementById('drainbox'); if(d) d.style.stroke=on?'var(--art-red)':''; return d; }
+ function pickG(){ VERT=mq(PHONE_MQ); G=VERT?GV:GH; stage.setAttribute('viewBox',G.vb); }
  pickG(); window.addEventListener('resize',function(){var v=mq(PHONE_MQ); if(v!==VERT&&!running){pickG();drawStage();}});
 
 
@@ -528,7 +558,7 @@ function bootEngine() {
  function sayNow(tag,html){ $('#narr').innerHTML='<span class="tag">'+tag+'</span> \u00b7 '+html; holdToRead('narr',textOf($('#narr'))); }
  async function say(tag,html){ if(holding()) await readUntil('narr'); sayNow(tag,html); }
  function stamp(kind,txt){ var host=document.getElementById(kind); if(!host) return; host.textContent=txt; }
- function poison(on){ var g=document.getElementById('poisonmark'); if(!g) return; g.innerHTML=''; if(!on) return; var B=G.buf; el('circle',{cx:B.x+30,cy:B.y+61,r:7,fill:'#ef4444'},g); el('text',{x:B.x+30,y:B.y+65,'text-anchor':'middle','font-size':'9',fill:'#08090D','font-weight':'700'},g,'!'); }
+ function poison(on){ var g=document.getElementById('poisonmark'); if(!g) return; g.innerHTML=''; if(!on) return; var p=G.poison; el('circle',{cx:p.x,cy:p.y,r:7,fill:'var(--art-red)'},g); el('text',{x:p.x,y:p.y+4.5,'text-anchor':'middle','font-size':'12','font-weight':'700',fill:'var(--art-bg)'},g,'!'); }
 
  /* ---------- cards: the slot beside the stage + the full list (page 1) ---------- */
  var QOF={where:'q1',full:'q3',stuck:'q4',order:'q5',done:'q6',retry:'q7',dedupe:'q6',retention:'q7',scans:'q2',archive:'q7'};
@@ -599,12 +629,12 @@ function bootEngine() {
   },
   async function slowdown(t){
    await say('EVENT 2/6','<b>The workers slow to a fifth of their speed</b>, because the database behind them is overloaded. Jobs keep arriving at the same rate. Watch the queue.');
-   var d=document.getElementById('drainbox'); if(d) d.setAttribute('stroke','#ef4444');
+   var d=drainAlert(true);
    if(t==='SEIZED'){
     await phase(22,function(s){ var eff=Math.max(0.2,1-(s.backlog/s.cap)*0.8); var dr=6*0.15*eff; s.backlog=Math.min(s.cap,s.backlog+14*0.15-dr); s.drainNow=dr/0.15; if(s.backlog>=s.cap-0.5){s.seized=true;s.drainNow=0;} });
     await dwell(900);
     await say('EVENT 2/6','Full. And <b>a full queue can\'t empty itself</b>: taking a job out needs a little free memory, and the backlog has used it all. Watch: the slowdown ends, and the queue stays locked.');
-    await phase(8,function(s){ s.drainNow=0; }); if(d) d.setAttribute('stroke','#3a4158'); await phase(6,function(s){ s.drainNow=0; });
+    await phase(8,function(s){ s.drainNow=0; }); drainAlert(false); await phase(6,function(s){ s.drainNow=0; });
     await card('bad','LOCKED: THE QUEUE TOOK THE SITE DOWN','The queue (Redis) filled its memory, and taking a job out needed free memory. Every feature that depends on the queue failed. The slowdown was fixed and the queue stayed locked. Getting it back took a lot of manual work.','Slack 2017.','where');
     SIM.seized=false; SIM.backlog=8; return {cls:'bad'};
    }
@@ -614,26 +644,26 @@ function bootEngine() {
     await say('EVENT 2/6','Full, and now the queue <b>turns senders away</b>. Every job that arrives is an error someone upstream has to handle.');
     await phase(8,function(s){ s.drainNow=6; s.rejected=(s.rejected||0)+2; });
     await card('bad','JOBS REFUSED AT THE DOOR','The queue protected itself by refusing the jobs it exists to hold. Messages, notifications and everything else behind it failed loudly.','Slack 2017: at the memory limit, no new job could be added.','full');
-    if(d) d.setAttribute('stroke','#3a4158'); SIM.backlog=8; return {cls:'bad'};
+    drainAlert(false); SIM.backlog=8; return {cls:'bad'};
    }
    if(t==='UPSTREAM'){
     await phase(14,function(s){ s.backlog=Math.min(s.cap*0.8,s.backlog+14*0.15-6*0.15); s.drainNow=6; });
     await say('EVENT 2/6','The queue <b>slows its senders down</b> to protect itself. They feel it as network delay they can\'t explain, and their own requests pile up. Then a timeout kills the slowed processes over and over, and their restarts flood the queue with reconnections.');
     ['A','B','C'].forEach(function(x){SIM['wait'+x]=50;}); await phase(10,function(s){ s.drainNow=4; }); await dwell(900);
     await card('bad','THE TROUBLE MOVED UPSTREAM','Flow Control slowed the app servers. A timeout setting on them (harakiri) kept killing and restarting their slowed processes, and the reconnections loaded the queue even more. The slowdown fed itself.','DoorDash 2020.','full');
-    ['A','B','C'].forEach(function(x){SIM['wait'+x]=0;}); if(d) d.setAttribute('stroke','#3a4158'); SIM.backlog=8; return {cls:'bad'};
+    ['A','B','C'].forEach(function(x){SIM['wait'+x]=0;}); drainAlert(false); SIM.backlog=8; return {cls:'bad'};
    }
    if(t==='CLEAN_SPILL'){
     await phase(20,function(s){ s.spill+=14*0.15-6*0.15; s.backlog=Math.min(s.cap*0.55,s.backlog+0.2); s.drainNow=6; });
     await say('EVENT 2/6','The queue stays at a level the workers can handle. The extra lands in <b>a queue on disk in front</b>: a number on disk, not a full queue in memory. Nothing refused, nothing locked.');
-    if(d) d.setAttribute('stroke','#3a4158'); await phase(8,function(s){ s.spill=Math.max(0,s.spill-3); s.drainNow=30; });
+    drainAlert(false); await phase(8,function(s){ s.spill=Math.max(0,s.spill-3); s.drainNow=30; });
     await card('good','SURVIVED: THE BACKLOG BECAME A NUMBER ON DISK','Kafka took every job as fast as it arrived, and a relay fed jobs into Redis under a rate limit. A build-up now means turning a dial, not hours of manual work. The cost is on the bill: two systems, and someone owns the dial.','Slack 2017.',null);
     SIM.spill=0; return {cls:'good'};
    }
    /* CLEAN_DELAY */
    await phase(20,function(s){ s.backlog=s.backlog+14*0.15-6*0.15; s.drainNow=6; });
    await say('EVENT 2/6','The backlog grows, and nothing else happens. A queue on disk takes everything, so the failure downstream becomes <b>delay, not loss</b>.');
-   if(d) d.setAttribute('stroke','#3a4158'); await phase(8,function(s){ s.backlog=Math.max(6,s.backlog-4); s.drainNow=30; });
+   drainAlert(false); await phase(8,function(s){ s.backlog=Math.max(6,s.backlog-4); s.drainNow=30; });
    await card('good','SURVIVED: DELAY, NOT LOSS','Senders kept adding jobs, the jobs were kept, and the workers caught up later. Meta\'s queue has held backlogs of hundreds of billions this way. That is the design working. The cost: a backlog is now normal, and everything downstream has to live with the delay.','Meta 2021.',null);
    SIM.backlog=8; return {cls:'good'};
   },
@@ -685,7 +715,7 @@ function bootEngine() {
   },
   async function crash(t){
    await say('EVENT 5/6','<b>A worker crashes</b> holding a job it was handed but hadn\'t finished.');
-   var d=document.getElementById('drainbox'); if(d){d.setAttribute('stroke','#ef4444'); d.classList.add('bpulse');} await sleep(800); if(d){d.classList.remove('bpulse'); d.setAttribute('stroke','#3a4158');}
+   var d=drainAlert(true); if(d) d.classList.add('bpulse'); await sleep(800); if(d) d.classList.remove('bpulse'); drainAlert(false);
    if(t==='LOST_ITEM'){
     await say('EVENT 5/6','The job was marked done when it was <b>handed out</b>. Nothing knows it wasn\'t finished. It is gone.');
     await dwell(900);
@@ -693,7 +723,7 @@ function bootEngine() {
     return {cls:'bad'};
    }
    await say('EVENT 5/6','No confirmation came, so the job is <b>handed out again</b>, to a worker that is alive. A slow worker would have looked exactly like a dead one, and its job would arrive twice.');
-   stamp('dupetxt','handed out again · may repeat'); await phase(8,function(s){ s.drainNow=28; }); stamp('dupetxt','');
+   stamp('dupetxt','handed out again'); await phase(8,function(s){ s.drainNow=28; }); stamp('dupetxt','');
    await card('good','SURVIVED: HANDED OUT AGAIN, NOT LOST','Nobody confirmed the job, so it came back. Now every worker has to cope with seeing the same job twice. That cost is on the bill.','Meta 2021, Uber 2021.',null);
    return {cls:'good'};
   },

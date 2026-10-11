@@ -88,15 +88,15 @@ svg.stage { width: 100%; height: auto; display: block; }
    toggles cutlab across both by id-prefix. This retires the Batch-2 scroll
    pill + horizontal min-width for phones. */
 svg.stage:not(.stage-v) { min-width: 480px; }
-/* Until the design drop-in brings the vertical stage, the one horizontal stage
-   scrolls sideways inside its wrapper on phones rather than disappearing. */
-svg.stage.stage-only { display: block !important; }
 svg.stage.stage-v { display: none; } /* outrank svg.stage{display:block} (§3b) */
 @media (max-width: 700px) {
  .stagewrap { overflow-x: visible; }
  svg.stage:not(.stage-v) { display: none; }
  svg.stage.stage-v { display: block; min-width: 0; }
 }
+/* the phone stage's labels at 14 / 13 units (11.1px and up at a 308px frame) */
+svg.stage.stage-v .s-nlabel { font-size: 14px; }
+svg.stage.stage-v .s-nsub { font-size: 13px; }
 @media (min-width: 701px) { .stagewrap { overflow-x: auto; } }
 svg.stage text { font-family: var(--mono); }
 .s-node { fill: var(--art-surface); stroke: var(--art-border); stroke-width: 1.3; }
@@ -117,18 +117,40 @@ const MARKUP = `
  <div class="art-eyebrow">WALL · BUFFER DEGRADES UNDER BACKLOG · INTERACTIVE</div>
  <div class="art-title">Two ways a queue breaks <span style="font-size:9px;letter-spacing:1.5px;border:1px solid #6B7280;color:#6B7280;border-radius:5px;padding:2px 7px;vertical-align:2px;font-weight:400;">TRY IT</span></div>
  <p class="art-sub">Fourteen jobs a second arrive. Two things can go wrong: the workers slow down, or one job gets stuck. Where the backlog lives decides what happens next.</p>
- <div class="stagewrap"><svg class="stage stage-only" viewBox="0 0 640 120" role="img" aria-label="Senders send jobs into a queue, and workers deliver them to a partner. The bar in the queue fills as the backlog grows.">
-  <rect class="s-node" x="8" y="40" width="104" height="34" rx="7"/><text class="s-nlabel" x="60" y="61">SENDERS</text>
-  <line class="s-seg" x1="120" y1="57" x2="200" y2="57"/>
-  <rect class="s-node" x="202" y="30" width="176" height="54" rx="7"/><text class="s-nlabel" x="290" y="46">THE QUEUE</text>
-  <rect x="222" y="54" width="136" height="14" rx="4" fill="#161922" stroke="#3a4158"/><rect data-part="buf" x="222" y="54" width="10" height="14" rx="4" fill="#3b82f6"/>
-  <text data-part="bufl" class="s-nsub" x="290" y="80"></text>
-  <g data-part="stuckmark" style="display:none"><circle cx="228" cy="61" r="6" fill="#ef4444"/><text x="228" y="64.5" text-anchor="middle" font-size="8" fill="#08090D" font-weight="700">!</text></g>
-  <line class="s-seg" x1="380" y1="57" x2="428" y2="57"/>
-  <rect data-part="drainbox" class="s-node" x="430" y="40" width="70" height="34" rx="7"/><text class="s-nlabel" x="465" y="61">WORKERS</text>
-  <line class="s-seg" x1="502" y1="57" x2="526" y2="57"/>
-  <rect class="s-node" x="528" y="40" width="104" height="34" rx="7"/><text class="s-nlabel" x="580" y="61">PARTNER</text>
- </svg></div>
+ <div class="stagewrap"><svg class="stage" viewBox="0 0 640 138" role="img" aria-label="Senders send jobs into a queue, and workers deliver them to a partner. The bar in the queue fills as the backlog grows.">
+  <rect class="s-node" x="8" y="46" width="104" height="34" rx="7"/>
+  <text class="s-nlabel" x="60" y="67">SENDERS</text>
+  <line class="s-seg" x1="120" y1="63" x2="196" y2="63"/>
+  <rect class="s-node" x="202" y="30" width="176" height="74" rx="7"/>
+  <text class="s-nlabel" x="290" y="48">THE QUEUE</text>
+  <rect x="225" y="56" width="130" height="14" rx="4" fill="#161922" stroke="#3a4158"/>
+  <rect data-part="buf" x="225" y="56" width="10" height="14" rx="4" fill="#3b82f6"/>
+  <text class="s-nsub" x="290" y="90" data-part="bufl"></text>
+  <g data-part="stuckmark" style="display:none"><circle cx="349" cy="63" r="6" fill="#ef4444"></circle><text x="349" y="66.5" text-anchor="middle" font-size="9" font-weight="700" fill="#08090D">!</text></g>
+  <line class="s-seg" x1="384" y1="63" x2="424" y2="63"/>
+  <rect class="s-node" data-part="drainbox" x="430" y="46" width="70" height="34" rx="7"/>
+  <text class="s-nlabel" x="465" y="67">WORKERS</text>
+  <line class="s-seg" x1="506" y1="63" x2="522" y2="63"/>
+  <rect class="s-node" x="528" y="46" width="104" height="34" rx="7"/>
+  <text class="s-nlabel" x="580" y="67">PARTNER</text>
+ </svg>
+ <svg class="stage stage-v" viewBox="0 0 360 300" role="img" aria-label="Senders send jobs into a queue, and workers deliver them to a partner. The bar in the queue fills as the backlog grows.">
+  <rect class="s-node" x="90" y="10" width="180" height="44" rx="7"/>
+  <text class="s-nlabel" x="180" y="36">SENDERS</text>
+  <line class="s-seg" x1="180" y1="54" x2="180" y2="78"/>
+  <rect class="s-node" x="90" y="78" width="180" height="78" rx="7"/>
+  <text class="s-nlabel" x="180" y="98">THE QUEUE</text>
+  <rect x="115" y="108" width="130" height="16" rx="4" fill="#161922" stroke="#3a4158"/>
+  <rect data-part="buf" x="115" y="108" width="10" height="16" rx="4" fill="#3b82f6"/>
+  <text class="s-nsub" x="180" y="146" data-part="bufl"></text>
+  <g data-part="stuckmark" style="display:none"><circle cx="239" cy="116" r="6" fill="#ef4444"></circle><text x="239" y="119.5" text-anchor="middle" font-size="9" font-weight="700" fill="#08090D">!</text></g>
+  <line class="s-seg" x1="180" y1="156" x2="180" y2="180"/>
+  <rect class="s-node" data-part="drainbox" x="90" y="180" width="180" height="44" rx="7"/>
+  <text class="s-nlabel" x="180" y="206">WORKERS</text>
+  <line class="s-seg" x1="180" y1="224" x2="180" y2="248"/>
+  <rect class="s-node" x="90" y="248" width="180" height="44" rx="7"/>
+  <text class="s-nlabel" x="180" y="274">PARTNER</text>
+</svg></div>
  <div class="art-cols">
   <div class="art-panel art-controls">
    <span class="art-label">WHERE THE BACKLOG LIVES</span>
@@ -213,7 +235,7 @@ function bootEngine() {
   $('#tlost').textContent=Math.round(W.lost); $('#tlost').className='val '+(W.lost>0?'bad':'good');
   $('#twait').textContent=Math.round(W.waiting); $('#twait').className='val '+(W.waiting>5?'bad':'');
   part('stuckmark').forEach(function(g){ g.style.display=stuck?'':'none'; });
-  part('drainbox').forEach(function(r){ r.setAttribute('stroke', slow?'#ef4444':'#1F2333'); });
+  part('drainbox').forEach(function(r){ r.style.stroke = slow?'var(--art-red)':''; }); /* style: .s-node outranks a stroke attribute */
  }
  $$('.abtn[data-sub]').forEach(function(b){ b.addEventListener('click',function(){ sub=b.dataset.sub; fresh(); render(); }); });
  $('#t-slow').addEventListener('click',function(){ slow=!slow; render(); });

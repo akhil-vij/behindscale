@@ -85,6 +85,7 @@ arrows on every page in the sitemap.
 | Verdict red         | `--art-red`           | `#ef4444` |
 | Verdict amber       | `--art-amber`         | `#eab308` |
 | Verdict green       | `--art-green`         | `#22c55e` |
+| Queue bar blue      | `--art-blue`          | `#3b82f6` |
 | Problem-class accent| `--accent-problem`    | `#D946EF` |
 | Problem accent hover| `--accent-problem-hover` | `#E879F9` |
 
@@ -98,6 +99,8 @@ Usage rules for the named dark tokens (problem page v7.3, 2026-09-06):
   brighter than the light-shell semantics for contrast on `#08090D`. **Never
   on light surfaces** -- the shell keeps `--state-error` / `--cat-amber` /
   `--state-success`.
+- `--art-blue` is the healthy fill of a stage's level bar (the queue in the
+  queue-backlog mission), before it turns amber and red. Display only.
 - `--accent-problem` (magenta) marks **interactive controls, attention cues,
   and the BUILD IT badge**; never the light shell, and never a
   non-interactive dark element (magenta means clickable; the badge is the
