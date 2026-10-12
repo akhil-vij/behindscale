@@ -7709,8 +7709,8 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     card-slot tests, verticals) install Playwright's clock (it reaches the
     sandboxed frames) and run it forward: 10-17s each instead of 80-106s.
   - The 3 pacing tests stay on real time.
-  - Queue-backlog's round-trip test (on `feat/queue-backlog-lesson`, not yet
-    on main) gets the same change once that PR lands.
+  - Queue-backlog's round-trip test moved onto the fake clock on
+    `feat/queue-backlog-lesson` after its rebase onto this: 96s to 11s.
   - Not done (owner's call): more workers locally and in CI; tagging the
     pacing tests so a quick local run can skip them.
 

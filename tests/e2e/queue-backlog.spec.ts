@@ -31,6 +31,21 @@ async function waitForMission(page: Page): Promise<Frame> {
   await f.locator('#runbtn').waitFor({ state: 'visible', timeout: 30_000 })
   return f
 }
+// Fake time for a test that needs a day's END STATE, not its pacing (the same
+// helpers as page 1's suite, problem-page.spec.ts): install Playwright's clock
+// before the page loads -- it reaches the sandboxed artifact frames -- and run
+// it forward in one-second steps until the day is done. The reading-time test
+// below stays on real time: pacing is what it tests.
+async function fastClock(page: Page): Promise<void> {
+  await page.clock.install()
+}
+async function runUntil(page: Page, frame: Frame, done: () => boolean, label: string): Promise<void> {
+  for (let fakeSecs = 0; fakeSecs < 600; fakeSecs++) {
+    if (await frame.evaluate(done)) return
+    await page.clock.runFor(1000)
+  }
+  throw new Error(`fake clock: still waiting for ${label} after 600 simulated seconds`)
+}
 // A saved record, as the host writes it, so a test can start from a survived
 // (or fully held) design without playing it.
 function seed(page: Page, held: boolean[], decisions: Record<string, string> = CLEAN) {
@@ -42,17 +57,18 @@ function seed(page: Page, held: boolean[], decisions: Record<string, string> = C
 
 test.describe('queue-backlog: the real iframe round-trip', () => {
   test('a survived day fills YOU; the commit persists; a reload restores the design', async ({ page }) => {
-    test.setTimeout(300_000)
+    await fastClock(page)
     await page.goto(PAGE)
     const mission = await waitForMission(page)
     await expect(page.locator('#you-th')).not.toHaveText('YOU')
     for (const [k, v] of Object.entries(CLEAN)) await frameClick(mission, `#deck button[data-k="${k}"][data-v="${v}"]`)
     await frameClick(mission, '#runbtn')
     await page.locator('#artB iframe').scrollIntoViewIfNeeded()
-    await mission.waitForFunction(
+    await runUntil(
+      page,
+      mission,
       () => !(document.getElementById('runbtn') as HTMLButtonElement).disabled && document.getElementById('escwrap')!.style.display !== 'none',
-      null,
-      { timeout: 240_000 },
+      'a survived day',
     )
     // the YOU column and diagram fill from the wall's youMapping()
     await expect(page.locator('#you-th')).toHaveText('YOU', { timeout: 15_000 })
