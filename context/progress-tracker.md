@@ -7709,10 +7709,73 @@ exceed when bandwidth allows). Reassess at week 8 (counting from
     card-slot tests, verticals) install Playwright's clock (it reaches the
     sandboxed frames) and run it forward: 10-17s each instead of 80-106s.
   - The 3 pacing tests stay on real time.
-  - Queue-backlog's round-trip test (on `feat/queue-backlog-lesson`, not yet
-    on main) gets the same change once that PR lands.
+  - Queue-backlog's round-trip test moved onto the fake clock on
+    `feat/queue-backlog-lesson` after its rebase onto this: 96s to 11s.
   - Not done (owner's call): more workers locally and in CI; tagging the
     pacing tests so a quick local run can skip them.
+
+- 2026-10-11: **Queue-backlog: the design agent's drawings dropped in.** Same
+  branch (`main` had not moved). Two zips: `wall2-drawings` (20 SVGs) and
+  `return-1` (8 revised files laid over them); C2PA metadata and namespace
+  stripped from every file.
+  - **Mission stage:** `drawStage()` now draws the drawings (640x244 /
+    360x514, same ids). The first word of each decision is fixed text; the
+    value fills the reserved rows ("confirmed," / "time limit"; "wait, then" /
+    "cut off"). The bar's full width is the drawn track (144 / 320; "B.w − 16"
+    holds on desktop only), the lanes 104 / 108, and the stuck job sits at
+    fixed points on the wire into WORKERS (322,81 / 89,326). Approved strings:
+    "log on disk", "database rows", "LOCKED 100/100" and "32/100", "handed out
+    again", "shared line", and "receiving" fixed with `rpstxt` showing the
+    number ("0/s" when idle). New `--art-blue` token for the bar.
+  - **Colours through style:** the engine sets `buftxt`/`dupetxt`/`downtxt`
+    and the bars with `el.style.fill`, and the workers box outline with
+    `style.stroke` (the class rule outranked the attribute, so the red outline
+    never showed; the same was true of the try-it's `drainbox`).
+  - **Try-it:** return-1's two stages, the vertical switch restored; the two
+    phone label lines (14 / 13 units) also on page 1's try-it, where every
+    label still fits (7.3px -> 11.1px at 390).
+  - **Diagrams:** the ten `anat-*` files and four `you-*` files; Meta's
+    DOWNSTREAM reads SERVICES. The phone YOU files keep only their `-v` slot
+    ids, as page 1's do. New `queue-backlog-you-wrap.test.ts`.
+  - **Wall figure:** the designer's drawing and its phone twin
+    (`buffer-turns-on-its-owner-v`, a second `figures[]` entry so the figure
+    checks cover it), switched by a `<picture>` source under 700px through the
+    new optional `wall.figurePhoneSlug`.
+  - `.wire` exists in the mission block at page 1's stroke width (2; the
+    designer's note said 1.4, page 1 has 2).
+  - **#33 (owner: yes, animation only):** the slowdown fills a memory queue
+    to 100/100 and shows it LOCKED, red, before the "Full." line (the end
+    state under reduced motion); `capMem()` holds a memory queue at 100 in
+    every phase and paint, so the big customer stops at 100/100. Scores and
+    the parity tests are unchanged. Tested in the click-through (event 2,
+    red, max 100) and the reduced-motion e2e (both days).
+  - Open: #31 (the phone wall figure may get one more tidy-up; it ships as
+    is if the tidy-up comes later).
+
+- 2026-10-10: **Queue-backlog becomes the second full lesson (Step 2, in
+  progress).** Branch `feat/queue-backlog-lesson` off `main` (`3a42815`); not
+  pushed (waiting on the design agent's stage and diagram files). Source:
+  queue-backlog v1.3 (fact-checked copy pass).
+  - **Shell:** the eyebrow's year range is in words ("2017 to 2022") on every
+    wall (owner: no dashes as punctuation).
+  - **Content:** the v1.3 JSON in the repo schema (approved Step 1 mapping),
+    page 1's stations and minutes, the owner's legend kinds, the mission
+    outline and the new search description. `src/walls/queue-backlog.ts`
+    ports host.js `youMapping` ("not chosen" for an unset decision).
+  - **Try-it:** the prototype's script and markup in page 1's try-it shell.
+  - **Mission:** its own artifact (`problem-queue-backlog-mission.jsx` +
+    `-rules.js`), the prototype's rules, decisions, stage, events, attacks and
+    debrief with page 1's mechanics carried in (layout, slot + log, accordion,
+    reading hold, reduced motion, restore, bridge). Page 1 untouched; a shared
+    engine is parked until after launch. The reading hold here applies when a
+    narration or card is replaced (say()/card() wait), not inside every pause,
+    because each event is an animated phase.
+  - **Interim art:** the comparison SVGs and the wall figure are the
+    prototype's drawings until the design files land (the 390 diagram-text
+    check fails until the verticals arrive).
+  - Tests: rules parity on 128,304 combinations, a jsdom click-through, and
+    e2e for the round trip, ticks, reduced-motion reading time, phones and
+    diagram text.
 
 - 2026-10-10: **Full-screen link arrows.** Branch `fix/full-screen-arrows` off
   `main` (`2df9661`); not pushed. Owner ruling: "Open in full ↗" (article

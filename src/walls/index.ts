@@ -17,6 +17,7 @@
 // `comparison.matrixRows[].id` plus the `{{slot}}` names of the YOU diagram.
 
 import ambiguousTimeouts from './ambiguous-timeouts'
+import queueBacklog from './queue-backlog'
 
 export type WallDecisions = Readonly<Record<string, string | undefined>>
 
@@ -28,4 +29,5 @@ export interface WallModule {
 
 export const wallBySlug: ReadonlyMap<string, WallModule> = new Map([
   ['ambiguous-failure-under-retry', ambiguousTimeouts],
+  ['buffer-degrades-under-backlog', queueBacklog],
 ])

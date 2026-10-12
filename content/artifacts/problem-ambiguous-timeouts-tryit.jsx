@@ -107,6 +107,10 @@ svg.stage.stage-v { display: none; } /* outrank svg.stage{display:block} (§3b) 
  svg.stage:not(.stage-v) { display: none; }
  svg.stage.stage-v { display: block; min-width: 0; }
 }
+/* the phone stage's labels at 14 / 13 units: 11.1px and up at a 308px frame
+   (they drew at 7.3px at 8.5 units). Wall 2 drawings; same lines as wall 2. */
+svg.stage.stage-v .s-nlabel { font-size: 14px; }
+svg.stage.stage-v .s-nsub { font-size: 13px; }
 @media (min-width: 701px) { .stagewrap { overflow-x: auto; } }
 svg.stage text { font-family: var(--mono); }
 .s-node { fill: var(--art-surface); stroke: var(--art-border); stroke-width: 1.3; }

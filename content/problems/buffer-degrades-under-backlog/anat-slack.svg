@@ -1,0 +1,32 @@
+<svg class="anat" viewBox="0 0 640 212" role="img" aria-label="Slack: the backlog lives in Redis memory, then Kafka in front. What slows as it fills: the old queue, taking a job out slowed and needed free memory. When full: nobody, a rate-limited relay. Still breaks: not listed, Kafka keeps two days." xmlns="http://www.w3.org/2000/svg">
+  <line class="replay none" x1="263" y1="60" x2="263" y2="30"></line>
+  <line class="rstop" x1="253" y1="30" x2="273" y2="30"></line>
+  <text class="rlabel none" x="263" y="16">NOBODY: A RATE-LIMITED RELAY</text>
+  <rect class="node" x="8" y="60" width="120" height="52" rx="7"></rect>
+  <text class="nlabel" x="68" y="81">SENDERS</text>
+  <text class="nsub" x="68" y="98">THE WEB APP</text>
+  <line class="arrow" x1="136" y1="86" x2="170" y2="86"></line>
+  <polygon class="ahead" points="178,86 170,82 170,90"></polygon>
+  <line class="arrow" x1="354" y1="86" x2="388" y2="86"></line>
+  <polygon class="ahead" points="396,86 388,82 388,90"></polygon>
+  <line class="arrow" x1="490" y1="86" x2="524" y2="86"></line>
+  <polygon class="ahead" points="532,86 524,82 524,90"></polygon>
+  <rect class="node" x="180" y="60" width="166" height="52" rx="7"></rect>
+  <text class="nlabel" x="263" y="81">THE QUEUE</text>
+  <text class="nsub" x="263" y="98">KAFKAGATE · JQRELAY</text>
+  <rect class="node" x="398" y="60" width="84" height="52" rx="7"></rect>
+  <text class="nlabel" x="440" y="91">WORKERS</text>
+  <rect class="node" x="534" y="60" width="96" height="52" rx="7"></rect>
+  <text class="nlabel" x="582" y="77">DOWNSTREAM</text>
+  <text class="nsub" x="582" y="91">WORKERS,</text>
+  <text class="nsub" x="582" y="105">THEN DB</text>
+  <line class="drop" x1="263" y1="112" x2="263" y2="124"></line>
+  <rect class="state" x="136" y="124" width="254" height="26" rx="6"></rect>
+  <text class="slabel" x="263" y="141">REDIS MEMORY, THEN KAFKA IN FRONT</text>
+  <circle class="keydot" cx="147" cy="162" r="5"></circle>
+  <text class="klabel" x="263" y="166">OLD: TAKING A JOB OUT SLOWED,</text>
+  <text class="klabel" x="263" y="181">NEEDED FREE MEMORY</text>
+  <line class="bx" x1="50" y1="193" x2="62" y2="205"></line>
+  <line class="bx" x1="62" y1="193" x2="50" y2="205"></line>
+  <text class="blabel" x="72" y="203">NOT LISTED · KAFKA KEEPS 2 DAYS</text>
+</svg>

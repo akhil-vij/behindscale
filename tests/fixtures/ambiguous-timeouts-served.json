@@ -1,5 +1,5 @@
 [
-  "PROBLEM · SEEN AT 5 COMPANIES · 2017–2022",
+  "PROBLEM · SEEN AT 5 COMPANIES · 2017 TO 2022",
   "Ambiguous failure under retry",
   "A timed-out request tells you the response never came back, not whether the work got done.",
   "TRY IT · 3 MIN",

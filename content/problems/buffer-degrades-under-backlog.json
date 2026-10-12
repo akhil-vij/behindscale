@@ -1,4 +1,841 @@
 {
   "cruxTag": "buffer-degrades-under-backlog",
-  "lede": "The queue you added to protect your system becomes the thing that takes it down."
+  "lede": "The queue you added to protect your system becomes the thing that takes it down.",
+  "searchQuestion": {
+    "titleClause": "keep a backed-up queue from taking the system down",
+    "description": "Why a queue fails exactly when the backlog arrives. Cause it, build one that survives, then compare how Meta, Uber, Slack, DoorDash and Segment handled it."
+  },
+  "howItWorks": [
+    "Cause it",
+    "Build it",
+    "Survive a day",
+    "Compare with five real systems"
+  ],
+  "intro": [
+    "A queue has one job: hold the extra work when it arrives faster than it can be done. All five systems here failed at exactly that moment. Slack's queue (Redis) could not empty itself once it was full, because taking a job out needed a little free memory, and the backlog had used it all. Meta's queue (MySQL) got slower to read the more work was waiting in it. DoorDash's queue (RabbitMQ) answered a rush by slowing down the servers sending it work, so the work piled up in front of it. Uber's queue (Kafka) let one slow job hold up every job behind it. Segment's shared queue let one failing destination make every customer wait.",
+    "That is one wall in two shapes. In the first three, the queue itself got worse as it filled. In the last two, one stuck job held up the whole line. Knowing which shape your queue has is most of the answer. The five teams answered differently: Meta repaired its queue, Uber and Slack built around theirs, DoorDash replaced its queue with a new one, and Segment stopped using a queue at all. This page lines their answers up so you can see the differences."
+  ],
+  "figures": [
+    {
+      "slug": "buffer-turns-on-its-owner",
+      "eyebrow": "TWO WAYS A QUEUE FAILS",
+      "caption": "Two ways a queue fails at exactly the moment the backlog arrives.",
+      "ariaLabel": "A queue fails two ways: it slows as it fills, or one stuck job holds up everything behind it."
+    },
+    {
+      "slug": "buffer-turns-on-its-owner-v",
+      "eyebrow": "TWO WAYS A QUEUE FAILS",
+      "caption": "Two ways a queue fails at exactly the moment the backlog arrives.",
+      "ariaLabel": "A queue fails two ways: it slows as it fills, or one stuck job holds up everything behind it."
+    }
+  ],
+  "stations": [
+    {
+      "id": "tryit",
+      "anchor": "artifact",
+      "label": "TRY IT",
+      "minutes": 3,
+      "estimate": true
+    },
+    {
+      "id": "build",
+      "anchor": "artB",
+      "label": "BUILD IT",
+      "minutes": 15,
+      "estimate": true
+    },
+    {
+      "id": "compare",
+      "anchor": "hintsheet",
+      "label": "COMPARE",
+      "minutes": 10,
+      "estimate": true
+    },
+    {
+      "id": "decide",
+      "anchor": "decide",
+      "label": "DECIDE",
+      "minutes": 5,
+      "estimate": true
+    },
+    {
+      "id": "deeper",
+      "anchor": "cards",
+      "label": "GO DEEPER",
+      "minutes": 20,
+      "openEnded": true
+    },
+    {
+      "id": "interview",
+      "anchor": "interview",
+      "label": "INTERVIEW",
+      "minutes": 5
+    }
+  ],
+  "wall": {
+    "prose": [
+      "It always starts the same way: work arrives faster than it can be done, and a queue holds the difference. The wall is what that backlog does to the queue. Cause it yourself before reading anyone's answer: pick where the backlog lives, slow the workers down, and get one job stuck."
+    ],
+    "figureSlug": "buffer-turns-on-its-owner",
+    "figurePhoneSlug": "buffer-turns-on-its-owner-v",
+    "stats": [
+      {
+        "value": "1.4 billion+",
+        "label": "jobs on the busiest days, 33,000 a second at peak. When the workers slowed, the queue locked up, and it stayed locked after the slowdown was fixed.",
+        "source": "Slack · 2017"
+      },
+      {
+        "value": "About 1.5%",
+        "label": "of all data reaches its destination only because it was retried. Give up on the first failure and it never would.",
+        "source": "Segment · 2018"
+      },
+      {
+        "value": "hundreds of billions",
+        "label": "jobs waiting at once. When the services downstream failed, the work just waited. That is a queue doing its job.",
+        "source": "Meta · 2021"
+      },
+      {
+        "value": "80%",
+        "label": "of the task load moved off RabbitMQ to Kafka within a week of launch, low-risk, low-priority work first. The repeated outages stopped.",
+        "source": "DoorDash · 2020"
+      }
+    ],
+    "statsCaption": "The sharpest way a queue breaks, what giving up too soon would cost, what a queue is for when it works, and what fixing it earned. Each number comes from the company that measured it."
+  },
+  "tryIt": {
+    "artifactSlug": "problem-queue-backlog-tryit",
+    "name": "Two ways a queue breaks",
+    "teaser": "Pick where the backlog lives, then slow the workers down or get one job stuck. One minute, two ways a queue breaks.",
+    "caption": "Two shapes of the same wall: the queue itself getting slower as it fills (question 2 below), and one stuck job holding up the line (question 4). Each of the five companies below hit one or both.",
+    "noscript": "This part needs JavaScript. The picture shows the same two ways a queue breaks."
+  },
+  "mission": {
+    "artifactSlug": "problem-queue-backlog-mission",
+    "name": "Own the queue",
+    "teaser": "You own this queue. Make six decisions, then run the day. You survive it with nothing lost, nobody stalled and no outage.",
+    "title": "Build the defense",
+    "intro": "You caused the failure from the senders' side. Now you design the queue. The six decisions below are yours, and the goal is to get through a day of traffic. Run it with the starting decisions first, to see what breaks. Each failure card names the company that wrote about that failure and points at one decision. Once your day is clean, five attacks hit the design that just worked. Each one is a real failure that one of the five companies wrote about.",
+    "outline": {
+      "decisions": [
+        {
+          "label": "WHERE: the backlog lives in…",
+          "anchor": "q1",
+          "options": [
+            "memory: fast, but emptying it needs free memory too",
+            "a log on disk: in order, one worker per line",
+            "rows in a database: one row per job"
+          ]
+        },
+        {
+          "label": "WHEN FULL: the queue…",
+          "anchor": "q3",
+          "options": [
+            "accepts everything and keeps filling",
+            "refuses new jobs, so senders get errors",
+            "slows the senders down",
+            "overflows to a queue on disk in front, and a relay feeds jobs in at the workers' pace"
+          ]
+        },
+        {
+          "label": "STUCK JOB: a job that can never succeed…",
+          "anchor": "q4",
+          "options": [
+            "blocks its line until someone notices",
+            "goes to the back of the line",
+            "is set aside: progress moves past it, and a dead-letter queue keeps it for a person",
+            "is pulled into a small local queue, so only one runner waits"
+          ]
+        },
+        {
+          "label": "ORDER: jobs come out…",
+          "anchor": "q5",
+          "options": [
+            "first in, first out, in one shared line",
+            "most important first",
+            "by a query, each customer scheduled on its own"
+          ]
+        },
+        {
+          "label": "DONE MEANS: a job is finished when…",
+          "anchor": "q6",
+          "options": [
+            "it is handed to a worker",
+            "the worker confirms it. If it doesn't confirm in time, the job is handed out again",
+            "the worker confirms it, and progress is saved as one marker: everything done up to here"
+          ]
+        },
+        {
+          "label": "RETRIES: when the partner is down…",
+          "anchor": "q7",
+          "options": [
+            "keep trying at full speed until it responds",
+            "wait longer between tries, and never give up",
+            "wait longer between tries, then archive after a cutoff"
+          ]
+        }
+      ],
+      "events": [
+        "Steady traffic",
+        "The workers slow to a fifth",
+        "A job that can never succeed",
+        "One customer sends a huge burst",
+        "A worker crashes mid-job",
+        "The partner fails for 105 minutes"
+      ],
+      "attacks": [
+        {
+          "company": "Uber",
+          "year": "2021",
+          "text": "a deploy reshuffles the workers"
+        },
+        {
+          "company": "Slack",
+          "year": "2017",
+          "text": "the slowdown lasts three days"
+        },
+        {
+          "company": "DoorDash",
+          "year": "2020",
+          "text": "the queue's Flow Control kicks in"
+        },
+        {
+          "company": "Meta",
+          "year": "2021",
+          "text": "the backlog reaches hundreds of billions"
+        },
+        {
+          "company": "Segment",
+          "year": "2018",
+          "text": "the partner is down for six hours"
+        }
+      ]
+    },
+    "stopblock": "Once your design survives a day, you can stop here. By then you have caused the failure and built a queue that survives it, and that is the working knowledge. Everything below is for going deeper: the five real answers side by side, which answer fits which situation, and the original posts. If you are preparing for an interview, the interview section walks through the same trade-offs in interview order.",
+    "stuckNote": "Stuck on a failure card? Each of your six decisions matches one of the questions below, with the five companies' answers."
+  },
+  "comparison": {
+    "title": "Same wall, five answers",
+    "lede": "All five start from the same idea: put a queue between the work arriving and the work being done. After that, they answer every hard question differently. Below, in order: how much of the queue each team kept, the five designs drawn the same way, a table that compares them, and each company's full answers.",
+    "spectrum": {
+      "eyebrow": "How much of the queue did they keep?",
+      "points": [
+        {
+          "label": "Meta",
+          "left": 6
+        },
+        {
+          "label": "Uber",
+          "left": 28,
+          "up": true
+        },
+        {
+          "label": "Slack",
+          "left": 46
+        },
+        {
+          "label": "DoorDash",
+          "left": 68,
+          "up": true
+        },
+        {
+          "label": "Segment",
+          "left": 94
+        }
+      ],
+      "ends": [
+        "Repaired the queue",
+        "Stopped using a queue"
+      ],
+      "caption": "Meta kept its queue on MySQL and repaired the way it slowed down. Uber left Kafka's log untouched and built a second record of progress on top of it. Slack kept Redis and put Kafka in front of it to take the overflow. DoorDash decided its queue (RabbitMQ) couldn't be repaired, since nobody in-house knew it well and they could barely see inside it, so it switched to Kafka. Segment stopped using a queue at all: every job is a database row, and the order of delivery is a query. This isn't a ranking. It shows how much repair was within reach from where each team stood. Read down the diagrams in this order and watch the queue disappear."
+    },
+    "diagramTitle": "Five designs and yours, drawn the same way",
+    "legend": [
+      {
+        "kind": "state",
+        "label": "Where the backlog lives"
+      },
+      {
+        "kind": "key",
+        "label": "What slows as it fills"
+      },
+      {
+        "kind": "reply",
+        "label": "Who feels it when full"
+      },
+      {
+        "kind": "break",
+        "label": "What still breaks it"
+      }
+    ],
+    "diagramRows": [
+      {
+        "company": "Meta",
+        "year": "2021",
+        "vantage": "Repaired",
+        "articleSlug": "meta-foqs-priority-queue",
+        "svg": "anat-meta",
+        "caption": "Jobs are rows in MySQL. Checkpoints keep the lookups fast as the backlog grows.",
+        "open": true
+      },
+      {
+        "company": "Uber",
+        "year": "2021",
+        "vantage": "Built around",
+        "articleSlug": "uber-kafka-consumer-proxy",
+        "svg": "anat-uber",
+        "caption": "A record of each job's progress, kept on top of Kafka's log."
+      },
+      {
+        "company": "Slack",
+        "year": "2017",
+        "vantage": "Built around",
+        "articleSlug": "slack-scaling-job-queue",
+        "svg": "anat-slack",
+        "caption": "Kafka in front of Redis, letting jobs in only as fast as Redis can empty."
+      },
+      {
+        "company": "DoorDash",
+        "year": "2020",
+        "vantage": "Replaced",
+        "articleSlug": "doordash-rabbitmq-kafka",
+        "svg": "anat-doordash",
+        "caption": "RabbitMQ out, a simple Kafka setup in, switched over task by task."
+      },
+      {
+        "company": "Segment",
+        "year": "2018",
+        "vantage": "No queue",
+        "articleSlug": "segment-centrifuge-database-queue",
+        "svg": "anat-segment",
+        "caption": "Jobs are rows. Delivery order is a query. One writer per database."
+      }
+    ],
+    "you": {
+      "name": "You",
+      "year": "now",
+      "vantage": "Your design",
+      "emptySvg": "you-empty",
+      "filledSvg": "you-filled",
+      "open": true
+    },
+    "stripNote": "A dashed mark means the company's post doesn't say. We leave a gap rather than guess. The table below shows the same comparison at a glance, and the full answers follow it.",
+    "matrixLead": "Start with the first row. Who sends the work, and who waits at the other end, decides almost everything below it.",
+    "columns": [
+      "Meta",
+      "Uber",
+      "Slack",
+      "DoorDash",
+      "Segment"
+    ],
+    "youColumn": {
+      "emptyLabel": "YOU · survive a day first",
+      "label": "YOU"
+    },
+    "matrixRows": [
+      {
+        "id": "who",
+        "label": "Who sends work",
+        "cells": [
+          "Hundreds of internal use cases, each with a guaranteed number of jobs per minute",
+          "300+ of Uber's own services",
+          "Slack's own web app: every message, notification and link preview",
+          "DoorDash's own app servers, with 900+ different kinds of task, checkout included",
+          "42,000 customer sources in, 200+ outside destinations out. Neither side is Segment's."
+        ],
+        "lead": true
+      },
+      {
+        "id": "lives",
+        "label": "Backlog lives in",
+        "qref": "q1",
+        "cells": [
+          "MySQL rows, split across many databases",
+          "Kafka's log",
+          "Redis memory, later Kafka on disk in front",
+          "One RabbitMQ server, later Kafka",
+          "MySQL rows, one database per owner"
+        ]
+      },
+      {
+        "id": "drain",
+        "label": "Drain as it fills",
+        "qref": "q2",
+        "cells": [
+          "Slowed, then sped up by checkpoints",
+          "Flat, but capped: one job per call, per line",
+          "Slowed with length, then locked when full",
+          "The queue slowed its own senders",
+          "Flat: few jobs in use at once"
+        ]
+      },
+      {
+        "id": "full",
+        "label": "When full, who feels it",
+        "qref": "q3",
+        "cells": [
+          "Nobody: delay, not loss",
+          "The proxy, which is told how fast to send",
+          "Before: every sender. After: nobody. A relay sets the pace.",
+          "Before: the app servers, as delay",
+          "The partner: retries pile onto it"
+        ]
+      },
+      {
+        "id": "stuck",
+        "label": "One stuck job holds up the rest?",
+        "qref": "q4",
+        "cells": [
+          {
+            "ns": "not stated"
+          },
+          "Yes. Fixed by confirming each job, a done-up-to-here marker and a dead-letter queue",
+          "No. A failing job is retried a set number of times, then set aside.",
+          "Yes. Fixed with a small, capped local queue",
+          "Yes. Fixed by making order a query"
+        ]
+      },
+      {
+        "id": "order",
+        "label": "Order jobs come out",
+        "qref": "q5",
+        "cells": [
+          "Priority, then oldest ready, merged across databases",
+          "No order above the log",
+          {
+            "ns": "not stated"
+          },
+          "Kafka's order within each line",
+          "Whatever the query says"
+        ]
+      },
+      {
+        "id": "done",
+        "label": "Done means, and what can be lost",
+        "qref": "q6",
+        "cells": [
+          "Confirming deletes it. If time runs out, it goes out again or is dropped, set by the user.",
+          "Confirmed one by one, saved as a marker. Repeats after a reshuffle.",
+          "Only Kafka's lead server confirms each write: a small, stated loss window",
+          "The local queue's cap limits what a crash can lose",
+          "Rows never rewritten. Bad requests dropped. Retries stop at 4 hours, then cold storage."
+        ]
+      },
+      {
+        "id": "breaks",
+        "label": "Still breaks when",
+        "qref": "q7",
+        "cells": [
+          "A failover leaves capacity in the wrong place, until routing adjusts",
+          "A reshuffle delivers jobs again",
+          "Not listed. Its numbers point at Kafka's 2-day limit",
+          "A deploy briefly stops the workers",
+          "Retries pile onto a partner that's struggling"
+        ],
+        "hot": true
+      }
+    ],
+    "matrixCaption": "Not stated means the post doesn't say, and we don't guess. Columns run along the line above, from repaired on the left to no queue on the right.",
+    "questions": [
+      {
+        "id": "q1",
+        "title": "Where does the backlog actually live?",
+        "why": "The most basic decision, and the others depend on it. A backlog in memory, on disk, in database rows or in a log behaves differently once it gets deep. In the mission, this is WHERE.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "As rows in MySQL, split across many databases (shards). Each job is one row with its priority, the earliest time it can be delivered, a time limit for the worker and a small payload. Its ID says which database it lives in, and each database belongs to exactly one server."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "In Kafka's log, exactly as before. The proxy changes nothing about where jobs sit or how Kafka sees them: each line of the log (a partition) is still read by exactly one proxy server. All the new machinery sits above the log, in how the proxy hands jobs out."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "Before: in Redis memory, with little to spare. After: in Kafka, on disk, in front of Redis. A gateway writes every job to Kafka the moment it arrives, and a relay feeds Redis only as fast as the workers empty it. The backlog now lands on disk instead of in the memory that taking jobs out depends on. The setup: 16 Kafka servers, 50 topics of 32 lines each, three copies of everything and two days of storage."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "Before: a single RabbitMQ server, already the largest size available, so there was nowhere bigger to move. After: Kafka, holding each task's name and its arguments. A wrapper around the old task code sent each task to the old or the new system, based on a switch they could flip while the system was running."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "As rows in MySQL, one database per owning process. Every job is a payload plus a destination. Each change to a job's state is added to a separate table, so a row is never rewritten. Jobs live a few hundred milliseconds, so almost everything is served from memory and dropped once delivered."
+          }
+        ]
+      },
+      {
+        "id": "q2",
+        "title": "What happens to the drain as the backlog grows?",
+        "why": "This is the first shape of the wall: the queue itself getting slower as it fills. A queue that slows down the fuller it gets fails at exactly the moment it exists for. In the mission, WHERE decides this, and attack 4 adds LOOKUPS.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "It slowed, then checkpoints sped it back up. MySQL keeps old versions of rows in a list (the history list) that grows as work piles up. The background lookups that run the queue had to walk that list, so they slowed as the backlog grew. The fix is a checkpoint: a saved marker of the last time already handled, used as the starting point so each lookup reads only new work. That keeps the list short and the reads faster."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "It doesn't slow, because it's capped from the start. One worker per line, and each job finishes before the next starts: if each call takes a second, a line moves one job a second. In the post's example, reaching 1,000 jobs a second would need 1,000 lines, each moving 1 job a second when it could handle 10,000. The proxy's fix is to send a batch to many workers at once, so the number of lines no longer limits how many workers can run."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "Two things went wrong at once. Taking a job out got slower as the queue got longer, so the deeper the backlog, the harder it was to empty. And taking a job out needed a little free memory to move it into the in-progress list, so a Redis at its memory limit couldn't empty at all. It stayed locked even after the slowdown that filled it was fixed. In the new design Redis never fills: the relay lets jobs in under a rate limit kept in a shared config store."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "The queue slowed down, then made it worse. Under peak bursts, RabbitMQ got into a degraded state where it handed out work far slower than expected, and only a restart fixed it. Its high-availability mode cut throughput by copying everything, and its failovers took more than 20 minutes and lost messages. How the new Kafka setup's drain changes as the backlog grows is not stated. The post's new problems are about order, not depth."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "It stays flat because the number of jobs in use is kept small. Rows never change, every query touches one job, and each database is replaced about every 30 minutes, which turns many small deletes into one dropped table. So a database's active jobs never outgrow memory. Before a database is replaced, a drainer moves out the few jobs still retrying (by then 99.9% have been delivered or failed)."
+          }
+        ]
+      },
+      {
+        "id": "q3",
+        "title": "When the queue is full, who feels it?",
+        "why": "Every queue has a limit. The design decision is who gets the pressure when it's reached: the senders, the workers, the partner downstream, or nobody. DoorDash's answer is the warning. The others each chose on purpose. In the mission, this is WHEN FULL.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "Nobody, by design: a failure downstream shows up as delay, not loss. Senders keep adding jobs, and the jobs are kept. Three guards keep that promise. A switch in front of each database stops sending to it when its queries get slow or fail (a circuit breaker). A job added to an overloaded server is forwarded to one with room. And each use case gets a guaranteed number of new jobs per minute, enforced worldwide, because a limit per region can't be guaranteed."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "The proxy has to be told. Pushing changes who sets the pace: the proxy, not the worker, decides when the next job goes out, so it has to know how fast is safe. So there are limits per service on jobs in progress, timeouts, slow-down signals read from the error codes a service returns, and a switch that stops pushing when a service is down. The post's own next steps call this tuning hard enough that flow control that adjusts itself is on the roadmap."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "Before: every sender. At the memory limit no new job could be added, and every part of Slack that depends on the queue failed. After: nobody at the front door. Kafka takes jobs as fast as they arrive, and the relay writes into Redis under rate limits kept in a shared config store. The limit is set to match how fast the workers empty Redis, so the extra waits in Kafka. A build-up is now handled by turning a dial, not by hours of manual work."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "The app servers, and they couldn't tell why. Flow Control slows down connections that publish too fast so the queues can keep up, but the senders felt it as network delay, which at peak piled up their requests. Then harakiri, a setting on the web servers that kills any process past a timeout, killed and restarted the slowed web processes again and again. With thousands of them running, every reconnection loaded RabbitMQ even more. The queue, asked to hold the pressure back, pushed it onto the layer least able to make sense of it."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "The partner. Segment's system (Centrifuge) accepts everything and keeps retrying, waiting longer each time, up to a four-hour cutoff. During a March outage it soaked up about 85 million events and delivered them all within 30 minutes of recovery. But requests to the partner briefly peaked at around 100,000 a second, against the 16,000 it normally receives. The post admits the retry strategy still needs tuning."
+          }
+        ]
+      },
+      {
+        "id": "q4",
+        "title": "Can one stuck job hold up everything behind it?",
+        "why": "The second shape of the wall. The name for it is head-of-line blocking: the first job in line delays everyone behind it, whether the line is a Kafka partition, a shared queue or a single worker. In the mission, this is STUCK JOB.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "ns": true,
+            "text": "The post doesn't discuss it. What it does say: every job is handed out with a time limit (a lease). If the worker neither confirms nor refuses it in time, the job is handed out again or dropped, depending on the retry policy the user picked. Whether a stuck job can delay others is not stated."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "Yes, by construction. In the post's billing example, a slow payment provider holds up a healthy charge behind it. And a job that can't be processed, or takes a very long time (a poison pill), leaves its line stuck. The fix is to confirm jobs out of order. Workers confirm each job to the proxy, and the proxy keeps handing out jobs past a slow one. It tells Kafka only a marker that says everything up to here is done (a watermark), and the marker catches up once the slow job is done. A poison pill can never be confirmed, so it would stop the marker for good. A dead-letter queue completes the fix: a worker refuses the job, the proxy parks it in a separate topic, the marker moves on, and a person replays or deletes it later."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "No. When a job can't be passed on to Redis, the relay sends it back to Kafka rather than dropping it or waiting on it. A job that fails when a worker runs it is retried a set number of times, then moved to a list of permanently failed jobs. The relay moves Kafka's saved position forward only after a job is safely in Redis, and keeps retrying through Redis outages."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "Yes, in the new system. Kafka hands each line to one worker in order, so a single slow job blocked everything behind it, which is bad for a high-priority topic. The fix separates fetching from running. One process per worker pulls jobs into a small local queue with a cap you set, and several other processes take work from it. A slow job ties up one runner while the line keeps moving, and the cap limits what a crash can lose."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "Yes, on both designs before this one. On a shared queue, one slow destination backed up everything, for every customer. On a queue per destination, the post's own example: one customer's 50,000 messages sent back to back would strand everyone else's behind a limit of 1,000 a second, and every way out is bad: cap that customer and delay customers who did nothing wrong, keep sending and burn retries, or copy terabytes to a side queue. Segment's answer is to make delivery order a query over rows, so what is stuck no longer sits in front of what isn't."
+          }
+        ]
+      },
+      {
+        "id": "q5",
+        "title": "In what order do jobs come out?",
+        "why": "A queue's order is a promise, and the five keep very different ones: a priority across many databases, no order at all, or an order you change by deploying a new query. In the mission, this is ORDER.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "Most important first, and the oldest ready job among equals. Each database keeps an in-memory list of its ready jobs, sorted by priority. A read-ahead step merges those lists into one ordered stream and marks the winners as handed out, so no job goes to two workers. The promise covers the databases one server owns. Across regions, Meta's queue sends requests for work toward the servers holding the highest-priority jobs, rather than pretending one worldwide order exists."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "No order, point to point: any worker takes any job. That is what a work queue needed, and what Kafka's lines denied it. Kafka's own order survives only in the marker saved below."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "ns": true,
+            "text": "Not stated. The post describes the web app using each job's ID to pick a Redis server, and workers asking for work, but says nothing about the order jobs come out."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "Kafka's order within each line. The post mentions a high-priority topic in passing. How priority is set across topics is not stated."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "Whatever the query says. Because every job is a row, delivery order is a query. Keeping customers apart, changing priority and retrying only some jobs become a deploy, not terabytes copied between queues. The 88,000 queues, one for each pair of source and destination, are a scheduling rule applied to rows, not 88,000 real queues."
+          }
+        ]
+      },
+      {
+        "id": "q6",
+        "title": "What counts as done, and what can be lost?",
+        "why": "Progress and loss are the same question asked twice. Each of the five draws its loss window somewhere on purpose, and says where. In the mission, this is DONE MEANS, and attack 1 adds DUPLICATES.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "Confirming a job (an ack) deletes the row. Refusing it (a nack) schedules it again, optionally after a delay the worker picks, with updated details to save partial work. If neither arrives before the time limit runs out, the retry policy the user picked decides. At least once: the job is handed out again, and a worker may see it twice. At most once: it is deleted, and it's gone. A lost confirmation is harmless, because the time limit runs out and the job is handed out again. So every worker using at-least-once delivery must cope with seeing the same job twice."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "Two records in two places. The proxy knows exactly which jobs finished. Kafka knows only the done-up-to-here marker. Jobs confirmed but not yet under the marker are delivered again after a reshuffle. Those repeats are by design, accepted because the services receiving them usually already drop repeats. That is at-least-once delivery resting on a company-wide habit of coping with repeats, and the habit has to hold forever."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "A loss window chosen on purpose, at the front door, and stated plainly. The gateway waits only for Kafka's lead server to confirm a write, not for the copies. That gives the fastest write, with a small risk of loss if that server dies at the wrong moment. Slack judged it right for most jobs and left stronger guarantees open for critical ones. Behind the door, the relay moves Kafka's saved position forward only after Redis has the job, and a failed job goes back to Kafka. Loss becomes delay."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "The local queue's cap limits how many jobs in progress a crash can lose: a small, chosen window, accepted to keep things simple. The old system's high-availability mode lost messages during failovers that took more than 20 minutes."
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "State is a log. Each change (scheduled, running, succeeded, discarded, retrying, archived) is added, never overwritten, so a job's current state is rebuilt from its history. If the partner says the request itself is bad (a 400 response), the job is discarded and never retried. Server errors and timeouts are retried, waiting longer each time, up to a four-hour cutoff, and then the job is archived to cold storage (S3). About 1.5% of all data is delivered only because it was retried."
+          }
+        ]
+      },
+      {
+        "id": "q7",
+        "title": "What still breaks it?",
+        "why": "The row interviewers spend the most time on. Most posts name the failure their own fix doesn't cover. Knowing these is what separates using the pattern from understanding it. In the mission, this is RETRIES and the five attacks.",
+        "answers": [
+          {
+            "company": "Meta",
+            "year": "2021",
+            "text": "Geography. The guarantees per use case are worldwide, because a limit per region can't be guaranteed. A failover that promotes copies elsewhere can leave capacity in the wrong place, and the routing has to work around it. And the post's own Looking Ahead section admits that handling failures across regions, data centers and racks, and losing no data when a region goes down, were still ahead of the team."
+          },
+          {
+            "company": "Uber",
+            "year": "2021",
+            "text": "Two things. A reshuffle delivers again the jobs that were confirmed but not yet under the marker, so spotting repeats downstream has to keep working forever. And the dead-letter queue puts problems off rather than solving them: a person has to replay or delete each one."
+          },
+          {
+            "company": "Slack",
+            "year": "2017",
+            "text": "The post doesn't list what still breaks. Its own numbers point at one thing. Redis can no longer lock up, but if the workers stay slow, the backlog piles into Kafka, which keeps jobs for two days. Someone still has to decide what drain rate is sustainable, and the rate limits live in a config store, not in code. The deadlock became a dial."
+          },
+          {
+            "company": "DoorDash",
+            "year": "2020",
+            "text": "Deploys. Each one, several a day, briefly stops the workers while Kafka reshuffles which worker reads which line. That is fine for a planned release and risky for an emergency fix. The gentler reshuffle their client didn't yet support was the cure they wanted. The post's own heading puts it plainly: \"No solution is perfect, iterate as needed.\""
+          },
+          {
+            "company": "Segment",
+            "year": "2018",
+            "text": "Retry pressure. Requests to a struggling partner peaked at about six times its normal load before the growing waits smoothed the curve, and the post says the strategy still needs tuning."
+          }
+        ],
+        "open": true
+      }
+    ]
+  },
+  "decide": {
+    "intro": "The five designs aren't competing opinions. Each is a spot on the line above, set by who sends the work and how much repair was within reach. Find the row that matches your situation.",
+    "rows": [
+      {
+        "if": "Your queue gets slower as it fills, and replacing its storage isn't an option",
+        "then": "**[Meta](/articles/meta-foqs-priority-queue)**: keep the storage, start every lookup from a [checkpoint](#q2) so depth stops mattering, put a [circuit breaker](#q3) in front of each database, and make delay, not loss, the promise.",
+        "highlights": [
+          "Meta"
+        ]
+      },
+      {
+        "if": "The queue itself is fine, but once it fills up it can't empty itself, and replacing it would mean big changes to the app's logic",
+        "then": "**[Slack](/articles/slack-scaling-job-queue)**: a queue on disk in front and a [rate-limited relay](#q3) behind it. The deadlock becomes a dial in a config file, and the stack gets one layer taller.",
+        "highlights": [
+          "Slack"
+        ]
+      },
+      {
+        "if": "Order, parallel work and progress are tied together in one line, and one slow job stalls it",
+        "then": "**[Uber](/articles/uber-kafka-consumer-proxy)**: confirm each job above the log, save only a [done-up-to-here marker](#q4) below it, and park the poison pills in a dead-letter queue. Accept repeats after a reshuffle, and make [coping with them](#q6) everyone's habit.",
+        "highlights": [
+          "Uber"
+        ]
+      },
+      {
+        "if": "You can't see inside your queue, and nobody in the building can fix it",
+        "then": "**[DoorDash](/articles/doordash-rabbitmq-kafka)**: replace it, move over task by task behind a switch, pay to run both systems for a while, and write down the new system's [problems](#q7) as plainly as the old one's.",
+        "highlights": [
+          "DoorDash"
+        ]
+      },
+      {
+        "if": "Thousands of customers must never wait for each other, and you need to change delivery order without moving data",
+        "then": "**[Segment](/articles/segment-centrifuge-database-queue)**: rows instead of messages, [order as a query](#q5), one writer per database. Then decide [how hard your retries may knock](#q3) on a partner's door.",
+        "highlights": [
+          "Segment"
+        ]
+      }
+    ],
+    "elsewhere": {
+      "title": "Same wall, other places",
+      "text": "Anywhere a queue sits between arriving work and slower workers: a connection pool that stops handing out connections when it's full, a log shipper whose disk fills, a thread pool whose queue has no limit, an email queue behind one dead mail server, build runners stuck behind one hung job, a retry queue that becomes the retry storm. Ask the seven questions. The answers change. The wall doesn't."
+    }
+  },
+  "steal": {
+    "intro": "Five rules from these posts that carry over to any queue you build. Each one is a row of the table, boiled down.",
+    "items": [
+      {
+        "rule": "A queue's speed must not depend on how full it is.",
+        "text": "Slack's queue needed free memory to take a job out, and got slower as it got longer. Meta's lookups slowed as work piled up. Both are the queue getting worse under exactly the backlog it exists to hold. Before you trust a queue, ask how fast it empties when it's 90% full.",
+        "qref": "q2"
+      },
+      {
+        "rule": "Decide who feels a full queue before it fills.",
+        "text": "DoorDash's queue chose for them: the app servers, as delay they couldn't explain. Slack chose a dial. Meta chose nobody, and paid for it in machinery. Segment chose the partner, and still had to work out how hard to retry. Any of those is a design. Letting the queue choose is not.",
+        "qref": "q3"
+      },
+      {
+        "rule": "Never let one job's fate be everyone's.",
+        "text": "Uber's proxy keeps handing out work past slow ones. DoorDash separates fetching from running. Segment makes order a query, so the stuck job steps out of line. Three costs for the same freedom. Pick one, but pick.",
+        "qref": "q4"
+      },
+      {
+        "rule": "Order, parallel work and progress are three things. Don't buy them as one.",
+        "text": "A Kafka line bundles all three. A work queue needs none of that bundling and pays for all of it. Uber's whole design pulls them apart without touching the log.",
+        "qref": "q5"
+      },
+      {
+        "rule": "Repair, build around or replace, by what's within reach. Then write down the new system's problems.",
+        "text": "Meta could repair. Slack and Uber could build around. DoorDash could barely see into its queue or its workers, so it replaced. Segment needed control a queue can't give, so it stopped using one. Every one of them then named what still breaks. You don't escape queue trouble. You choose which kind you can live with.",
+        "qref": "q7"
+      }
+    ]
+  },
+  "interview": {
+    "asks": [
+      "\"Design a job queue for asynchronous work.\"",
+      "\"Your queue is backing up and the site is slowing down. What do you do?\"",
+      "\"How do you stop one bad customer from delaying everyone else's delivery?\""
+    ],
+    "shape": "I'd say where the backlog lives (memory, disk, rows or a log) and what happens to the drain as it fills, because a queue that slows down the fuller it gets fails at exactly the wrong moment. Then who feels it when it's full: the senders, the workers, a partner, or nobody, and what that costs. Whether one stuck job can hold up the line, and how I'd let it step aside. What order jobs come out in, and whether that order is fixed by the sender or can change later. What counts as done, and where the loss window is. I'd name it. And what still breaks: the backlog that outlasts how long jobs are kept, the retries that hammer a recovering partner, the reshuffle that delivers jobs twice.",
+    "followupsIntro": "Every attack in the mission is a question a good interviewer asks after \"put it on a queue.\"",
+    "followups": [
+      {
+        "ask": "\"You deploy, and the workers are reshuffled. What comes back?\"",
+        "attack": "1 · Uber",
+        "held": "Jobs confirmed one by one, and workers that skip repeats"
+      },
+      {
+        "ask": "\"The workers stay slow for three days. Where does the backlog go?\"",
+        "attack": "2 · Slack",
+        "held": "Onto disk, kept long enough to cover the bad week"
+      },
+      {
+        "ask": "\"The queue starts slowing your senders down to protect itself.\"",
+        "attack": "3 · DoorDash",
+        "held": "Don't let the queue choose who feels it"
+      },
+      {
+        "ask": "\"The backlog is now a hundred billion jobs. Is the queue still fast?\"",
+        "attack": "4 · Meta",
+        "held": "Start every lookup from a checkpoint, so depth stops mattering"
+      },
+      {
+        "ask": "\"The partner is down for six hours. What do your retries do?\"",
+        "attack": "5 · Segment",
+        "held": "Back off, cut off, archive, and replay by hand"
+      }
+    ],
+    "senior": "\"I'd put it on a queue.\"",
+    "staff": "\"Kafka in front so the backlog lands on disk, a rate-limited relay into the store the workers actually empty, and only the lead server confirming each write. I know that's a loss window, and I'd say how small. Failed jobs go back on the queue rather than being dropped. And here's what it costs: two queueing systems instead of one, and someone has to choose the drain rate, because the deadlock is now a dial.\"",
+    "closing": "The difference is the bill. A Staff answer comes with one. The bill in the mission above is yours.",
+    "redFlags": [
+      "\"Just add more workers.\" → At Slack, each extra worker was one more worker asking Redis for work, adding load to a Redis that was already struggling. A second problem feeding the first (Slack, 2017).",
+      "\"Use Kafka, it's durable and ordered.\" → Durable and ordered is the trap for a work queue: one line, one worker, one job at a time. Uber's whole post is about working around it (Uber, 2021).",
+      "\"Give every customer their own queue.\" → Segment counted 88,000 pairs of source and destination. None of the queues they had used handles that many, and the one that does (SQS) costs too much (Segment, 2018).",
+      "\"Turn on the broker's high-availability mode.\" → DoorDash's cut throughput they couldn't spare, took more than 20 minutes to fail over, and lost messages doing it (DoorDash, 2020).",
+      "\"The queue soaks it up. Keep retrying until the partner is back.\" → Half right. It soaked up about 85 million events, and requests to the partner also peaked at about six times its normal load. A system that never gives up needs a rule for how hard it knocks (Segment, 2018)."
+    ]
+  },
+  "patterns": {
+    "intro": "The reusable building blocks behind these five designs. A queue on disk and guaranteed delivery are the core. The rest limit the ways a backlog can slow the queue down or hold up its line.",
+    "order": [
+      "durable-front-buffer",
+      "queue-with-guaranteed-delivery",
+      "checkpoint-bounded-scans",
+      "circuit-breaker",
+      "selective-acknowledgment",
+      "dead-letter-queue",
+      "fetch-execute-decoupling",
+      "database-as-a-queue",
+      "single-writer-ownership",
+      "retry-with-backoff-and-jitter",
+      "fault-isolation",
+      "universal-staged-rollout"
+    ]
+  },
+  "cards": {
+    "title": "Every article",
+    "intro": "The five source articles, each with its own interactive version. Break one company's system at a time.",
+    "teasers": {
+      "meta-foqs-priority-queue": "Stop the workers and watch a hundred-billion-job backlog become delay, not loss. Then crash a worker before its time limit, trip a slow database's circuit breaker, and turn checkpoints on and off to see the lookups stay steady or slow down.",
+      "uber-kafka-consumer-proxy": "Slow down Visa and watch Mastercard's charges wait behind it. Then send to many workers at once and get stuck anyway, add the progress record and watch work keep moving past slow jobs, and refuse a poison pill into the dead-letter queue.",
+      "slack-scaling-job-queue": "Slow the workers and watch the old Redis queue fill, lock up, and stay locked until you step in by hand. Then switch to Kafka in front and watch the same slowdown become a backlog on disk.",
+      "doordash-rabbitmq-kafka": "Push a peak at RabbitMQ and watch Flow Control slow the app servers while restarts flood the queue. Then move to Kafka and meet its own problem: one slow job freezing a line, until a small local queue freezes only one worker instead.",
+      "segment-centrifuge-database-queue": "Run a partner outage and one customer's flood through all three of Segment's real designs. Everyone waits, then you pick which bad option to take, then you watch the stuck jobs step out of everyone else's way."
+    }
+  },
+  "sources": {
+    "intro": "Read the originals. Every claim on this page comes from one of these five posts:",
+    "items": [
+      {
+        "label": "Meta",
+        "articleSlug": "meta-foqs-priority-queue"
+      },
+      {
+        "label": "Uber",
+        "articleSlug": "uber-kafka-consumer-proxy"
+      },
+      {
+        "label": "Slack",
+        "articleSlug": "slack-scaling-job-queue"
+      },
+      {
+        "label": "DoorDash",
+        "articleSlug": "doordash-rabbitmq-kafka"
+      },
+      {
+        "label": "Segment",
+        "articleSlug": "segment-centrifuge-database-queue"
+      }
+    ]
+  }
 }

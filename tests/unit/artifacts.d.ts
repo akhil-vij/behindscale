@@ -9,3 +9,7 @@ declare module '*/problem-ambiguous-timeouts-rules.js' {
   export function dayTokens(q: Record<string, string | undefined>): unknown
   export default dayTokens
 }
+declare module '*/problem-queue-backlog-rules.js' {
+  export function dayTokens(q: Record<string, string | undefined>): unknown
+  export default dayTokens
+}

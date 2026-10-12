@@ -126,6 +126,9 @@ export function contentHosts(content: ContentSet): ContentHost[] {
     if (e.wall?.figureSlug !== undefined) {
       markerFields.push(['wall.figureSlug', `{{figure:${e.wall.figureSlug}}}`])
     }
+    if (e.wall?.figurePhoneSlug !== undefined) {
+      markerFields.push(['wall.figurePhoneSlug', `{{figure:${e.wall.figurePhoneSlug}}}`])
+    }
     const forbidden: Array<readonly [string, string]> = []
     if (e.headline !== undefined) forbidden.push(['headline', e.headline])
     if (e.lede !== undefined) forbidden.push(['lede', e.lede])

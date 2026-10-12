@@ -145,8 +145,8 @@ export default function ProblemDetail() {
 
   // Authored headline (when present) becomes the H1 and the class label
   // moves into the eyebrow; otherwise the label is the H1. The year range
-  // derives from the members' source dates ("2017–2022"; one year when
-  // they all share it).
+  // derives from the members' source dates ("2017 to 2022"; one year when
+  // they all share it). No dash as punctuation (owner, 2026-10-10).
   const headline = essay?.headline ?? label
   const eyebrow = [
     'Problem',
@@ -222,6 +222,7 @@ export default function ProblemDetail() {
           wall={essay.wall}
           tryIt={essay.tryIt}
           figure={wallFigure}
+          figurePhoneSlug={wallFigure !== undefined ? essay?.wall?.figurePhoneSlug : undefined}
           hostSlug={cruxTag}
           hostTitle={label}
           tryItWrapperId={TRYIT_WRAPPER_ID}
@@ -420,8 +421,9 @@ export default function ProblemDetail() {
   )
 }
 
-// "2017–2022" from the members' source dates; a single year when they share
-// it; empty when there are no members.
+// "2017 to 2022" from the members' source dates; a single year when they
+// share it; empty when there are no members. Words, not an en dash: the
+// no-dashes-as-punctuation rule (owner, 2026-10-10).
 function yearRange(members: readonly Article[]): string | null {
   const years = members
     .map((a) => a.publishedAt.slice(0, 4))
@@ -430,7 +432,7 @@ function yearRange(members: readonly Article[]): string | null {
   if (years.length === 0) return null
   const first = years[0]!
   const last = years[years.length - 1]!
-  return first === last ? first : `${first}–${last}`
+  return first === last ? first : `${first} to ${last}`
 }
 
 // Authored order first (in the given sequence), then the rest A-Z by name.

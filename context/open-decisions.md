@@ -242,7 +242,33 @@ lives here it needs the owner's input to resolve.
   or give those patterns a `oneLineDefinition`. The e2e test allows exactly
   this list and fails on any new dash or on a listed page that's been fixed.
 
+### 31. Queue-backlog lesson: one drawing may still change (2026-10-11)
+
+- **Source:** `feat/queue-backlog-lesson` (not pushed).
+- The design agent's wall 2 drawings are in (first delivery + return-1, C2PA
+  metadata stripped): the mission stage (now drawn from the drawings in
+  `drawStage()`), the try-it's two stages, the five comparison diagrams and
+  YOU empty/filled, each with its `-v` phone file, and the wall figure with
+  its phone twin (`wall.figurePhoneSlug`, a `<picture>` source under 700px).
+- **Open:** `buffer-turns-on-its-owner-v.svg` (the designer's
+  `wall-figure-queue-v.svg`, phones with JavaScript off only) may get a
+  tidy-up: its two red labels sit close and the grey arrow line runs through
+  "gets slower as it fills". If it arrives before the push, swap it in;
+  otherwise it ships as is and is swapped later.
+
 ## Lower priority
+
+### 32. Page 1's survived-day card shows twice in the slot (2026-10-10)
+
+- **Source:** found while porting the queue-backlog mission.
+- On a survived day, page 1's mission (`finishDay()` in
+  `problem-ambiguous-timeouts-mission.jsx`) puts the DAY SURVIVED card in the
+  slot, then at once replaces it with the same card plus the "THE BILL ↓"
+  link. It reads as a flicker, and under the reading hold the first copy is
+  replaced before its reading time. Queue-backlog shows it once.
+- **Owner (2026-10-10):** leave page 1 as it is for now; fix later. The fix is
+  three lines (append the card to the full list, then show the slot copy with
+  the link once), plus page 1's tests.
 
 ### 23. Thin/wrong article tags surfaced by search-terms authoring (2026-09-09)
 
@@ -623,6 +649,11 @@ same class of question.
 Items resolved in the last full round, kept for provenance. Rolls
 off after one round passes.
 
+- **#33 Queue-backlog stage numbers** — RESOLVED 2026-10-11 (owner):
+  animation only. The slowdown fills a memory queue to 100/100 and shows it
+  LOCKED, red, before the "Full." line (the end state under reduced motion);
+  a memory queue is capped at 100 in every event; only the slowdown and
+  attack 4's memory case lock. Landed on `feat/queue-backlog-lesson`.
 - **#27 Mission pacing in normal motion** — RESOLVED 2026-10-09 (owner):
   the reading-time hold also applies to the first day in normal motion;
   repeat days keep their pace; reduced motion holds on every day. Landed

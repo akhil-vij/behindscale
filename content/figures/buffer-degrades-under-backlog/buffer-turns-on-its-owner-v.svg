@@ -1,0 +1,32 @@
+<svg class="wall-v" viewBox="0 0 360 304" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A queue fails two ways: it slows as it fills, or one stuck job holds up everything behind it." font-family="'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace">
+  <rect x="72" y="10" width="216" height="44" rx="7" fill="#F4F2EE" stroke="#D6D2CA" stroke-width="1.3"></rect>
+  <text x="180" y="36" font-size="14" fill="#52525B" text-anchor="middle" letter-spacing="0.3">SENDERS</text>
+  <line x1="180" y1="54" x2="180" y2="84" stroke="#8A8A94" stroke-width="1.3"></line>
+  <polygon points="180,92 176,84 184,84" fill="#8A8A94"></polygon>
+  <rect x="72" y="92" width="216" height="86" rx="7" fill="#F4F2EE" stroke="#D6D2CA" stroke-width="1.3"></rect>
+  <text x="180" y="114" font-size="14" fill="#52525B" text-anchor="middle" letter-spacing="0.3">THE QUEUE</text>
+  <rect x="88" y="126" width="184" height="18" rx="4" fill="#FFFFFF" stroke="#D6D2CA"></rect>
+  <rect x="92" y="129" width="18" height="12" rx="2" fill="none" stroke="none" stroke-width="1"></rect>
+  <rect x="112" y="129" width="18" height="12" rx="2" fill="none" stroke="none" stroke-width="1"></rect>
+  <rect x="132" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="152" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="172" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="192" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="212" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="232" y="129" width="18" height="12" rx="2" fill="#D6D2CA" stroke="#C9C4BA" stroke-width="1"></rect>
+  <rect x="252" y="129" width="18" height="12" rx="2" fill="#FFFFFF" stroke="#DC2626" stroke-width="1.6"></rect>
+  <text x="261" y="138.5" font-size="12" font-weight="700" fill="#DC2626" text-anchor="middle">!</text>
+
+  <path d="M 300 236 C 340 220, 340 118, 292 112" fill="none" stroke="#DC2626" stroke-width="1.5"></path>
+  <polygon points="284,110 294,106 294,116" fill="#DC2626"></polygon>
+  <line x1="180" y1="178" x2="180" y2="188" stroke="#8A8A94" stroke-width="1.3"></line>
+  <text x="346" y="248" font-size="13" fill="#DC2626" text-anchor="end" letter-spacing="0.2">gets slower as it fills</text>
+  <text x="14" y="230" font-size="13" fill="#DC2626" letter-spacing="0.2">one stuck job holds up the line</text>
+  <line x1="150" y1="216" x2="254" y2="150" stroke="#DC2626" stroke-width="1.5"></line>
+  <polygon points="260,146 250,146 256,155" fill="#DC2626"></polygon>
+  <line x1="180" y1="232" x2="180" y2="244" stroke="#8A8A94" stroke-width="1.3"></line>
+  <polygon points="180,252 176,244 184,244" fill="#8A8A94"></polygon>
+  <rect x="72" y="252" width="216" height="44" rx="7" fill="#F4F2EE" stroke="#D6D2CA" stroke-width="1.3"></rect>
+  <text x="180" y="270" font-size="14" fill="#52525B" text-anchor="middle" letter-spacing="0.3">WORKERS</text>
+  <text x="180" y="286" font-size="13" fill="#8A8A94" text-anchor="middle">slower</text>
+</svg>

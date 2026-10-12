@@ -1,0 +1,29 @@
+<svg class="anat" id="you-svg" viewBox="0 0 640 212" role="img" aria-label="Your design, drawn the same way: senders, the queue, workers and downstream. It fills in after you survive a day." xmlns="http://www.w3.org/2000/svg">
+  <g id="you-fill">
+  <text class="rlabel" x="263" y="16" id="you-d-full">{{dFull}}</text>
+  <rect class="node" x="8" y="60" width="120" height="52" rx="7"></rect>
+  <text class="nlabel" x="68" y="81">SENDERS</text>
+  <text class="nsub" x="68" y="98">YOUR SERVICES</text>
+  <line class="arrow" x1="136" y1="86" x2="170" y2="86"></line>
+  <polygon class="ahead" points="178,86 170,82 170,90"></polygon>
+  <line class="arrow" x1="354" y1="86" x2="388" y2="86"></line>
+  <polygon class="ahead" points="396,86 388,82 388,90"></polygon>
+  <line class="arrow" x1="490" y1="86" x2="524" y2="86"></line>
+  <polygon class="ahead" points="532,86 524,82 524,90"></polygon>
+  <rect class="node" x="180" y="60" width="166" height="52" rx="7"></rect>
+  <text class="nlabel" x="263" y="91">THE QUEUE</text>
+  <rect class="node" x="398" y="60" width="84" height="52" rx="7"></rect>
+  <text class="nlabel" x="440" y="91">WORKERS</text>
+  <rect class="node" x="534" y="60" width="96" height="52" rx="7"></rect>
+  <text class="nlabel" x="582" y="81">DOWNSTREAM</text>
+  <text class="nsub" x="582" y="98">YOUR PARTNER</text>
+  <line class="drop" x1="263" y1="112" x2="263" y2="124"></line>
+  <rect class="state" x="185" y="124" width="156" height="26" rx="6"></rect>
+  <text class="slabel" x="263" y="141" id="you-d-lives">{{dLives}}</text>
+  <circle class="keydot" cx="140" cy="162" r="5"></circle>
+  <text class="klabel" x="152" y="166" id="you-d-slows" style="text-anchor:start">{{dSlows}}</text>
+  <line class="bx" x1="50" y1="193" x2="62" y2="205"></line>
+  <line class="bx" x1="62" y1="193" x2="50" y2="205"></line>
+  <text class="blabel" x="72" y="203" id="you-d-breaks">{{dBreaks}}</text>
+  </g>
+</svg>
