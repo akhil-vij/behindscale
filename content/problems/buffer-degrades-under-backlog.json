@@ -670,7 +670,7 @@
     "rows": [
       {
         "if": "Your queue gets slower as it fills, and replacing its storage isn't an option",
-        "then": "**[Meta](/articles/meta-foqs-priority-queue)**: keep the storage, start every lookup from a [checkpoint](#q2) so depth stops mattering, put a [circuit breaker](#q3) in front of each database, and make delay, not loss, the promise.",
+        "then": "**[Meta](/articles/meta-foqs-priority-queue)**: keep the storage, use [checkpoints](#q2) to keep the list short and reads faster, put a [circuit breaker](#q3) in front of each database, and make delay, not loss, the promise.",
         "highlights": [
           "Meta"
         ]
@@ -766,7 +766,7 @@
       {
         "ask": "\"The backlog is now a hundred billion jobs. Is the queue still fast?\"",
         "attack": "4 · Meta",
-        "held": "Start every lookup from a checkpoint, so depth stops mattering"
+        "held": "Checkpoints keep the list short, so reads are faster"
       },
       {
         "ask": "\"The partner is down for six hours. What do your retries do?\"",
