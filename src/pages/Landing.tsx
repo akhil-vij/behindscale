@@ -173,8 +173,7 @@ function HeroArtifactFrame() {
     <div className="mx-auto w-full max-w-[640px]">
       <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
         <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ background: '#30a46c' }}
+          className="inline-block h-2 w-2 rounded-full bg-art-live"
           aria-hidden="true"
         />
         Live artifact · Priority-blind load shedding
