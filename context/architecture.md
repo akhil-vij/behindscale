@@ -1,954 +1,729 @@
 # Architecture Context
 
-behindscale is two cooperating sub-systems in one repository: a build-time
-**pipeline** and a static **website**. They are separate system boundaries
-with different responsibilities and different invariants. Keep them
-decoupled — the website never imports pipeline code, and the pipeline never
-imports website runtime code. They communicate only through generated files
-committed to the repo (the "content contract").
+behindscale is a static website built from hand-authored content. One
+repository holds four areas with different jobs: `content/` (the
+hand-authored source of truth), `scripts/` (build-time tooling),
+`src/` (the website), and `public/artifacts/` + `public/figures/`
+(compiled output). The website does no runtime fetching of content;
+everything it renders is in the served HTML or the bundle at build
+time. See System Boundaries for the rules between the areas.
+
+The build-time Claude pipeline this file was first written around is
+**deferred and was never built**; its design lives in
+`context/pipeline-architecture-deferred.md`.
 
 ## Stack
 
-| Layer            | Technology                          | Role                                                        |
-| ---------------- | ----------------------------------- | ----------------------------------------------------------- |
-| Website build    | Vite + React + TypeScript           | Static site that renders generated summaries and artifacts  |
-| Styling          | Tailwind CSS + CSS custom properties| Editorial reading shell; tokens defined in ui-context.md    |
-| Routing          | React Router (`HashRouter`)         | Hash-based client-side routing; zero-config across static hosts |
-| Artifact bundler | esbuild                             | Compiles each artifact `.jsx` to a standalone ESM bundle    |
-| Artifact runtime | Sandboxed iframes                   | Each artifact rendered in isolation as a self-contained bundle |
-| Pipeline         | Node.js + TypeScript                | RSS discovery, fetch/extract, Claude analysis & generation  |
-| AI               | Anthropic SDK (Claude Sonnet)       | Article analysis + artifact generation                      |
-| Pipeline storage | SQLite (better-sqlite3)             | Tracks processed articles, status, dedup                    |
-| Content store    | Flat files (JSON + JSX/HTML) in repo| Source of truth for what the site renders                   |
-| Hosting / CI     | Vercel                              | Auto-deploy on push to `main`; preview deploys per PR       |
+| Layer            | Technology                                   | Role                                                          |
+| ---------------- | -------------------------------------------- | ------------------------------------------------------------- |
+| Website          | Vite + React + TypeScript                    | Static site, prerendered per route, hydrated in the browser   |
+| Styling          | Tailwind CSS + CSS custom properties         | Tokens defined in `src/index.css`, specified in ui-context.md |
+| Routing          | React Router (`BrowserRouter` / `StaticRouter`) | One route tree (`src/AppRoutes.tsx`) for client and prerender |
+| Prerender        | `react-dom/server` + `scripts/prerender.ts`  | One HTML file per route at build time                         |
+| Artifact bundler | esbuild (`scripts/compile-artifacts.ts`)     | Each artifact `.jsx` to a standalone ESM bundle with its own React |
+| Artifact runtime | Sandboxed iframes                            | Each artifact rendered in isolation                           |
+| Build tooling    | Node + `tsx` scripts in `scripts/`           | Validation, compile, prerender, sitemap, feed, output checks  |
+| Content store    | Flat files in the repo (JSON, JSX, SVG)      | Source of truth for what the site renders                     |
+| Fonts            | `@fontsource` packages                       | Self-hosted, bundled by Vite                                  |
+| Analytics        | `@vercel/analytics`                          | Client-only pageviews and artifact events                     |
+| Tests            | Vitest, Playwright                           | Unit and check suites; e2e against a production build         |
+| Hosting          | Vercel                                       | Deploys `main`; preview deploy per PR                         |
+| CI               | GitHub Actions (`.github/workflows/ci.yml`)  | Validate, Vitest, Playwright on every push and PR             |
+
+Versions are in `package.json`. **Build chain** (`npm run build`, in
+order): `validate-content.ts` (schema + the checks in
+`scripts/checks/`) → `compile-artifacts.ts` → `copy-figures.ts` →
+`tsc -b` → `vite build` → `vite build --ssr src/ssr-entry.tsx` →
+`prerender.ts` → `generate-sitemap.ts` → `generate-feed.ts` →
+`check-share-images.ts`. A validation error stops the build before
+anything is emitted.
 
 ## Rendering
 
-> Locked in Unit 9 (2026-06-11), superseding the HashRouter +
-> client-only SPA model from Unit 3a. See `progress-tracker.md`
-> Architecture Decisions for the rationale and the rejected
-> alternative (`vite-react-ssg`).
-
 behindscale renders to **per-route static HTML at build time**. The
-build emits one HTML file per known route — every article, every
-pattern, the article index, the patterns index, the 404 — with
-content, head tags, meta tags, OpenGraph + Twitter card tags,
-canonical tags, and (for article pages) JSON-LD `Article` structured
-data baked into the served HTML. Crawlers, link-preview unfurlers,
-screen readers, and any other non-JavaScript reader receive the full
-page on first byte.
+build emits one HTML file per known route (the landing page,
+`/problems`, every `/problems/<urlSlug>`, every article, `/patterns`,
+every pattern, `/sources`, the 404) with content, head tags,
+OpenGraph + Twitter card tags, canonical tags and JSON-LD baked into
+the served HTML. Crawlers, link-preview unfurlers, screen readers and
+any non-JavaScript reader receive the full page on first byte.
 
-**Mechanism.** A custom prerender script (`scripts/prerender.ts`)
-runs after `vite build` produces the client bundle and
-`vite build --ssr src/ssr-entry.tsx --outDir dist-ssr` produces the
-SSR bundle. The script reads `dist/index.html` as a template (Vite
-has already injected the hashed `<script>` and
-`<link rel="stylesheet">` tags into that file), uses
-`react-dom/server`'s `renderToString` with `react-router-dom`'s
-`StaticRouter` to render each route's React component tree to HTML,
-splices the per-route head tags and rendered body into the template,
-and writes one file per route to `dist/`. Head tags and JSON-LD
-inject as string interpolation from the article and pattern JSON the
-script already has in hand — no head-context library, no
-react-helmet-async dependency.
-
-Routes are enumerable at build time from `articleBySlug.keys()`,
-`patternBySlug.keys()`, and the static route table (`/`, `/catalog`,
-`/patterns`, `/404`). As of the 2026-07-08 navigation phase `/` is the
-**conversion landing page** (hero + embedded live artifact + trust
-band + a compact preview of the top problem-classes + one CTA), and
-the browsable article feed moved to **`/catalog`** — the workbench,
-organized by problem-class (`cruxTag`) with a secondary company filter
-and client-side search. This supersedes the earlier model where `/`
-was itself the article feed. The same React components run twice: once
-at build time (Node, `renderToString` + `StaticRouter`) to produce
-HTML, once at runtime (browser, `hydrateRoot` + `BrowserRouter`) to
-take over interactivity for navigation, the catalog filters/search,
-and the artifact iframe HEAD probe.
+**Mechanism.** `vite build` emits the client bundle and
+`dist/index.html`; the SSR build of `src/ssr-entry.tsx` emits
+`dist-ssr/`, which also re-exports the content from `src/content`
+(`import.meta.glob` resolves only under Vite, not `tsx`).
+`scripts/prerender.ts` uses `dist/index.html` as the template,
+renders each route with `renderToString` + `StaticRouter`, splices in
+the per-route head tags and body, and writes one file per route. Head
+tags and JSON-LD are string interpolation; no head-management library.
+Its route table mirrors `src/AppRoutes.tsx`: the static routes plus
+one entry per article, per pattern, and per cruxTag with at least one
+article (a class without a `urlSlug` is skipped with a warning, never
+emitted as a dead route). In the browser the same tree hydrates
+(`hydrateRoot` + `BrowserRouter`, `src/main.tsx`).
 
 **Defensive properties of the prerender script (locked):**
 
-1. Every string replacement in the template asserts the needle
-   exists before replacing and that the output differs from the
-   input after. A drifted template — someone edits `<title>` in
-   `index.html`, Vite changes how it emits the root div, whitespace
-   shifts — makes the replacement no-op silently and ship empty
-   pages, precisely the regression this unit exists to prevent. The
-   script throws on either failure; the build refuses to emit a
-   page it couldn't fully populate.
-2. JSON-LD inline injection escapes `<` to `\u003c` after
-   `JSON.stringify` to prevent script-tag breakout when an article
-   summary or title legitimately contains `</script>` (a dissection
-   about HTML sanitization is plausible for this site). The escape
-   is valid JSON, parses identically, cannot close the tag.
-3. Attribute-context escape helper covers `&`, `<`, `>`, `"`, `'` —
-   not just the three HTML-content characters.
+1. Every template replacement (`safeReplace`) asserts the needle
+   exists and the output changed, and throws otherwise: a drifted
+   template must never ship empty pages.
+2. JSON-LD escapes `<` to `\u003c` after `JSON.stringify`, so content
+   containing `</script>` can't close the tag (still valid JSON).
+3. The attribute-context escape covers `&`, `<`, `>`, `"`, `'`.
+4. Every JSON-LD `@id` an article references (cruxTag `about`,
+   pattern `mentions`) must resolve to an emitted `DefinedTerm`, or
+   the build fails.
 
-**Hydration model.** SSG renders the unfiltered catalog on first
-paint. Filtered arrivals at `/catalog?source=<slug>` apply the filter
-from state set in a `useEffect` immediately after mount, so the
-hydrated DOM matches the server-rendered DOM on first paint and the
-filter resolves on next tick. There is one `dist/catalog.html` for all
-source-filter arrivals — no per-query-string HTML files. Client-side
-search on the catalog is likewise a runtime concern: the prerendered
-HTML contains the full unfiltered grouped catalog, and search narrows
-it after hydration. The SEO benefit of source-filter URLs being
-indexable is small (they're navigation surfaces, not content
-surfaces); the hydration-mismatch cost of doing it the other way is
-real.
+**Hydration model.** The prerendered `/problems` is the full,
+unfiltered, grouped list. The company filter (`?source=<slug>`) and
+search (`?q=`) are read in a `useEffect` after mount, so the hydrated
+DOM matches the server DOM; one `dist/problems.html` serves every
+query string. The same holds for every client-only value (a stored
+wall record, a frame height from a size message): it applies after
+mount, never on first render. `CatalogRedirect` rewrites legacy
+`/?source=` arrivals to `/problems?source=`.
 
-**Company canonicalization (navigation phase).** The catalog's company
-filter and every "SEEN AT" row key off a single canonical company
-identity derived from `source.company` — not `source.name`. Sources
-whose blog name differs from the company (e.g. `source.name` "Amazon
-Builders' Library" with `source.company` "Amazon (AWS)") must collapse
-to exactly one chip; the filter derives its chip set from the distinct
-`source.company` values across realized articles, so AWS/Amazon is one
-entry, never two.
+**Company canonicalization.** The company filter and every "SEEN AT"
+row key off `source.company`, never `source.name`, derived from
+realized articles: "Amazon Builders' Library" / "Amazon (AWS)" is one
+chip.
 
-**Site-level artifacts (navigation phase).** The landing hero embeds a
-live artifact that is **not** tied to any single article — a bespoke,
-cold-legible load-shedding demo built for the homepage. This is a new
-artifact class: article artifacts live at
-`/artifacts/<article-slug>/` and carry the standalone context block +
-article backlink, whereas the hero artifact lives at a site-level path
-(e.g. `/artifacts/_hero/`), carries no article backlink, and is
-tuned for five-second legibility to a cold visitor rather than for
-teaching depth. The isolation guarantee is unchanged — a broken hero
-artifact must fail without breaking the landing page. The `_hero`
-underscore-prefix is the site-level, standalone-visitor-contract-
-exempt signal — see `docs/behindscale-taste.md` §4 (artifact
-contract) for the editorial rationale.
+**Landing hero.** The hero embeds the Priority-Aware Load Shedding
+pattern artifact (`HERO_IFRAME_PATH`, `src/pages/Landing.tsx`): one
+bundle, two mounts. It uses a raw sandboxed iframe, not
+`ArtifactEmbed`, sized from the artifact's `artifact:size` message,
+inside its own ErrorBoundary. Old `/artifacts/_hero` paths 301 to it
+(`vercel.json`). A `_`-prefixed artifact source is still the
+convention for a site artifact no content host owns
+(`orphan-artifacts` exempts it).
 
-**JSON-LD field map** (per article page, locked verbatim):
+**JSON-LD.** Built per page type in `scripts/prerender.ts`
+(`landingMeta`, `problemsMeta`, `problemMeta`, `articleMeta`,
+`patternsIndexMeta`, `patternMeta`, `sourcesMeta`). Rules that hold:
 
-```jsonc
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline":         "<article.title>",
-  "description":      "<article.summary>",
-  "datePublished":    "<article.addedAt>",
-  "dateModified":     "<article.updatedAt ?? article.addedAt>",
-  "author":           { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
-  "publisher":        { "@type": "Organization", "name": "behindscale", "url": "https://www.behindscale.com" },
-  "mainEntityOfPage": "https://www.behindscale.com/articles/<slug>",
-  "image":            "https://www.behindscale.com/og-default.png",
-  "isBasedOn": {
-    "@type": "Article",
-    "url":   "<article.url>",
-    "datePublished": "<article.publishedAt>",
-    "publisher": { "@type": "Organization", "name": "<article.source.name>", "url": "<article.source.url>" }
-  },
-  "citation": "<article.url>"
-}
-```
+- Article pages carry a `TechArticle` and a `BreadcrumbList` (home →
+  Problems → the class → the article). The `TechArticle` describes
+  behindscale's dissection, not the source post: `author`,
+  `publisher` and `mainEntityOfPage` are behindscale; `isBasedOn`
+  (an `Article` with `url`, `datePublished` = `publishedAt`, and
+  `publisher` = `source.name` / `source.url`) and `citation` attribute
+  the original. **`isBasedOn` deliberately omits `name`**: our title
+  is editorial and may differ from the source's, and asserting the
+  source published under our title would be misattribution.
+- `datePublished` = `addedAt`; `dateModified` = `updatedAt ?? addedAt`
+  (the same fallback the sitemap uses). `abstract` = `crux`.
+- `image` is the first figure's SVG URL when the article has figures,
+  else the default share image.
+- `about` points at the cruxTag term `/problems#term-<cruxTag>`;
+  `mentions` at each pattern term `/patterns#term-<slug>`. `/problems`
+  and `/patterns` emit the matching `DefinedTermSet`s.
 
-The map describes the page as behindscale's dissection of the source
-post — not the source post itself. `isBasedOn` and `citation`
-attribute the original to its publisher; `author` / `publisher` /
-`mainEntityOfPage` attribute the dissection to behindscale.
-**`isBasedOn` deliberately omits `name`**: behindscale's title is
-editorial and may diverge from the source post's title; asserting
-the source published under our title would be misattribution. URL +
-publisher is sufficient identification; if a future `originalTitle`
-field is added to the content contract, `name` can return inside
-`isBasedOn`. `dateModified` sources from `article.updatedAt` when
-present (the date of the last material post-publish revision) and
-falls back to `article.addedAt` otherwise — the same fallback the
-sitemap's `lastmod` uses.
+**Deploy.** Vercel serves the per-route files directly. `vercel.json`
+pins `cleanUrls: true` and `trailingSlash: false` (`/articles/foo`
+serves `dist/articles/foo.html`; `/articles/foo/` 308s) and holds the
+permanent redirects (`/catalog` → `/problems`, old `_hero` paths,
+renamed patterns). Unknown paths get the prerendered `dist/404.html`
+with a 404 status.
 
-**Deploy.** Vercel serves the per-route HTML files directly.
-`vercel.json` pins `cleanUrls: true` and `trailingSlash: false`:
-`/articles/foo` maps to `dist/articles/foo.html` with no extension
-and no trailing slash; `/articles/foo/` 308-redirects to
-`/articles/foo`. Unknown paths get `dist/404.html` with a 404 status
-code — the 404 is itself prerendered as a React `NotFound`
-component routed through `/404` like every other static route, so
-it inherits the navbar and styling; Vercel automatically serves
-`dist/404.html` for unknown paths.
+**Sitemap + robots** (`scripts/generate-sitemap.ts`): every
+prerendered route except `/404`. Article `lastmod` = `updatedAt ??
+addedAt`; pattern `lastmod` = the newest of those among its articles;
+`/problems` and `/sources` carry none, since a fabricated `lastmod`
+would lie to crawlers.
 
-**Sitemap + robots.** `scripts/generate-sitemap.ts` emits
-`dist/sitemap.xml` listing every prerendered route except `/404`
-(404 pages don't belong in sitemaps), plus `dist/robots.txt`
-pointing at the sitemap. Article `lastmod` is
-`article.updatedAt ?? article.addedAt` — when an article has been
-materially revised post-publish, the revision date supersedes the
-original prod-add date. Pattern `lastmod` is derived as
-`max(updatedAt ?? addedAt)` over articles referencing that pattern
-(truthful: the page's content last changed when its newest
-referencing article landed or was revised).
+**Share image.** Every page's `og:image` / `twitter:image` is the
+absolute `https://www.behindscale.com/og-default.png?v=<hash>`
+(committed in `public/`, drawn by `scripts/make-og-image.ts`, hashed
+by `scripts/share-image.ts` so caches refetch on change), with
+`twitter:card` = `summary_large_image`. `check-share-images.ts` fails
+the build if any page in `dist/` names a missing share image.
 
-**Share image, standalone pages, feed dates** (pre-distribution batch A,
-2026-10-10). Every page's `og:image` / `twitter:image` is the absolute
-`https://www.behindscale.com/og-default.png?v=<hash>` (1200x630, committed in
-`public/`, rendered by `scripts/make-og-image.ts`; the hash of its contents,
-from `scripts/share-image.ts`, makes preview caches refetch it whenever it
-changes), with `twitter:card` `summary_large_image`; `scripts/check-share-images.ts` runs last in the build
-and fails it if any HTML page in `dist/` names a share image that isn't there.
-The standalone artifact page (`/artifacts/<slug>/index.html`, the "Open full
-screen" target) carries its own head: "<name> · behindscale", the teaser as
-description, a canonical to `/artifacts/<slug>`, and the share tags. It also
-carries a bar back to the site (wordmark home, "Read the full breakdown" to the
-owning article, pattern or problem page; `scripts/artifact-pages.ts`). The bar
-ships `hidden` and an inline script reveals it only when `window.self ===
-window.top`, so it never shows inside an embed. The Atom feed gives each entry
-`<published>` (unchanged dates) and `<updated>` = the last real change to the
-page's sources in git (`scripts/content-dates.ts`: formatting-only commits and
-`.git-blame-ignore-revs` skipped). The build never dates from a shallow clone:
-it fetches the missing history first (Vercel's clone has no remote, so from
-the URL in `VERCEL_GIT_REPO_OWNER` / `VERCEL_GIT_REPO_SLUG`; elsewhere from
-`origin`) and fails only if it can't. `VERCEL_DEEP_CLONE=true` did not give
-a full clone on Vercel. A build-time fetch from our own public repo; the
-website itself still fetches nothing at runtime.
+**Standalone artifact pages.** Each bundle's `index.html` shell
+(`compile-artifacts.ts`) is also the shareable "Open in full" page at
+`/artifacts/<slug>`, with its own head ("<name> · behindscale", the
+teaser, a canonical, the share tags) and a bar back to the site: the
+wordmark home and "Read the full breakdown" to the owning article,
+pattern or problem page (`scripts/artifact-pages.ts`; no owner or
+several means no link). The bar ships `hidden` and shows only when
+`window.self === window.top`, never inside an embed. The script `src`
+is slug-absolute (`/artifacts/<slug>/index.js`) because `cleanUrls`
+redirects `.../index.html` to `/artifacts/<slug>`, where `./index.js`
+would resolve to `/artifacts/index.js`.
 
-**Page titles** (owner, 2026-10-10): no long dashes. A colon splits the
-title itself ("Ambiguous failure under retry: how Stripe, ... prevent double
-payments"), " · behindscale" ends every title but the homepage's
-("behindscale: real production systems, taken apart. ..."), and pattern
-pages read "<name> · patterns · behindscale". `og:title` and `twitter:title`
-repeat the `<title>` exactly. Meta descriptions and the RSS feed follow the
-same rule (colon or full stop, no long dash). `tests/e2e/share-tags.spec.ts`
-checks every sitemap page and the feed; 24 descriptions taken verbatim from
-content still carry a dash and are listed there (`KNOWN_CONTENT_DASHES`, which
-can only shrink) until they're rewritten (open-decisions #30).
+**Feed** (`scripts/generate-feed.ts` → `dist/rss.xml`, Atom): the
+article breakdowns plus, as separate entries, the walls that carry a
+comparison. `<updated>` is the last real change to the page's source
+files in git (`scripts/content-dates.ts` skips formatting-only commits
+and `.git-blame-ignore-revs`). The build never dates from a shallow
+clone: it deepens it first (from the repo Vercel's `VERCEL_GIT_*`
+variables name, else `origin`) or fails. A build-time fetch from our
+own public repo; the site fetches nothing at runtime.
 
-**Legacy `#/...` URLs.** A five-line inline `<script>` in `<head>`,
-placed before the main.tsx script tag in `index.html` so it runs on
-first paint before React mounts. On detecting a `#/` prefix in
-`location.hash`, the script `location.replace`s to the canonical
-path. Catches every URL shared before Unit 9 in one move, no
-flash, no race.
+**Page titles.** No long dashes in titles, meta descriptions or the
+feed. A colon splits a title; " · behindscale" ends every title but
+the homepage's; pattern pages read "<name> · patterns · behindscale";
+`og:title` / `twitter:title` repeat `<title>`. Checked by
+`tests/e2e/share-tags.spec.ts`, whose `KNOWN_CONTENT_DASHES` lists the
+content descriptions still carrying one (it may only shrink).
+
+**Legacy `#/...` URLs.** An inline `<script>` at the top of
+`index.html`'s `<head>` `location.replace`s a `#/` hash to the
+canonical path before React mounts.
 
 ## Article Reading Arc
 
-> Locked in Unit 10 (2026-06-11). The article page's section order,
-> the artifact's pedagogical placement, the editorial-discipline
-> hooks (`artifact.teaser`, `stats[]`), and the cross-origin
-> instrumentation protocol. See `progress-tracker.md` Architecture
-> Decisions for the rationale and the explicit deferrals (Tier 2
-> deep links, Tier 3 sticky panel, per-article OG cards,
-> two-column rejection).
-
-**Section order on every article page** (the reading arc):
+**Section order on every article page** (`src/pages/ArticleDetail.tsx`):
 
 ```
-header → pattern chips (wayfinding) → summary → THE CRUX
-→ artifact teaser → Problem → Solution → [ARTIFACT EMBED]
-→ Tradeoffs → Patterns (full)
+header (title + source attribution) → pattern chips (wayfinding)
+→ summary → THE CRUX (+ cruxTag chip) → artifact teaser
+→ Problem (+ stats) → Solution (+ stats) → [ARTIFACT EMBED, #artifact]
+→ Tradeoffs (+ stats) → Patterns in this article (with notes)
+→ Also solving this
 ```
-
-> **THE CRUX callout** (added to the arc 2026-07-05, pending its
-> implementing commit): a short callout in the article's accent
-> rendering `article.crux` — the named bottleneck — immediately
-> after the summary. Placement rationale: the crux is the
-> is-this-my-problem scan, so it belongs before the reader commits
-> to the Problem section; and the artifact context block's
-> PROBLEM line is this same crux compressed, so reader and
-> cold-visitor entry points stay in sync by construction.
 
 The arc is **understand-problem → understand-solution → interact →
-read tradeoffs with hands-on intuition**. Tradeoffs land harder
-after the reader has toggled a failure mode themselves; the full
-patterns section stays last as the zoom-out beat. Pattern chips at
-the top are wayfinding for the is-this-worth-my-time scan; the
-bottom section is the substance with per-article notes.
+read tradeoffs with hands-on intuition**. Tradeoffs land harder after
+the reader has toggled a failure mode themselves; the full patterns
+section stays late as the zoom-out beat. The top chips serve the
+is-this-worth-my-time scan; the bottom section carries the
+per-article notes.
 
-**Width discontinuity is by design.** Prose renders at 720 px; the
-artifact breakout renders at 960 px. The reader's eye crosses two
-width boundaries per article (in and out of the breakout). Stripe
-Docs and Notion both adopt this shape; recorded here so the visual
-judgment isn't re-debated when someone proposes containing the
-artifact at 720 px later. Mobile is unaffected (single-column at
-both widths).
+**THE CRUX callout** renders `article.crux` right after the summary,
+because the crux is the is-this-my-problem scan and belongs before
+the reader commits to Problem. Its cruxTag chip links to the class
+page `/problems/<urlSlug>` (falling back to `/problems#term-<cruxTag>`
+if no urlSlug resolves). An article artifact's context-block PROBLEM
+line compresses the same crux, so the reading arc and the
+artifact-first arc stay in sync.
 
-**Artifact teaser card** (rendered between summary and Problem,
-only when `article.artifact.teaser` is present). Dark surface in
-the artifact's visual language (`#08090D` background, JetBrains
-Mono, the artifact's accent color as a left border or label tint).
-One small `INTERACTIVE` label + the editorial teaser line + an
-anchor link to `#artifact` (the embed wrapper). **Specificity
-principle**: no generic fallback copy — a vague teaser is worse
-than none. The card activates per-article as teaser strings land in
-content, not at deploy time of the feat commit. On Unit 10's
-initial deploy, zero articles render the card; the field activates
-incrementally as Fable's editorial backfill commits land.
+**Width discontinuity is by design.** Prose renders at 720px; the
+artifact breakout at 960px. Recorded so the judgment isn't re-debated
+when someone proposes containing the artifact at 720px. Mobile is
+single-column at both widths.
 
-**Stat callouts** (rendered between prose sections per
-`stat.placement`, only when `article.stats` is present). Large
-mono value + small label, accent-tinted. Editorial constraints
-enforced by the `stats-value-in-prose` validator check (Content
-Contract): at most 5 per article, every value must appear in the
-article's own prose. The field is a lift, not a source of new
-claims.
+**Artifact teaser card** (only when `artifact.teaser` is present): a
+dark card on the artifact tokens with an `INTERACTIVE` label, the
+teaser, and a link to `#artifact`. **Specificity principle**: no
+generic fallback copy; a vague teaser is worse than none.
 
-**Instrumentation protocol**: per-article analytics events flow via
-`@vercel/analytics` (client-only, never mounted during SSR; a
-progressive enhancement of the same class as the artifact iframe
-HEAD probe — see invariant 1 wording).
+**Stat callouts** (only when `stats` is present) render after the
+section named by `stat.placement`. **Figures** render where a
+`{{figure:<slug>}}` marker sits in Problem or Solution. **Also solving
+this** lists the other articles sharing the cruxTag and is omitted
+when there are none.
 
-- `artifact_viewed` — fires once when the embed enters the
-  viewport. Implemented in `ArtifactEmbed` via
-  `IntersectionObserver` inside `useEffect`. Payload: `{ slug }`.
-- `artifact_interacted` — fires once on first pointerdown inside
-  the iframe, delivered via `postMessage`. **Cross-origin by
-  design**: the iframe runs with `sandbox="allow-scripts"` (no
-  `allow-same-origin`), giving it an opaque origin, so
-  `iframe.contentDocument` is unreadable from the parent. This is
-  the instantiation of invariant 2's "never loosen sandbox, widen
-  postMessage instead" decision (Unit 5).
-  - `scripts/compile-artifacts.ts` entryStub installs a one-time
-    `pointerdown` listener and posts
-    `{ type: 'artifact:interacted', slug }` to `window.parent`
-    with target origin `'*'`. The sandboxed frame's own origin is
-    opaque (`event.origin === "null"` on the parent side) and the
-    parent origin differs between local dev and production, so the
-    target-origin string can't be pinned at compile time. Origin
-    pinning happens on the receiving side instead.
-  - `ArtifactEmbed` listens for `message` events and accepts only
-    those where `event.source === iframeRef.current?.contentWindow`
-    and `event.data?.type === 'artifact:interacted'`. **Source
-    comparison, not origin comparison** — a sandboxed frame's
-    `event.origin` is literally the string `"null"`, which makes
-    origin-allowlist checks meaningless here. Source comparison is
-    the correct gating mechanism for the sandboxed-iframe → parent
-    direction.
+**Instrumentation.** `@vercel/analytics` is mounted client-only in
+`src/main.tsx`, never during prerender.
 
-The funnel: pageview → `artifact_viewed` → `artifact_interacted`.
-This is the metric Tier 1 (Unit 10) measures and any future Tier 3
-prototype (deferred) must beat.
+- `artifact_viewed` fires once when the embed is half in view
+  (`IntersectionObserver` in `ArtifactEmbed`). Payload `{ slug }`.
+- `artifact_interacted` fires once on the first pointerdown inside
+  the iframe. **Cross-origin by design**: the sandboxed frame has an
+  opaque origin, so the parent can't read `contentDocument`. The entry
+  stub `compile-artifacts.ts` wraps around every bundle posts
+  `{ type: 'artifact:interacted', slug }` to `window.parent` with
+  target origin `'*'` (nothing can be pinned at compile time), and
+  `ArtifactEmbed` accepts it only when `event.source ===
+  iframeRef.current?.contentWindow`. **Source comparison, not origin
+  comparison**: a sandboxed frame's `event.origin` is `"null"`.
+
+The funnel is pageview → `artifact_viewed` → `artifact_interacted`.
+
+## Problem Pages and Walls
+
+`/problems` groups every article by cruxTag (count descending, then
+alphabetical; `src/lib/catalogGroups.ts`). Each class with articles
+gets a page at `/problems/<urlSlug>` (`src/pages/ProblemDetail.tsx`),
+where `urlSlug` comes from the cruxTag registry and
+`cruxTagByUrlSlug` in `src/content/index.ts` maps it back.
+
+**One template, progressive authoring.** Every class renders through
+the same page. Unauthored, it is fully derived: the registry
+definition as "The wall", a "Same wall, N systems" table, the members'
+patterns as chips, a card per member. An optional essay at
+`content/problems/<cruxTag>.json` (`ProblemEssay`,
+`src/types/problemEssay.ts`, the authority on its fields) replaces
+those placeholders block by block. Each block renders only when
+present, and the shell hard-codes none of a wall's mechanics. Keyed by
+the frozen cruxTag, so a urlSlug rename never orphans it; the
+`problem-essay` check requires filename = cruxTag, one essay per
+class, and every article, pattern, question and anchor it names to
+resolve. Pattern chips and cards stay derived even when authored (the
+essay adds intro, order and teasers). `extraSections` is validated
+but not yet rendered.
+
+**Inline diagrams.** The comparison's SVGs live at
+`content/problems/<cruxTag>/<name>.svg` and are inlined into the page
+(not `<img>`-loaded like figures) so they share the page's diagram
+classes and tokens; the YOU row's filled SVG carries `{{slot}}`
+placeholders the host fills. Because this markup enters the page DOM,
+the `problem-essay` check runs the `figure-svg-safe` allowlist over
+every referenced file before it can ship.
+
+**Walls and the wall registry.** A wall is a class with a playable
+mission. Its data lives in the essay; its one piece of code lives in
+`src/walls/<name>.ts`, registered in `src/walls/index.ts`
+(`wallBySlug`, keyed by cruxTag). A `WallModule` exports
+`youMapping(decisions, held)`, returning strings keyed by
+`comparison.matrixRows[].id` (the YOU cells) and by the YOU diagram's
+`{{slot}}` names, plus `attackCount` (the length of `held`). The
+`problem-essay` check stops content and code drifting: every matrix
+row id and slot must be a `youMapping` key, the interview needs one
+follow-up per attack, and a comparison with no wall module warns.
+
+**The two artifacts.** `tryIt.artifactSlug` (cause the failure) and
+`mission.artifactSlug` (build it) each name their own artifact in the
+flat namespace (`content/artifacts/<artifactSlug>.jsx`; a mission may
+import a sibling `.js` rules module). Both mount through
+`ArtifactEmbed` in `bare` mode (wrapper ids `artifact` and `artB`)
+with a `<noscript>` fallback (the teaser; for the mission, its static
+outline). On `/problems` a class with a mission gets a Playable badge,
+its teaser and an estimate (the `minutes` of stations flagged
+`estimate`, summed and rounded up to 5; `src/lib/wallEstimate.ts`).
+
+**Host protocol (v1)**, `src/pages/problem/useWallHost.ts`. Every
+message is `{ v: 1, wall: <cruxTag>, type, ... }`; `ArtifactEmbed`
+passes only its own frame's messages and the hook drops any other `v`
+or `wall`. Mission → host:
+
+- `ready` → the host replies `init` `{ commit, decisions, survived,
+  held }` (the saved design, only if it survived): the only host →
+  mission message.
+- `state` `{ decisions, held, survived, bill }`: when survived, fill
+  the YOU cells, slots and interview ticks from `youMapping()` and
+  save the design; not survived after a fill empties them.
+- `checkpoint` `{ kind: caused | survived | held }`: write-once flags.
+- `touched`: first deck interaction (reveals the "↑ your decisions"
+  jump).
+- `reset`: clear the saved design; keep the commit and checkpoints.
+- `commit` `{ text }`: the reader's sentence, shown under the YOU row.
+- `size` `{ h }`: content height, clamped to 320–20000px.
+- `anchor` `{ id }`: scroll the page to `#id`, opening a `<details>`;
+  `anchor` `{ frame }`: scroll to a region of the frame, ignored
+  while the frame is its own scroller.
+
+Try-it → host: `size` only. At 700px and wider the mission frame is a
+bounded scrollport, `min(content, 100dvh - 56px)`; narrower, it is
+content-height and the page scrolls.
+
+**Persistence.** One record per wall in
+`localStorage['bs:wall:<cruxTag>']`, `{ v: 1, commit, checkpoints,
+saved }`, every access in try/catch. Nothing leaves the browser.
 
 ## System Boundaries
 
-> **Pipeline status: deferred from active implementation as of
-> 2026-06-04.** behindscale is currently in manual editorial
-> authoring mode (see `progress-tracker.md` → Current Operating
-> Mode). The conceptual shape of the pipeline — its boundaries,
-> stages, idempotency contract, and relationship to the content
-> contract — is retained below as the architectural shape the
-> website is designed against. The full design-as-built (four
-> stages, SQLite schema, Claude integration, draft handoff,
-> twelve open questions) is preserved at
-> `context/pipeline-architecture-deferred.md`. Revisit when manual
-> cadence shows scaling friction or at the week-8 reassessment.
+> **Pipeline status: deferred, never built.** The planned build-time
+> pipeline (`pipeline/`: RSS discovery, fetch and extract, Claude
+> analysis and artifact generation, SQLite state, `npm run study`)
+> does not exist. There is no `pipeline/` directory, no SQLite, no
+> Claude API call and no `pipeline/prompts/`. The full design is in
+> `context/pipeline-architecture-deferred.md`; revisit when manual
+> cadence shows scaling friction.
 
-- `pipeline/` — Owns article discovery, fetching, Claude API calls, and
-  artifact generation. Produces content into `content/` and compiled
-  artifact bundles into `public/artifacts/`. May do long-running work and
-  network/API calls. Never rendered to users.
-- `pipeline/run.ts` (the orchestrator) — The single entrypoint that fulfills
-  the "run one command daily" goal. It chains the stages in order
-  (discover → fetch → analyze → generate → publish), is safe to re-run
-  (idempotent, per invariant 4), processes the day's 2–3 selected articles,
-  and exits with a clear per-article success/failure summary. Exposed as the
-  `study` npm script (e.g. `npm run study`). Individual stages remain
-  independently runnable for debugging (e.g. `npm run study:discover`), but
-  `run.ts` is the normal daily interface. The optional scheduler
-  (cron/launchd/GitHub Actions) does nothing more than invoke this command —
-  scheduling is decoupled from orchestration.
-- `content/` — The content contract between pipeline and website. Holds
-  per-article summary JSON and the aggregated pattern library JSON. The
-  website reads this; the pipeline writes it. Treated as generated data.
-- `public/artifacts/` — Compiled, self-contained artifact bundles (one HTML
-  bundle per article) that the website loads into iframes.
-- `src/` — The website. Reads `content/`, renders the reading shell, and
-  embeds artifacts via iframes. Pure presentation; no API calls at runtime.
-- `.github/workflows/` — CI/CD. Builds and deploys the site; optionally runs
-  the pipeline on a schedule.
+**How content is made today.** By hand. The owner drafts dissections
+with Claude in chat; Claude Code commits them, builds and verifies; a
+design agent supplies SVG drawings; task briefs arrive under
+`handoff/`.
+
+- `content/` (+ `keywords/`) — the hand-authored source of truth;
+  everything the site renders (Storage Model).
+- `scripts/` — build-time tooling run by `npm run build`
+  (`make-og-image.ts` runs by hand). Reads `content/` from disk and the
+  SSR bundle in `dist-ssr/`; writes `public/artifacts/`,
+  `public/figures/` and `dist/`. Import rules: invariant 3.
+- `src/` — the website. Reads content only through
+  `src/content/index.ts`, renders the reading shell, embeds artifacts.
+- `public/artifacts/`, `public/figures/` — build output, gitignored.
+- `tests/` — Vitest (`tests/unit/`, co-located `__tests__/`) and
+  Playwright (`tests/e2e/`). CI (`.github/workflows/ci.yml`) runs
+  validate, Vitest and Playwright on every push and PR; deploys are
+  Vercel's.
+- `docs/` — design and editorial specs. `handoff/` — task briefs.
 
 ## Storage Model
 
-- **SQLite (pipeline only)**: operational metadata — which articles have
-  been seen/processed, their status (pending → processing → done → failed),
-  source feed, and timestamps. Enables dedup and idempotent re-runs.
-- **Flat JSON files (`content/`)**: the durable, version-controlled record
-  of all published content. This is what the site renders and what gets
-  committed to git. Two subfolders:
-  - `content/articles/{slug}.json` — one file per article (summary + source
-    + pattern references).
-  - `content/patterns/{slug}.json` — one file per pattern definition
-    (authored, durable).
-  - `content/patterns/index.json` — the aggregated pattern library,
-    *derived* from the two folders above every pipeline run.
-- **Compiled artifact bundles (`public/artifacts/`)**: large generated UI
-  bundles, one per article, loaded on demand by the website.
+**Flat files in git are the only store.** There is no database.
 
-Rationale: metadata that drives pipeline control flow lives in SQLite; the
-published content lives as committed files so the site is fully static and
-the history is auditable in git. Large generated UI is never inlined into
-the main site bundle.
+- `content/articles/<slug>.json` — one `Article` per file.
+- `content/patterns/<slug>.json` — one `PatternDefinition` per file.
+- `content/cruxtags.json` — the cruxTag registry.
+- `content/problems/<cruxTag>.json` — optional `ProblemEssay` per
+  class; `content/problems/<cruxTag>/*.svg` — its inline diagrams.
+- `content/artifacts/<host-slug>.jsx` — artifact sources, one flat
+  namespace across articles, patterns and problem pages.
+- `content/figures/<host-slug>/<figure-slug>.svg` — figure SVGs for
+  articles, patterns and problem essays.
+- `content/feeds.json` — the official-blog allowlist (`Source[]`),
+  rendered on `/sources`.
+- `keywords/{articles,patterns,walls}.json` — the search-terms
+  overlay, merged at build time into `Article.keywords`,
+  `PatternDefinition.aliases` and `CruxTagEntry.keywords` by
+  `src/content/index.ts` (`keywords/README.md`).
+
+**Derived at build time, never stored.** The aggregated pattern
+library (per-pattern frequency, member articles, companies,
+co-occurrences, problem classes) is computed in memory from
+`article.patterns[]` by `src/content/index.ts` (`patternStats`,
+`patternDetail`). There is no `content/patterns/index.json`; the name
+stays reserved and both loaders exclude it (the glob negation in
+`src/content/index.ts`, `isPatternDefinitionFile` in
+`scripts/load-content.ts`). Problem-class grouping is
+`src/lib/catalogGroups.ts`.
+
+**Build output (gitignored):** `public/artifacts/<slug>/` (`index.html`
++ `index.js`), `public/figures/`, `dist/`, `dist-ssr/`.
+
+**Per-browser state:** the wall record in `localStorage` (Problem
+Pages and Walls). Nothing else.
+
+Rationale: committed files keep the site fully static and its history
+auditable in git. Large artifact UI is never inlined into the main
+site bundle; each bundle loads on demand in its iframe.
 
 ## Content Contract
 
-The content contract is the set of JSON shapes the pipeline writes and the
-website reads. Full TypeScript types live in `src/types/` and are the
-single source of truth on both sides (the type-only cross-boundary import
-permitted by invariant 3). Three documented entities: **Source**,
-**Article**, and **Patterns** (references, definitions, and the
-aggregated library).
+The content contract is the set of JSON shapes in `content/` that the
+site renders. The TypeScript types in `src/types/` are authoritative;
+`src/types/predicates.ts` checks every file at load
+(`scripts/load-content.ts`), and the checks in `scripts/checks/`
+(registered in `scripts/validate-content.ts`) enforce the cross-file
+rules. This section records the rules the types can't express.
+
+A check error fails the build. `CheckError.severity: 'warning'`
+surfaces in the validator output without failing it; it is used where
+authorial phrasing or hygiene is a judgment call (`crux-summary-length`,
+`stats-value-in-prose` misses, the `figure-count-ceiling` soft band,
+`orphan-artifacts`, and `problem-essay`'s missing-wall-module case).
 
 ### Source
 
-Every per-article summary JSON in `content/articles/` must include a
-`source` block that fully identifies its origin. This is what the website
-renders as visible attribution and what enforces invariant #7
-(official engineering blogs only) at the data level.
+Every article carries a `source` block (`Source`, all fields required
+strings): the visible attribution and the data-level face of
+invariant 7.
 
-- `source.name` — the canonical, human-readable name of the engineering
-  blog (e.g. "Uber Engineering", "Stripe Engineering", "Netflix Tech Blog").
-  Stable across articles from the same blog so cards group correctly.
-- `source.slug` — a stable, normalized identifier (e.g. `uber-engineering`)
-  used for filtering, color/logo lookup, and grouping.
-- `source.company` — the company that runs the blog (e.g. "Uber"). Often
-  matches the brand the reader recognizes.
-- `source.url` — the homepage of the official engineering blog (not the
-  article URL — that's `article.url`). Used for "View all from this blog"
-  links and as a credibility cue.
-- `source.feed` — the RSS feed the article was discovered through. Useful
-  for debugging and as a back-reference into `content/feeds.json`.
+- `name` — the blog's canonical name ("Netflix Tech Blog"), stable
+  across its articles.
+- `slug` — a stable normalized identifier for filtering and grouping.
+- `company` — the company that runs the blog; the canonical company
+  identity on every browse surface.
+- `url` — the blog's homepage (the post itself is `article.url`).
+- `feed` — the blog's feed URL, a back-reference into
+  `content/feeds.json`.
 
-Every entry in `content/feeds.json` (the allowlist from invariant #7)
-defines these fields once. The pipeline copies them onto each article it
-publishes — articles do not invent or override source data, they inherit it
-from the allowlist. This guarantees: if it isn't in the allowlist, it can't
-appear with a `source` block, and articles without a valid `source` block
-fail schema validation and are not published.
+Each `content/feeds.json` entry defines these fields once, and an
+article's `source` is meant to be copied from it verbatim: articles
+inherit source data, they don't invent it. No check compares the two
+(a `source-matches-allowlist` check was pipeline design), so drift is
+possible.
 
 ### Article
 
-Every per-article summary JSON in `content/articles/` conforms to the
-`Article` shape. Fields:
+Every `content/articles/<slug>.json` conforms to `Article`
+(`src/types/article.ts`):
 
-- `slug` — required string. Stable, lowercase-kebab-case identifier; used
-  for routing (`/articles/:slug`), file naming, SQLite identity (invariant
-  4), and pattern back-links.
-- `title` — required string. The article's display title.
-- `url` — required string. Canonical URL of the original article on the
-  source engineering blog. Distinct from `source.url`, which is the blog's
-  homepage.
-- `publishedAt` — required ISO 8601 date string. When the original post
-  was published on the source blog.
-- `addedAt` — required ISO 8601 date string. When this article first
-  appeared on behindscale's production deploy (distinct from
-  `publishedAt`, which is the source post's date). Used for sitemap
-  `lastmod` (when `updatedAt` is absent), JSON-LD `datePublished`, and
-  any future recently-added surface. Added as a schema chore ahead of
-  Unit 9 (the SSG / SEO foundation); backfilled on the five Phase-5
-  and 5f articles from their prod-verify dates.
-- `updatedAt` — optional ISO 8601 date string. The date of the last
-  material post-publish revision to this article: a rewrite to source,
-  a correction, a pattern reattribution. Sources JSON-LD `dateModified`
-  and sitemap `lastmod` when present; both fall back to `addedAt`
-  otherwise. Added in Unit 11's stripe-rework chore — the seed article's
-  audit-driven rewrite was the field's first use; later articles set it
-  only when they are materially revised post-publish.
-- `source` — required `Source` block, as documented above.
-- `summary` — required string. Short summary surfaced on article cards
-  and used as the page lead on the article page.
-- `crux` — required string (Taste Doc v2 §3.5; schema'd 2026-07-05,
-  backfilled across all pre-existing articles in the same batch that
-  introduced it). Two to four sentences naming the article's
-  *bottleneck* — the thing that made the problem hard — in
-  near-source language. Never the topic, never the solution. Rendered
-  as a "THE CRUX" callout between `summary` and the artifact teaser
-  in the reading arc (see Article Reading Arc). Validator: missing
-  `crux` is an **error** — every article in the library carries one.
-- `cruxTag` — required string, lowercase-kebab-case. The bottleneck
-  *class* the crux belongs to (e.g. `ambiguous-failure-under-retry`,
-  `priority-blind-load-shedding`). This is the library's second
-  taxonomy axis: patterns name *solutions*, cruxTags name *problems*.
-  Reuse across articles is the point — a tag shared by two companies
-  is the taxonomy demonstrating its thesis — so uniqueness is
-  deliberately NOT enforced. As of the 2026-07-08 landing/navigation
-  phase the catalog page (`/catalog`) is organized primarily by
-  `cruxTag` — problem-class groups ordered by system count
-  descending — so this grouping is now **load-bearing navigation
-  UI**, not merely derived metadata: a mis-assigned cruxTag now
-  mis-files an article on the main browse surface, which raises
-  the bar on tag hygiene. Recurrence is derived by grouping
-  articles on equal tags. The cruxTag *registry* at
-  `content/cruxtags.json` (added 2026-07-08) supplies the display
-  label + one-sentence definition per tag; a dedicated
-  `/bottlenecks` deep-dive surface (per-cruxTag pages) remains
-  deferred work (see progress-tracker.md). Validator: present +
-  normalized kebab-case is an error-level check (`checkArticle`);
-  every used tag must have a registry entry (`cruxtag-registry-
-  coverage`); no orphan rule the other direction.
-- `cruxSummary` — required string (added 2026-07-08 for the
-  landing/navigation phase; backfilled across all pre-existing
-  articles in the same change). A single hand-authored line,
-  ~10-16 words, stating the bottleneck crisply from the reader's-
-  eye view. This is the card- and browse-surface label: the full
-  `crux` (2-4 sentences) remains the reading-arc callout, while
-  `cruxSummary` is what a catalog card, a problem-class row on the
-  landing preview, and a search result show. Authored to the same
-  source-faithful bar as `crux` — it compresses the crux, it does
-  not restate the title or the solution. Validator: missing/empty
-  is an **error** (`checkArticle` + `crux-summary-length`);
-  a soft length check warns above ~20 words (the card layout
-  assumes one line).
-- `problem` — required string. What the team was solving — the
-  motivating problem the original post describes. Plain
-  paragraph-separated text (paragraphs split on blank lines), **plus
-  one Markdown-subset construct: unordered (`- `) and ordered (`1. `)
-  lists** (docs/lists-design.md). A chunk whose lines are all list
-  items renders as a `<ul>`/`<ol>`; `list-block-well-formed` hard-errors
-  on malformed shapes. Full markdown (bold/code/links/headings) is
-  still deferred until the first real Claude output lands (Unit 7+), at
-  which point we adopt a renderer (likely `react-markdown`); the list
-  syntax is a strict CommonMark subset, so that migration renders
-  today's list content unchanged.
-- `solution` — required string. How they solved it — the architectural
-  approach the post takes. Same paragraph-separated-plus-lists contract
-  as `problem`.
-- `tradeoffs` — required string array. The costs, constraints, and
-  limitations the solution introduces.
-- `tags` — required string array. Free-form topical labels (e.g.
-  `payments`, `retries`, `load-shedding`). **Distinct from `patterns[]`**:
-  tags are loose topical wayfinding; patterns are the canonical,
-  library-tracked abstractions with their own detail pages. Do not collapse
-  the two — ui-context.md treats them as visually distinct components.
-- `patterns` — required `PatternReference[]`. Documented in the Patterns
-  section below. 2–6 entries is the expected range; the type does not
-  enforce that, since semantic constraints are validated at the pipeline
-  analyze stage and at build-time, not by the type system.
-- `relatedArticles` — optional string array of article slugs. Powers
-  "see also" links between articles. Plain slugs only; annotated
-  relationships live on pattern references, not on related-article links.
-- `generatedAt` — optional ISO 8601 timestamp. When the pipeline analyzed
-  this article (distinct from `publishedAt`, which is the original post's
-  date). Useful for "studied on X" UI affordances and for debugging
-  re-runs.
-- `artifact` — required. Either `{ path: string; teaser?: string }` —
-  the relative path the website loads into the iframe (e.g.
-  `/artifacts/{slug}/index.html`) plus an optional editorial teaser
-  line (Unit 10) — or `null` when this article has no interactive
-  artifact (summary-only articles). **Missing artifacts are encoded
-  as data (`null`), never inferred from a filesystem 404.** This
-  makes the iframe loader's "skip + flag on bad entry" path
-  (invariant 6) deterministic, and it leaves room for summary-only
-  articles without a special case. Discriminated union shape
-  (`{ path; teaser? } | null`) is used in preference to
-  `{ path, hasArtifact }` so the impossible state
-  `{ path: "/x", hasArtifact: false }` is unrepresentable.
-  - `artifact.teaser` (optional, Unit 10) — one-line editorial
-    description of what the reader can *do* inside the artifact,
-    surfaced by the `ArtifactTeaser` card between summary and
-    Problem. Specificity principle: no generic fallback copy. The
-    teaser card renders only when this field is present; a vague
-    hook is worse than none.
-- `stats` (optional, Unit 10) — an array of up to three pull-stat
-  callouts displayed inline between prose sections. Each entry:
-  - `value` — string, the figure to display (e.g. `"+80%"`,
-    `"3.1 s"`, `"93%"`).
-  - `label` — string, the short caption beneath the value.
-  - `placement` — one of `"problem" | "solution" | "tradeoffs"`,
-    controlling which prose section the callout renders after.
-  Editorial constraints, enforced by the `stats-value-in-prose`
-  validator check: **at most 5 entries per article** (zero is fine
-  — an article without strong figures ships without callouts
-  rather than with weak ones), and **every `value` must already
-  appear in the article's own prose** (problem/solution/tradeoffs/
-  summary). The field is a lift, not a source of new claims;
-  normalization is intentionally best-effort (strip `+`, `%`,
-  `,`, `<`, `>`, `~`, `≈`, whitespace; lowercase) so `"+80%"`
-  matches `"80 percent"` and `"<100ms"` matches `"100ms"` or
-  `"under 100ms"`. Composite values that use the `→` separator
-  (e.g. `"3.1s → 1.0s"`, `"500ms → <100ms"`) are split on the
-  arrow and each half is required to match independently; the
-  monolithic form is still tried first as the simpler case. The
-  max-3 rule is a hard error; the value-in-prose miss is a
-  **warning** (surfaces in validator output, does not fail the
-  build) — fuzzy misses often mean the prose phrases the figure
-  differently rather than that the stat is fabricated, and the
-  human reviewing the warning is in a better position to judge
-  than the substring matcher. The framework supports the
-  warning/error distinction via `CheckError.severity`.
+- `slug` — lowercase kebab-case and equal to the filename, by
+  convention (unchecked); the route, the key for pattern back-links,
+  and the artifact path.
+- `title` — editorial display title (may differ from the source's).
+- `url` — the original post on the source blog.
+- `publishedAt` — the source post's date (YYYY-MM-DD).
+- `addedAt` — when the article first reached behindscale production
+  (YYYY-MM-DD).
+- `updatedAt?` — the last *material* post-publish revision (a rewrite
+  to source, a correction, a pattern reattribution); set only then.
+  JSON-LD `dateModified` and sitemap `lastmod` fall back to `addedAt`.
+- `source`; `summary` (card text and page lead); `crux`, `cruxTag`,
+  `cruxSummary` (Bottleneck Taxonomy); `problem`, `solution` (Prose
+  contract); `tradeoffs` (string array).
+- `tags` — free-form topical terms, search data only, not rendered.
+  **Distinct from `patterns[]`**, the canonical library-tracked
+  abstractions with their own pages. Do not collapse the two.
+- `patterns` — `PatternReference[]` (Patterns below).
+- `keywords?` — search terms, delivered through
+  `keywords/articles.json`, never hand-edited into the article.
+- `relatedArticles?` — article slugs; schema-checked, not rendered
+  ("Also solving this" derives from cruxTag). `generatedAt?` —
+  pipeline-era; not rendered.
+- `artifact` — required: `{ path: string; teaser?: string }`, or
+  `null` for a summary-only article. **A missing artifact is encoded
+  as data (`null`), never inferred from a filesystem 404**, and the
+  union makes `{ path, hasArtifact: false }` unrepresentable. `path`
+  must be `/artifacts/<slug>/index.html` (`artifact-path-matches-slug`),
+  its source must exist (`artifact-bundle-exists`), and no two hosts
+  may claim one slug (`artifact-slug-unique`). `teaser`, when present,
+  is a non-empty line naming what the reader can *do*.
+- `stats?` — `{ value, label, placement: 'problem' | 'solution' |
+  'tradeoffs' }[]`. `stats-value-in-prose`: **at most 5** (error), and
+  every `value` must already appear in the article's own prose
+  (**warning**: a fuzzy miss usually means different phrasing, and
+  the reviewer judges better than the matcher). A lift, not a source
+  of new claims. Matching strips `+ % , < > ~ ≈`, whitespace and case;
+  a `→` composite matches whole or by each half.
+- `figures?` — Figures below.
+
+**Prose contract** (`src/components/Prose.tsx`), shared by
+`Article.problem` / `solution`, `PatternDefinition.definition`, and
+problem-essay prose: paragraphs split on blank lines; a chunk whose
+lines are all `- ` or `1. ` items renders as a list
+(`list-block-well-formed` hard-errors on malformed shapes); a chunk
+that is exactly `{{figure:<slug>}}` renders a figure. Inline:
+`**bold**` (`bold-markers-balanced`), `[text](/internal/path)` as a
+router link (internal only; `/patterns/<slug>` targets are checked by
+`inline-link-targets`), `[text](#anchor)` as a same-page link. No
+other markdown.
+
+**Figures** (`Figure`: `slug`, `eyebrow`, `caption`, `ariaLabel`;
+`docs/figures-design.md`) live at
+`content/figures/<host-slug>/<slug>.svg`, mirrored to `/figures/` by
+`copy-figures.ts`. Each is placed by exactly one marker, on its own
+line, in the host's prose fields only (problem/solution, a pattern's
+definition, an essay's intro and wall prose). They render as `<img>`
+in a `<figure>`, never inline, so the browser's `<img>` sandbox is
+their security perimeter and `figure-svg-safe` is hygiene on top.
+Warn above 3 per host, error above 5. Rules live in the `figure-*`,
+`orphan-figure-markers`, `unused-figure-defs` and
+`marker-placement-legal` checks; `svg-no-c2pa` covers every SVG in
+`content/`.
 
 ### Patterns
 
-Patterns are a **first-class entity**, not a derived afterthought. behindscale
-exposes two equally first-class navigation axes (articles and patterns), so
-the content contract treats both with equal rigor.
+Patterns are a **first-class entity**: articles and patterns are two
+equally first-class navigation axes.
 
-There are two distinct data shapes for patterns:
+**1. Pattern references on an article.** `patterns[]` of `{ slug,
+note }`. The slug is the join key and must match a definition
+(`orphan-pattern-slugs`); every article needs at least two
+(`minimum-pattern-coverage`); no maximum is enforced. `note` is one or
+two sentences on how *this* article embodies the pattern, so the
+pattern page shows differentiated examples rather than repeating the
+definition.
 
-**1. Pattern references on an article** (in `content/articles/{slug}.json`).
-Each article lists 2–6 canonical pattern slugs it embodies, plus a short
-per-article note describing how *this* article applies the pattern. The slugs
-are the join key — they must match an entry in the pattern library exactly.
+**2. Pattern definitions** (`content/patterns/<slug>.json`,
+`PatternDefinition` in `src/types/pattern.ts`):
 
-- `patterns[].slug` — canonical pattern identifier (e.g. `atomic-phases`).
-- `patterns[].note` — 1–2 sentence note on how this article specifically
-  embodies the pattern. Lets the pattern detail page surface differentiated
-  examples instead of repeating the same definition.
+- `slug`, `name`; `definition` (Prose contract: what it is, how it
+  works, when to use it); `whenItApplies`, `tradeoffs` (string arrays).
+- `category` — optional in the type, **required** by `pattern-category`.
+- `oneLineDefinition?` — the detail-page lede and meta description.
+- `aliases?` — lowercase search terms bridging industry vocabulary to
+  the house name; extended by `keywords/patterns.json`.
+- `figures?` (markers in `definition`); `artifact?` (the
+  `Article.artifact` contract; source at
+  `content/artifacts/<pattern-slug>.jsx`); `mechanism?` (`{ caption?,
+  blurb?, idea?, whatToTry? }`, the copy around the artifact).
 
-**2. Pattern definitions** (in `content/patterns/{slug}.json`, one file per
-pattern). These are the authored, durable definitions surfaced on each
-pattern's detail page.
+Definitions are authored by the owner (or by Claude with owner
+review), never generated from a single article: the synthesis across
+articles is where the learning compounds. `/patterns/:slug` adds
+derived sections (member breakdowns, co-occurring patterns, problem
+classes) from `patternDetail` in `src/content/index.ts`.
 
-- `slug` — canonical identifier.
-- `name` — human-readable pattern name (e.g. "Atomic Phases").
-- `definition` — a hand-authored or hand-reviewed multi-paragraph
-  description: what the pattern is, how it works, when to use it. Same
-  paragraph-separated-plus-lists rendering contract as `Article.problem`
-  / `Article.solution` (`- `/`1. ` lists supported; full markdown
-  deferred to Unit 7+).
-- `whenItApplies` — short bullet list of situations where this pattern is
-  the right tool.
-- `tradeoffs` — short bullet list of the costs and constraints the pattern
-  introduces (e.g. "requires an ACID-compliant store").
-- `category` — optional flat grouping tag drawn from the **canonical
-  category set** documented below. Flat only; no deep taxonomy.
+**3. Aggregated pattern library.** Derived in memory, never stored
+(Storage Model). The `PatternLibrary` types in `src/types/` describe a
+stored form nothing writes or reads.
 
 #### Canonical pattern categories
 
-The set is intentionally small and additive. Each category gets a
-dedicated color from the `--cat-*` ramp in `src/index.css`, wired into
-`CATEGORY_CLASSES` in `src/components/PatternChip.tsx`. A pattern may
-omit `category` entirely — that's the uncategorized neutral chip
-variant.
-
-| Slug            | Color                |
-| --------------- | -------------------- |
-| `resilience`    | `--cat-blue`         |
-| `consistency`   | `--cat-purple`       |
-| `throughput`    | `--cat-green`        |
-| `observability` | `--cat-cyan`         |
-
-The remaining ramp tokens (`--cat-orange`, `--cat-red`, `--cat-amber`)
-are reserved headroom — unassigned until a future pattern needs one.
-
-**Adding a new category is a deliberate, two-step change:**
-
-1. Update this table (and the rationale paragraph, if the new category
-   needs one) in a `docs:` commit. New category gets a color from the
-   reserved ramp.
-2. Then a `feat:` commit wires the slug into `CATEGORY_CLASSES` in
-   `PatternChip.tsx` and (when pattern-library category filtering
-   exists) wherever the filter lists categories.
-
-The docs-first ordering prevents pattern definitions from being
-authored with a category slug the website doesn't know how to color.
-Patterns whose definitions don't fit any current category should
-either be authored without a category (uncategorized chip) or trigger
-the two-step addition above — never silently use a new slug.
-
-**3. Aggregated pattern library** (in `content/patterns/index.json`).
-This is *derived data*, regenerated from scratch every pipeline run by
-walking `content/articles/` and matching pattern slugs to pattern
-definitions. Hand-editing this file is never allowed.
-
-- For each pattern: its definition, frequency count, the list of articles
-  embodying it (with source attribution), and the set of source companies
-  it has been seen in.
-
-**Bidirectional integrity is enforced at build time.** The website build
-validates that:
-- Every `patterns[].slug` referenced by an article has a matching pattern
-  definition file (no orphan references on articles).
-- Every pattern definition with zero matching articles is flagged but does
-  not fail the build (a pattern can exist before its first article — useful
-  for seeding the library with known patterns).
-- Pattern slugs are unique and normalized (lowercase, kebab-case).
-
-Pattern definitions are authored by the owner (or by Claude with owner
-review), never auto-generated from a single article. The synthesis across
-articles is where the learning compounds, and that synthesis requires
-deliberate curation. The pipeline analysis stage may *propose* new pattern
-slugs when it sees something recurring across articles, but those proposals
-land in `progress-tracker.md` as open items, not as auto-merged
-definitions.
+The set is `PATTERN_CATEGORIES` in `src/lib/patternCategories.ts`
+(id, label, gloss, listing-dot colour). `/patterns` groups by it, and
+`pattern-category` fails the build on a missing or unknown category.
+Chip colours are a second map, `CATEGORY_CLASSES` in
+`src/components/PatternChip.tsx`; both draw from the `--cat-*` ramp in
+`src/index.css`, so keep them in step. **Adding a category is
+deliberate:** add it to both maps in one change, with a ramp colour.
+Since the check reads `PATTERN_CATEGORIES`, no pattern can ship a
+category the site can't place; a definition that fits none triggers
+that addition, never a silent new slug.
 
 ### Bottleneck Taxonomy (crux + cruxTag)
 
-> Locked in the 2026-07-05 editorial batch (shipped
-> 2026-07-06 → 07). See `progress-tracker.md` Architecture
-> Decisions for the full rationale and
-> `docs/behindscale-taste.md` §3.5 for the editorial framing.
-> The field-level schema and validator rules are documented in
-> Content Contract → Article; this subsection captures the
-> design decision itself, so the "why" doesn't have to be
-> reconstructed from field docs.
-
-behindscale exposes **two first-class taxonomy axes across
-articles**: patterns name *solutions*, and cruxTags name
-*problems*. The pattern library existed from the start; the
-cruxTag axis was added in the 2026-07-05 batch after the
-five-article quality sprint and article #6 (Netflix) made
-clear that recurrence-driven publication — the move that
-demonstrates the library's thesis rather than asserting it —
-also applies at the problem layer. Two companies converging
-on the same reusable solution is one signal; two companies
-running into the same reusable *bottleneck* is a distinct,
-equally load-bearing signal.
+behindscale has **two taxonomy axes across articles**: patterns name
+*solutions*, cruxTags name *problems*. Two companies converging on the
+same solution is one signal; two companies hitting the same reusable
+*bottleneck* is a distinct, equally load-bearing one. Editorial
+framing: `docs/behindscale-taste.md` §3.5.
 
 **Three fields, all required on every Article:**
 
-- `crux` — 2-4 sentences of near-source prose naming the
-  article's bottleneck (never the topic, never the solution).
-  Rendered as the "THE CRUX" callout in the article reading
-  arc (see Article Reading Arc). Also compressed as the
-  PROBLEM line inside every artifact's standalone-visitor
-  context block (see invariant 2, Standalone-Visitor
-  Contract), so the reader's reading arc and the cold
-  visitor's artifact-first arc stay in sync by construction.
-- `cruxTag` — a lowercase-kebab-case slug naming the
-  bottleneck *class* the crux belongs to (e.g.
-  `ambiguous-failure-under-retry`,
-  `priority-blind-load-shedding`). Field pattern:
-  `^[a-z0-9]+(-[a-z0-9]+)*$`. Position in the JSON: between
-  `summary` and `problem`, in that order — the field order
-  mirrors the reading arc's callout position, and predicate
-  checks enforce it as required.
-- `cruxSummary` — one-line hand-authored crux compression
-  (~10-16 words) added 2026-07-08 alongside the catalog
-  page. This is the card- and browse-surface label
-  (catalog cards, landing preview crux lines, search
-  results); the full `crux` remains the reading-arc
-  callout. Same source-faithful bar as `crux` — compresses,
-  never restates the title or solution. Position in the
-  JSON: between `cruxTag` and `problem`, immediately after
-  the tag. Validators: `checkArticle` requires non-empty;
-  `crux-summary-length` warns above ~20 words.
+- `crux` — two to four sentences of near-source prose naming the
+  bottleneck: never the topic, never the solution. The THE CRUX
+  callout; compressed into the PROBLEM line of the article artifact's
+  context block.
+- `cruxTag` — the lowercase-kebab-case slug of the bottleneck *class*
+  (`^[a-z0-9]+(-[a-z0-9]+)*$`).
+- `cruxSummary` — one hand-authored line (~10–16 words) compressing
+  the crux for browse surfaces (`/problems` cards, the landing
+  preview, search results). Same source-faithful bar as `crux`:
+  compresses it, never restates the title or the solution.
 
 **Three design decisions that shape the axis:**
 
-1. **cruxTag reuse across articles is the point, so
-   uniqueness is deliberately NOT enforced.** A tag shared
-   by two companies is the taxonomy demonstrating its
-   thesis; forcing every tag to be unique per article would
-   defeat the entire purpose. Consequence: the validator's
-   cruxTag check is presence + kebab-case format only —
-   never uniqueness. The first three two-company tags
-   landed day one of the schema (Stripe + Shopify on
-   `ambiguous-failure-under-retry`; Uber + Netflix on
-   `priority-blind-load-shedding`; Skipper + Cadence on
-   `partial-completion-under-crashes`, the first
-   same-crux/opposite-solution pair — same bottleneck, one
-   embedded answer and one central-platform answer).
-2. **The cruxTag *registry* is minimal browse-surface
-   metadata, not a definition file.** The 2026-07-08 landing/
-   navigation phase added `content/cruxtags.json` — a flat
-   `{ slug: { label, definition } }` map with one entry per
-   distinct cruxTag used across the library. The registry
-   exists because the catalog page groups articles by
-   cruxTag and needs a display label plus a one-sentence
-   class definition per group header; a raw kebab slug like
-   `single-table-scaling-ceiling` won't do, and neither will
-   a per-page derivation from article prose. **The registry
-   is deliberately not a definition file in the pattern
-   sense.** Patterns have
-   `content/patterns/{slug}.json` files carrying multi-
-   paragraph authored definitions, `whenItApplies`,
-   `tradeoffs`, and category. cruxTag entries have exactly
-   two fields — `label` (display casing/hyphenation) and
-   `definition` (one company-neutral sentence naming the
-   bottleneck class). The article-level `crux` prose still
-   carries the full editorial payload; the registry
-   definition is the class-level compression the group
-   header needs. Validator (`cruxtag-registry-coverage`,
-   Commit 1): every distinct cruxTag used by any article
-   must have a registry entry (missing entry is an
-   **error** — an unlabeled group would render a raw slug
-   and break the DefinedTermSet structured data). Unused
-   registry entries are allowed by design — supports future
-   article removals.
-3. **A browsable `/bottlenecks` surface is deferred.** The
-   taxonomy renders correctly on the article page today
-   (THE CRUX callout) and would benefit from a
-   patterns-index-style browsable page at
-   `/bottlenecks` — grouping articles by cruxTag, showing
-   recurrence counts — once the taxonomy has enough
-   two-company recurrence to be materially interesting for
-   browsing (~5-6 two-company tags is the current
-   threshold). Tracked in `progress-tracker.md` → In
-   Progress. Building it earlier would ship a page with
-   mostly one-article groups, which would misrepresent
-   the taxonomy's payoff.
+1. **Reuse across articles is the point, so uniqueness is
+   deliberately NOT enforced.** A tag shared by two companies is the
+   taxonomy demonstrating its thesis.
+2. **The registry is minimal browse metadata, not a definition
+   file.** `content/cruxtags.json` (`src/types/cruxtag.ts`) maps each
+   cruxTag to `label` (the exact display form; never humanize the
+   slug), `definition` (one company-neutral sentence naming the
+   class), `urlSlug` (the page address; the cruxTag itself stays the
+   frozen join key and anchor id, never displayed), and `keywords?`
+   (search-only, from `keywords/walls.json`). A class's long-form
+   content lives in its problem essay.
+3. **The grouping is load-bearing navigation.** A mis-assigned cruxTag
+   mis-files an article on the main browse surface, which raises the
+   bar on tag hygiene.
 
 **Validator (locked):**
 
-- Missing `crux` is an **error** — every article in the
-  library carries one.
-- Missing `cruxTag` or `cruxTag` failing the kebab-case
-  regex is an **error**.
-- Missing / empty `cruxSummary` is an **error**;
-  `cruxSummary` above ~20 words warns
-  (`crux-summary-length`).
-- Every cruxTag used by any article must have a
-  `content/cruxtags.json` entry — missing entry is an
-  **error** (`cruxtag-registry-coverage`). Unused registry
-  entries are allowed by design.
-- There is NO uniqueness check on cruxTag (see decision 1).
-
-All error-level checks fit the existing
-`CheckError.severity: 'error'` contract — no framework
-change needed. The soft-length warning on `cruxSummary`
-and the value-in-prose fuzzy-miss warnings on `stats` are
-the only two check outputs that use `severity: 'warning'`
-— both cases where authorial phrasing is genuinely a
-judgment call, so the validator flags and the human
-decides.
+- Missing or empty `crux` or `cruxSummary`, or a `cruxTag` that is
+  missing or fails the kebab-case pattern: schema **error**
+  (`checkArticle`).
+- `cruxSummary` above 20 words: **warning** (`crux-summary-length`;
+  the card assumes one line).
+- Every cruxTag an article uses has a registry entry: **error**
+  (`cruxtag-registry-coverage`; an unlabeled group would render a raw
+  slug and break the `DefinedTermSet`). Unused entries are allowed.
+- Every registry entry has a kebab-case `urlSlug`, unique across the
+  registry: **error** (`cruxtag-urlslug`).
+- There is NO uniqueness check on cruxTag (decision 1).
 
 ## Proposed Pattern Queue
 
-The pipeline's analyze stage (Unit 7+) may identify candidate patterns
-in an article that aren't yet defined in `content/patterns/`. Pattern
-definitions are authored, not auto-generated (see Architecture
-Decisions in `progress-tracker.md`), but the analyze stage shouldn't
-silently drop emerging patterns either — the synthesis across articles
-is where the library's value compounds. The Proposed Pattern Queue is
-the mechanism that surfaces candidates for human curation without
-compromising the authored-definitions rule.
+A pipeline mechanism, deferred with it: the analyze stage would strip
+references to undefined patterns into a human-review queue and hold
+articles left below two grounded patterns. The design is in
+`context/pipeline-architecture-deferred.md`.
 
-**Mechanism.** When the analyze stage emits an article's candidate
-`patterns[]` list, it splits each reference by whether the slug has a
-matching definition in `content/patterns/`:
-
-- *Grounded references* (slug has a definition) stay on the article
-  and are written into the article's published JSON.
-- *Proposed references* (slug has no definition) are stripped from the
-  article's published JSON and appended to
-  `pipeline/proposed-patterns.json` — a human-review queue listing the
-  candidate slug, the source article, and the analyze stage's
-  rationale.
-
-The validator (Unit 4) only ever sees articles with fully grounded
-references; this preserves invariant 8 at the data level without
-requiring the analyze stage to be perfect.
-
-**Three publish states.** Stripping proposed references can drop an
-article below invariant 8's minimum-2 rule. The analyze stage routes
-each article into one of three states:
-
-- *Published* — ≥2 grounded references after stripping. The article's
-  JSON is written to `content/articles/` and the validator passes.
-  Proposed slugs (if any) still log to the queue for later authoring.
-- *Blocked* — fewer than 2 grounded references after stripping. The
-  article's JSON is **not** written to `content/articles/` (which
-  would fail the validator). Instead, the full analyzed article and
-  its proposed slugs land in `pipeline/blocked-articles.json`,
-  awaiting human action: author the missing definitions to unblock,
-  or reject.
-- *Rejected* — manually removed from `blocked-articles.json` when the
-  owner decides the article isn't worth pursuing. No persistent state
-  required — the absence from both queues is the rejection.
-
-The principle: **the validator enforces shape integrity; the analyze
-stage makes authoring decisions.** Splitting the concerns this way
-lets the validator stay simple and content-focused, and lets the
-analyze stage stay editorial without poisoning the content contract.
-
-**Storage.** Both `pipeline/proposed-patterns.json` and
-`pipeline/blocked-articles.json` are pipeline operational state, not
-website-readable content. They live under `pipeline/` and never enter
-`content/`. (Compare with `content/feeds.json`, which both pipeline
-and website read — moved from `pipeline/feeds.json` in Unit 6 to
-resolve its boundary cleanly. The queue files have no such tension:
-only the pipeline reads them.)
+In manual authoring the rule it protected still holds: **the validator
+enforces shape integrity; authoring decisions stay with the author.**
+An article that can't reference two defined patterns doesn't ship
+until the missing definition is authored, or it doesn't ship at all.
 
 ## Auth and Access Model
 
 - No authentication. The site is fully public and read-only.
-- There is no per-user state and no mutation surface on the website.
-- Write access is implicit: whoever can push to the repo (the owner, or CI)
-  can publish content. There is no runtime write path.
+- No server-side state and no runtime write path. The only per-user
+  state is the per-browser wall record in `localStorage`; nothing
+  leaves the browser apart from Vercel Analytics events.
+- Write access is implicit: whoever can push to the repo publishes.
+  Vercel deploys `main`.
+- The problem page's subscribe card renders only when
+  `newsletterSignupUrl` in `src/config/site.ts` is set.
 
 ## Invariants
 
-1. **Static-by-construction.** Per-route content is present in the
-   served HTML at build time via SSG (see Rendering section). The
-   only runtime network activity is artifact iframe loads and their
-   HEAD availability probe — progressive enhancements, not content
-   dependencies. The original wording (Unit 1) read "the website
-   performs no network calls or dynamic data fetching at request
-   time," which captured the no-fetch property but missed the
-   no-runtime-computation property — exactly the gap that made the
-   SEO miss possible in Unit 9. The current phrasing makes both
-   explicit: content first, network only for enhancements.
-2. **Artifact fault isolation and containment.** Each interactive
-   artifact renders in its own sandboxed iframe. A single malformed or
-   failing artifact must never break the site build or affect any
-   other artifact (fault isolation). This holds at **compile time**
-   (per-artifact esbuild failures log to stderr and skip; the missing
-   bundle does not fail the build) and at **runtime** (iframe load
-   errors and inside-iframe render exceptions both surface as a single
-   muted error state in the artifact's slot — the rest of the page
-   reads normally; the home and pattern routes are unaffected).
+Numbers are stable because code and other context files cite them;
+4 and 5 are retired, not reused.
 
-   The iframe `sandbox` attribute is exactly `allow-scripts` — JS
-   execution and nothing else. Same-origin, form submission, top-level
-   navigation, popups, pointer lock, storage access (cookies,
-   localStorage, sessionStorage), plugin embeds, and downloads are all
-   denied by the absence of the corresponding `allow-*` flags.
-   Artifacts cannot read parent state, navigate the parent, or persist
-   data.
+1. **Static by construction.** Per-route content is in the served HTML
+   at build time (Rendering). Content reaches `src/` only through
+   `src/content/index.ts`'s eager `import.meta.glob`, so it is
+   bundled, never fetched. Runtime network activity is limited to
+   progressive enhancements: artifact iframes and their bundles, the
+   `ArtifactEmbed` HEAD probe, and `@vercel/analytics` events. Fonts
+   are self-hosted. The no-fetch property and the no-runtime-
+   computation property are both required: content first, network
+   only for enhancements. Enforced by construction and review; no
+   automated check.
+2. **Artifact fault isolation and containment.** Each artifact renders
+   in its own sandboxed iframe, and a malformed or failing artifact
+   never breaks the build, the page around it, or any other artifact.
+   - **Compile time:** a per-artifact esbuild failure logs, removes
+     its partial output and is skipped; the build proceeds. (A host
+     that *declares* an artifact with no source is a content error and
+     fails validation: `artifact-bundle-exists`.)
+   - **Runtime:** `ArtifactEmbed` shows one muted error frame for both
+     modes, and the page around it reads normally. Load failure:
+     `iframe.onerror`, or a HEAD probe failing twice 1.5s apart (for
+     protocol artifacts, any message from the frame within 8s
+     overrides it). Render exception: the ErrorBoundary the entry stub
+     wraps around every bundle. The landing hero has no probe (a load
+     failure leaves a dark empty frame); its own ErrorBoundary covers
+     the wrapper.
 
-   **Principle: never loosen sandbox, widen postMessage instead.**
-   Future "this artifact wants to do X" needs are granted through a
-   `postMessage` protocol between artifact and parent (artifact emits
-   a request, parent decides whether to honor it) — never by adding
-   sandbox flags. The sandbox is the floor; postMessage is the door.
+   The `sandbox` attribute is exactly `allow-scripts` wherever an
+   artifact mounts: JS and nothing else. Same-origin, forms, top-level
+   navigation, popups, pointer lock, storage, plugins and downloads
+   are denied by absence. Artifacts cannot read parent state, navigate
+   the parent, or persist data.
 
-   **Standalone-visitor contract (2026-07-05).** Artifact bundles have
-   shareable standalone URLs and are routinely opened without the
-   article. Every artifact therefore ships two required elements,
-   specified in the Taste Document's artifact contract: (1) a
-   collapsible context block (THE PROBLEM / THE MOVE / TRY), expanded
-   by default, whose PROBLEM line compresses the article's `crux` and
-   whose MOVE/TRY lines describe what *this* artifact actually does —
-   no claims that don't already exist in the article; (2) a footer
-   backlink to the article route (`target="_blank"`, since the same
-   bundle renders inside the sandboxed embed iframe). Both elements
-   are additive UI inside the bundle; they do not change the sandbox,
-   the postMessage protocol, or the compile step.
-3. The pipeline and the website never import each other's **runtime code**.
-   They communicate only through the generated files in `content/` and
-   `public/artifacts/` (the content contract). Exception: shared schema
-   type definitions live in `src/types/` and may be imported by both sides
-   as *type-only* imports (`import type { ... }`). Types have no runtime
-   existence after compilation, so this does not couple the systems at
-   runtime; it only ensures both sides agree on the shape of the content
-   contract. Any non-type-only import across the boundary is a violation.
-4. The pipeline is idempotent: running it repeatedly (same day, same inputs)
-   never produces duplicate articles or corrupts existing content. Article
-   identity is a stable slug tracked in SQLite.
-5. Long-running work and external API calls happen only in the pipeline,
-   never in website code.
-6. `content/` JSON conforms to the documented summary and pattern-library
-   schemas. The website may assume the schema and should fail gracefully
-   (skip + flag) on a nonconforming entry rather than crashing.
-7. **Official engineering blogs only.** Every article in the library must
-   originate from the official engineering blog of the company that built
-   the system being described. The pipeline maintains an explicit source
-   allowlist (`content/feeds.json`) of approved official feeds; any article
-   whose canonical URL does not match an allowlisted source is rejected at
-   discovery, regardless of how it was discovered (RSS, manual URL, etc.).
-   Personal blogs, Substacks, third-party summaries, conference recaps, and
-   aggregators are never published, even when they cover the same material.
-8. **Bidirectional pattern integrity + minimum coverage.** Articles and
-   patterns are joined by canonical pattern slugs. Two rules govern the
-   relationship; both fail the build when violated:
-   - **Orphan references.** Every `patterns[].slug` referenced by an
-     article must have a matching pattern definition file in
-     `content/patterns/`.
-   - **Minimum coverage.** Every article must reference **at least 2
-     patterns**. Articles below the threshold do not belong in the
-     library.
+   **Principle: never loosen sandbox, widen postMessage instead.** A
+   new capability is a `postMessage` request the parent decides on,
+   never a sandbox flag. The sandbox is the floor; postMessage is the
+   door. The parent always gates on `event.source ===
+   iframe.contentWindow`, never on origin. Handled today:
+   `artifact:interacted` (every bundle), `artifact:size` (the landing
+   hero), the wall protocol v1 (problem pages). Missions persist
+   through the host: the principle at work.
 
-   Pattern slugs are unique and normalized (lowercase, kebab-case).
-   Patterns with zero matching articles are permitted (a pattern can be
-   seeded before its first article) and surfaced as such in the pattern
-   library, but never silently dropped.
+   **Standalone-visitor contract.** Artifact URLs are shared and opened
+   without their page. Article artifacts ship (1) a collapsible
+   context block (THE PROBLEM / THE MOVE / TRY), expanded by default,
+   whose PROBLEM line compresses the `crux` and whose MOVE/TRY lines
+   describe what *this* artifact does, claiming nothing the article
+   doesn't; (2) a footer backlink to the article (`target="_blank"`,
+   since the same bundle renders in the embed). See
+   `docs/behindscale-taste.md` §6. Pattern and problem artifacts carry
+   neither; their host page supplies the context. Every standalone
+   page also gets the build-injected bar back to its owner.
+3. **The boundary.** `src/` is the site; `scripts/` is build-time
+   tooling; `content/` (with `keywords/`) is the hand-authored source
+   of truth; `public/artifacts/` and `public/figures/` are compiled
+   output.
+   - `src/` never imports from `scripts/` and never reads files at
+     runtime.
+   - `scripts/` may import from `src/` only framework-free modules:
+     `src/types` (the types and the schema predicates), pure helpers
+     in `src/lib` (e.g. `proseText`, `proseList`, `catalogGroups`,
+     `patternCategories`), and `src/walls`. Never React components,
+     pages, or `src/content` (which depends on Vite's glob; scripts
+     read content from disk or from the SSR bundle).
+   - Networked or long-running work (the git-history fetch) happens
+     only in `scripts/`, at build time.
+
+   No automated check enforces the import rule; review does.
+4. *Retired.* Pipeline idempotency. Kept in
+   `context/pipeline-architecture-deferred.md`.
+5. *Retired.* Long-running work and external API calls only in the
+   pipeline. Superseded by invariant 3's build-time rule; the
+   pipeline form is in the deferred doc.
+6. **Schema conformance.** `content/` JSON conforms to the types in
+   `src/types/`. Enforced at build: `scripts/load-content.ts` runs the
+   predicates in `src/types/predicates.ts` on every file; a
+   nonconforming file is reported and skipped from the check set, and
+   any error fails `npm run validate`, which gates `npm run build` and
+   CI. The site trusts the schema but still degrades rather than
+   crashing on a bad lookup (skip + flag): unknown slugs render
+   not-found states, an unregistered cruxTag renders its slug as the
+   label, a class without a `urlSlug` links to
+   `/problems#term-<cruxTag>` and gets no page.
+7. **Official engineering blogs only.** Every article originates from
+   the official engineering blog of the company that built the system
+   it describes. Personal blogs, Substacks, third-party summaries,
+   conference recaps and aggregators are never published, even when
+   they cover the same material. `content/feeds.json` is the allowlist
+   of approved blogs, rendered on `/sources`. Enforcement is editorial
+   (`docs/behindscale-taste.md` §2); no check ties an article's `url`
+   or `source` to the allowlist.
+8. **Bidirectional pattern integrity + minimum coverage.** Articles
+   and patterns are joined by canonical pattern slugs. Two rules, both
+   build failures:
+   - **Orphan references.** Every `patterns[].slug` on an article has
+     a matching file in `content/patterns/` (`orphan-pattern-slugs`).
+   - **Minimum coverage.** Every article references **at least 2
+     patterns** (`minimum-pattern-coverage`).
+
+   Patterns with zero articles are permitted (a pattern can be seeded
+   before its first article) and still get a page; nothing flags
+   them. Pattern slugs are lowercase kebab-case, one file per slug, by
+   convention: no check enforces the format, uniqueness, or
+   slug-equals-filename.
 
    *Rationale for the minimum-2 rule:* behindscale's mission is to
-   surface transferable patterns across companies. An article that
-   embodies only one pattern is a single-pattern case study — fine
-   reading on its own, but it doesn't compound, and the library's value
-   is the cross-article synthesis. The minimum forces either deeper
-   analysis (most engineering articles really do embody multiple
-   patterns once you look) or honest exclusion (the article doesn't fit
-   the library's purpose). Enforced by the build-time validator
-   (Unit 4); produced by the analyze stage's Proposed Pattern Queue
-   mechanism (see section above).
+   surface transferable patterns across companies. A single-pattern
+   article is a case study, fine reading on its own, but it doesn't
+   compound, and the library's value is the cross-article synthesis.
+   The minimum forces either deeper analysis (most engineering
+   articles embody several patterns once you look) or honest
+   exclusion.
