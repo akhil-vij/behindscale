@@ -17,18 +17,21 @@ import {
   checkCruxTagRegistry,
   checkPatternDefinition,
   checkProblemEssay,
+  checkSource,
 } from '../src/types/predicates'
 import type {
   Article,
   CruxTagRegistry,
   PatternDefinition,
   ProblemEssay,
+  Source,
 } from '../src/types'
 import type { CheckError, ContentSet } from './types'
 
 const ARTICLES_DIR = 'content/articles'
 const PATTERNS_DIR = 'content/patterns'
 const CRUXTAGS_PATH = 'content/cruxtags.json'
+const FEEDS_PATH = 'content/feeds.json'
 const PROBLEMS_DIR = 'content/problems'
 const FIGURES_DIR = 'content/figures'
 const ARTIFACTS_DIR = 'content/artifacts'
@@ -63,6 +66,7 @@ export function loadContent(): LoadResult {
   const patterns: PatternDefinition[] = []
   const problemEssays: ProblemEssay[] = []
   let cruxTagRegistry: CruxTagRegistry = {}
+  const feeds: Source[] = []
   const articlePaths = new Map<string, string>()
   const patternPaths = new Map<string, string>()
   const problemEssayPaths = new Map<string, string>()
@@ -154,6 +158,42 @@ export function loadContent(): LoadResult {
       fix: [
         'create content/cruxtags.json (map of cruxTag slug -> { label, definition })',
       ],
+    })
+  }
+
+  // Source allowlist -- a single file, an array of Source entries. Each
+  // entry is shape-checked on its own so one bad entry doesn't hide the
+  // rest; source-matches-feed compares every article's source against it.
+  if (existsSync(FEEDS_PATH)) {
+    const parsed = readJson(FEEDS_PATH, schemaErrors)
+    if (parsed === undefined) {
+      skippedFileCount += 1
+    } else if (!Array.isArray(parsed)) {
+      schemaErrors.push({
+        file: FEEDS_PATH,
+        message: 'expected an array of sources',
+        fix: ['shape file as Source[] (see src/types/source.ts)'],
+      })
+      skippedFileCount += 1
+    } else {
+      parsed.forEach((entry: unknown, i: number) => {
+        const result = checkSource(entry)
+        if (result.ok) {
+          feeds.push(entry as Source)
+        } else {
+          schemaErrors.push({
+            file: FEEDS_PATH,
+            message: `entry ${i}: ${result.reason}`,
+            fix: ['shape the entry as Source (see src/types/source.ts)'],
+          })
+        }
+      })
+    }
+  } else {
+    schemaErrors.push({
+      file: FEEDS_PATH,
+      message: 'source allowlist file does not exist',
+      fix: ['create content/feeds.json (array of { name, slug, company, url, feed })'],
     })
   }
 
@@ -291,6 +331,7 @@ export function loadContent(): LoadResult {
       problemEssays,
       problemEssayPaths,
       cruxTagRegistry,
+      feeds,
       articlePaths,
       patternPaths,
       figureSvgs,

@@ -8,6 +8,7 @@ import type {
   CruxTagRegistry,
   PatternDefinition,
   ProblemEssay,
+  Source,
 } from '../src/types'
 
 export interface ContentSet {
@@ -23,6 +24,10 @@ export interface ContentSet {
   // that failure separately, so downstream checks see the same empty
   // set they would see if no entries were authored yet.
   readonly cruxTagRegistry: CruxTagRegistry
+  // The source allowlist (`content/feeds.json`): one entry per official
+  // engineering blog. Entries that fail the Source schema are reported by
+  // the loader and left out.
+  readonly feeds: readonly Source[]
   // slug -> on-disk path. Lets checks emit exact file locations in
   // their error output without each check arg carrying path strings;
   // the runner resolves slug -> path when rendering.

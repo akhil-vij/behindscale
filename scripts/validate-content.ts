@@ -35,6 +35,7 @@ import { cruxtagUrlslug } from './checks/cruxtag-urlslug'
 import { problemEssay } from './checks/problem-essay'
 import { patternCategory } from './checks/pattern-category'
 import { svgNoC2pa } from './checks/svg-no-c2pa'
+import { sourceMatchesFeed } from './checks/source-matches-feed'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -65,6 +66,7 @@ const CHECKS: readonly Check[] = [
   problemEssay,
   patternCategory,
   svgNoC2pa,
+  sourceMatchesFeed,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()
