@@ -13,10 +13,9 @@
 //   import { isArticle } from '../predicates'   // tests
 //   import { checkArticle } from '../../src/types/predicates'  // scripts
 //
-// Hand-written rather than Zod-generated; the heavier runtime validator
-// arrives when the pipeline's analyze stage needs to validate Claude's
-// JSON output before writing (see Architecture Decisions in
-// progress-tracker.md).
+// Hand-written rather than Zod-generated; a heavier runtime validator would
+// only be worth it for the deferred pipeline, to validate Claude's JSON
+// output before writing (context/pipeline-architecture-deferred.md).
 
 import type { Source } from './source'
 import type { PatternReference, PatternDefinition } from './pattern'

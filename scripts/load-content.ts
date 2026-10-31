@@ -47,13 +47,11 @@ export interface LoadResult {
 }
 
 /**
- * Excludes `content/patterns/index.json` -- that file is reserved for
- * the future derived aggregated pattern library (architecture.md,
- * Content Contract section). Mirrors the exclusion in
- * src/content/index.ts's pattern glob negation. **Both must stay in
- * sync** -- once Unit 4+ starts writing index.json, the website indexer
- * and this validator both have to refuse to treat it as a
- * PatternDefinition.
+ * Excludes `content/patterns/index.json` -- the name was reserved for a
+ * pipeline-written aggregated pattern library that was never built
+ * (context/pipeline-architecture-deferred.md). Mirrors the exclusion in
+ * src/content/index.ts's pattern glob negation; **both must stay in
+ * sync**, so neither ever treats such a file as a PatternDefinition.
  */
 export function isPatternDefinitionFile(name: string): boolean {
   return name.endsWith('.json') && name !== 'index.json'
@@ -270,8 +268,8 @@ export function loadContent(): LoadResult {
   // artifact existence is checked against the hand-authored .jsx SOURCE
   // (content/artifacts/<slug>.jsx), not the compiled output. Keeping the
   // IO here preserves the checks-do-no-IO invariant. Slug = filename
-  // without the .jsx extension; the `_`-prefix site convention (e.g.
-  // `_hero`) is preserved here and filtered in orphan-artifacts.
+  // without the .jsx extension; the `_`-prefix site convention (no members
+  // today) is preserved here and filtered in orphan-artifacts.
   const artifactSourceSlugs = new Set<string>()
   if (existsSync(ARTIFACTS_DIR)) {
     for (const name of readdirSync(ARTIFACTS_DIR)) {

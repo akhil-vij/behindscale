@@ -8,12 +8,10 @@
 // block the build; it's a hygiene signal.
 //
 // The `_`-prefix convention marks genuine SITE artifacts bound to no
-// content entity (rendered directly by a page, e.g. the landing hero) and
-// is exempt. NOTE (2026-08-19): `_hero` is scheduled to retire once its
-// bundle ports to the priority-aware-load-shedding pattern page (the
-// hero's production home); the underscore convention remains valid for
-// future genuine site artifacts even though it loses its only current
-// member. See pattern-artifacts-design.md §1.2.
+// content entity, rendered directly by a page) and is exempt. It has no
+// members today: the only one, `_hero`, retired when the landing hero moved
+// to the priority-aware-load-shedding pattern artifact. The convention stays
+// valid for future site artifacts. See pattern-artifacts-design.md §1.2.
 
 import type { Check, CheckError } from '../types'
 import { artifactHosts } from '../content-hosts'

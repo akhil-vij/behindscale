@@ -5,9 +5,9 @@
 // 1 on any failure. Designed so adding a new check is "write the file
 // under scripts/checks/, append one line to CHECKS below."
 //
-// Wired into the build chain in package.json:
-//   "build": "npm run validate && tsc -b && vite build"
-// so a Vercel deploy fails the same way a local build does.
+// The first step of `npm run build` (see package.json for the full chain),
+// and its own step in CI, so a Vercel deploy fails the same way a local
+// build does.
 
 import { loadContent, SCHEMA_SECTION_NAME } from './load-content'
 import { render, type CheckResult } from './render-output'

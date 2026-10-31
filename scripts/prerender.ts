@@ -215,7 +215,7 @@ function landingMeta(): Meta {
 // group header wrappers; the workbench route was renamed /catalog ->
 // /problems in the 2026-08 navigation-IA phase, D2); article-page
 // TechArticle.mentions references a pattern DefinedTerm by its
-// `/patterns/<slug>#term` anchor. The assertion pass below verifies
+// `/patterns#term-<slug>` anchor. The assertion pass below verifies
 // every referenced @id resolves to a real emitted DefinedTerm.
 function cruxTagTermId(slug: string): string {
   return `${SITE_URL}/problems#term-${slug}`
@@ -468,7 +468,7 @@ function articleMeta(article: Article): Meta {
   // TechArticle upgrade (was Article). Landed 2026-07-08 for the
   // navigation/SEO phase. isBasedOn keeps the same shape it had on
   // the Article node so source attribution stays canonical -- see
-  // architecture.md JSON-LD field map. `about` references the
+  // architecture.md, Rendering → JSON-LD. `about` references the
   // cruxTag DefinedTerm on /problems by @id (locked correspondence
   // with the id="term-<slug>" DOM anchor emitted by
   // src/pages/Catalog.tsx group headers). `mentions` references
