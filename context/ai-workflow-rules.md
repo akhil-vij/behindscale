@@ -1,169 +1,83 @@
 # AI Workflow Rules
 
+How Claude Code works in this repo: scoping, branching, verifying, shipping.
+
 ## Approach
 
-Build behindscale incrementally using a spec-driven workflow. The context
-files define what to build, how to build it, and the current state. Always
-implement against these specs — do not infer or invent product behavior from
-scratch. When something is undefined, resolve it in the context files first
-(see "Handling Missing Requirements").
+- Work from the specs: the context files; `docs/` for authoring and design
+  (`docs/authoring-problem-pages.md`, `docs/behindscale-taste.md`,
+  `docs/figures-design.md` and the rest); and the task's brief when there is
+  one (`handoff/`). Don't infer or invent product behavior.
+- When something is undefined, ask the owner or record it in
+  `open-decisions.md` before building on a guess.
+- A brief governs its own task. Rulings it records are settled; don't re-open
+  them. Where a brief and a context file disagree, follow the brief and say so
+  in the PR.
 
-Build in this rough order, because later stages depend on earlier contracts.
-This phasing aligns with the granular "Next Up" list in
-`progress-tracker.md`; the tracker is the operational source of truth for
-the current unit, this list is the strategic framing.
+## Kinds of Work
 
-1. Project scaffolding: Vite + React + TypeScript, Tailwind, and the
-   ui-context.md design tokens wired into the Tailwind theme. Nothing else
-   is buildable until this is in place.
-2. Shared schema types (the content contract) — article summary (with
-   `source` block and `patterns[]` references), pattern definition, and
-   aggregated pattern library shapes. Bidirectional integrity (invariant 8)
-   is enforced by these types. Lives in `src/types/` and is the only
-   permitted cross-boundary import (type-only).
-3. Website shell with both navigation axes wired up against hand-placed
-   sample content from `content/articles/` and `content/patterns/`:
-   - Home / article index (`/`) with article cards that show source and
-     pattern chips.
-   - Article page (`/articles/:slug`) with source attribution and pattern
-     chips that link to pattern detail.
-   - Pattern library index (`/patterns`) — grid of pattern cards with
-     frequency counts and teasers.
-   - Pattern detail page (`/patterns/:slug`) with definition, when-it-applies,
-     tradeoffs, and "Seen in" back-link cards (each with source attribution).
-   Use ui-context.md tokens throughout.
-4. Build-time validation step that fails the build on orphan pattern slugs
-   (article references a pattern with no definition) — this is how invariant
-   8 is actually enforced.
-5. Artifact embedding via sandboxed iframes, with a deliberately broken
-   sample artifact to prove fault isolation (invariant 2).
-6. Pipeline stages one at a time: discover → fetch → analyze → generate →
-   publish, each verifiable on its own. The analyze stage emits pattern
-   slug *references* on articles; it may also *propose* new pattern slugs
-   (logged to progress-tracker.md), but pattern definitions themselves are
-   authored separately and never auto-merged.
-7. The orchestrator (`pipeline/run.ts`, exposed as `npm run study`) that
-   chains the stages into the single daily command. Must be idempotent and
-   report per-article success/failure. This is the deliverable that makes the
-   whole system usable day to day — treat it as a first-class unit, not an
-   afterthought.
-8. CI/CD: build + deploy to Vercel (auto on push to `main`); then the
-   optional pipeline scheduler, whose
-   only job is to invoke `npm run study` on a timer.
+- **Content rounds** (`round/<slug>-enrichment`): the owner hands over a
+  round package (article or pattern JSON, artifact JSX, figure SVGs) to place.
+  Place it as delivered, strip C2PA blocks from SVGs, run the gates below, and
+  report anything the package leaves open as notes for the owner.
+- **Page and lesson builds** (`feat/<name>`): usually from a brief, in stages:
+  a lookup report first (what the repo has, what the brief needs, the
+  questions), then the owner's go-ahead with rulings, then the build.
+- **Fixes, copy passes, tests and docs** (`fix/`, `copy/`, `test/`, `docs/`).
 
-## Scoping Rules
+## Scoping
 
-- Work on one feature unit at a time.
-- Prefer small, verifiable increments over large speculative changes.
-- Do not combine unrelated system boundaries in a single implementation step.
-  In particular, never mix pipeline work and website work in the same step —
-  they are different boundaries (architecture.md).
+- One task per branch, off an up-to-date `main`, and one PR per branch.
+- One commit per build item, each leaving `npm run build` green. Keep content,
+  site code, tests and context-doc updates in separate commits.
+- If a change can't be verified end to end quickly, split it.
+- **Design intent before code.** When a task makes visible choices that spread
+  (component anatomy, page layout, a new postMessage message, how errors
+  surface to the reader), send the owner one or two paragraphs on those
+  choices and why, and wait for confirmation. Mechanical work doesn't need it.
 
-## Sub-Unit Decomposition
+## Commits and PRs
 
-Some units are too large to land in a single commit while still ending in a
-buildable, verifiable state. When that's the case, split the unit into
-lettered sub-units (e.g. 3a, 3b, 3c, …). Each sub-unit:
+- Conventional Commits with a scope, in plain words that say what changed for
+  the reader: `feat(queue-backlog): …`, `content(patterns): …`,
+  `fix(links): …`, `copy(problems): …`, `test(e2e): …`, `docs(context): …`.
+  Reference an open-decisions item as `(#31)`.
+- No Co-Authored-By trailer (owner preference).
+- The PR body lists what changed, how it was verified, and anything only the
+  owner can check (a real device, iOS Safari, reduced motion on a phone).
 
-- Ends in a state where `npm run build` and (when applicable) `npm run dev`
-  pass and the increment is visibly working — no half-rendered routes, no
-  imports of files that don't exist yet.
-- Lands as its own commit using the project's Conventional Commits format
-  (`feat: unit 3a — …`).
-- Is reviewed by the owner against its own diff, not against the parent
-  unit's summary.
+## Before Calling It Done
 
-The decomposition itself is recorded in `progress-tracker.md` under
-"Next Up" before the first sub-unit's code lands.
+1. `npm run validate`: 0 errors. Warnings are advisory.
+2. `npm test` (vitest) and `npm run test:e2e` (Playwright against a local
+   production build) pass.
+3. `npm run build` passes.
+4. The invariants in `architecture.md` still hold.
+5. Visual changes are checked at desktop and phone widths (the tests use 1440
+   and 390).
+6. The context files are still true (below), and `progress-tracker.md` is
+   updated in place.
 
-## Design-Intent Before Code
+## Generated Files
 
-Some units involve design decisions that propagate widely — visible
-component anatomy, error-surface behavior, orchestration models — and are
-not pure mechanical execution. Before writing code for these, send the
-owner a brief design-intent paragraph (one to two paragraphs, not a spec)
-covering the visible choices and why. The owner reviews and confirms
-before implementation starts.
+Don't hand-edit these; the build writes them and git ignores them:
 
-Units currently requiring a design-intent paragraph:
+- `public/artifacts/`: compiled from `content/artifacts/*.jsx` by
+  `scripts/compile-artifacts.ts`.
+- `public/figures/`: copied from `content/figures/` by
+  `scripts/copy-figures.ts`.
+- `dist/`, `dist-ssr/`: build output.
 
-- **3b** — article shell components (ArticleCard, PatternChip,
-  SourceAttribution). These components are reused across four pages, so
-  their anatomy is a load-bearing decision.
-- **4** — orphan-pattern-slug validator: where it runs in the build,
-  what a failure looks like (which file, which slug, exit code).
-- **5** — sandboxed-iframe artifact embed: how missing artifacts
-  (`artifact: null`) and broken artifacts surface to the reader without
-  breaking the page (invariant 2 + invariant 6).
-- **7** — pipeline orchestrator: per-article success/failure reporting
-  model and idempotency semantics.
-
-Pure-scaffolding sub-units (e.g. 3a — routing skeleton + placeholders) do
-not require a design-intent paragraph; they are mechanical.
-
-## When to Split Work
-
-Split an implementation step if it combines:
-
-- Website (`src/`) changes and pipeline (`pipeline/`) changes.
-- Multiple pipeline stages (e.g. fetching and Claude analysis) that can each
-  be verified independently.
-- The content contract (schema/types) and a consumer of it — define the
-  contract first, then build against it.
-- Behavior not clearly defined in the context files.
-
-If a change cannot be verified end to end quickly, the scope is too broad —
-split it.
-
-## Handling Missing Requirements
-
-- Do not invent product behavior not defined in the context files.
-- If a requirement is ambiguous, resolve it in the relevant context file
-  before implementing.
-- If a requirement is missing, add it as an open question in
-  `progress-tracker.md` before continuing.
-- For anything touching the content contract (the JSON the pipeline writes
-  and the site reads), update the shared schema/types first; both sides
-  depend on it.
-
-## Protected Files / Generated Content
-
-Do not hand-edit the following unless explicitly instructed — they are
-generated and will be overwritten by the pipeline:
-
-- `content/articles/*.json` — generated article summaries (pipeline output).
-- `content/patterns/index.json` — the aggregated pattern library, derived
-  from articles + pattern definitions every pipeline run. Never hand-edit.
-- `public/artifacts/*` — compiled artifact bundles.
-- Any third-party library internals or generated `components/ui/*` if a
-  component CLI is used.
-
-Pattern *definitions* (`content/patterns/{slug}.json` — one file per pattern,
-excluding `index.json`) are **authored content**, not generated. They are
-hand-written or hand-reviewed and committed deliberately. Edit them like any
-other source file.
-
-Treat secrets as untouchable: never write `ANTHROPIC_API_KEY` or any secret
-into a committed file.
+Everything in `content/` is authored source, edited like code. Never write a
+secret into a committed file.
 
 ## Keeping Docs in Sync
 
-Update the relevant context file whenever implementation changes:
+Update the context file in the same PR as the change that makes it untrue:
 
-- System architecture, boundaries, or invariants → `architecture.md`.
-- Storage model decisions → `architecture.md`.
-- Visual tokens, theme, or layout patterns → `ui-context.md`.
-- Code conventions or standards → `code-standards.md`.
-- Feature scope → `project-overview.md`.
-- Claude prompt changes are meaningful — note them in `progress-tracker.md`.
-
-## Before Moving to the Next Unit
-
-1. The current unit works end to end within its defined scope.
-2. No invariant defined in `architecture.md` was violated — especially:
-   static-by-construction (no runtime fetching), artifact fault isolation,
-   pipeline/website decoupling, and pipeline idempotency.
-3. Generated content validates against the shared schema before being written.
-4. `progress-tracker.md` reflects the completed work and any new open questions.
-5. `npm run build` passes for the website; pipeline scripts run without error
-   on a sample input.
+- Rendering, boundaries, invariants, the content contract → `architecture.md`.
+- Tokens, theme, layout, link and copy presentation → `ui-context.md`.
+- Code and testing conventions → `code-standards.md`.
+- Product features and scope → `project-overview.md`.
+- Where things stand → `progress-tracker.md`, edited in place.
+- Pending owner decisions → `open-decisions.md`.

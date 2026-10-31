@@ -11,9 +11,11 @@ lives here it needs the owner's input to resolve.
 - **When the owner resolves an item**, the agent moves it to Recently
   Resolved (with commit hash) and removes it after one full round has
   passed.
-- **Do not** put made decisions here — those go in
-  `progress-tracker.md` under Architecture Decisions. This file is
-  for *pending* input.
+- **Do not** put made decisions here — a decided rule goes in the
+  context file it belongs to (`architecture.md`, `ui-context.md`,
+  `code-standards.md`). This file is for *pending* input.
+- **Numbers are permanent.** Commits cite items as `(#31)`; never
+  reuse or renumber. The next free number is #35.
 - **Do not** duplicate per-round narrative — the crux of each item
   should fit in a paragraph; link back to the source round if more
   context is needed.
@@ -31,14 +33,6 @@ lives here it needs the owner's input to resolve.
 
 ## Blocker
 
-### 28. Full git history on Vercel: resolved 2026-10-10
-
-- `VERCEL_DEEP_CLONE=true` was set (Production and Preview) but the deploy
-  still got a 10-commit clone and failed. The build now fetches the full
-  history itself (`scripts/content-dates.ts`), so the variable is no longer
-  needed. It's harmless; remove it from Vercel or leave it. If the repo ever
-  goes private, the fetch will need a token. Remove this item after one round.
-
 ### 29. Repo transfer and analytics plan (2026-10-10)
 
 - **Source:** batch A report items 7 and 8.
@@ -54,7 +48,10 @@ lives here it needs the owner's input to resolve.
 
 ## Worth resolving
 
-### 3. Problem-page Batch 1: one pending device pass (2026-09-09)
+### 34. Problem-page Batch 1: one pending device pass (2026-09-09)
+
+_(Numbered #3 until 2026-10-31, which collided with the accent registry
+item below.)_
 
 - **Source:** `problem-page-batch1` (the layout-spec build). All the spec
   decisions plus the two mid-round deferrals are now resolved; one owner
@@ -201,7 +198,7 @@ lives here it needs the owner's input to resolve.
 
 ### 26. Comparison diagrams: after the v2 drop-in (2026-10-09)
 
-- **Source:** `fix/comparison-diagrams-v2` (not pushed).
+- **Source:** `fix/comparison-diagrams-v2` (merged, PR #25).
 - **Resolved by diagrams v2:** text size (smallest on screen now 11.4px on
   the windows chart, 11.5px on the horizontals and 11.7px on the verticals; e2e
   asserts at least 11px at 1440 and 390), Segment's own "nothing" mark (dashed
@@ -244,7 +241,7 @@ lives here it needs the owner's input to resolve.
 
 ### 31. Queue-backlog lesson: one drawing may still change (2026-10-11)
 
-- **Source:** `feat/queue-backlog-lesson` (not pushed).
+- **Source:** `feat/queue-backlog-lesson` (merged, PR #28, 2026-10-12).
 - The design agent's wall 2 drawings are in (first delivery + return-1, C2PA
   metadata stripped): the mission stage (now drawn from the drawings in
   `drawStage()`), the try-it's two stages, the five comparison diagrams and
@@ -253,8 +250,8 @@ lives here it needs the owner's input to resolve.
 - **Open:** `buffer-turns-on-its-owner-v.svg` (the designer's
   `wall-figure-queue-v.svg`, phones with JavaScript off only) may get a
   tidy-up: its two red labels sit close and the grey arrow line runs through
-  "gets slower as it fills". If it arrives before the push, swap it in;
-  otherwise it ships as is and is swapped later.
+  "gets slower as it fills". It shipped as is; swap it in if the tidy-up
+  arrives.
 
 ## Lower priority
 
@@ -653,7 +650,12 @@ off after one round passes.
   animation only. The slowdown fills a memory queue to 100/100 and shows it
   LOCKED, red, before the "Full." line (the end state under reduced motion);
   a memory queue is capped at 100 in every event; only the slowdown and
-  attack 4's memory case lock. Landed on `feat/queue-backlog-lesson`.
+  attack 4's memory case lock. Landed on `feat/queue-backlog-lesson`
+  (PR #28).
+- **#28 Full git history on Vercel** — RESOLVED 2026-10-10: the build
+  deepens a shallow clone itself (`scripts/content-dates.ts`), so
+  `VERCEL_DEEP_CLONE` is no longer needed (harmless; remove it from Vercel
+  or leave it). If the repo goes private, that fetch will need a token.
 - **#27 Mission pacing in normal motion** — RESOLVED 2026-10-09 (owner):
   the reading-time hold also applies to the first day in normal motion;
   repeat days keep their pace; reduced motion holds on every day. Landed
@@ -662,14 +664,8 @@ off after one round passes.
   the ~4px margin at 1440x780, and the 9-10px hash glyph in the identity
   dot. Only the real-device run stays open in #25.
 
-- **Pattern-artifacts design: all 4 sub-decisions** (collision A,
-  placement above-Definition, prop rename now, scope patterns-only)
-  — surfaced and RESOLVED 2026-08-19; foundations landed as
-  `af2c138`. `_hero` reconciliation + `question` host kind folded.
-  Page-rebuild (PALS hero port, above-header mount) tracked
-  separately in `prompt-pattern-detail-build.md`.
-
-_(Older resolutions rolled off after their round: Idempotency
+_(Older resolutions rolled off after their round: Pattern-artifacts
+design, all four sub-decisions, 2026-08-19 as `af2c138`; Idempotency
 5-company backlink symmetry 2026-07-23 as `89a3d98` (retired
 items 9 and 11); Third backlink to Shopify from AWS
 idempotency 2026-07-22 as `c59d141`; buffer-degrades-under-
