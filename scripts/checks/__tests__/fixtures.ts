@@ -8,8 +8,19 @@ import type {
   Figure,
   PatternDefinition,
   ProblemEssay,
+  Source,
 } from '../../../src/types'
 import type { ContentSet } from '../../types'
+
+// The fixture article's source, and the only entry in the default feeds
+// allowlist, so source-matches-feed passes unless a test overrides either.
+export const EXAMPLE_SOURCE: Source = {
+  name: 'Example Engineering',
+  slug: 'example-engineering',
+  company: 'Example',
+  url: 'https://example.com/engineering',
+  feed: 'https://example.com/engineering.rss',
+}
 
 export function article(slug: string, patternSlugs: readonly string[]): Article {
   return {
@@ -18,13 +29,7 @@ export function article(slug: string, patternSlugs: readonly string[]): Article 
     url: 'https://example.com/article',
     publishedAt: '2026-01-01',
     addedAt: '2026-01-02',
-    source: {
-      name: 'Example Engineering',
-      slug: 'example-engineering',
-      company: 'Example',
-      url: 'https://example.com/engineering',
-      feed: 'https://example.com/engineering.rss',
-    },
+    source: { ...EXAMPLE_SOURCE },
     summary: '',
     crux: 'placeholder crux for test fixture -- not editorial output.',
     cruxTag: 'test-fixture-crux',
@@ -89,6 +94,8 @@ export function makeContent(input: {
   articles: readonly Article[]
   patterns: readonly PatternDefinition[]
   cruxTagRegistry?: CruxTagRegistry
+  // The source allowlist (defaults to [EXAMPLE_SOURCE]).
+  feeds?: readonly Source[]
   problemEssays?: readonly ProblemEssay[]
   // Override cruxTag -> path (defaults to content/problems/<cruxTag>.json).
   problemEssayPaths?: ReadonlyMap<string, string>
@@ -124,6 +131,7 @@ export function makeContent(input: {
         ]),
       ),
     cruxTagRegistry: input.cruxTagRegistry ?? DEFAULT_REGISTRY,
+    feeds: input.feeds ?? [EXAMPLE_SOURCE],
     articlePaths: new Map(
       input.articles.map((a) => [a.slug, `content/articles/${a.slug}.json`]),
     ),

@@ -19,11 +19,11 @@ import SideBySideBadge from '../components/SideBySideBadge'
 //     └── Left: eyebrow + Newsreader H1 (italic-gold-underline emphasis
 //         on the break→fix promise) + crawlable lede
 //     └── Right: dark-in-light seam frame around the sandboxed iframe
-//         at /artifacts/_hero/index.html, with a light caption bar
+//         at HERO_IFRAME_PATH (below), with a light caption bar
 //         above, a hint below, and a "See how" link into the
 //         load-shedding class page
-//   Trust band (#F4F2EE) — DISSECTED FROM FIRST-PARTY BLOGS + 12
-//     canonical company wordmarks
+//   Trust band (#F4F2EE) — DISSECTED FROM FIRST-PARTY BLOGS + every
+//     canonical company's wordmark (canonicalCompanies(articles))
 //   Audience block — "Built for Senior and Staff engineers" (who it's
 //     for + why), between the trust band and the problems preview
 //   Problems preview — top-3 multi-company problem-classes, each row
@@ -173,8 +173,7 @@ function HeroArtifactFrame() {
     <div className="mx-auto w-full max-w-[640px]">
       <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.14em] text-text-muted">
         <span
-          className="inline-block h-2 w-2 rounded-full"
-          style={{ background: '#30a46c' }}
+          className="inline-block h-2 w-2 rounded-full bg-art-live"
           aria-hidden="true"
         />
         Live artifact · Priority-blind load shedding

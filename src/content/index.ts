@@ -3,10 +3,9 @@
 // import.meta.glob bundles all matched JSON into the JS bundle at build
 // time — no runtime network fetching (invariant 1).
 //
-// Schemas are type-only imports from src/types/ (the single permitted
-// cross-boundary surface per invariant 3). Runtime validation of these
-// JSON files is enforced by the build-time validator in Unit 4; this
-// module trusts the schema.
+// Schemas are type-only imports from src/types/. Every JSON file is
+// validated at build time (scripts/validate-content.ts fails the build on a
+// malformed file), so this module trusts the schema.
 
 import type {
   Article,
@@ -21,12 +20,11 @@ const articleModules = import.meta.glob<Article>(
   { eager: true, import: 'default' },
 )
 
-// content/patterns/index.json is reserved for the derived aggregated
-// pattern library (architecture.md). It is NOT a pattern definition file
-// and must never enter this glob. The negation in the pattern array
-// excludes it at the glob level — Vite skips loading the module entirely
-// rather than loading-then-filtering at runtime, so the bundle stays clean
-// and the exclusion can never silently lapse.
+// content/patterns/index.json was reserved for a pipeline-written aggregated
+// pattern library that was never built (context/pipeline-architecture-
+// deferred.md); the library is derived below instead. The negation keeps
+// such a file out of the glob should one ever appear, at the glob level, so
+// Vite never loads it. scripts/load-content.ts mirrors the exclusion.
 const patternModules = import.meta.glob<PatternDefinition>(
   ['/content/patterns/*.json', '!/content/patterns/index.json'],
   { eager: true, import: 'default' },
@@ -184,8 +182,7 @@ export const cruxTagByUrlSlug: ReadonlyMap<string, string> = new Map(
 // Per-class authored problem essays (nav-IA progressive-authoring model).
 // OPTIONAL and keyed by the frozen `cruxTag`: a class with no file renders
 // fully derived (minimal state); a file's present blocks replace their
-// derived placeholders on ProblemDetail. Same glob shape as articles;
-// zero files today, so every class is minimal until authored. See
+// derived placeholders on ProblemDetail. Same glob shape as articles. See
 // src/types/problemEssay.ts.
 const problemEssayModules = import.meta.glob<ProblemEssay>(
   '/content/problems/*.json',
@@ -219,13 +216,8 @@ export const problemSvgByKey: ReadonlyMap<string, string> = new Map(
 // PatternIndex, PatternDetail) read by slug and never know how the stats
 // were computed.
 //
-// 3d implementation (here): walk the in-memory `articles` array at module
-// load and aggregate. Cheap, fine while the library has few articles.
-//
-// Unit 4+ swap point: this implementation will be replaced by a read from
-// `content/patterns/index.json` (the pipeline-generated aggregated pattern
-// library) -- shape stays identical, the swap is the body of
-// buildPatternStats() and the const that follows it. No consumer changes.
+// Derived at module load by walking the in-memory `articles` array; the
+// aggregate is never stored on disk.
 export interface PatternStatsEntry {
   frequency: number
   articleSlugs: string[]

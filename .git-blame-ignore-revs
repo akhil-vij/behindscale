@@ -5,3 +5,6 @@
 
 # chore(svg): strip C2PA content-credentials blocks from 33 SVGs (metadata only)
 fc78ffc82a8f49a040079832e035dc3299a20724
+
+# content(articles): five source blocks copied from feeds.json (metadata only)
+46264b9f949ef534842a6eef7a19cfd117f3ab65

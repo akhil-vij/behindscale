@@ -5,9 +5,9 @@
 // 1 on any failure. Designed so adding a new check is "write the file
 // under scripts/checks/, append one line to CHECKS below."
 //
-// Wired into the build chain in package.json:
-//   "build": "npm run validate && tsc -b && vite build"
-// so a Vercel deploy fails the same way a local build does.
+// The first step of `npm run build` (see package.json for the full chain),
+// and its own step in CI, so a Vercel deploy fails the same way a local
+// build does.
 
 import { loadContent, SCHEMA_SECTION_NAME } from './load-content'
 import { render, type CheckResult } from './render-output'
@@ -35,6 +35,7 @@ import { cruxtagUrlslug } from './checks/cruxtag-urlslug'
 import { problemEssay } from './checks/problem-essay'
 import { patternCategory } from './checks/pattern-category'
 import { svgNoC2pa } from './checks/svg-no-c2pa'
+import { sourceMatchesFeed } from './checks/source-matches-feed'
 import type { Check } from './types'
 
 // Explicit registration over auto-discovery: greppable, type-checked,
@@ -65,6 +66,7 @@ const CHECKS: readonly Check[] = [
   problemEssay,
   patternCategory,
   svgNoC2pa,
+  sourceMatchesFeed,
 ]
 
 const { content, schemaErrors, skippedFileCount } = loadContent()

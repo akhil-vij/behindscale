@@ -413,9 +413,9 @@ invariant 7.
 
 Each `content/feeds.json` entry defines these fields once, and an
 article's `source` is meant to be copied from it verbatim: articles
-inherit source data, they don't invent it. No check compares the two
-(a `source-matches-allowlist` check was pipeline design), so drift is
-possible.
+inherit source data, they don't invent it. The `source-matches-feed`
+check fails the build when an article's `source.slug` isn't in the
+allowlist or any field differs from its entry.
 
 ### Article
 
@@ -526,12 +526,12 @@ stored form nothing writes or reads.
 #### Canonical pattern categories
 
 The set is `PATTERN_CATEGORIES` in `src/lib/patternCategories.ts`
-(id, label, gloss, listing-dot colour). `/patterns` groups by it, and
-`pattern-category` fails the build on a missing or unknown category.
-Chip colours are a second map, `CATEGORY_CLASSES` in
-`src/components/PatternChip.tsx`; both draw from the `--cat-*` ramp in
-`src/index.css`, so keep them in step. **Adding a category is
-deliberate:** add it to both maps in one change, with a ramp colour.
+(id, label, gloss, listing-dot and chip classes). `/patterns` groups by
+it, `PatternChip.tsx` takes its colours from it, and `pattern-category`
+fails the build on a missing or unknown category. Colours come from the
+`--cat-*` ramp in `src/index.css`. **Adding a category is deliberate:**
+one new entry, with a ramp colour and the mapping in
+`src/lib/__tests__/patternCategories.test.ts`.
 Since the check reads `PATTERN_CATEGORIES`, no pattern can ship a
 category the site can't place; a definition that fits none triggers
 that addition, never a silent new slug.
@@ -703,9 +703,10 @@ Numbers are stable because code and other context files cite them;
    it describes. Personal blogs, Substacks, third-party summaries,
    conference recaps and aggregators are never published, even when
    they cover the same material. `content/feeds.json` is the allowlist
-   of approved blogs, rendered on `/sources`. Enforcement is editorial
-   (`docs/behindscale-taste.md` §2); no check ties an article's `url`
-   or `source` to the allowlist.
+   of approved blogs, rendered on `/sources`. An article's `source` must
+   equal its allowlist entry (`source-matches-feed`); whether the post
+   itself (`url`) belongs to that blog is editorial
+   (`docs/behindscale-taste.md` §2), and no check ties the two.
 8. **Bidirectional pattern integrity + minimum coverage.** Articles
    and patterns are joined by canonical pattern slugs. Two rules, both
    build failures:

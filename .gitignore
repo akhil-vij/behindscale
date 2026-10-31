@@ -23,7 +23,8 @@ playwright-report
 blob-report
 .playwright
 
-# pipeline operational state (SQLite, including WAL files)
+# the deferred pipeline's SQLite state (context/pipeline-architecture-deferred.md);
+# kept so a future pipeline run can't commit it
 processed.db
 processed.db-shm
 processed.db-wal
@@ -31,7 +32,8 @@ pipeline/processed.db
 pipeline/processed.db-shm
 pipeline/processed.db-wal
 
-# generated artifact bundles — produced by the pipeline's generate stage
+# compiled artifact bundles — written by scripts/compile-artifacts.ts from
+# content/artifacts/*.jsx on every build
 public/artifacts/*
 !public/artifacts/.gitkeep
 

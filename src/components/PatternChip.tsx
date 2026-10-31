@@ -1,23 +1,13 @@
 import { Link } from 'react-router-dom'
+import { patternCategoryById } from '../lib/patternCategories'
 
-// Map of pattern category -> Tailwind class set. Each entry is a literal
-// string so Tailwind's content scanner picks up every class even though
-// the selection happens at runtime. Add new categories here as the
-// pattern library grows.
-//
-// `performance` joined the ramp in the 2026-07-08 landing/navigation
-// phase (docs/design-spec.md §2). `throughput` (volume/work-per-time)
-// and `performance` (latency/response-time) are genuinely distinct
-// pattern categories, so they get distinct colors -- consolidating
-// them would erase a real distinction in the taxonomy.
-const CATEGORY_CLASSES: Record<string, string> = {
-  resilience: 'text-cat-blue border-cat-blue/30 bg-cat-blue/10',
-  consistency: 'text-cat-purple border-cat-purple/30 bg-cat-purple/10',
-  throughput: 'text-cat-green border-cat-green/30 bg-cat-green/10',
-  performance: 'text-cat-orange border-cat-orange/30 bg-cat-orange/10',
-  observability: 'text-cat-cyan border-cat-cyan/30 bg-cat-cyan/10',
-}
-
+// A chip's colour comes from its category's entry in PATTERN_CATEGORIES
+// (src/lib/patternCategories.ts), the same entry the /patterns listing
+// dots read, so chips and dots always agree. `throughput`
+// (volume/work-per-time) and `performance` (latency/response-time) are
+// genuinely distinct categories, so they get distinct colors --
+// consolidating them would erase a real distinction in the taxonomy.
+// Uncategorized or unknown categories render neutral.
 const NEUTRAL_CLASSES =
   'text-text-secondary border-border-default bg-bg-surface'
 
@@ -32,7 +22,7 @@ interface PatternChipProps {
 
 export default function PatternChip({ slug, name, category }: PatternChipProps) {
   const variantClasses =
-    (category && CATEGORY_CLASSES[category]) ?? NEUTRAL_CLASSES
+    (category && patternCategoryById.get(category)?.chipClass) || NEUTRAL_CLASSES
 
   return (
     <Link to={`/patterns/${slug}`} className={`${BASE_CLASSES} ${variantClasses}`}>
