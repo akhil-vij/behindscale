@@ -207,6 +207,9 @@ const MAIN_TEXT_WITH_MARKERS = () => {
   // B3-5 (task 10): the prev/next wall nav is new text with no counterpart in
   // the reference build (the footer sits OUTSIDE <main>, so it's already out).
   main.querySelector('nav[aria-label="More walls"]')?.remove()
+  // The newsletter SignupCard is site furniture shared with every lesson and
+  // article, not lesson copy (tests/e2e/newsletter.spec.ts covers it).
+  main.querySelector('[data-signup-card]')?.remove()
   const frames = Array.from(main.querySelectorAll('iframe'))
   const markers: HTMLElement[] = []
   frames.forEach((f, i) => {
