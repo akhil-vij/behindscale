@@ -1,47 +1,67 @@
 # behindscale — Claude Code Context
 
-behindscale is a system design learning platform: it dissects top
-engineering blog posts into structured summaries and interactive visual
-artifacts, and tracks the reusable patterns across them. It is built as two
-decoupled sub-systems in one repo — a build-time **pipeline** and a static
-**website** — communicating only through generated files (the content
-contract).
+behindscale (behindscale.com) is a system design learning site. It dissects
+posts from official engineering blogs into structured breakdowns with
+interactive artifacts, tracks the reusable patterns and problem classes across
+them, and turns some problem classes into playable lessons ("walls"). All
+content is hand-authored. The build-time Claude pipeline was deferred on
+2026-06-04 and does not exist in the repo.
+
+## Repo Map
+
+- `content/` — the source of truth, authored by hand: `articles/`,
+  `patterns/`, `problems/` (problem classes plus each wall's data and SVGs),
+  `artifacts/` (artifact JSX sources), `figures/`, `cruxtags.json`,
+  `feeds.json` (the source allowlist).
+- `src/` — the static site: React + Vite, prerendered per route. `src/types/`
+  is the content schema; `src/walls/` holds the per-wall code.
+- `scripts/` — build-time tooling: the content validator and its checks
+  (`scripts/checks/`), artifact compile, figure copy, prerender, sitemap, RSS
+  feed, share-image check.
+- `tests/` — Playwright e2e (`tests/e2e/`) and the mission suites
+  (`tests/unit/`); other vitest suites sit next to their code in `__tests__/`.
+- `docs/` — authoring guides and design specs. `handoff/` — task briefs from
+  the owner.
 
 ## Read First
 
-Read the following files in order before implementing or making any
-architectural decision:
+Always: `context/progress-tracker.md` (short; where things stand).
 
-1. `context/project-overview.md` — product definition, goals, features, scope
-2. `context/architecture.md` — the two sub-systems, boundaries, storage model,
-   and invariants
-3. `context/ui-context.md` — theme (light shell + dark artifacts), color
-   tokens, typography, layout
-4. `context/code-standards.md` — implementation rules and conventions
-5. `context/ai-workflow-rules.md` — development workflow, scoping, build order
-6. `context/progress-tracker.md` — current phase, decisions, open questions,
-   next steps
-7. `context/open-decisions.md` — running index of owner-facing decisions
-   surfaced across rounds; blocker-first ordering. Update after every round
-   or session that surfaces or resolves an item
+Then, as the task needs:
 
-## Working Agreements
+- Writing code → `context/architecture.md` and `context/code-standards.md`.
+- Styles, layout or copy presentation → `context/ui-context.md`.
+- Scoping, branching, verifying, shipping → `context/ai-workflow-rules.md`.
+- Product behavior or scope → `context/project-overview.md`.
+- Touching an area with pending owner decisions → the matching items in
+  `context/open-decisions.md` (search it; don't read it end to end).
 
-- Implement against the specs in the context files. Do not invent product
-  behavior; resolve gaps in the context files first.
-- Respect the system boundaries: never mix pipeline (`pipeline/`) and website
-  (`src/`) work in one step, and never import across that boundary — they
-  communicate only through `content/` and `public/artifacts/`.
-- Uphold the invariants in `architecture.md`, especially: the website does no
-  runtime network fetching (static-by-construction); each artifact renders in
-  a sandboxed iframe and must fail in isolation; the pipeline is idempotent.
-- Use the ui-context.md tokens — no hardcoded hex in `src/`.
-- Never commit secrets; the Anthropic API key comes from `ANTHROPIC_API_KEY`.
+`context/archive/` is history and `context/pipeline-architecture-deferred.md`
+is the shelved pipeline design. Read them only when the task is about either.
 
-## Keep In Sync
+## Rules
 
-Update `context/progress-tracker.md` after each meaningful implementation
-change. If implementation changes the architecture, scope, standards, or UI
-tokens documented in the context files, update the relevant file before
-continuing. Treat Claude prompt changes under `pipeline/prompts/` as
-meaningful changes worth noting.
+- Implement against the context files, `docs/`, and the task's brief. Don't
+  invent product behavior; when something is undefined, ask the owner or
+  record it in `open-decisions.md`.
+- Static by construction: content is compiled in at build time and present
+  in the prerendered HTML. Nothing in `src/` fetches content at runtime.
+- Every artifact renders in a `sandbox="allow-scripts"` iframe and fails in
+  isolation. Never loosen the sandbox; extend the postMessage protocol
+  instead.
+- Use the `ui-context.md` tokens in `src/`; no hardcoded hex.
+- Imports go one way: `scripts/` may import `src/types` and pure helpers from
+  `src/lib` and `src/walls`, never components, pages or `src/content`;
+  nothing in `src/` imports from `scripts/` (architecture.md invariant 3).
+- Articles come only from the official engineering blogs in
+  `content/feeds.json`.
+- `npm run build` (which runs the validator) passes before anything is called
+  done. Never commit secrets.
+
+## Keep in Sync
+
+- Update `context/progress-tracker.md` in place when a change lands; keep it
+  short (its header says how).
+- Update `context/open-decisions.md` when a round or session raises or
+  resolves an owner decision.
+- If a change makes a context file untrue, fix that file in the same PR.
