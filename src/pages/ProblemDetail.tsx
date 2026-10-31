@@ -11,7 +11,7 @@ import {
   urlSlugByCruxTag,
 } from '../content'
 import { catalogGroups } from '../lib/catalogGroups'
-import { newsletterSignupUrl } from '../config/site'
+import SignupCard from '../components/SignupCard'
 import type { Article, PatternDefinition, ProblemEssay } from '../types'
 import StationNav from './problem/StationNav'
 import WallSection from './problem/WallSection'
@@ -79,10 +79,8 @@ function formatMonthYear(iso: string): string {
 // Host logic (the mission<->page protocol, persistence, scroll-spy) is
 // client-side and lives in a hook; every string on the page is prerendered.
 //
-// Newsletter furniture from the design (the "essay upcoming" strip and the
-// "The weekly" subscribe card) is intentionally deferred to the Phase-6
-// /newsletter surface -- it renders-when-present once that route exists, so
-// this page never links to a 404.
+// Lessons (classes with a mission) end on the newsletter SignupCard, after the
+// sources and before the prev/next walls; essay-only class pages carry none.
 export default function ProblemDetail() {
   const { urlSlug } = useParams<{ urlSlug: string }>()
   const cruxTag = urlSlug ? cruxTagByUrlSlug.get(urlSlug) : undefined
@@ -378,7 +376,7 @@ export default function ProblemDetail() {
         </p>
       )}
 
-      <SubscribeCard />
+      {essay?.mission !== undefined && <SignupCard className="mt-10" />}
 
       {(prevWall || nextWall) && (
         <nav
@@ -487,43 +485,6 @@ function RichCards({
         })}
       </div>
     </Section>
-  )
-}
-
-// The "The weekly" subscribe card. Config-gated (design §5b): renders only when
-// a newsletter signup URL is set -- external hosted page now, /newsletter at
-// Phase 6. Empty config => nothing renders, so this page never links to a 404.
-function SubscribeCard() {
-  if (!newsletterSignupUrl) return null
-  const external = /^https?:\/\//.test(newsletterSignupUrl)
-  const ctaClass =
-    'shrink-0 rounded-md bg-accent-primary px-4 py-2 font-mono text-xs font-semibold text-bg-surface transition-opacity hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary'
-  return (
-    <section className="mt-9 rounded-xl border border-border-default bg-bg-surface px-5 py-[18px]">
-      <div className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">
-        The weekly
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <span className="flex-1 text-sm text-text-secondary">
-          This wall&rsquo;s essay lands in an upcoming edition — one problem
-          class per edition, every claim linked to the company&rsquo;s own post.
-        </span>
-        {external ? (
-          <a
-            href={newsletterSignupUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={ctaClass}
-          >
-            Subscribe
-          </a>
-        ) : (
-          <Link to={newsletterSignupUrl} className={ctaClass}>
-            Subscribe
-          </Link>
-        )}
-      </div>
-    </section>
   )
 }
 

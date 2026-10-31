@@ -9,9 +9,10 @@ import {
 } from '../content'
 import { canonicalCompanies, catalogGroups } from '../lib/catalogGroups'
 import { estimateMinutes } from '../lib/wallEstimate'
-import { heroWallPromise } from '../config/site'
+import { heroWallPromise, newsletterSignupUrl } from '../config/site'
 import PlayableBadge from '../components/PlayableBadge'
 import SideBySideBadge from '../components/SideBySideBadge'
+import SignupCard from '../components/SignupCard'
 
 // Landing page: the conversion billboard. Structure (design-spec §3):
 //
@@ -28,6 +29,8 @@ import SideBySideBadge from '../components/SideBySideBadge'
 //     for + why), between the trust band and the problems preview
 //   Problems preview — top-3 multi-company problem-classes, each row
 //     linking to its class page /problems/<urlSlug>
+//   Newsletter — SignupCard (size lg), 48px from the last problem row and
+//     48px above the CTA: subscribe, then browse
 //   CTA — "Browse all N systems →" (N derived at build time)
 //   Footer — wordmark + Problems / Patterns / Sources + FIRST-PARTY
 //
@@ -109,6 +112,11 @@ export default function Landing() {
       <TrustBand companies={companies} />
       <AudienceSection articleCount={articleCount} />
       <PreviewSection preview={preview} totalClasses={totalClasses} />
+      {newsletterSignupUrl && (
+        <section className="mx-auto max-w-[1080px] px-6 pb-12">
+          <SignupCard size="lg" />
+        </section>
+      )}
       <CtaSection articleCount={articleCount} />
     </main>
   )
@@ -359,7 +367,7 @@ function PreviewSection({
   const companyNoun =
     minCompanies === maxCompanies && maxCompanies === 1 ? 'company' : 'companies'
   return (
-    <section className="mx-auto max-w-[1080px] px-6 py-14">
+    <section className="mx-auto max-w-[1080px] px-6 pb-12 pt-14">
       <div className="mb-6 flex items-center gap-3">
         <span className="inline-block h-[2px] w-6 bg-brand-gold" />
         <span className="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">

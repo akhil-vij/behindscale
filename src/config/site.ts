@@ -2,19 +2,19 @@
 // online. Static-by-construction (invariant 1): plain constants, read at build
 // time, no runtime fetch.
 
-// The newsletter signup destination. EMPTY = no subscribe surface renders
-// anywhere (the current state). Set it to flip every subscribe surface at once
-// -- the problem-page "The weekly" card and (when it exists) the footer link.
-//
-// Distribution track (docs/problem-page-design.md §5b): the signup exists as an
-// EXTERNAL hosted page (e.g. Buttondown) weeks before Phase 6's /newsletter
-// ships. Point this there now; swap to "/newsletter" when that page lands. One
-// value, every surface. Invariant 7 (no link to a 404) holds because the target
-// exists before the link does.
-//
-// An absolute "https://..." value renders as an external link (new tab); a
-// leading-slash value renders as an in-app route.
-export const newsletterSignupUrl = ''
+// The newsletter lives on Substack. `newsletterSignupUrl` is the "Subscribe free
+// on Substack ↗" button in SignupCard (the landing, the end of every lesson and
+// every article); EMPTY = no signup card renders anywhere. `newsletterUrl` is
+// the footer's "Newsletter ↗" link to the publication's home. Both open in a
+// new tab. Nothing links to a page that doesn't exist yet (invariant 7).
+export const newsletterSignupUrl = 'https://behindscale.substack.com/subscribe'
+export const newsletterUrl = 'https://behindscale.substack.com'
+
+// The "Latest:" line under the signup button: a link to the most recent
+// edition so a reader can sample before subscribing. Hidden while `url` is
+// empty (the state until the first edition, Nov 16). Set both fields to show
+// it; `title` is the edition's headline.
+export const newsletterLatestEdition = { url: '', title: '' }
 
 // The landing hero's cross-link to the load-shedding wall (F20). The old "See
 // how →" promised a drop-order comparison /problems/blind-load-shedding does

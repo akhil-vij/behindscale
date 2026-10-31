@@ -14,6 +14,7 @@ import CruxCallout from '../components/CruxCallout'
 import PatternChip from '../components/PatternChip'
 import Prose from '../components/Prose'
 import SourceAttribution from '../components/SourceAttribution'
+import SignupCard from '../components/SignupCard'
 import StatsRow from '../components/StatCallout'
 
 // Article reading arc (Unit 10 + 2026-07-05 crux addition,
@@ -192,6 +193,10 @@ export default function ArticleDetail() {
             cruxTag chip above already provides the "browse the
             whole class" affordance. */}
         <AlsoSolvingThis article={article} />
+
+        {/* The newsletter card ends every breakdown, after its last
+            section and before the footer. */}
+        <SignupCard className="mt-10" />
       </div>
     </article>
   )
