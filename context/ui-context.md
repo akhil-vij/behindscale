@@ -184,11 +184,12 @@ thing everywhere.
 | Red      | `--cat-red`     | `#DC2626` |
 | Amber    | `--cat-amber`   | `#B45309` |
 
-Category → colour (`docs/design-spec.md` §2, `PatternChip.tsx`): resilience
-blue, consistency purple, throughput green, performance orange,
-observability cyan. Known drift: `src/lib/patternCategories.ts` (the
-category dots on `/patterns` and the pattern page) swaps throughput and
-performance. `--cat-amber` doubles as the light shell's attention ink: the
+Category → colour (`docs/design-spec.md` §2): resilience blue, consistency
+purple, throughput green, performance orange, observability cyan. One table
+holds it: `PATTERN_CATEGORIES` in `src/lib/patternCategories.ts`, whose
+entries carry both the listing dot and the chip classes (`PatternChip.tsx`
+reads them); `src/lib/__tests__/patternCategories.test.ts` pins the mapping.
+`--cat-amber` doubles as the light shell's attention ink: the
 "hot" matrix row and question, SEEN AT lines, the BREAK IT teaser, the
 numbered steal list.
 

@@ -80,10 +80,6 @@ direction questions that aren't there yet.
 
 Each item is safe to pick up on its own.
 
-- **Stale comment in `src/pages/Landing.tsx`:** the structure comment near the
-  top still names `/artifacts/_hero/index.html`. The hero embeds
-  `/artifacts/priority-aware-load-shedding/index.html`; the old path 301s in
-  `vercel.json`. Comment only.
 - **Skipper errata:** `skipper-workflow-engine.json` says "10,000 workflows
   per second on DynamoDB"; flagged in July as conflicting with the source's
   MySQL/UDS state-store framing. Check the source when the article's prose is
