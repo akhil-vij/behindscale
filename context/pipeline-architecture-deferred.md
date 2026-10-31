@@ -1,9 +1,11 @@
 > Status: Deferred from active implementation as of 2026-06-04.
 > This document preserves the full pipeline architecture as
-> designed during Unit 7 review. The decision to defer is
-> recorded in progress-tracker.md under "Deferred Work." Revisit
-> at the week-8 reassessment or whenever manual editorial cadence
-> shows signs of scaling friction.
+> designed during Unit 7 review. The decision to defer, and its
+> reasoning, is in `context/archive/progress-log-2026.md` under
+> "Deferred Work". The owner reconfirmed the deferral on
+> 2026-10-31; the three-articles-a-week cadence it assumed is now
+> optional. Revisit whenever manual authoring shows signs of
+> scaling friction.
 
 # Unit 7 — pipeline architecture review
 
@@ -339,7 +341,7 @@ pipeline/prompts/
     artifact-rules.md            — the dark-palette / self-containment / ErrorBoundary contract; generate.md imports this
 ```
 
-**Versioning discipline.** Prompts are committed code. CLAUDE.md already says "Treat Claude prompt changes under `pipeline/prompts/` as meaningful changes worth noting." Significant prompt changes get their own `docs:` or `chore:` commit with a body that explains *why* the change.
+**Versioning discipline.** Prompts are committed code. The pre-deferral CLAUDE.md said "Treat Claude prompt changes under `pipeline/prompts/` as meaningful changes worth noting"; restore that line if the pipeline returns. Significant prompt changes get their own `docs:` or `chore:` commit with a body that explains *why* the change.
 
 **Regression check.** A `pipeline/regression-check.ts` script re-runs analyze (not generate — too noisy) against the four seed articles and diffs the output against committed `pipeline/regression-fixtures/<slug>.expected.json` files. Two purposes:
 
@@ -439,3 +441,98 @@ Estimated commit count: 7 (1 docs + 6 feat). Plus probably 1–3 small fix/chore
 ---
 
 Push back surgically on any of the 12 open questions, or on the stage contracts directly. I'd particularly value your read on (4) the pattern-recognition lock, (9) the source-equality validator scope, and (11) the dry-run mode — those have downstream implications for what 7d/7f need to look like.
+
+---
+
+## Addendum: pipeline rules moved from architecture.md
+
+These were stated in `architecture.md` while the pipeline was the plan.
+They moved here when that file was rewritten to describe the code as it
+is. They apply only if the pipeline is built.
+
+**Stack.** Node.js + TypeScript for the stages; the Anthropic SDK
+(Claude Sonnet) for analysis and artifact generation; SQLite via
+`better-sqlite3` for operational state.
+
+**Orchestration.** `pipeline/run.ts` is the single daily entrypoint
+(`npm run study`): it chains discover → fetch → analyze → generate →
+publish, processes the day's two or three selected articles, and exits
+with a per-article success/failure summary. Each stage stays
+independently runnable for debugging (e.g. `npm run study:discover`).
+A scheduler (cron, launchd or GitHub Actions) does nothing more than
+invoke that command: scheduling is decoupled from orchestration.
+
+**Storage split.** Metadata that drives pipeline control flow lives in
+SQLite; published content lives as committed files under `content/`,
+so the site stays static and the history auditable in git.
+`pipeline/proposed-patterns.json` and `pipeline/blocked-articles.json`
+are pipeline operational state, never website-readable content: they
+stay under `pipeline/` and never enter `content/`. (`content/feeds.json`
+is the counter-example: both sides read it, so it moved out of
+`pipeline/` into `content/`.)
+
+**Proposed Pattern Queue principle.** The validator enforces shape
+integrity; the analyze stage makes authoring decisions. The validator
+only ever sees articles with fully grounded references, which keeps
+invariant 8 clean without the analyze stage having to be perfect. A
+blocked article is rejected by removing it from
+`blocked-articles.json`; absence from both queues is the rejection,
+with no other state.
+
+**Aggregated pattern library.** The pipeline would regenerate
+`content/patterns/index.json` from scratch every run by walking
+`content/articles/` and matching slugs to definitions: per pattern, its
+definition, frequency, embodying articles (with source attribution) and
+companies. Hand-editing it is never allowed. The `PatternLibrary` types
+in `src/types/pattern-library.ts` are that shape. Today the site
+derives the same data in memory (`patternStats` in
+`src/content/index.ts`); swapping to the file changes only that
+function's body. Both loaders already exclude `index.json` from the
+pattern-definition set.
+
+**Pipeline invariants** (numbered as they were in architecture.md):
+
+3. The pipeline and the website never import each other's runtime
+   code; they communicate only through `content/` and
+   `public/artifacts/`. The one exception is type-only imports
+   (`import type`) of the schema in `src/types/`.
+4. The pipeline is idempotent: re-running it (same day, same inputs)
+   never produces duplicate articles or corrupts existing content.
+   Article identity is a stable slug tracked in SQLite.
+5. Long-running work and external API calls happen only in the
+   pipeline, never in website code.
+7. (pipeline enforcement) Discovery rejects any article whose
+   canonical URL doesn't match an allowlisted source in
+   `content/feeds.json`, however it was found (RSS, a manual URL), and
+   the analyze stage copies the `source` block from the feed entry
+   verbatim.
+
+**`Article.generatedAt`.** When the pipeline analyzed the article
+(distinct from `publishedAt`), for "studied on" affordances and for
+debugging re-runs.
+
+**Markdown.** The prose fields are not full markdown. The plan was to
+adopt a renderer (likely `react-markdown`) once real Claude output
+arrived. The list syntax in use is a strict CommonMark subset, so that
+migration would render today's lists unchanged.
+
+## Addendum: code standards moved from code-standards.md
+
+Moved here on 2026-10-31 when `code-standards.md` stopped describing the
+pipeline. They apply if the pipeline is built.
+
+- **One Claude client.** Every Claude API call goes through one thin client
+  wrapper, so the model name, retries and error handling live in one place.
+- **Effects at the edges.** Network and filesystem effects sit in clearly
+  named functions, so the core logic is testable without them.
+- **Validate model output before writing.** Parse Claude's JSON against the
+  schema in `src/types/` (the same predicates the content validator uses)
+  before anything reaches `content/`; a malformed response is flagged, never
+  written.
+- **No preemptive unit tests for glue code.** The orchestrator's per-article
+  success/failure report is the safety net. Add targeted tests only for
+  non-trivial pure functions (slug normalization, dedup) whose behavior is
+  hard to check by running the orchestrator.
+- **The artifact style-guide prompt** encodes the `ui-context.md` dark token
+  palette and the artifact conventions: tabs, expandable cards, pattern
+  cross-references and failure-scenario toggles.

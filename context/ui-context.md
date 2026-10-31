@@ -5,12 +5,14 @@
 behindscale has two distinct visual environments, used intentionally:
 
 - **Reading shell (light, editorial):** Everything that is text to be read —
-  the article index, summaries, problem/solution write-ups, the pattern
-  library. Optimized for sustained reading: warm off-white background (never
-  pure white), high-contrast text, generous whitespace, comfortable measure
-  (line length). Reference points: Stripe docs, Linear blog, Mintlify.
+  the landing page, the problems workbench and problem-class pages, article
+  breakdowns, the pattern library. Optimized for sustained reading: warm
+  off-white background (never pure white), high-contrast text, generous
+  whitespace, comfortable measure (line length). Reference points: Stripe
+  docs, Linear blog, Mintlify.
 - **Artifact surface (dark, technical):** The interactive artifacts embedded
-  per article. These stay dark — like a code editor or dashboard embedded in
+  in article, pattern and problem pages (simulations, try-its, missions).
+  These stay dark — like a code editor or dashboard embedded in
   documentation. The contrast with the light shell creates hierarchy and
   signals "interactive exploration zone." Artifacts own their own internal
   styling (they are self-contained bundles in iframes) but should align with
@@ -21,9 +23,18 @@ artifacts are dark. This is a deliberate design choice, not a missing feature.
 
 ## Colors
 
-All shell components use these CSS custom properties — no hardcoded hex
-values anywhere in `src/`. Artifacts (self-contained) should mirror the dark
-tokens for visual continuity.
+Tokens are defined once, as CSS custom properties on `:root` in
+`src/index.css`, and exposed to Tailwind as colour names in
+`tailwind.config.js` (`bg-bg-base`, `text-text-muted`, `border-art-border`).
+No hardcoded hex in `src/` outside those definitions. Tokens that need alpha
+also carry an `-rgb` triplet (`--cat-*-rgb`, `--brand-gold-rgb`,
+`--art-live-rgb`), which is what lets Tailwind opacity modifiers like
+`bg-cat-blue/10` work.
+
+Artifacts cannot read `src/index.css`: each runs in its own sandboxed
+document and loads no site CSS. Each bundle declares its own copy of the
+dark values, and so does the HTML shell `scripts/compile-artifacts.ts`
+writes around it.
 
 ### Reading shell (light)
 
@@ -43,6 +54,11 @@ tokens for visual continuity.
 | Success             | `--state-success`     | `#15803D` |
 | Error               | `--state-error`       | `#DC2626` |
 | Code background     | `--code-bg`           | `#F4F2EE` |
+| Brand gold          | `--brand-gold`        | `#F5B841` |
+
+**Brand thread (2026-07-08):** `--brand-gold` is for hairline rules, the
+wordmark mark, the artifact underglow and the crux underline. Never body
+text.
 
 **Muted split (F18, 2026-09-09):** `--text-muted` was `#8A8A94` (≈3.9:1 on the
 light grounds — fails WCAG AA for text). It is darkened to `#6E6E78` for every
@@ -70,6 +86,13 @@ Every link from a wall page to one of our breakdowns reads "Read the
 breakdown →". `tests/e2e/link-arrows.spec.ts` checks every wall page, and the
 arrows on every page in the sitemap.
 
+**No long dashes as punctuation (2026-10-10, owner):** no em or en dash in
+copy; use a colon, a full stop, or words ("2017 to 2022"). Compound names
+keep theirs ("Logical–Physical"). `tests/e2e/share-tags.spec.ts` enforces it
+for page titles, meta descriptions and the feed; the content-sourced
+descriptions that still carry one are listed there (`KNOWN_CONTENT_DASHES`)
+and in open-decisions #30.
+
 ### Artifact / dark tokens (for artifact bundles and any dark embed)
 
 | Role                | CSS Variable          | Value     |
@@ -80,14 +103,22 @@ arrows on every page in the sitemap.
 | Artifact border     | `--art-border`        | `#1F2333` |
 | Artifact text       | `--art-text`          | `#C8CDD8` |
 | Artifact text muted | `--art-text-muted`    | `#6B7280` |
+| Live indicator      | `--art-live`          | `#30a46c` |
 | Interactive border  | `--art-border-interactive` | `#3a4158` |
 | Bright text         | `--art-text-bright`   | `#EDEFF3` |
 | Verdict red         | `--art-red`           | `#ef4444` |
 | Verdict amber       | `--art-amber`         | `#eab308` |
 | Verdict green       | `--art-green`         | `#22c55e` |
-| Queue bar blue      | `--art-blue`          | `#3b82f6` |
 | Problem-class accent| `--accent-problem`    | `#D946EF` |
 | Problem accent hover| `--accent-problem-hover` | `#E879F9` |
+| Muted text (local)  | `--art-muted`         | `#98A1B0` |
+| Queue bar blue (local) | `--art-blue`       | `#3b82f6` |
+
+Every row except the two marked *local* is defined in `src/index.css`. The
+shell itself uses only the first seven (embed and error frames, the pattern
+page's mechanism shell); the rest are reference values the problem-page
+artifacts re-declare. The *local* rows exist only inside the problem-page
+artifacts (`--art-blue` only in the queue-backlog mission).
 
 Usage rules for the named dark tokens (problem page v7.3, 2026-09-06):
 
@@ -101,29 +132,30 @@ Usage rules for the named dark tokens (problem page v7.3, 2026-09-06):
   `--state-success`.
 - `--art-blue` is the healthy fill of a stage's level bar (the queue in the
   queue-backlog mission), before it turns amber and red. Display only.
+- `--art-live` is the status dot on an artifact's caption bar. It is distinct
+  from `--state-success`, which is a darker UI green.
 - `--accent-problem` (magenta) marks **interactive controls, attention cues,
   and the BUILD IT badge**; never the light shell, and never a
   non-interactive dark element (magenta means clickable; the badge is the
   one sanctioned exception).
 
 **The `#08090D` family is canonical** for every dark artifact (v5
-ratification 2026-08-29). Drift that actually exists in the shipped
-artifacts, as counted 2026-09-06: 40 artifacts hardcode the taste-doc
-literals (`#111118` / `#0c0d13` / `#2a2a3a` panels and borders), 22 use
-the `--art-*` values above (`#0F1118` / `#161922` / `#1F2333`), and one
-(`skipper-workflow-engine`) sits on its own grays (`#101018` / `#14141c` /
-`#23232e`). All but that one share the `#08090D` root. Migrate each
+ratification 2026-08-29). Drift still exists in the shipped artifacts: most
+older ones hardcode the taste-doc literals (`#111118` / `#0c0d13` /
+`#2a2a3a` panels and borders), often alongside the `--art-*` values above,
+and `skipper-workflow-engine` sits on its own grays (`#101018` / `#14141c` /
+`#23232e`) and is the only one without the `#08090D` root. Migrate each
 artifact onto the `--art-*` values at its next touch; no third family.
 
 **Muted text on dark surfaces (legibility, 2026-09-06):** `--art-text-muted`
 `#6B7280` measures 3.9:1 on `--art-surface` and 4.1:1 on `--art-bg`, under
-the 4.5:1 AA floor for the 9–11px labels the artifacts set in it. The two
-problem-page artifacts (`problem-ambiguous-timeouts-tryit` / `-mission`)
-therefore carry a local `--art-muted: #98A1B0` (7.2:1 on the surface),
-keep every HTML label at 10px or more (meter captions 9px), and dim locked
-/ disabled options to 0.7 / 0.5 instead of 0.55 / 0.35. That is a
-deliberate deviation from the table above, recorded as open decision #22
-(lift the token site-wide, or keep it per-artifact).
+the 4.5:1 AA floor for the 9–11px labels the artifacts set in it. Every
+problem-page artifact (`problem-<wall>-tryit` / `-mission`) therefore
+carries a local `--art-muted: #98A1B0` (7.2:1 on the surface), keeps every
+HTML label at 10px or more (meter captions 9px), and dims locked / disabled
+options to 0.7 / 0.5 instead of 0.55 / 0.35. That is a deliberate deviation
+from the table above, recorded as open decision #22 (lift the token
+site-wide, or keep it per-artifact).
 
 ### Problem-page shell tokens (light)
 
@@ -139,8 +171,8 @@ window-bar fill is the solid bar in the protection-window figure.
 
 ### Pattern / tag accent ramp (shared, used for categorizing patterns)
 
-Use these for tag chips, pattern category coding, and artifact accents so
-colors mean the same thing everywhere.
+Use these for tag chips and pattern category coding so colors mean the same
+thing everywhere.
 
 | Role     | CSS Variable    | Value     |
 | -------- | --------------- | --------- |
@@ -152,19 +184,37 @@ colors mean the same thing everywhere.
 | Red      | `--cat-red`     | `#DC2626` |
 | Amber    | `--cat-amber`   | `#B45309` |
 
+Category → colour (`docs/design-spec.md` §2, `PatternChip.tsx`): resilience
+blue, consistency purple, throughput green, performance orange,
+observability cyan. Known drift: `src/lib/patternCategories.ts` (the
+category dots on `/patterns` and the pattern page) swaps throughput and
+performance. `--cat-amber` doubles as the light shell's attention ink: the
+"hot" matrix row and question, SEEN AT lines, the BREAK IT teaser, the
+numbered steal list.
+
 ## Typography
 
 Reading comfort is the priority for the shell. Use a clean, modern sans for
-UI and body, and a monospace for code, tags, and artifact text.
+UI and body, a serif for editorial display type, and a monospace for code,
+tags, and artifact text.
 
-| Role           | Font                          | Variable        |
-| -------------- | ----------------------------- | --------------- |
-| UI + body text | Inter (fallback: system sans) | `--font-sans`   |
-| Headings       | Inter (tight tracking)        | `--font-sans`   |
-| Code / mono    | JetBrains Mono (fallback mono)| `--font-mono`   |
+| Role                  | Font                           | Variable        |
+| --------------------- | ------------------------------ | --------------- |
+| UI + body text        | Inter (fallback: system sans)  | `--font-sans`   |
+| Content-page headings | Inter (tight tracking)         | `--font-sans`   |
+| Editorial display     | Newsreader (variable, opsz)    | `--font-serif`  |
+| Code / mono           | JetBrains Mono (fallback mono) | `--font-mono`   |
 
-Type scale (shell): body 16px / line-height 1.7; small 14px; captions 12px;
-h1 ~32px, h2 ~24px, h3 ~18px. Keep body measure to ~68–75 characters.
+Newsreader carries the headings and card titles on the landing page,
+`/problems` and `/sources`; article, pattern and problem pages head in Inter.
+Mono carries code, eyebrows, chips, counts and artifact text. All three are
+self-hosted through the `@fontsource` packages imported in `src/main.tsx`;
+there is no font CDN.
+
+Type scale (shell): body 16px / line-height 1.7 (the problem page sets
+1.65); small 14px; captions 12–13px; content-page h1 ~30px (`text-3xl`), h2
+20–24px, h3 ~17–18px; serif display headings scale with `clamp()`. Keep body
+measure to ~68–75 characters (the 680–720px reading columns).
 
 ## Border Radius
 
@@ -175,74 +225,96 @@ h1 ~32px, h2 ~24px, h3 ~18px. Keep body measure to ~68–75 characters.
 | Modals / overlays    | `rounded-2xl`    | 16px  |
 | Artifact iframe frame| `rounded-xl`     | 12px  |
 
+Set in `tailwind.config.js`. Off the scale today: 8–10px on search inputs
+and the problem page's row boxes, 14px on the landing hero frame.
+
 ## Component Library
 
-- Tailwind CSS as the styling system. Optionally shadcn/ui for primitives
-  (buttons, inputs, dialog) — if used, components live in `src/components/ui/`
-  and are added via the CLI rather than hand-written.
+- Tailwind CSS is the styling system. There is no component kit (no
+  shadcn/ui, no `src/components/ui/`): shared components are hand-written in
+  `src/components/`, page-specific ones sit beside their page
+  (`src/pages/problem/`).
 - All custom components consume the CSS variable tokens above via Tailwind
   theme extension. No raw hex in component files.
+- The one plain-CSS surface is `src/pages/problem-page.css`: every rule
+  scoped under `.problem-page`, tokens only (`var(--…)`).
 
 ## Layout Patterns
 
-behindscale has **two equally prominent navigation surfaces**: the article
-feed and the pattern library. Both are reachable from the navbar at all
-times. Article cards expose the patterns they embody; pattern cards expose
-the articles that embody them. The reader can enter from either side and
-traverse to the other.
+behindscale has **two equally prominent navigation surfaces**: the problems
+workbench (`/problems`, where the article breakdowns live, grouped by
+problem class) and the pattern library (`/patterns`). Both are in the
+navbar at all times. Article cards expose the patterns they embody; pattern
+pages list the breakdowns that embody them. The reader can enter from
+either side and traverse to the other.
 
-- **Article index (home, `/`):** centered single-column feed
-  (max-width ~960px) of article cards; left-aligned filter/tag rail on
-  desktop that collapses above the feed on mobile. Each article card shows
-  source attribution (eyebrow), title, a short summary, and **2–3 pattern
-  chips** identifying the patterns this article embodies.
-- **Problem page (`/problems/:urlSlug`, rich state):** the same 680px
-  reading column; the two artifacts (try-it, build-it mission) break out
-  to 960px at **equal widths** and draw their own dark frames (the embed
-  runs bare). A sticky station nav under the header carries the time
-  budgets from content; on phones it becomes a single nowrap row with a
-  right-edge mask and the `· N MIN` budgets hidden. The mission iframe is
-  the scrollport under 700px (~90dvh, internal scrolling) so its sticky
-  RUN bar and damage toast work; at 700px and above it is content-height
-  from the artifact's `size` message. The YOU column and YOU diagram own
-  themselves with a 1.5px left rule (`--border-strong`) and a
-  `--bg-subtle` tint in neutral ink -- never magenta on the light shell.
-- **Article page (`/articles/:slug`):** centered reading column
-  (max-width ~720px) for the summary; the interactive artifact breaks out to
-  a wider container (max-width ~960px) and sits in a dark, rounded frame.
-  Pattern chips appear in the article header (below source attribution) and
-  again in a "Patterns in this article" section near the bottom of the
-  reading column, each linked to its pattern detail page.
-- **Pattern library index (`/patterns`):** grid of pattern cards on desktop
-  (3 columns), single column on mobile. Each card shows the pattern name,
-  its category (if set), its frequency count
-  ("Seen in 7 articles across 5 companies"), and a 1–2 line teaser drawn
-  from the start of the definition. Cards link to the pattern detail page.
-  Optional flat category filter at the top.
-- **Pattern detail page (`/patterns/:slug`):** centered reading column
-  (max-width ~720px) for the definition, when-it-applies, and tradeoffs.
-  Below that, a section titled "Seen in" that lists every article embodying
-  this pattern as cards — each showing source attribution, article title,
-  and the per-article note (how *this* article applies the pattern). This
-  is the durable-knowledge surface; treat it with the same reading-comfort
-  rigor as the article page.
-- **Navbar:** light top bar with a bottom border (`--border-default`),
-  wordmark left, two primary nav items ("Articles", "Patterns") centered or
-  inline-right, search affordance and any secondary links right.
+- **Navbar:** light top bar (`--bg-surface`, `--border-default` bottom
+  border, 1080px): wordmark with its gold mark (links to `/`), then
+  "Problems", "Patterns" and a Search button that focuses the `/problems`
+  search box (navigating there first).
+- **Landing (`/`):** a hero (serif H1 and lede beside the live artifact in a
+  dark-in-light frame with a gold hairline; stacks text-first below `lg`), a
+  trust band, an audience block, a preview of the top problem classes, and a
+  CTA into `/problems`. No `<input>` on this page.
+- **Problems workbench (`/problems`, 1080px):** search (`?q=`), Company
+  filter chips, a "Showing N of M" line, then one section per problem class
+  (cruxTag), largest first. A section header links to the class page and
+  carries its definition, a SEEN AT line, and PLAYABLE / SIDE BY SIDE badges
+  when it has a mission or comparison. Article cards fill an auto-fill grid
+  (min 310px): source eyebrow, serif title (the link), crux summary, up to 3
+  pattern chips.
+- **Problem page (`/problems/:urlSlug`):** a 680px reading column; sections
+  render when authored. A wall page (the rich state) adds the two artifacts
+  (try-it, build-it mission), which break out to 960px at **equal widths**
+  and draw their own dark frames (the embed runs bare). A sticky station nav
+  under the header, spanning the same 960px, carries the time budgets from
+  content; on phones it becomes a single nowrap row with a right-edge mask
+  and the `· N MIN` budgets hidden. The mission frame takes its height from
+  the artifact's `size` message: at 700px and above it is a bounded
+  scrollport, `min(content, 100dvh − 56px)`, so the right working column's
+  sticky engages; under 700px it is content-height and the page scrolls.
+  The comparison table also spans 960px, first column frozen. The YOU
+  column and YOU diagram own themselves with a 1.5px left rule
+  (`--border-strong`) and a `--bg-subtle` tint in neutral ink -- never
+  magenta on the light shell.
+- **Article page (`/articles/:slug`):** a 720px reading column (title,
+  source row, all pattern chips, summary, crux, Problem, Solution); the
+  artifact breaks out to 960px in a dark, rounded frame before Tradeoffs,
+  "Patterns in this article" (each chip with its per-article note) and
+  "Also solving this" (the same problem class).
+- **Pattern library (`/patterns`, 1020px):** patterns grouped under the five
+  categories, with search (`?q=`) and single-select category chips
+  (`?category=`). Cards (auto-fill, min 300px) show the name, breakdown
+  count, a one-line definition and SEEN AT companies, and link to the
+  pattern page.
+- **Pattern page (`/patterns/:slug`, 680px):** eyebrow ("Pattern · seen in
+  N breakdowns across M companies"), name, lede, category chip, then each
+  section only when authored or derived: The mechanism (the artifact in its
+  own dark shell), Definition, When it applies, Tradeoffs, "The same move, N
+  ways" (one row per breakdown with company, source, year and the
+  per-article note; past 8, the first 4 stay full and the rest collapse
+  behind SHOW ALL), Often used together, Problems this pattern answers.
+  This is the durable-knowledge surface; treat it with the same
+  reading-comfort rigor as the article page.
+- **Sources (`/sources`, 880px):** the `content/feeds.json` allowlist with
+  each blog's breakdown count, each linking to `/problems?source=<slug>`.
 
 ### Pattern Chips
 
 Pattern chips are the bidirectional cross-link between articles and
-patterns. They appear on article cards, in article headers, in artifact
-contexts when relevant, and on pattern-back-link cards.
+patterns. They appear on article cards, in article headers, and in an
+article's "Patterns in this article" section. Problem pages list their
+patterns as neutral `.chip` links in `problem-page.css`.
 
 - Visual: small pill, `rounded-md`, `--font-mono`, color-coded by category
-  using the `--cat-*` ramp (if the pattern has a category) or a neutral
-  border + text style if uncategorized.
+  (`--cat-*` text, a 10% fill, a 30% border) if the pattern has a category,
+  or a neutral border + text style if uncategorized.
 - Behavior: always a link to the pattern detail page (`/patterns/:slug`).
-- Constraint: never more than 3 chips visible on a card at once; if an
-  article embodies more, show the first 3 and a "+N more" affordance.
-- Hover/focus: light surface fill, never a hard color shift.
+- Constraint: never more than 3 chips visible on a card at once. A card
+  shows the first 3 with no overflow marker; the article page shows them
+  all.
+- Hover/focus: light surface fill (`--bg-subtle`) and the accent focus
+  ring, never a hard color shift.
 - A chip is a wayfinding element, not a tag in the broad sense. Tags
   (general topical labels like "load-shedding") are visually distinct from
   pattern chips; do not collapse the two into one component.
@@ -250,44 +322,46 @@ contexts when relevant, and on pattern-back-link cards.
 ### Source Attribution
 
 Source attribution is a first-class element, not a footnote. Every place an
-article is referenced — index cards, article page header, pattern library
-back-links — shows where it came from, prominently and consistently.
+article is referenced — workbench cards, the article page header, pattern
+page back-links — shows where it came from, prominently and consistently.
 
-- **Article card (in the index):** the `source.name` appears as a small
+- **Article card (on `/problems`):** the `source.name` appears as a small
   uppercase eyebrow above the article title (e.g. "UBER ENGINEERING"),
-  styled with `--text-muted` and `--font-mono`. The article date sits
-  beside it. The card itself is a link to the article page; the source
-  name additionally links to a filtered view of all articles from that blog.
-- **Article page header:** below the title, render a source row with:
-  the `source.name` (linked to `source.url`, opens in new tab), a separator,
-  the publish date, and a small "↗ Read original" link that points to
-  `article.url`. The reader should never have to hunt for where this came
-  from or how to find the source post.
-- **Pattern library back-links:** every article-link under a pattern shows
-  `source.name` alongside the article title so the breadth of a pattern
-  across companies is visible at a glance ("seen in Uber, Stripe, Airbnb").
-- **Filter affordance:** the article index supports a source filter
-  (inline chips above the card grid). Chips are derived from
-  `articles[*].source` — only sources with at least one published
-  article appear, plus an explicit "All" chip as the cleared state.
-  The full `content/feeds.json` allowlist is the upstream truth and
-  the surface for any future "Sources we track" page, but the filter
-  itself filters by realized content (Unit 6 architecture decision:
-  navigation surfaces filter by realized content; informational
-  surfaces describe intended scope). Chips ordered alphabetically by
-  display name. Active chip filled; inactive chips border-only. URL
-  shape: `?source=<slug>`.
+  styled with `--text-muted` and `--font-mono`, with the article date beside
+  it. The title links to the article page; the source name links to
+  `/problems?source=<slug>`.
+- **Article page header:** below the title, a source row with the
+  `source.name` and ↗ (linked to `source.url`, opens in new tab), a
+  separator, the publish date, and a small "↗ Read original" link that
+  points to `article.url`. The reader should never have to hunt for where
+  this came from or how to find the source post.
+- **Pattern page back-links:** every row in "The same move, N ways" shows
+  the company and the source name beside the note, so the breadth of a
+  pattern across companies is visible at a glance.
+- **Filter affordance:** the workbench's Company chips are derived from
+  realized content (the distinct `source.company` values across published
+  articles, alphabetical) plus an explicit "All" chip as the cleared state.
+  Active chip filled; inactive chips border-only. URL shape:
+  `?source=<slug>`. `content/feeds.json` is the upstream allowlist and is
+  listed in full on `/sources` (Unit 6 architecture decision: navigation
+  surfaces filter by realized content; informational surfaces describe
+  intended scope).
 
 Attribution must never be styled in a way that visually competes with the
 article title — it is a credibility signal and a wayfinding cue, not the
 headline. Muted token, smaller size, distinct typographic treatment.
 
-- **Artifact embed:** dark rounded frame with a thin border and subtle
-  shadow, full-width within its container, with a small "open in full" affordance.
+- **Artifact embed:** a dark rounded frame (`rounded-xl`, `--art-border`,
+  `--art-bg`, a subtle shadow), full-width within its container, with an
+  "Open in full →" link in a footer bar. Bare mode drops both for hosts
+  that draw their own shell (pattern mechanism, problem page). A load or
+  render failure shows one muted line in the same frame.
 
 ## Icons
 
-- Lucide React. Stroke-based icons only.
+- No icon library. The only icons are hand-written inline SVGs (the search
+  magnifiers); everything else is a text glyph (→ ↗ ▾ ⟷).
+- Stroke-based icons only.
 - Sizes: `h-4 w-4` for inline/text-adjacent, `h-5 w-5` for buttons and nav.
 - Icons inherit text color via `currentColor`; no multi-color icons.
 
@@ -295,5 +369,13 @@ headline. Muted token, smaller size, distinct typographic treatment.
 
 - Mobile-first. The reading shell must be fully comfortable on a phone
   (this is a stated product goal — browsing on mobile while commuting).
+- 700px is the shared phone/desktop line: the problem page's CSS, the
+  host's mission sizing, and the problem-page artifacts (which key off
+  their own frame width) all switch there. Under 700px each comparison
+  diagram and the windows chart swap to their vertical `-v` file when one
+  exists; otherwise the wrapper scrolls sideways with a "⟷ scroll" pill and
+  a right-edge fade. 560px drops the problem page's stat strip and decision
+  rows to one column; Tailwind `lg` splits the landing hero into two
+  columns.
 - Artifacts are dark dashboards; ensure they scroll horizontally within their
   iframe rather than forcing the page to overflow.
