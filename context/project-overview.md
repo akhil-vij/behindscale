@@ -137,6 +137,9 @@ each station with a minute budget:
 - Pages are prerendered with structured data and a share image; an Atom
   feed (`/rss.xml`) and a sitemap cover the content. Vercel Analytics is
   mounted; custom events wait on `context/open-decisions.md` #29.
+- **The newsletter** ("one real failure every two weeks") runs on Substack,
+  first edition 2026-11-16. A signup card ends the landing, every lesson
+  and every article; the footer links to the publication.
 
 ## Scope
 
@@ -156,9 +159,12 @@ each station with a minute budget:
   fetch them, draft the article and artifact for human review) was
   designed and deferred on 2026-06-04, and never built; there is no
   `pipeline/` code. Design: `context/pipeline-architecture-deferred.md`.
-- **Interview, company and newsletter pages** are designed in
-  `docs/nav-ia-decisions.md` but not built. The problem-page subscribe
-  card stays hidden until a signup URL is set in `src/config/site.ts`.
+- **Interview and company pages** are designed in
+  `docs/nav-ia-decisions.md` but not built. The newsletter runs on Substack
+  rather than an on-site page.
+- **Author pieces** (an /about page, bylines, the author half of the end
+  cards, a "Spotted a mistake?" mail link) wait on the owner's About copy,
+  photo and a working mail address.
 
 ### Out of Scope (for now)
 

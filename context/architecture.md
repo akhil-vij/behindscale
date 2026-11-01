@@ -608,8 +608,10 @@ until the missing definition is authored, or it doesn't ship at all.
   leaves the browser apart from Vercel Analytics events.
 - Write access is implicit: whoever can push to the repo publishes.
   Vercel deploys `main`.
-- The problem page's subscribe card renders only when
-  `newsletterSignupUrl` in `src/config/site.ts` is set.
+- The newsletter lives on Substack. The signup card (landing, lessons,
+  articles) and the footer link are plain outbound links set in
+  `src/config/site.ts`; the card renders only while `newsletterSignupUrl`
+  is set. The site collects no email itself.
 
 ## Invariants
 

@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
+import { newsletterUrl } from '../config/site'
 
 // Site footer, shared by the landing and every inner page (findability task 10:
 // inner pages were dead ends). Wordmark + primary nav + the RSS feed + the
 // first-party promise. /rss.xml is a static build artifact (scripts/
-// generate-feed.ts), not a React route, so it's a plain anchor.
+// generate-feed.ts), not a React route, so it's a plain anchor; the newsletter
+// lives on Substack, so its link opens in a new tab.
 export default function Footer() {
   return (
     <footer className="border-t border-border-default bg-bg-subtle">
@@ -33,6 +35,14 @@ export default function Footer() {
             className="text-sm text-text-secondary hover:text-text-primary"
           >
             RSS
+          </a>
+          <a
+            href={newsletterUrl}
+            target="_blank"
+            rel="noopener"
+            className="text-sm text-text-secondary hover:text-text-primary"
+          >
+            Newsletter ↗
           </a>
         </div>
         <span className="font-mono text-xs uppercase tracking-[0.06em] text-text-muted">

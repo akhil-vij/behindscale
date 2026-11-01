@@ -255,8 +255,9 @@ either side and traverse to the other.
   search box (navigating there first).
 - **Landing (`/`):** a hero (serif H1 and lede beside the live artifact in a
   dark-in-light frame with a gold hairline; stacks text-first below `lg`), a
-  trust band, an audience block, a preview of the top problem classes, and a
-  CTA into `/problems`. No `<input>` on this page.
+  trust band, an audience block, a preview of the top problem classes, the
+  newsletter signup card, and a CTA into `/problems`. No `<input>` on this
+  page.
 - **Problems workbench (`/problems`, 1080px):** search (`?q=`), Company
   filter chips, a "Showing N of M" line, then one section per problem class
   (cruxTag), largest first. A section header links to the class page and
@@ -277,12 +278,14 @@ either side and traverse to the other.
   The comparison table also spans 960px, first column frozen. The YOU
   column and YOU diagram own themselves with a 1.5px left rule
   (`--border-strong`) and a `--bg-subtle` tint in neutral ink -- never
-  magenta on the light shell.
+  magenta on the light shell. A lesson (a class with a mission) ends on the
+  signup card, 40px after its sources and before the prev/next walls.
 - **Article page (`/articles/:slug`):** a 720px reading column (title,
   source row, all pattern chips, summary, crux, Problem, Solution); the
   artifact breaks out to 960px in a dark, rounded frame before Tradeoffs,
   "Patterns in this article" (each chip with its per-article note) and
-  "Also solving this" (the same problem class).
+  "Also solving this" (the same problem class), then the signup card, 40px
+  after the last section.
 - **Pattern library (`/patterns`, 1020px):** patterns grouped under the five
   categories, with search (`?q=`) and single-select category chips
   (`?category=`). Cards (auto-fill, min 300px) show the name, breakdown
@@ -299,6 +302,22 @@ either side and traverse to the other.
   reading-comfort rigor as the article page.
 - **Sources (`/sources`, 880px):** the `content/feeds.json` allowlist with
   each blog's breakdown count, each linking to `/problems?source=<slug>`.
+- **Newsletter signup (`src/components/SignupCard.tsx`):** our own button,
+  not Substack's embed (its box brings a font and an orange the site doesn't
+  use and scales under 11px on phones). A white card (`--bg-surface`,
+  `--border-default`, 12px radius): mono eyebrow "The newsletter", a bold
+  heading (22px on the landing, 20 on phones; 18 at the end of lessons and
+  articles), one line at a 36em measure, the "Subscribe free on Substack ↗"
+  button (`--text-primary` fill, `--bg-base` text, 6px radius, at least 44px
+  tall, 48 on the landing to pair with the Browse CTA, full width under
+  700px), and the mono note "EVERY TWO WEEKS · FREE · UNSUBSCRIBE ANY TIME".
+  The button sits beside the text where the column is wide enough (the
+  landing) and under it in the reading columns. A "Latest:" link joins when
+  `newsletterLatestEdition` in `src/config/site.ts` is set. Placements: the
+  landing (48px from the last problem row and from the CTA), the end of every
+  lesson, the end of every article; essay-only problem pages carry none.
+- **Footer:** wordmark; Problems, Patterns, Sources, RSS and "Newsletter ↗"
+  (the Substack home, new tab); the FIRST-PARTY line.
 
 ### Pattern Chips
 

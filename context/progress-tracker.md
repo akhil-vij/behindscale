@@ -7,7 +7,7 @@ detail. The full log up to 2026-10-12 (every unit, round and decision with
 its reasoning) is in `context/archive/progress-log-2026.md`; search it when
 you need the history behind a choice, don't read it end to end.
 
-_Last updated 2026-10-31. `main` at `d26fa2c` (PR #28)._
+_Last updated 2026-10-31._
 
 ## Current State
 
@@ -28,6 +28,11 @@ _Last updated 2026-10-31. `main` at `d26fa2c` (PR #28)._
   - `/problems/queue-backlog` (`buffer-degrades-under-backlog`), page 2,
     merged 2026-10-12 (PR #28).
   - The other 12 problem classes have essay pages without a mission.
+- **Newsletter:** on Substack (`behindscale.substack.com`), every two weeks,
+  first edition 2026-11-16. A signup card ends the landing, both lessons and
+  every article; the footer links to it. Once the first edition is out, set
+  `newsletterLatestEdition` in `src/config/site.ts` to show the "Latest:"
+  link.
 - **Health:** `npm run validate` passes with 0 errors and 45 warnings (40
   `stats-value-in-prose`, 5 `figure-count-ceiling`; both are warning-only by
   design). CI (`.github/workflows/ci.yml`) runs the validator, vitest and
@@ -35,6 +40,15 @@ _Last updated 2026-10-31. `main` at `d26fa2c` (PR #28)._
 
 ## In Flight
 
+- **Author pieces** (part 2 of the author + newsletter brief; the design is in
+  the design agent's `author-newsletter-handoff`): AuthorBlock, the landing
+  "who's behind this" strip, lesson and article bylines, the author half of
+  the end cards, `/about`, the "Spotted a mistake? Tell me →" mailto, and the
+  footer's "About" link (held back from part 1 so no page links to a missing
+  `/about`). Built on a branch with placeholder text; never ship the sheet's
+  invented About copy. Waits on the owner's copy file, a square photo (288px
+  or more), and `hello@behindscale.com` receiving mail (the domain has no mail
+  records yet). Don't merge until all three are in.
 - **`copy/meta-checkpoints`** (pushed 2026-10-13, no PR): one queue-backlog
   copy commit, "Meta's checkpoints keep the list short and reads faster".
   Open a PR for it or drop it (owner).
